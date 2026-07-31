@@ -1,0 +1,41 @@
+[project]
+name = "openagents"
+version = "0.1.0"
+description = "Agents work for you."
+readme = "README.md"
+license = "MIT"
+requires-python = ">=3.12"
+authors = [{ name = "Wangyang Jiang", email = "jiangwangyang2000@163.com" }]
+dependencies = [
+    "uvicorn",
+    "fastapi",
+    "anyio",
+    "sqlalchemy",
+    "aiosqlite",
+    "anthropic",
+    "mcp",
+    "apscheduler>=4.0.0a6",
+]
+
+[project.scripts]
+openagents = "openagents.main:main"
+
+[project.urls]
+Homepage = "https://github.com/jiangwangyang/openagents"
+Documentation = "https://github.com/jiangwangyang/openagents"
+Repository = "https://github.com/jiangwangyang/openagents"
+Issues = "https://github.com/jiangwangyang/openagents/issues"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/openagents"]
+
+[tool.hatch.build.targets.sdist]
+include = [
+    "/src",
+    "/README.md",
+    "/LICENSE",
+]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"

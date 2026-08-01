@@ -8,7 +8,7 @@ from importlib.resources import files
 from fastapi import FastAPI
 from fastapi.staticfiles import StaticFiles
 
-from openagents.api import conversation_api, work_api, app_api
+from openagents.api import conversation_api, work_api, app_api, model_provider_api, mcp_server_api
 from openagents.repository import setting, database
 from openagents.tool import mcp_tool
 from openagents.tool import skill_tool
@@ -47,4 +47,6 @@ app: FastAPI = FastAPI(lifespan=lifespan)
 app.include_router(app_api.router)
 app.include_router(conversation_api.router)
 app.include_router(work_api.router)
+app.include_router(model_provider_api.router)
+app.include_router(mcp_server_api.router)
 app.mount("/static", StaticFiles(directory=str(STATIC_PATH)), name="static")

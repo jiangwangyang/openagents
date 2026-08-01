@@ -1,5 +1,6 @@
 import asyncio
 import json
+import logging
 from datetime import datetime
 
 from anthropic import AsyncAnthropic, AsyncStream
@@ -141,5 +142,6 @@ async def work(conversation_id: int, task_content: str | None) -> None:
             messages += [{"role": "user", "content": tool_result_list, "time": datetime.now()}]
     except Exception as e:
         publish(conversation_id, "error", f"工作执行异常: {str(e)}")
+        logging.error(f"工作执行异常: {str(e)}", exc_info=True)
     finally:
         finish(conversation_id)

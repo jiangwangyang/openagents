@@ -1175,9 +1175,15 @@
                     <input type="text" id="mcpKey" class="form-control mono" placeholder="e.g. vserver_wind_financial_data">
                 </div>
                 <div class="form-group">
+                    <label>Description</label>
+                    <input type="text" id="mcpDesc" class="form-control" placeholder="e.g. Wind Financial Data Provider">
+                </div>
+            </div>
+            <div class="form-row">
+                <div class="form-group">
                     <label>Protocol Architecture Type</label>
                     <select id="mcpType" class="form-control" onchange="adaptMcpFormFields()">
-                        <option value="streamable_http">streamable_http</option>
+                        <option value="streamable-http">streamable_http</option>
                         <option value="sse">sse</option>
                         <option value="stdio">stdio</option>
                     </select>
@@ -1707,7 +1713,7 @@
     async function fetchMcpRegistry() {
         mcpListContainer.innerHTML = '<div style="padding:20px; text-align:center; font-family:var(--font-mono); color:var(--slate-400)">RESOLVING MCP SERVER TOPOLOGY...</div>';
         try {
-            const response = await fetch('/mcp/list');
+            const response = await fetch('/mcp-server/list');
             globalMcpCachedList = await response.json();
             mcpListContainer.innerHTML = '';
 
@@ -1746,6 +1752,11 @@
                             <div class="details-label">Protocol Type</div>
                             <div class="details-value"><code style="background:rgba(0,0,0,0.05); padding:2px 6px; border-radius:2px;">${escapeHtml(server.type)}</code></div>
 
+                            <div class="details-label">Description</div>
+                            <div class="details-value">
+                                <input type="text" id="mcp-desc-${name}" class="form-control" value="${escapeHtml(server.description || '')}">
+                            </div>
+
                             ${!isStdio ? `
                                 <div class="details-label">Target URL</div>
                                 <div class="details-value">
@@ -1782,13 +1793,14 @@
 
     async function submitMcpServer() {
         const name = document.getElementById('mcpKey').value.trim();
+        const description = document.getElementById('mcpDesc').value.trim();
         const type = document.getElementById('mcpType').value;
         if (!name) {
             alert("SERVER UNIQUE NAME IS REQUIRED.");
             return;
         }
 
-        let bodyPayload = {type};
+        let bodyPayload = {name: name, description: description};
         if (type === 'stdio') {
             bodyPayload.command = document.getElementById('mcpCommand').value.trim();
             const argsStr = document.getElementById('mcpArgs').value.trim();
@@ -1809,7 +1821,7 @@
         }
 
         try {
-            const response = await fetch(`/mcp/${encodeURIComponent(name)}`, {
+            const response = await fetch(`/mcp-server/${encodeURIComponent(type)}`, {
                 method: 'POST',
                 headers: {'Content-Type': 'application/json'},
                 body: JSON.stringify(bodyPayload)
@@ -1817,6 +1829,7 @@
             if (response.ok) {
                 toggleAddMcpPanel();
                 document.getElementById('mcpKey').value = '';
+                document.getElementById('mcpDesc').value = '';
                 document.getElementById('mcpUrl').value = '';
                 document.getElementById('mcpHeaders').value = '';
                 document.getElementById('mcpCommand').value = '';
@@ -1830,7 +1843,8 @@
 
     async function updateSingleMcp(name) {
         const type = document.getElementById(`mcp-type-${name}`).value;
-        let bodyPayload = {type};
+        const description = document.getElementById(`mcp-desc-${name}`).value.trim();
+        let bodyPayload = {description: description};
 
         if (type === 'stdio') {
             bodyPayload.command = document.getElementById(`mcp-command-${name}`).value.trim();
@@ -1852,8 +1866,8 @@
         }
 
         try {
-            const response = await fetch(`/mcp/${encodeURIComponent(name)}`, {
-                method: 'POST',
+            const response = await fetch(`/mcp-server/${encodeURIComponent(name)}/${encodeURIComponent(type)}`, {
+                method: 'PUT',
                 headers: {'Content-Type': 'application/json'},
                 body: JSON.stringify(bodyPayload)
             });
@@ -1872,7 +1886,7 @@
             text: `Are you sure you want to completely eject MCP node [${name}] from system environment? Bridge tunnels attached will be disconnected instantly.`,
             onConfirm: async () => {
                 try {
-                    const response = await fetch(`/mcp/${encodeURIComponent(name)}`, {method: 'DELETE'});
+                    const response = await fetch(`/mcp-server/${encodeURIComponent(name)}`, {method: 'DELETE'});
                     if (response.ok) {
                         await fetchMcpRegistry();
                     }
@@ -1937,11 +1951,26 @@
         providerList.innerHTML = '<div style="padding:20px; text-align:center; font-family:var(--font-mono); color:var(--slate-400)">LOADING CONFIGURATION IMAGES...</div>';
 
         try {
-            const pResponse = await fetch('/model/provider/list');
+            const pResponse = await fetch('/model-provider/list');
             globalProvidersCachedList = await pResponse.json();
 
-            const sResponse = await fetch('/model/select');
-            const selectRoute = await sResponse.json();
+            let currentProviderName = null;
+            try {
+                const cpResponse = await fetch('/model-provider/current');
+                if (cpResponse.ok) {
+                    const cp = await cpResponse.json();
+                    currentProviderName = cp.name;
+                }
+            } catch (e) {}
+
+            let currentModelName = null;
+            try {
+                const cmResponse = await fetch('/model/current');
+                if (cmResponse.ok) {
+                    const cm = await cmResponse.json();
+                    currentModelName = cm.model;
+                }
+            } catch (e) {}
 
             const activeProviderSelect = document.getElementById('configActiveProvider');
             activeProviderSelect.innerHTML = '';
@@ -1950,13 +1979,13 @@
                 const opt = document.createElement('option');
                 opt.value = provider.name;
                 opt.textContent = provider.name;
-                if (provider.name === selectRoute.model_provider) {
+                if (provider.name === currentProviderName) {
                     opt.selected = true;
                 }
                 activeProviderSelect.appendChild(opt);
             });
 
-            syncModelDropdown(selectRoute.model);
+            syncModelDropdown(currentModelName);
             renderProvidersFormList();
 
         } catch (e) {
@@ -2049,13 +2078,14 @@
         const modelsValue = document.getElementById('newProviderModels').value.trim();
 
         const bodyPayload = {
+            name: name,
             base_url: urlValue,
             api_key: keyValue,
             models: modelsValue ? modelsValue.split(',').map(m => m.trim()).filter(m => m) : []
         };
 
         try {
-            const response = await fetch(`/model/provider/${encodeURIComponent(name)}`, {
+            const response = await fetch('/model-provider', {
                 method: 'POST',
                 headers: {'Content-Type': 'application/json'},
                 body: JSON.stringify(bodyPayload)
@@ -2085,14 +2115,14 @@
         };
 
         try {
-            const response = await fetch(`/model/provider/${encodeURIComponent(name)}`, {
-                method: 'POST',
+            const response = await fetch(`/model-provider/${encodeURIComponent(name)}`, {
+                method: 'PUT',
                 headers: {'Content-Type': 'application/json'},
                 body: JSON.stringify(bodyPayload)
             });
             if (response.ok) {
                 alert(`PROVIDER CLUSTER [${name}] SYNCHRONIZED.`);
-                const pResponse = await fetch('/model/provider/list');
+                const pResponse = await fetch('/model-provider/list');
                 globalProvidersCachedList = await pResponse.json();
                 syncModelDropdown(document.getElementById('configActiveModel').value);
             }
@@ -2107,7 +2137,7 @@
             text: `Are you sure you want to completely remove infrastructure cluster [${name}]? Layer dependencies pointing here will collapse.`,
             onConfirm: async () => {
                 try {
-                    const response = await fetch(`/model/provider/${encodeURIComponent(name)}`, {method: 'DELETE'});
+                    const response = await fetch(`/model-provider/${encodeURIComponent(name)}`, {method: 'DELETE'});
                     if (response.ok) {
                         await fetchGlobalSettings();
                     }
@@ -2127,16 +2157,20 @@
             return;
         }
 
-        const bodyPayload = {
-            model_provider: providerSelect.value,
-            model: modelSelect.value
-        };
-
         try {
-            const response = await fetch('/model/select', {
-                method: 'POST',
+            let response = await fetch('/model-provider/current', {
+                method: 'PUT',
                 headers: {'Content-Type': 'application/json'},
-                body: JSON.stringify(bodyPayload)
+                body: JSON.stringify({name: providerSelect.value})
+            });
+            if (!response.ok) {
+                alert("PROVIDER ROUTING FAILED");
+                return;
+            }
+            response = await fetch('/model/current', {
+                method: 'PUT',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({model: modelSelect.value})
             });
             if (response.ok) {
                 alert("GLOBAL CONTEXT ACTIVE ROUTE MOUNTED.");

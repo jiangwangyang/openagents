@@ -13,22 +13,62 @@ async def get_mcp_server(name: str) -> McpServer | None:
     return setting.mcp_servers.get(name)
 
 
-# 新增 MCP 服务，名称已存在返回 False
-async def add_mcp_server(name: str, type: str | None = None, url: str | None = None, headers: dict[str, str] | None = None, command: str | None = None, args: list[str] | None = None) -> bool:
+# 新增 streamable_http 类型的 MCP 服务，名称已存在返回 False
+async def add_mcp_streamable_http_server(name: str, description: str, url: str, headers: dict[str, str] | None = None) -> bool:
     setting = await load_setting()
     if name in setting.mcp_servers:
         return False
-    setting.mcp_servers[name] = McpServer(name=name, type=type, url=url, headers=headers, command=command, args=args)
+    setting.mcp_servers[name] = McpServer(name=name, description=description, type="streamable_http", url=url, headers=headers)
     await save_setting(setting)
     return True
 
 
-# 按名称更新 MCP 服务，不存在返回 False
-async def update_mcp_server(name: str, type: str | None = None, url: str | None = None, headers: dict[str, str] | None = None, command: str | None = None, args: list[str] | None = None) -> bool:
+# 新增 sse 类型的 MCP 服务，名称已存在返回 False
+async def add_mcp_sse_server(name: str, description: str, url: str, headers: dict[str, str] | None = None) -> bool:
+    setting = await load_setting()
+    if name in setting.mcp_servers:
+        return False
+    setting.mcp_servers[name] = McpServer(name=name, description=description, type="sse", url=url, headers=headers)
+    await save_setting(setting)
+    return True
+
+
+# 新增 stdio 类型的 MCP 服务，名称已存在返回 False
+async def add_mcp_stdio_server(name: str, description: str, command: str, args: list[str] | None = None) -> bool:
+    setting = await load_setting()
+    if name in setting.mcp_servers:
+        return False
+    setting.mcp_servers[name] = McpServer(name=name, description=description, type="stdio", command=command, args=args)
+    await save_setting(setting)
+    return True
+
+
+# 按名称更新 streamable_http 类型的 MCP 服务，不存在返回 False
+async def update_mcp_streamable_http_server(name: str, description: str, url: str, headers: dict[str, str] | None = None) -> bool:
     setting = await load_setting()
     if name not in setting.mcp_servers:
         return False
-    setting.mcp_servers[name] = McpServer(name=name, type=type, url=url, headers=headers, command=command, args=args)
+    setting.mcp_servers[name] = McpServer(name=name, description=description, type="streamable_http", url=url, headers=headers)
+    await save_setting(setting)
+    return True
+
+
+# 按名称更新 sse 类型的 MCP 服务，不存在返回 False
+async def update_mcp_sse_server(name: str, description: str, url: str, headers: dict[str, str] | None = None) -> bool:
+    setting = await load_setting()
+    if name not in setting.mcp_servers:
+        return False
+    setting.mcp_servers[name] = McpServer(name=name, description=description, type="sse", url=url, headers=headers)
+    await save_setting(setting)
+    return True
+
+
+# 按名称更新 stdio 类型的 MCP 服务，不存在返回 False
+async def update_mcp_stdio_server(name: str, description: str, command: str, args: list[str] | None = None) -> bool:
+    setting = await load_setting()
+    if name not in setting.mcp_servers:
+        return False
+    setting.mcp_servers[name] = McpServer(name=name, description=description, type="stdio", command=command, args=args)
     await save_setting(setting)
     return True
 

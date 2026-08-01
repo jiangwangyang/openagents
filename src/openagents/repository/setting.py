@@ -27,7 +27,8 @@ class ModelProvider(BaseModel):
 # MCP 服务配置，name 为 dict 键（存储时不保存，读取时从键回填，默认空串仅为通过校验），序列化时剔除防止脏数据
 class McpServer(BaseModel):
     name: str = ""
-    type: str | None = None
+    description: str = ""
+    type: str = ""
     url: str | None = None
     headers: dict[str, str] | None = None
     command: str | None = None

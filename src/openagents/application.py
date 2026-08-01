@@ -8,6 +8,8 @@ from importlib.resources import files
 from fastapi import FastAPI
 from fastapi.staticfiles import StaticFiles
 
+from openagents.api import work_api
+
 STATIC_PATH = files("openagents") / "static"
 LOGGING_FILE = str(pathlib.Path.home() / ".openagents" / "app.log")
 pathlib.Path(LOGGING_FILE).parent.mkdir(parents=True, exist_ok=True)
@@ -32,4 +34,5 @@ async def lifespan(app: FastAPI):
 
 
 app: FastAPI = FastAPI(lifespan=lifespan)
+app.include_router(work_api.router)
 app.mount("/static", StaticFiles(directory=str(STATIC_PATH)), name="static")

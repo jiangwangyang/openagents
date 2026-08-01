@@ -1,9 +1,9 @@
 import json
 import os
 import pathlib
-from typing import TypedDict
 
 import anyio
+from pydantic import BaseModel, ConfigDict, Field
 
 # 配置文件路径
 SETTING_FILE = str(pathlib.Path.home() / ".openagents" / "setting.json")
@@ -16,58 +16,89 @@ PROVIDER_DEFS = [
 ]
 
 
-# 模型提供商配置
-class ModelProvider(TypedDict):
+# 模型提供商配置，name 为 dict 键（存储时不保存，读取时从键回填，默认空串仅为通过校验），序列化时剔除防止脏数据
+class ModelProvider(BaseModel):
+    name: str = ""
     base_url: str
     api_key: str
     models: list[str]
 
 
-# MCP 服务配置
-class McpServer(TypedDict, total=False):
-    type: str
-    url: str
-    headers: dict[str, str]
-    command: str
-    args: list[str]
+# MCP 服务配置，name 为 dict 键（存储时不保存，读取时从键回填，默认空串仅为通过校验），序列化时剔除防止脏数据
+class McpServer(BaseModel):
+    name: str = ""
+    type: str | None = None
+    url: str | None = None
+    headers: dict[str, str] | None = None
+    command: str | None = None
+    args: list[str] | None = None
 
 
-# 全局配置
-class Setting(TypedDict, total=False):
-    model_provider: str
-    model: str
-    model_providers: dict[str, ModelProvider]
-    mcp_servers: dict[str, McpServer]
+# 全局配置，允许配置文件中的未知字段（读写时保留不丢失）
+class Setting(BaseModel):
+    model_config = ConfigDict(extra="allow")
+
+    model_provider: str | None = None
+    model: str | None = None
+    model_providers: dict[str, ModelProvider] = Field(default_factory=dict)
+    mcp_servers: dict[str, McpServer] = Field(default_factory=dict)
 
 
-async def init_setting():
+# 读取配置文件，文件不存在返回空配置，文件损坏时备份后返回空配置，name 从 dict 键回填
+async def load_setting() -> Setting:
+    setting_file = anyio.Path(SETTING_FILE)
+    content = await setting_file.read_text(encoding="utf-8") if await setting_file.exists() else ""
+    try:
+        setting = Setting.model_validate(json.loads(content)) if content.strip() else Setting()
+    except (json.JSONDecodeError, ValueError):
+        await setting_file.rename(SETTING_FILE + ".bak")
+        setting = Setting()
+    for name, provider in setting.model_providers.items():
+        provider.name = name
+    for name, server in setting.mcp_servers.items():
+        server.name = name
+    return setting
+
+
+# 将配置写入文件，自动创建父目录，dict 中不保存 name 字段
+async def save_setting(setting: Setting) -> None:
+    setting_file = anyio.Path(SETTING_FILE)
+    await setting_file.parent.mkdir(parents=True, exist_ok=True)
+    dump = setting.model_dump(mode="json", exclude_none=True)
+    dump["model_providers"] = {name: provider.model_dump(mode="json", exclude={"name"}) for name, provider in setting.model_providers.items()}
+    dump["mcp_servers"] = {name: server.model_dump(mode="json", exclude={"name"}, exclude_none=True) for name, server in setting.mcp_servers.items()}
+    content = json.dumps(dump, ensure_ascii=False, indent=4)
+    await setting_file.write_text(content, encoding="utf-8")
+
+
+async def init_setting() -> None:
     # 查询现有配置，文件损坏时备份后重建
     setting_file = anyio.Path(SETTING_FILE)
     content = await setting_file.read_text(encoding="utf-8") if await setting_file.exists() else ""
     try:
-        setting: Setting = json.loads(content) if content.strip() else Setting()
-    except json.JSONDecodeError:
+        setting = Setting.model_validate(json.loads(content)) if content.strip() else Setting()
+    except (json.JSONDecodeError, ValueError):
         await setting_file.rename(SETTING_FILE + ".bak")
         setting = Setting()
-    model_providers = setting.get("model_providers", {})
+    # name 从 dict 键回填
+    for name, provider in setting.model_providers.items():
+        provider.name = name
     # 根据环境变量自动补充缺失的模型提供商
     for name, base_url, env_key, models in PROVIDER_DEFS:
         api_key = os.getenv(env_key, "")
-        if name not in model_providers and api_key:
-            model_providers[name] = ModelProvider(
-                base_url=base_url,
-                api_key=api_key,
-                models=models,
-            )
+        if name not in setting.model_providers and api_key:
+            setting.model_providers[name] = ModelProvider(name=name, base_url=base_url, api_key=api_key, models=models)
     # 补充默认的提供商与模型，不覆盖用户已有配置
-    if "model_provider" not in setting and model_providers:
-        setting["model_provider"] = next(iter(model_providers))
-    provider = model_providers.get(setting.get("model_provider", ""))
-    if "model" not in setting and provider and provider["models"]:
-        setting["model"] = provider["models"][0]
-    setting["model_providers"] = model_providers
-    # 配置有变化时才写入文件
-    new_content = json.dumps(setting, ensure_ascii=False, indent=4)
+    if setting.model_provider is None and setting.model_providers:
+        setting.model_provider = next(iter(setting.model_providers))
+    provider = setting.model_providers.get(setting.model_provider or "")
+    if setting.model is None and provider and provider.models:
+        setting.model = provider.models[0]
+    # 配置有变化时才写入文件，dict 中不保存 name 字段
+    dump = setting.model_dump(mode="json", exclude_none=True)
+    dump["model_providers"] = {name: p.model_dump(mode="json", exclude={"name"}) for name, p in setting.model_providers.items()}
+    dump["mcp_servers"] = {name: s.model_dump(mode="json", exclude={"name"}, exclude_none=True) for name, s in setting.mcp_servers.items()}
+    new_content = json.dumps(dump, ensure_ascii=False, indent=4)
     if new_content != content:
         await setting_file.parent.mkdir(parents=True, exist_ok=True)
         await setting_file.write_text(new_content, encoding="utf-8")

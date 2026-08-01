@@ -29,10 +29,10 @@ async def get_conversation(conversation_id: int) -> ConversationEntity | None:
 
 
 # 新建对话，时间字段统一赋当前时间，task_id 为空为独立对话，agent_id 有值为 Agent 执行阶段、为空为用户审核阶段
-async def add_conversation(title: str, work_dir: str, task_id: int | None = None, agent_id: int | None = None) -> int:
+async def add_conversation(title: str, work_dir: str, system_prompt: str, task_id: int | None = None, agent_id: int | None = None) -> int:
     async with async_session() as session:
         now = datetime.now()
-        conversation = ConversationEntity(title=title, work_dir=work_dir, task_id=task_id, agent_id=agent_id, create_time=now, update_time=now)
+        conversation = ConversationEntity(title=title, work_dir=work_dir, system_prompt=system_prompt, task_id=task_id, agent_id=agent_id, create_time=now, update_time=now)
         session.add(conversation)
         await session.commit()
         await session.refresh(conversation)

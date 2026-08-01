@@ -75,6 +75,7 @@ class ConversationEntity(Base):
     agent_id: Mapped[int | None] = mapped_column(ForeignKey("t_agent.id", ondelete="SET NULL"), nullable=True)
     title: Mapped[str] = mapped_column(nullable=False)
     work_dir: Mapped[str] = mapped_column(nullable=False)
+    system_prompt: Mapped[str] = mapped_column(nullable=False)
     create_time: Mapped[datetime] = mapped_column(nullable=False)
     update_time: Mapped[datetime] = mapped_column(nullable=False)
 

@@ -2,7 +2,6 @@ import asyncio
 import json
 from datetime import datetime
 
-import anyio
 from anthropic import AsyncAnthropic, AsyncStream
 from anthropic.types.raw_message_stream_event import RawMessageStreamEvent
 from pydantic import BaseModel
@@ -85,15 +84,7 @@ async def work(conversation_id: int, task_content: str | None) -> None:
     base_url, api_key = "", ""
     model = ""
     work_dir = conversation.work_dir
-
-    # 提示词
-    system_prompt = ""
-    for agents_file in [anyio.Path(work_dir) / "AGENTS.md", await anyio.Path.home() / ".openagent" / "AGENTS.md", await anyio.Path.home() / ".agents" / "AGENTS.md"]:
-        if await agents_file.exists() and await agents_file.is_file():
-            system_prompt = await agents_file.read_text(encoding="utf-8")
-            break
-
-    # 工具
+    system_prompt = conversation.system_prompt
     tools = []
 
     # 执行

@@ -1,5 +1,6 @@
 import json
 
+import anyio
 from fastapi import APIRouter, HTTPException, Body
 from fastapi.responses import StreamingResponse
 
@@ -11,7 +12,14 @@ router = APIRouter()
 
 @router.post("/work/start")
 async def start_work(task_content: str = Body(..., embed=True), work_dir: str = Body(..., embed=True)) -> int:
-    conversation_id = await conversation_repository.add_conversation(task_content[:30], work_dir)
+    # 创建时读取 AGENTS.md 作为 system_prompt 存入对话，按优先级取第一个存在的文件
+    system_prompt = ""
+    for agents_file in [anyio.Path(work_dir) / "AGENTS.md", await anyio.Path.home() / ".openagents" / "AGENTS.md", await anyio.Path.home() / ".agents" / "AGENTS.md"]:
+        if await agents_file.exists() and await agents_file.is_file():
+            system_prompt = await agents_file.read_text(encoding="utf-8")
+            break
+    # 先创建对话，再根据对话ID开始任务
+    conversation_id = await conversation_repository.add_conversation(task_content[:30], work_dir, system_prompt)
     if not work_service.start_work(conversation_id, task_content):
         raise HTTPException(status_code=409, detail="Work already running")
     return conversation_id

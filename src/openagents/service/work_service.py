@@ -62,10 +62,10 @@ async def work(conversation_id: int, task_content: str | None) -> None:
         # 没有对话 直接结束
         finish(conversation_id)
         return
-    messages = [{"id": msg.id, "role": msg.role, "content": msg.content} for msg in conversation.messages]
+    messages = [{"id": msg.id, "role": msg.role, "content": msg.content, "time": msg.time} for msg in conversation.messages]
     # 无任务内容时为查询模式，不追加用户消息
     if task_content:
-        messages += [{"role": "user", "content": task_content}]
+        messages += [{"role": "user", "content": task_content, "time": datetime.now()}]
     for msg in messages:
         # 字符串消息整体作为用户消息发布，跳过块迭代
         if isinstance(msg["content"], str):

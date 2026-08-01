@@ -57,7 +57,7 @@ class TaskEntity(Base):
     id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
     title: Mapped[str] = mapped_column(nullable=False)
     content: Mapped[str] = mapped_column(nullable=False)
-    agent_ids: Mapped[str] = mapped_column(nullable=False)
+    agent_ids: Mapped[list[int]] = mapped_column(JSON, nullable=False)
     create_time: Mapped[datetime] = mapped_column(nullable=False)
     update_time: Mapped[datetime] = mapped_column(nullable=False)
 

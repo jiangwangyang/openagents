@@ -19,22 +19,24 @@ async def get_agent(agent_id: int) -> AgentEntity | None:
         return result.scalar_one_or_none()
 
 
-# 新增 Agent，返回自增 id
-async def add_agent(agent: AgentEntity) -> int:
+# 新增 Agent，时间字段统一赋当前时间，返回自增 id
+async def add_agent(name: str, description: str, prompt: str) -> int:
     async with async_session() as session:
+        now = datetime.now()
+        agent = AgentEntity(name=name, description=description, prompt=prompt, create_time=now, update_time=now)
         session.add(agent)
         await session.commit()
         await session.refresh(agent)
         return agent.id
 
 
-# 按 agent.id 更新 Agent 的 name/description/prompt，update_time 刷新为当前时间，id 不存在返回 False
-async def update_agent(agent: AgentEntity) -> bool:
+# 按 id 更新 Agent 的 name/description/prompt，update_time 刷新为当前时间，id 不存在返回 False
+async def update_agent(agent_id: int, name: str, description: str, prompt: str) -> bool:
     async with async_session() as session:
         result = await session.execute(
             update(AgentEntity)
-            .where(AgentEntity.id == agent.id)
-            .values(name=agent.name, description=agent.description, prompt=agent.prompt, update_time=datetime.now())
+            .where(AgentEntity.id == agent_id)
+            .values(name=name, description=description, prompt=prompt, update_time=datetime.now())
         )
         await session.commit()
         return result.rowcount > 0

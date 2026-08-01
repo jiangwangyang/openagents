@@ -28,22 +28,24 @@ async def get_task(task_id: int) -> TaskEntity | None:
         return task
 
 
-# 新增任务，返回自增 id
-async def add_task(task: TaskEntity) -> int:
+# 新增任务，时间字段统一赋当前时间，返回自增 id
+async def add_task(title: str, content: str, agent_ids: list[int]) -> int:
     async with async_session() as session:
+        now = datetime.now()
+        task = TaskEntity(title=title, content=content, agent_ids=agent_ids, create_time=now, update_time=now)
         session.add(task)
         await session.commit()
         await session.refresh(task)
         return task.id
 
 
-# 按 task.id 更新任务的 title/content/agent_ids，update_time 刷新为当前时间，id 不存在返回 False
-async def update_task(task: TaskEntity) -> bool:
+# 按 id 更新任务的 title/content/agent_ids，update_time 刷新为当前时间，id 不存在返回 False
+async def update_task(task_id: int, title: str, content: str, agent_ids: list[int]) -> bool:
     async with async_session() as session:
         result = await session.execute(
             update(TaskEntity)
-            .where(TaskEntity.id == task.id)
-            .values(title=task.title, content=task.content, agent_ids=task.agent_ids, update_time=datetime.now())
+            .where(TaskEntity.id == task_id)
+            .values(title=title, content=content, agent_ids=agent_ids, update_time=datetime.now())
         )
         await session.commit()
         return result.rowcount > 0

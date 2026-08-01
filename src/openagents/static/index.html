@@ -2424,6 +2424,17 @@
             const data = JSON.parse(event.data);
             streamChunkCount += 1;
 
+            // 错误消息
+            if (data.type === 'error') {
+                finalizeStreamBlock();
+                streamWrapper = null;
+                const errorDiv = document.createElement('div');
+                errorDiv.className = 'user-message';
+                errorDiv.style.cssText = 'background: var(--danger-bg); color: var(--danger-color); border: 1px solid var(--danger-color); align-self: center; max-width: 80%;';
+                errorDiv.innerHTML = `\u26a0 ${escapeHtml(data.text || 'Unknown Error')}`;
+                chatContainer.appendChild(errorDiv);
+            }
+
             // 用户消息：结束当前助手消息组，渲染用户气泡
             if (data.type === 'user') {
                 finalizeStreamBlock();

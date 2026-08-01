@@ -3,7 +3,7 @@ from contextlib import asynccontextmanager
 from datetime import datetime
 from typing import List
 
-from sqlalchemy import Index, ForeignKey, event
+from sqlalchemy import Index, ForeignKey, JSON, event
 from sqlalchemy.engine import Engine
 from sqlalchemy.ext.asyncio import create_async_engine, async_sessionmaker
 from sqlalchemy.orm import Mapped, mapped_column, relationship
@@ -90,7 +90,7 @@ class MessageEntity(Base):
     id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
     conversation_id: Mapped[int] = mapped_column(ForeignKey("t_conversation.id", ondelete="CASCADE"), nullable=False)
     role: Mapped[str] = mapped_column(nullable=False)
-    content: Mapped[str] = mapped_column(nullable=False)
+    content: Mapped[str | list | dict] = mapped_column(JSON, nullable=False)
     time: Mapped[datetime] = mapped_column(nullable=False)
 
     conversation: Mapped["ConversationEntity"] = relationship("ConversationEntity", back_populates="messages")

@@ -1,7 +1,7 @@
 import pathlib
 from contextlib import asynccontextmanager
 from datetime import datetime
-from typing import List
+from typing import ClassVar, List
 
 from sqlalchemy import Index, ForeignKey, JSON, event
 from sqlalchemy.engine import Engine
@@ -62,6 +62,9 @@ class TaskEntity(Base):
     update_time: Mapped[datetime] = mapped_column(nullable=False)
 
     conversations: Mapped[List["ConversationEntity"]] = relationship("ConversationEntity", back_populates="task", cascade="all, delete-orphan")
+
+    # 候选 Agent 列表（agent_ids 对应的 Agent），非数据库字段，由 get_task 查询填充
+    agents: ClassVar[list["AgentEntity"]]
 
 
 # 对话

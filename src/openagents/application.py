@@ -8,7 +8,10 @@ from importlib.resources import files
 from fastapi import FastAPI
 from fastapi.staticfiles import StaticFiles
 
-from openagents.api import work_api
+from openagents.api import conversation_api, work_api, app_api
+from openagents.repository import setting, database
+from openagents.tool import mcp_tool
+from openagents.tool import skill_tool
 
 STATIC_PATH = files("openagents") / "static"
 LOGGING_FILE = str(pathlib.Path.home() / ".openagents" / "app.log")
@@ -27,12 +30,21 @@ startup_event = threading.Event()
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    # 启动完成
-    startup_event.set()
-    logging.info("Application started")
-    yield
+    # 初始化设置
+    await setting.init_setting()
+    # 初始化技能
+    await skill_tool.init_skills()
+    # 数据库/mcp 生命周期管理
+    async with database.lifespan():
+        async with mcp_tool.lifespan():
+            # 启动完成
+            startup_event.set()
+            logging.info("Application started")
+            yield
 
 
 app: FastAPI = FastAPI(lifespan=lifespan)
+app.include_router(app_api.router)
+app.include_router(conversation_api.router)
 app.include_router(work_api.router)
 app.mount("/static", StaticFiles(directory=str(STATIC_PATH)), name="static")

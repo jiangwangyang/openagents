@@ -54,7 +54,7 @@ async def execute_tool(name: str, tool_input: dict, work_dir: str) -> tuple[str,
             return f"Unknown tool: {name}", True
         if not tool_input.get("cmd_and_args"):
             return "No cmd_and_args", True
-        cmd_and_args: list[str] = tool_input["args"]
+        cmd_and_args: list[str] = tool_input["cmd_and_args"]
         if cmd_and_args[0] == "file":
             return await file_tool.execute(cmd_and_args, work_dir)
         if cmd_and_args[0] == "skill":

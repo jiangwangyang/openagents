@@ -6,7 +6,8 @@ from anthropic import AsyncAnthropic, AsyncStream
 from anthropic.types.raw_message_stream_event import RawMessageStreamEvent
 from pydantic import BaseModel
 
-from openagents.repository import conversation_repository
+from openagents.repository import conversation_repository, model_provider_repository
+from openagents.service import tool_service
 
 
 # 每个 conversation 的流式数据状态，chunks 只追加，各请求通过自己的 index 游标读取
@@ -81,11 +82,13 @@ async def work(conversation_id: int, task_content: str | None) -> None:
         return
 
     # 模型
-    base_url, api_key = "", ""
-    model = ""
-    work_dir = conversation.work_dir
-    system_prompt = conversation.system_prompt
-    tools = []
+    model_provider = await model_provider_repository.get_current_model_provider()
+    base_url = model_provider.base_url if model_provider else ""
+    api_key = model_provider.api_key if model_provider else ""
+    model = await model_provider_repository.get_current_model() or ""
+    work_dir = str(conversation.work_dir)
+    system_prompt = str(conversation.system_prompt)
+    tools = tool_service.list_tools()
 
     # 执行
     anthropic_client: AsyncAnthropic = AsyncAnthropic(base_url=base_url, api_key=api_key)
@@ -129,7 +132,7 @@ async def work(conversation_id: int, task_content: str | None) -> None:
         # 3. 工具调用
         tool_result_list = []
         for tool_use in [block for block in model_block_list if block["type"] == "tool_use"]:
-            tool_content, is_error = "", False
+            tool_content, is_error = await tool_service.execute_tool(tool_use["name"], tool_use["input"], work_dir)
             tool_result_list += [{"type": "tool_result", "tool_use_id": tool_use["id"], "content": tool_content, "is_error": is_error}]
             publish(conversation_id, "tool_result", tool_content, _id=tool_use["id"], is_error=is_error)
         messages += [{"role": "user", "content": tool_result_list, "time": datetime.now()}]

@@ -4,7 +4,7 @@ from datetime import datetime
 
 from anthropic import AsyncAnthropic, AsyncStream
 from anthropic.types.raw_message_stream_event import RawMessageStreamEvent
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict
 
 from openagents.repository import conversation_repository, model_provider_repository
 from openagents.service import tool_service
@@ -12,6 +12,8 @@ from openagents.service import tool_service
 
 # 每个 conversation 的流式数据状态，chunks 只追加，各请求通过自己的 index 游标读取
 class WorkState(BaseModel):
+    model_config = ConfigDict(arbitrary_types_allowed=True)
+
     chunks: list[dict]
     done: bool
     event: asyncio.Event
@@ -24,7 +26,7 @@ _work_state_dict: dict[int, WorkState] = {}
 def start_work(conversation_id: int, task_content: str | None = None) -> bool:
     # 同一 conversation 不允许同时运行多个 work 任务
     work_state = _work_state_dict.get(conversation_id)
-    if work_state is not None:
+    if work_state is not None and not work_state.done:
         return False
     _work_state_dict[conversation_id] = WorkState(chunks=[], done=False, event=asyncio.Event(), task=asyncio.create_task(work(conversation_id, task_content)))
     return True
@@ -50,7 +52,6 @@ def finish(conversation_id: int) -> None:
     work_state = _work_state_dict[conversation_id]
     work_state.done = True
     work_state.event.set()
-    _work_state_dict.pop(conversation_id)
 
 
 # 后台执行
@@ -62,10 +63,14 @@ async def work(conversation_id: int, task_content: str | None) -> None:
         finish(conversation_id)
         return
     messages = [{"id": msg.id, "role": msg.role, "content": msg.content} for msg in conversation.messages]
-    messages += [{"role": "user", "content": task_content}]
+    # 无任务内容时为查询模式，不追加用户消息
+    if task_content:
+        messages += [{"role": "user", "content": task_content}]
     for msg in messages:
+        # 字符串消息整体作为用户消息发布，跳过块迭代
         if isinstance(msg["content"], str):
             publish(conversation_id, "user", msg["content"])
+            continue
         for block in msg["content"]:
             if block["type"] == "thinking":
                 publish(conversation_id, "thinking", block["thinking"])

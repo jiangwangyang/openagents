@@ -29,12 +29,12 @@ async def get_conversation(conversation_id: int) -> ConversationEntity | None:
 
 
 # 新建对话，时间字段未设置时统一赋当前时间，task_id 为空为独立对话，agent_id 有值为 Agent 执行阶段、为空为用户审核阶段
-async def add_conversation(conversation: ConversationEntity) -> ConversationEntity:
+async def add_conversation(conversation: ConversationEntity) -> int:
     async with async_session() as session:
         session.add(conversation)
         await session.commit()
         await session.refresh(conversation)
-        return conversation
+        return conversation.id
 
 
 # 批量追加对话消息，校验消息归属的对话，time 未设置时统一赋当前时间，并刷新对话的更新时间

@@ -2,10 +2,11 @@ import json
 import logging
 from contextlib import asynccontextmanager, AsyncExitStack
 
+import httpx
 from mcp import ClientSession, StdioServerParameters
 from mcp.client.sse import sse_client
 from mcp.client.stdio import stdio_client
-from mcp.client.streamable_http import streamablehttp_client
+from mcp.client.streamable_http import streamable_http_client
 from mcp.types import TextContent, Tool, ListToolsResult
 from pydantic import BaseModel, ConfigDict
 
@@ -29,7 +30,8 @@ MCP_DICT: dict[str, McpServerInfo] = {}
 async def _register_mcp_client(name: str, description: str, proto_type: str, arg_dict: dict):
     # 创建客户端
     if proto_type == "streamable_http":
-        client = streamablehttp_client(arg_dict["url"], arg_dict.get("headers"))
+        http_client = httpx.AsyncClient(headers=arg_dict.get("headers"), timeout=httpx.Timeout(30.0, read=300.0))
+        client = streamable_http_client(arg_dict["url"], http_client=http_client)
     elif proto_type == "sse":
         client = sse_client(arg_dict["url"], arg_dict.get("headers"))
     elif proto_type == "stdio":

@@ -1,4 +1,9 @@
+import httpx
 from fastapi import APIRouter, HTTPException, Body
+from mcp import ClientSession, StdioServerParameters
+from mcp.client.sse import sse_client
+from mcp.client.stdio import stdio_client
+from mcp.client.streamable_http import streamable_http_client
 
 from openagents.repository import mcp_server_repository
 
@@ -68,3 +73,34 @@ async def update_mcp_stdio_server(name: str, description: str = Body(..., embed=
 async def delete_mcp_server(name: str) -> None:
     if not await mcp_server_repository.delete_mcp_server(name):
         raise HTTPException(status_code=404, detail="MCP server not found")
+
+
+# 测试指定类型的 MCP 服务连接，创建会话获取工具列表返回，参数缺失返回 400，连接失败返回 502
+@router.post("/mcp-server/{type}/test")
+async def test_mcp_server(type: str, url: str | None = Body(None, embed=True), headers: dict[str, str] | None = Body(None, embed=True), command: str | None = Body(None, embed=True), args: list[str] | None = Body(None, embed=True)) -> list[dict]:
+    # 按协议类型创建客户端
+    if type == "streamable_http":
+        if not url:
+            raise HTTPException(status_code=400, detail="url is required")
+        http_client = httpx.AsyncClient(headers=headers, timeout=httpx.Timeout(30.0, read=300.0))
+        client = streamable_http_client(url, http_client=http_client)
+    elif type == "sse":
+        if not url:
+            raise HTTPException(status_code=400, detail="url is required")
+        client = sse_client(url, headers)
+    elif type == "stdio":
+        if not command:
+            raise HTTPException(status_code=400, detail="command is required")
+        client = stdio_client(StdioServerParameters(command=command, args=args or []))
+    else:
+        raise HTTPException(status_code=400, detail="Unknown MCP server type")
+    # 建立连接并初始化会话，获取工具列表后关闭连接
+    try:
+        async with client as streams:
+            read, write = streams[:2]
+            async with ClientSession(read, write) as session:
+                await session.initialize()
+                list_tools_result = await session.list_tools()
+                return [{"name": tool.name, "description": tool.description} for tool in list_tools_result.tools]
+    except Exception as e:
+        raise HTTPException(status_code=502, detail=f"MCP connection failed: {e}")

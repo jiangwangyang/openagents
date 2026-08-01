@@ -1914,7 +1914,7 @@
         listContainer.innerHTML = '<div style="font-family:var(--font-mono); font-size:12px; color:var(--slate-400)">CONNECTING & INITIALIZING CLIENT SESSION...</div>';
 
         try {
-            const response = await fetch('/mcp/tool/list', {
+            const response = await fetch(`/mcp-server/${encodeURIComponent(targetServer.type)}/test`, {
                 method: 'POST',
                 headers: {'Content-Type': 'application/json'},
                 body: JSON.stringify(targetServer)

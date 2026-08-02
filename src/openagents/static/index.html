@@ -2339,7 +2339,10 @@
                                 </div>
                             </div>
                             <div class="details-block-container">
-                                <div class="details-label" style="margin-bottom: 6px;">Stage Progress</div>
+                                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 6px;">
+                                    <div class="details-label" style="margin-bottom: 0;">Stage Progress</div>
+                                    <button class="btn btn-sm btn-secondary" style="height:24px; padding:0 8px; font-size:10px;" onclick="loadTaskDetail(${task.id})">Refresh</button>
+                                </div>
                                 <div class="task-stage-list" id="task-stages-${task.id}"></div>
                             </div>
                         </div>

@@ -776,29 +776,6 @@
             font-weight: 600;
         }
 
-        /* 任务消息详情模态框 */
-        .msg-modal {
-            background: var(--bg-panel);
-            border: 1px solid var(--charcoal-900);
-            box-shadow: 8px 8px 0 rgba(0, 0, 0, 0.05);
-            width: 90%;
-            max-width: 860px;
-            height: 80vh;
-            margin: auto;
-            display: flex;
-            flex-direction: column;
-            animation: slideUp 0.3s cubic-bezier(0.16, 1, 0.3, 1);
-        }
-
-        .msg-modal-content {
-            flex: 1;
-            overflow-y: auto;
-            padding: 24px 32px;
-            display: flex;
-            flex-direction: column;
-            gap: 16px;
-        }
-
         /* 底部输入区 */
         .input-wrapper {
             background: var(--bg-panel);
@@ -2380,6 +2357,9 @@
                 return;
             }
             task.conversations.forEach(conversation => {
+                // agent 对话且无消息说明正在执行中，提示点击查看实时流式内容；用户对话由用户自己处理，不在执行
+                const isRunning = conversation.agent_id != null && (!conversation.messages || conversation.messages.length === 0);
+                const snippet = isRunning ? '\u26a1 GENERATING... CLICK TO VIEW LIVE STREAM' : getLastMessageText(conversation.messages);
                 const item = document.createElement('div');
                 item.className = 'task-stage-item';
                 item.innerHTML = `
@@ -2387,9 +2367,13 @@
                         <span>${escapeHtml(conversation.title)}</span>
                         <span style="font-family:var(--font-mono); font-weight:400; color:var(--slate-300);">${escapeHtml(conversation.update_time || '')}</span>
                     </div>
-                    <div class="task-stage-snippet">${escapeHtml(getLastMessageText(conversation.messages))}</div>
+                    <div class="task-stage-snippet"${isRunning ? ' style="color:var(--charcoal-900); font-weight:600;"' : ''}>${escapeHtml(snippet)}</div>
                 `;
-                item.onclick = () => openTaskMessageModal(conversation);
+                // 点击阶段项复用对话页右侧展示区：切换视图并流式回放/跟随该阶段对话
+                item.onclick = () => {
+                    switchView('dialog');
+                    loadConversation(conversation.id);
+                };
                 stageList.appendChild(item);
             });
         } catch (e) {
@@ -2410,88 +2394,6 @@
             return content[content.length - 1].text || '';
         }
         return '';
-    }
-
-    // 消息详情模态框：渲染逻辑与对话页一致（user 气泡 / thinking / text / tool_use / tool_result 折叠块）
-    function openTaskMessageModal(conversation) {
-        closeTaskMessageModal();
-        const overlay = document.createElement('div');
-        overlay.className = 'confirm-overlay';
-        overlay.id = 'taskMessageModalOverlay';
-        overlay.style.display = 'flex';
-        overlay.innerHTML = `
-            <div class="msg-modal">
-                <div class="dir-modal-header">
-                    <h3 class="confirm-title" style="margin-bottom:0">${escapeHtml(conversation.title)}</h3>
-                    <button class="delete-btn" onclick="closeTaskMessageModal()" style="opacity:1; color:var(--charcoal-900)">✕</button>
-                </div>
-                <div class="msg-modal-content" id="taskMessageModalContent"></div>
-            </div>
-        `;
-        document.body.appendChild(overlay);
-        overlay.addEventListener('click', (e) => {
-            if (e.target === overlay) {
-                closeTaskMessageModal();
-            }
-        });
-        renderTaskMessages(conversation.messages || [], document.getElementById('taskMessageModalContent'));
-    }
-
-    function closeTaskMessageModal() {
-        const overlay = document.getElementById('taskMessageModalOverlay');
-        if (overlay) {
-            overlay.remove();
-        }
-    }
-
-    // 与对话页相同的消息渲染规则：字符串 content 为用户气泡，数组 content 按 block 类型渲染折叠块
-    function renderTaskMessages(messages, container) {
-        if (messages.length === 0) {
-            container.innerHTML = '<div style="font-family:var(--font-mono); font-size:12px; color:var(--slate-400); text-align:center; padding:40px 0;">NO MESSAGES IN THIS STAGE</div>';
-            return;
-        }
-        messages.forEach(message => {
-            const content = message.content;
-            // 字符串消息整体作为用户气泡
-            if (typeof content === 'string') {
-                const div = document.createElement('div');
-                div.className = 'user-message';
-                div.innerHTML = `${formatMarkdown(content.trim())}<div class="message-time">${escapeHtml(message.time || '')}</div>`;
-                container.appendChild(div);
-                return;
-            }
-            if (!Array.isArray(content)) {
-                return;
-            }
-            const wrapper = document.createElement('div');
-            wrapper.className = 'assistant-message';
-            content.forEach(block => {
-                if (block.type === 'thinking') {
-                    const details = document.createElement('details');
-                    details.className = 'think-details';
-                    details.innerHTML = `<summary>${FOLD_SVG} Thought Process</summary><div class="content">${formatMarkdown(block.thinking || '')}</div>`;
-                    wrapper.appendChild(details);
-                } else if (block.type === 'text') {
-                    const div = document.createElement('div');
-                    div.className = 'reply-content';
-                    div.innerHTML = formatMarkdown(block.text || '');
-                    wrapper.appendChild(div);
-                } else if (block.type === 'tool_use') {
-                    const details = document.createElement('details');
-                    details.className = 'tool-details';
-                    details.innerHTML = `<summary>${FOLD_SVG} Call: ${escapeHtml(block.name || 'Tool')}</summary><div class="content">${formatMarkdown(JSON.stringify(block.input || {}))}</div>`;
-                    wrapper.appendChild(details);
-                } else if (block.type === 'tool_result') {
-                    const details = document.createElement('details');
-                    details.className = 'tool-details';
-                    const status = block.is_error ? 'Error' : 'Result';
-                    const text = typeof block.content === 'string' ? block.content : JSON.stringify(block.content);
-                    details.innerHTML = `<summary>${FOLD_SVG} Tool ${status} [${escapeHtml(String(block.tool_use_id || ''))}]</summary><div class="content">${formatMarkdown(text)}</div>`;
-                    wrapper.appendChild(details);
-                }
-            });
-            container.appendChild(wrapper);
-        });
     }
 
     async function submitTask() {

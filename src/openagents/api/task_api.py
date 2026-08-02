@@ -23,7 +23,7 @@ async def list_tasks() -> list[dict]:
     ]
 
 
-# 任务详情接口，包含各阶段对话列表（按 id 升序），任务不存在返回 404
+# 任务详情接口，包含各阶段对话列表（按 id 升序）及每条对话的全部消息（按 id 升序），任务不存在返回 404
 @router.get("/task/{task_id}")
 async def get_task(task_id: int) -> dict:
     task = await task_repository.get_task(task_id)
@@ -44,6 +44,15 @@ async def get_task(task_id: int) -> dict:
                 "work_dir": conversation.work_dir,
                 "create_time": conversation.create_time,
                 "update_time": conversation.update_time,
+                "messages": [
+                    {
+                        "id": message.id,
+                        "role": message.role,
+                        "content": message.content,
+                        "time": message.time,
+                    }
+                    for message in conversation.messages
+                ],
             }
             for conversation in task.conversations
         ],

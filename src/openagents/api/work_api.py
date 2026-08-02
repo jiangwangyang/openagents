@@ -1,4 +1,5 @@
 import json
+from collections.abc import AsyncGenerator
 
 import anyio
 from fastapi import APIRouter, HTTPException, Body
@@ -11,7 +12,7 @@ router = APIRouter()
 
 
 @router.post("/work/start")
-async def start_work(task_content: str = Body(..., embed=True), work_dir: str = Body(..., embed=True), agent_id: int | None = Body(None, embed=True)) -> int:
+async def create_work(task_content: str = Body(..., embed=True), work_dir: str = Body(..., embed=True), agent_id: int | None = Body(None, embed=True)) -> int:
     # 指定 agent 时使用其 prompt 作为 system_prompt（与任务流水线的 Agent 阶段对话一致），否则读取 AGENTS.md，按优先级取第一个存在的文件
     system_prompt = ""
     if agent_id is not None:
@@ -27,6 +28,8 @@ async def start_work(task_content: str = Body(..., embed=True), work_dir: str = 
     # 先创建对话，再根据对话ID开始任务
     conversation_id = await conversation_repository.add_conversation(task_content, work_dir, system_prompt, agent_id=agent_id)
     if not work_service.start_work(conversation_id, task_content):
+        # 启动失败时清理刚创建的对话，避免产生孤儿数据
+        await conversation_repository.delete_conversation(conversation_id)
         raise HTTPException(status_code=409, detail="Work already running")
     return conversation_id
 
@@ -51,7 +54,7 @@ async def stream_work(conversation_id: int) -> StreamingResponse:
     work_state = work_service.get_work_state(conversation_id)
 
     # 返回流式数据
-    async def _generate():
+    async def _generate() -> AsyncGenerator[str]:
         # 每个请求持有独立的 index 游标，先回放历史数据，再实时跟随新数据
         index = 0
         while True:

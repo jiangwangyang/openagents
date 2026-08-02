@@ -72,18 +72,10 @@ async def save_setting(setting: Setting) -> None:
     await setting_file.write_text(content, encoding="utf-8")
 
 
+# 初始化配置：加载现有配置（文件损坏时自动备份重建），根据环境变量补充内置提供商与默认选项，有变化时写回文件
 async def init_setting() -> None:
-    # 查询现有配置，文件损坏时备份后重建
-    setting_file = anyio.Path(SETTING_FILE)
-    content = await setting_file.read_text(encoding="utf-8") if await setting_file.exists() else ""
-    try:
-        setting = Setting.model_validate(json.loads(content)) if content.strip() else Setting()
-    except (json.JSONDecodeError, ValueError):
-        await setting_file.rename(SETTING_FILE + ".bak")
-        setting = Setting()
-    # name 从 dict 键回填
-    for name, provider in setting.model_providers.items():
-        provider.name = name
+    setting = await load_setting()
+    before = setting.model_dump_json()
     # 根据环境变量自动补充缺失的模型提供商
     for name, base_url, env_key, models in PROVIDER_DEFS:
         api_key = os.getenv(env_key, "")
@@ -95,11 +87,6 @@ async def init_setting() -> None:
     provider = setting.model_providers.get(setting.model_provider or "")
     if setting.model is None and provider and provider.models:
         setting.model = provider.models[0]
-    # 配置有变化时才写入文件，dict 中不保存 name 字段
-    dump = setting.model_dump(mode="json", exclude_none=True)
-    dump["model_providers"] = {name: p.model_dump(mode="json", exclude={"name"}) for name, p in setting.model_providers.items()}
-    dump["mcp_servers"] = {name: s.model_dump(mode="json", exclude={"name"}, exclude_none=True) for name, s in setting.mcp_servers.items()}
-    new_content = json.dumps(dump, ensure_ascii=False, indent=4)
-    if new_content != content:
-        await setting_file.parent.mkdir(parents=True, exist_ok=True)
-        await setting_file.write_text(new_content, encoding="utf-8")
+    # 配置有变化时才写入文件
+    if setting.model_dump_json() != before:
+        await save_setting(setting)

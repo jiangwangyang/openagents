@@ -24,7 +24,7 @@ async def list_tasks() -> list[dict]:
     ]
 
 
-# 任务详情接口，包含各阶段对话列表（按 id 升序）及每条对话的全部消息（按 id 升序），任务不存在返回 404
+# 任务详情接口，包含候选 Agent 列表与各阶段对话（对话按 id 升序，每条对话含全部按 id 升序的消息），任务不存在返回 404
 @router.get("/task/{task_id}")
 async def get_task(task_id: int) -> dict:
     task = await task_repository.get_task(task_id)
@@ -38,23 +38,29 @@ async def get_task(task_id: int) -> dict:
         "work_dir": task.work_dir,
         "create_time": task.create_time,
         "update_time": task.update_time,
+        "agents": [{
+            "id": agent.id,
+            "name": agent.name,
+            "description": agent.description,
+            "prompt": agent.prompt,
+            "create_time": agent.create_time,
+            "update_time": agent.update_time
+        } for agent in task.agents],
         "conversations": [
             {
                 "id": conversation.id,
+                "task_id": conversation.task_id,
                 "agent_id": conversation.agent_id,
                 "title": conversation.title,
                 "work_dir": conversation.work_dir,
                 "create_time": conversation.create_time,
                 "update_time": conversation.update_time,
-                "messages": [
-                    {
-                        "id": message.id,
-                        "role": message.role,
-                        "content": message.content,
-                        "time": message.time,
-                    }
-                    for message in conversation.messages
-                ],
+                "messages": [{
+                    "id": message.id,
+                    "role": message.role,
+                    "content": message.content,
+                    "time": message.time
+                } for message in conversation.messages],
             }
             for conversation in task.conversations
         ],
@@ -63,7 +69,7 @@ async def get_task(task_id: int) -> dict:
 
 # 新增任务接口，agent_ids 为可供 Agent 选择下一个执行者的候选池，work_dir 为任务阶段对话的工作目录，返回自增 id
 @router.post("/task")
-async def add_task(title: str = Body(...), content: str = Body(...), agent_ids: list[int] = Body(...), work_dir: str = Body(...)) -> int:
+async def add_task(title: str = Body(..., embed=True), content: str = Body(..., embed=True), agent_ids: list[int] = Body(..., embed=True), work_dir: str = Body(..., embed=True)) -> int:
     return await task_repository.add_task(title, content, agent_ids, work_dir)
 
 

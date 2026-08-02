@@ -7,22 +7,11 @@ from openagents.repository import conversation_repository
 router = APIRouter()
 
 
-# 对话列表接口，按更新时间倒序返回全部对话（仅基本字段，不含消息内容与 system_prompt）
+# 对话列表接口，按更新时间倒序返回独立对话（不含任务中的阶段对话，仅基本字段）
 @router.get("/conversation/list")
 async def get_conversations() -> list[dict]:
     conversations = await conversation_repository.get_conversations()
-    return [
-        {
-            "id": conversation.id,
-            "task_id": conversation.task_id,
-            "agent_id": conversation.agent_id,
-            "title": conversation.title,
-            "work_dir": conversation.work_dir,
-            "create_time": conversation.create_time,
-            "update_time": conversation.update_time,
-        }
-        for conversation in conversations if not conversation.task_id
-    ]
+    return [{"id": conversation.id, "task_id": conversation.task_id, "agent_id": conversation.agent_id, "title": conversation.title, "work_dir": conversation.work_dir, "create_time": conversation.create_time, "update_time": conversation.update_time} for conversation in conversations if conversation.task_id is None]
 
 
 # 删除对话接口，消息由数据库外键 ON DELETE CASCADE 级联删除，对话不存在时返回 404

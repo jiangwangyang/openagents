@@ -1,7 +1,7 @@
 import pathlib
+from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
 from datetime import datetime
-from typing import ClassVar, List
 
 from sqlalchemy import Index, ForeignKey, JSON, event
 from sqlalchemy.engine import Engine
@@ -17,7 +17,7 @@ Base = declarative_base()
 
 
 @asynccontextmanager
-async def lifespan():
+async def lifespan() -> AsyncIterator[None]:
     async with async_engine.begin() as conn:
         await conn.run_sync(Base.metadata.create_all, checkfirst=True)
     yield
@@ -26,7 +26,7 @@ async def lifespan():
 
 # 开启 SQLite 的外键约束支持
 @event.listens_for(Engine, "connect")
-def set_sqlite_pragma(dbapi_connection, connection_record):
+def set_sqlite_pragma(dbapi_connection: object, connection_record: object) -> None:
     # 确保数据库层面的 ON DELETE CASCADE 能够正常工作
     cursor = dbapi_connection.cursor()
     cursor.execute("PRAGMA foreign_keys=ON")
@@ -62,10 +62,7 @@ class TaskEntity(Base):
     create_time: Mapped[datetime] = mapped_column(nullable=False)
     update_time: Mapped[datetime] = mapped_column(nullable=False)
 
-    conversations: Mapped[List["ConversationEntity"]] = relationship("ConversationEntity", back_populates="task", cascade="all, delete-orphan")
-
-    # 候选 Agent 列表（agent_ids 对应的 Agent），非数据库字段，由 get_task 查询填充
-    agents: ClassVar[list["AgentEntity"]]
+    conversations: Mapped[list["ConversationEntity"]] = relationship("ConversationEntity", back_populates="task", cascade="all, delete-orphan")
 
 
 # 对话
@@ -83,9 +80,9 @@ class ConversationEntity(Base):
     create_time: Mapped[datetime] = mapped_column(nullable=False)
     update_time: Mapped[datetime] = mapped_column(nullable=False)
 
-    task: Mapped["TaskEntity"] = relationship("TaskEntity", back_populates="conversations")
     agent: Mapped["AgentEntity"] = relationship("AgentEntity")
-    messages: Mapped[List["MessageEntity"]] = relationship("MessageEntity", back_populates="conversation", cascade="all, delete-orphan")
+    task: Mapped["TaskEntity"] = relationship("TaskEntity", back_populates="conversations")
+    messages: Mapped[list["MessageEntity"]] = relationship("MessageEntity", back_populates="conversation", cascade="all, delete-orphan")
 
 
 # 对话中 每一次消息

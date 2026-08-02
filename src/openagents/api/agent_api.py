@@ -9,17 +9,7 @@ router = APIRouter()
 @router.get("/agent/list")
 async def list_agents() -> list[dict]:
     agents = await agent_repository.list_agents()
-    return [
-        {
-            "id": agent.id,
-            "name": agent.name,
-            "description": agent.description,
-            "prompt": agent.prompt,
-            "create_time": agent.create_time,
-            "update_time": agent.update_time,
-        }
-        for agent in agents
-    ]
+    return [{"id": agent.id, "name": agent.name, "description": agent.description, "prompt": agent.prompt, "create_time": agent.create_time, "update_time": agent.update_time} for agent in agents]
 
 
 # 按 id 查询 Agent，不存在返回 404
@@ -28,14 +18,7 @@ async def get_agent(agent_id: int) -> dict:
     agent = await agent_repository.get_agent(agent_id)
     if agent is None:
         raise HTTPException(status_code=404, detail="Agent not found")
-    return {
-        "id": agent.id,
-        "name": agent.name,
-        "description": agent.description,
-        "prompt": agent.prompt,
-        "create_time": agent.create_time,
-        "update_time": agent.update_time,
-    }
+    return {"id": agent.id, "name": agent.name, "description": agent.description, "prompt": agent.prompt, "create_time": agent.create_time, "update_time": agent.update_time}
 
 
 # 新增 Agent，返回自增 id

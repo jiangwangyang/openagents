@@ -9,12 +9,12 @@ _config = uvicorn.Config(application.app, host="0.0.0.0", port=8000, log_level="
 _server = uvicorn.Server(_config)
 
 
-def _open_browser():
+def _open_browser() -> None:
     application.startup_event.wait()
     webbrowser.open("http://localhost:8000")
 
 
-def main():
+def main() -> None:
     threading.Thread(target=_open_browser, args=()).start()
     try:
         _server.run()

@@ -6,24 +6,24 @@ from mcp.client.stdio import stdio_client
 from mcp.client.streamable_http import streamable_http_client
 
 from openagents.repository import mcp_server_repository
+from openagents.repository.setting import McpServer
 
 router = APIRouter()
 
 
 # 查询全部 MCP 服务，按名称升序
-@router.get("/mcp-server/list")
-async def list_mcp_servers() -> list[dict]:
-    servers = await mcp_server_repository.list_mcp_servers()
-    return [s.model_dump(mode="json", exclude_none=True) for s in servers]
+@router.get("/mcp-server/list", response_model_exclude_none=True)
+async def list_mcp_servers() -> list[McpServer]:
+    return await mcp_server_repository.list_mcp_servers()
 
 
 # 按名称查询 MCP 服务，不存在返回 404
-@router.get("/mcp-server/{name}")
-async def get_mcp_server(name: str) -> dict:
+@router.get("/mcp-server/{name}", response_model_exclude_none=True)
+async def get_mcp_server(name: str) -> McpServer:
     server = await mcp_server_repository.get_mcp_server(name)
     if server is None:
         raise HTTPException(status_code=404, detail="MCP server not found")
-    return server.model_dump(mode="json", exclude_none=True)
+    return server
 
 
 # 新增 streamable_http 类型的 MCP 服务，名称已存在返回 409
@@ -79,6 +79,7 @@ async def delete_mcp_server(name: str) -> None:
 @router.post("/mcp-server/{type}/test")
 async def test_mcp_server(type: str, url: str | None = Body(None, embed=True), headers: dict[str, str] | None = Body(None, embed=True), command: str | None = Body(None, embed=True), args: list[str] | None = Body(None, embed=True)) -> list[dict]:
     # 按协议类型创建客户端
+    http_client: httpx.AsyncClient | None = None
     if type == "streamable_http":
         if not url:
             raise HTTPException(status_code=400, detail="url is required")
@@ -94,7 +95,7 @@ async def test_mcp_server(type: str, url: str | None = Body(None, embed=True), h
         client = stdio_client(StdioServerParameters(command=command, args=args or []))
     else:
         raise HTTPException(status_code=400, detail="Unknown MCP server type")
-    # 建立连接并初始化会话，获取工具列表后关闭连接
+    # 建立连接并初始化会话，获取工具列表后关闭连接，无论成功与否均释放 http_client
     try:
         async with client as streams:
             read, write = streams[:2]
@@ -104,3 +105,6 @@ async def test_mcp_server(type: str, url: str | None = Body(None, embed=True), h
                 return [{"name": tool.name, "description": tool.description} for tool in list_tools_result.tools]
     except Exception as e:
         raise HTTPException(status_code=502, detail=f"MCP connection failed: {e}")
+    finally:
+        if http_client is not None:
+            await http_client.aclose()

@@ -4,7 +4,7 @@ from openagents.repository.setting import McpServer, load_setting, save_setting
 # 查询全部 MCP 服务，按名称升序
 async def list_mcp_servers() -> list[McpServer]:
     setting = await load_setting()
-    return list(setting.mcp_servers.values())
+    return sorted(setting.mcp_servers.values(), key=lambda server: server.name)
 
 
 # 按名称查询 MCP 服务，不存在返回 None

@@ -51,15 +51,15 @@ async def run_task(task_id: int, agent_id: int) -> None:
                 return
             # 拼接各阶段对话的最后一条消息：agent 对话以 agent 名为标题，用户对话以“用户”为标题
             task_content_list = []
-            task_content_list += [f"# Task\n{json.dumps({"title": task.title, "content": task.content}, ensure_ascii=False)}"]
-            task_content_list += [f"# Team\n{json.dumps([{"id": team_agent.id, "name": team_agent.name, "description": team_agent.description} for team_agent in task.agents], ensure_ascii=False)}"]
+            task_content_list += [f"# Task\n{json.dumps({'title': task.title, 'content': task.content}, ensure_ascii=False)}"]
+            task_content_list += [f"# Team\n{json.dumps([{'id': team_agent.id, 'name': team_agent.name, 'description': team_agent.description} for team_agent in task.agents], ensure_ascii=False)}"]
             task_content_list += ["# Tool\n当需要将当前任务的控制权移交予其他智能体或人类时，请先执行上述内置移交命令，随后采用结构化格式（包括：当前状态、已完成事项、阻塞问题及待办计划）对任务进展进行总结。"]
             task_content_list += ["# History"]
             for history_conversation in task.conversations:
                 if not history_conversation.messages:
                     continue
                 name = history_conversation.agent.name if history_conversation.agent else "用户"
-                content = history_conversation.messages[-1].content if history_conversation.messages else ""
+                content = history_conversation.messages[-1].content
                 text = content if isinstance(content, str) else content[-1].get("text", "")
                 task_content_list += [f"## {name}\n{json.dumps(text, ensure_ascii=False)}"]
             task_content = "\n\n".join(task_content_list)
@@ -68,7 +68,7 @@ async def run_task(task_id: int, agent_id: int) -> None:
                 return
             await work_service.get_work_state(conversation.id).task
     except Exception as e:
-        logging.error(f"任务执行异常: {str(e)}", exc_info=True)
+        logging.error(f"Task execution failed: {e}", exc_info=True)
     finally:
         _task_id_context.reset(token)
         _task_loop_dict.pop(task_id, None)

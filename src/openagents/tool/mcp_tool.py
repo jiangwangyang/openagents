@@ -1,5 +1,6 @@
 import json
 import logging
+from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager, AsyncExitStack
 
 import httpx
@@ -27,7 +28,7 @@ MCP_DICT: dict[str, McpServerInfo] = {}
 
 
 @asynccontextmanager
-async def _register_mcp_client(name: str, description: str, proto_type: str, arg_dict: dict):
+async def _register_mcp_client(name: str, description: str, proto_type: str, arg_dict: dict) -> AsyncIterator[None]:
     # 创建客户端
     if proto_type == "streamable_http":
         http_client = httpx.AsyncClient(headers=arg_dict.get("headers"), timeout=httpx.Timeout(30.0, read=300.0))
@@ -55,7 +56,7 @@ async def _register_mcp_client(name: str, description: str, proto_type: str, arg
 
 
 @asynccontextmanager
-async def lifespan():
+async def lifespan() -> AsyncIterator[None]:
     mcp_servers = await mcp_server_repository.list_mcp_servers()
     mcp_clients = [_register_mcp_client(server.name, server.description, server.type, server.model_dump(mode="json", exclude_none=True)) for server in mcp_servers]
     async with AsyncExitStack() as stack:
@@ -63,7 +64,7 @@ async def lifespan():
             try:
                 await stack.enter_async_context(client)
             except Exception as e:
-                if hasattr(e, "exceptions"):
+                if isinstance(e, ExceptionGroup):
                     logging.error(f"Error registering mcp client: {e.exceptions}")
                 else:
                     logging.error(f"Error registering mcp client: {e}")
@@ -79,16 +80,16 @@ async def execute(cmd_and_args: list[str], work_dir: str) -> tuple[str, bool]:
     # 2. mcp server <server_name> tool list
     elif len(cmd_and_args) == 5 and cmd_and_args[0] == "mcp" and cmd_and_args[1] == "server" and cmd_and_args[3] == "tool" and cmd_and_args[4] == "list":
         server_name = cmd_and_args[2]
-        if not server_name in MCP_DICT:
+        if server_name not in MCP_DICT:
             return f"Unknown server {server_name}", True
         result = [{"name": tool.name, "description": tool.description} for tool in MCP_DICT[server_name].tool_dict.values()]
         return json.dumps(result, ensure_ascii=False), False
     # 3. mcp server <server_name> tool <tool_name> info
     elif len(cmd_and_args) == 6 and cmd_and_args[0] == "mcp" and cmd_and_args[1] == "server" and cmd_and_args[3] == "tool" and cmd_and_args[5] == "info":
         server_name, tool_name = cmd_and_args[2], cmd_and_args[4]
-        if not server_name in MCP_DICT:
+        if server_name not in MCP_DICT:
             return f"Unknown server {server_name}", True
-        if not tool_name in MCP_DICT[server_name].tool_dict:
+        if tool_name not in MCP_DICT[server_name].tool_dict:
             return f"Unknown tool {tool_name}", True
         tool = MCP_DICT[server_name].tool_dict[tool_name]
         result = {"name": tool.name, "description": tool.description, "input_schema": tool.inputSchema}
@@ -96,9 +97,9 @@ async def execute(cmd_and_args: list[str], work_dir: str) -> tuple[str, bool]:
     # 4. mcp server <server_name> tool <tool_name> call [tool_json_args]
     elif len(cmd_and_args) == 7 and cmd_and_args[0] == "mcp" and cmd_and_args[1] == "server" and cmd_and_args[3] == "tool" and cmd_and_args[5] == "call":
         server_name, tool_name, json_string = cmd_and_args[2], cmd_and_args[4], cmd_and_args[6]
-        if not server_name in MCP_DICT:
+        if server_name not in MCP_DICT:
             return f"Unknown server {server_name}", True
-        if not tool_name in MCP_DICT[server_name].tool_dict:
+        if tool_name not in MCP_DICT[server_name].tool_dict:
             return f"Unknown tool {tool_name}", True
         session = MCP_DICT[server_name].session
         tool_result = await session.call_tool(tool_name, json.loads(json_string) if json_string else {})
@@ -106,4 +107,4 @@ async def execute(cmd_and_args: list[str], work_dir: str) -> tuple[str, bool]:
         tool_content = tool_content_list[0] if len(tool_content_list) == 1 else json.dumps(tool_content_list, ensure_ascii=False)
         is_error = tool_result.isError
         return tool_content, is_error
-    return "未知命令", True
+    return "Unknown command", True

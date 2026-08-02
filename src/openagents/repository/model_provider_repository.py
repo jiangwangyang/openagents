@@ -37,7 +37,7 @@ async def set_current_model(model: str) -> bool:
 # 查询全部模型提供商，按名称升序
 async def list_model_providers() -> list[ModelProvider]:
     setting = await load_setting()
-    return list(setting.model_providers.values())
+    return sorted(setting.model_providers.values(), key=lambda provider: provider.name)
 
 
 # 按名称查询模型提供商，不存在返回 None

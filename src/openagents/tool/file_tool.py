@@ -36,4 +36,4 @@ async def execute(cmd_and_args: list[str], work_dir: str) -> tuple[str, bool]:
         # 写文件
         await path.write_text(content, encoding="utf-8")
         return "", False
-    return "未知命令", True
+    return "Unknown command", True

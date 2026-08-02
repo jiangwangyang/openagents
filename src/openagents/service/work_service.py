@@ -75,11 +75,11 @@ async def work(conversation_id: int, task_content: str | None) -> None:
             for block in msg["content"]:
                 if block["type"] == "thinking":
                     publish(conversation_id, "thinking", block["thinking"])
-                if block["type"] == "text":
+                elif block["type"] == "text":
                     publish(conversation_id, "text", block["text"])
-                if block["type"] == "tool_use":
+                elif block["type"] == "tool_use":
                     publish(conversation_id, "tool_use", json.dumps(block["input"], ensure_ascii=False), _id=block["id"], name=block["name"])
-                if block["type"] == "tool_result":
+                elif block["type"] == "tool_result":
                     publish(conversation_id, "tool_result", block["content"], _id=block["tool_use_id"], is_error=block["is_error"])
 
         # 没有任务 直接结束
@@ -124,13 +124,13 @@ async def work(conversation_id: int, task_content: str | None) -> None:
                     elif event.delta.type == "input_json_delta":
                         model_block_list[-1]["input"] += event.delta.partial_json
                         publish(conversation_id, "delta", event.delta.partial_json)
-            for block in [block for block in model_block_list if block["type"] == "tool_use"]:
-                block["input"] = json.loads(block["input"]) if block["input"] else {}
+            for tool_use in [block for block in model_block_list if block["type"] == "tool_use"]:
+                tool_use["input"] = json.loads(tool_use["input"]) if tool_use["input"] else {}
             messages += [{"role": "assistant", "content": model_block_list, "time": datetime.now()}]
 
             # 2. 判断结束
             if not [block for block in model_block_list if block["type"] == "tool_use"]:
-                await conversation_repository.add_conversation_messages(conversation_id, [(msg["role"], msg["content"], msg["time"]) for msg in messages if not "id" in msg])
+                await conversation_repository.add_conversation_messages(conversation_id, [(msg["role"], msg["content"], msg["time"]) for msg in messages if "id" not in msg])
                 return
 
             # 3. 工具调用
@@ -141,9 +141,10 @@ async def work(conversation_id: int, task_content: str | None) -> None:
                 publish(conversation_id, "tool_result", tool_content, _id=tool_use["id"], is_error=is_error)
             messages += [{"role": "user", "content": tool_result_list, "time": datetime.now()}]
     except Exception as e:
-        publish(conversation_id, "error", f"工作执行异常: {str(e)}")
-        logging.error(f"工作执行异常: {str(e)}", exc_info=True)
+        publish(conversation_id, "error", f"Work execution failed: {e}")
+        logging.error(f"Work execution failed: {e}", exc_info=True)
     finally:
         finish(conversation_id)
+        # 查询任务状态可以保留，执行任务存储的chunk太碎需要清理
         if task_content:
             _work_state_dict.pop(conversation_id)

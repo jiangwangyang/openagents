@@ -67,13 +67,6 @@ async def add_task(title: str = Body(...), content: str = Body(...), agent_ids: 
     return await task_repository.add_task(title, content, agent_ids, work_dir)
 
 
-# 更新任务接口，任务不存在返回 404
-@router.put("/task/{task_id}")
-async def update_task(task_id: int, title: str = Body(...), content: str = Body(...), agent_ids: list[int] = Body(...), work_dir: str = Body(...)) -> None:
-    if not await task_repository.update_task(task_id, title, content, agent_ids, work_dir):
-        raise HTTPException(status_code=404, detail="Task not found")
-
-
 # 删除任务接口，关联对话由数据库外键 ON DELETE CASCADE 级联删除，任务不存在返回 404
 @router.delete("/task/{task_id}")
 async def delete_task(task_id: int) -> None:

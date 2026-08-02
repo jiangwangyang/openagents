@@ -1249,7 +1249,7 @@
             <div class="form-row">
                 <div class="form-group">
                     <label>Working Directory</label>
-                    <button class="workspace-btn" id="taskWorkspaceBtn" onclick="selectTaskWorkspace()" style="margin-bottom:0;" title="Set Directory Context">
+                    <button class="workspace-btn" id="taskWorkspaceBtn" onclick="selectWorkspace()" style="margin-bottom:0;" title="Set Directory Context">
                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                             <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path>
                         </svg>
@@ -1558,8 +1558,6 @@
     let currentEventSource = null;
     let currentWorkdir = '';
     let tempSelectedPath = "";
-    // 任务工作目录，由目录选择弹窗写入
-    let taskWorkdir = '';
     // 目录选择弹窗的确认回调，为空则写入对话工作目录（默认行为）
     let dirConfirmCallback = null;
 
@@ -2298,21 +2296,8 @@
     // ==========================================
     // 8.5. TASK 任务流水线管理逻辑
     // ==========================================
-    async function toggleAddTaskPanel() {
-        const isOpening = addTaskPanel.style.display === 'none';
-        addTaskPanel.style.display = isOpening ? 'flex' : 'none';
-        // 打开面板时自动选择服务端默认目录，逻辑与对话页面 initDefaultWorkspace 一致
-        if (isOpening) {
-            try {
-                const response = await fetch(`/dir/list?path=`);
-                const data = await response.json();
-                if (data.current_path) {
-                    updateTaskWorkspaceUI(data.current_path);
-                }
-            } catch (e) {
-                // 默认静默降级逻辑
-            }
-        }
+    function toggleAddTaskPanel() {
+        addTaskPanel.style.display = addTaskPanel.style.display === 'none' ? 'flex' : 'none';
     }
 
     // 渲染候选 Agent 多选列表，checkedIds 为已选中的 Agent id
@@ -2351,6 +2336,11 @@
             }
 
             tasks.forEach(task => {
+                // 候选 Agent 名称列表（只读展示）
+                const agentNames = (task.agent_ids || []).map(agentId => {
+                    const agent = globalAgentsCachedList.find(a => a.id === agentId);
+                    return agent ? agent.name : String(agentId);
+                }).join(', ');
                 const card = document.createElement('div');
                 card.className = 'info-card';
                 card.id = `task-card-${task.id}`;
@@ -2362,7 +2352,6 @@
                             <span class="info-card-snippet">${escapeHtml(task.content)}</span>
                         </div>
                         <div style="display:flex; gap:8px; align-items:center;" onclick="event.stopPropagation();">
-                            <button class="btn btn-sm send-button" style="height:28px; padding:0 8px; font-size:10px;" onclick="updateTask(${task.id})">Apply</button>
                             <button class="delete-btn" style="opacity:1; padding:6px;" onclick="removeTask(${task.id}, '${escapeHtml(task.title).replace(/'/g, "\\'")}')">
                                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
                             </button>
@@ -2371,21 +2360,13 @@
                     <div class="info-card-details" style="display: none;">
                         <div class="details-grid">
                             <div class="details-label">Task Title</div>
-                            <div class="details-value">
-                                <input type="text" id="task-title-${task.id}" class="form-control" value="${escapeHtml(task.title)}">
-                            </div>
+                            <div class="details-value">${escapeHtml(task.title)}</div>
                             <div class="details-label">Task Content</div>
-                            <div class="details-value">
-                                <textarea id="task-content-${task.id}" class="form-control mono" rows="5" style="resize: vertical; font-size:11px;">${escapeHtml(task.content)}</textarea>
-                            </div>
+                            <div class="details-value" style="white-space:pre-wrap;">${escapeHtml(task.content)}</div>
                             <div class="details-label">Working Directory</div>
-                            <div class="details-value">
-                                <input type="text" id="task-dir-${task.id}" class="form-control mono" value="${escapeHtml(task.work_dir || '')}" placeholder="e.g. /home/project">
-                            </div>
+                            <div class="details-value">${escapeHtml(task.work_dir || 'Inherited Environment')}</div>
                             <div class="details-label">Candidate Agents</div>
-                            <div class="details-value">
-                                <div class="agent-check-list" id="task-agents-${task.id}"></div>
-                            </div>
+                            <div class="details-value">${escapeHtml(agentNames) || 'NONE'}</div>
                             <div class="details-label">Launch Pipeline</div>
                             <div class="details-value">
                                 <div style="display:flex; gap:8px; flex-wrap:wrap;">
@@ -2404,7 +2385,6 @@
                     </div>
                 `;
                 taskListContainer.appendChild(card);
-                renderAgentCheckList(document.getElementById(`task-agents-${task.id}`), task.agent_ids || []);
                 // 启动下拉仅列出候选 Agent
                 const startSelect = document.getElementById(`task-start-agent-${task.id}`);
                 (task.agent_ids || []).forEach(agentId => {
@@ -2524,7 +2504,7 @@
     async function submitTask() {
         const title = document.getElementById('taskTitle').value.trim();
         const content = document.getElementById('taskContent').value.trim();
-        const workDir = taskWorkdir;
+        const workDir = currentWorkdir;
         const agentIds = getCheckedAgentIds(document.getElementById('addTaskAgentList'));
         if (!title || !content || !workDir) {
             alert("REQUIRED FIELDS MISSING.");
@@ -2540,37 +2520,11 @@
             if (response.ok) {
                 document.getElementById('taskTitle').value = '';
                 document.getElementById('taskContent').value = '';
-                updateTaskWorkspaceUI('');
                 toggleAddTaskPanel();
                 await fetchTaskList();
             }
         } catch (e) {
             alert("CREATION FAULT");
-        }
-    }
-
-    async function updateTask(taskId) {
-        const title = document.getElementById(`task-title-${taskId}`).value.trim();
-        const content = document.getElementById(`task-content-${taskId}`).value.trim();
-        const workDir = document.getElementById(`task-dir-${taskId}`).value.trim();
-        const agentIds = getCheckedAgentIds(document.getElementById(`task-agents-${taskId}`));
-        if (!title || !content || !workDir) {
-            alert("REQUIRED FIELDS MISSING.");
-            return;
-        }
-
-        try {
-            const response = await fetch(`/task/${taskId}`, {
-                method: 'PUT',
-                headers: {'Content-Type': 'application/json'},
-                body: JSON.stringify({title: title, content: content, agent_ids: agentIds, work_dir: workDir})
-            });
-            if (response.ok) {
-                alert(`TASK [${title}] SYNCHRONIZED.`);
-                await fetchTaskList();
-            }
-        } catch (e) {
-            alert("SYNC CRASHED");
         }
     }
 
@@ -2974,14 +2928,6 @@
         await loadDirList(currentWorkdir || "");
     }
 
-    // 打开目录选择弹窗，确认结果写入任务工作目录
-    async function selectTaskWorkspace() {
-        dirConfirmCallback = updateTaskWorkspaceUI;
-        document.getElementById('dirModalOverlay').style.display = 'block';
-        renderWorkdirHistory();
-        await loadDirList(taskWorkdir || currentWorkdir || "");
-    }
-
     function handleManualJump() {
         const targetPath = manualPathInput.value.trim();
         if (targetPath) {
@@ -3009,16 +2955,12 @@
 
     function updateWorkspaceUI(path) {
         currentWorkdir = path;
-        const display = document.getElementById('workspaceDisplay');
-        display.textContent = path;
-        display.title = path;
-    }
-
-    function updateTaskWorkspaceUI(path) {
-        taskWorkdir = path;
-        const display = document.getElementById('taskWorkspaceDisplay');
-        display.textContent = path || 'UNSET';
-        display.title = path;
+        // 同步刷新对话页与任务创建面板的工作目录显示（复用同一组件状态）
+        ['workspaceDisplay', 'taskWorkspaceDisplay'].forEach(id => {
+            const display = document.getElementById(id);
+            display.textContent = path;
+            display.title = path;
+        });
     }
 
     function closeDirModal() {

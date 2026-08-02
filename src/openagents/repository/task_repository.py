@@ -1,6 +1,6 @@
 from datetime import datetime
 
-from sqlalchemy import select, delete, update
+from sqlalchemy import select, delete
 from sqlalchemy.orm import selectinload
 
 from openagents.repository.database import AgentEntity, ConversationEntity, TaskEntity, async_session
@@ -45,18 +45,6 @@ async def add_task(title: str, content: str, agent_ids: list[int], work_dir: str
         await session.commit()
         await session.refresh(task)
         return task.id
-
-
-# 按 id 更新任务的 title/content/agent_ids/work_dir，update_time 刷新为当前时间，id 不存在返回 False
-async def update_task(task_id: int, title: str, content: str, agent_ids: list[int], work_dir: str) -> bool:
-    async with async_session() as session:
-        result = await session.execute(
-            update(TaskEntity)
-            .where(TaskEntity.id == task_id)
-            .values(title=title, content=content, agent_ids=agent_ids, work_dir=work_dir, update_time=datetime.now())
-        )
-        await session.commit()
-        return result.rowcount > 0
 
 
 # 按 id 删除任务，不存在返回 False，关联对话由数据库外键 ON DELETE CASCADE 级联删除

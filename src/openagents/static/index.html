@@ -2360,6 +2360,7 @@
                 body: JSON.stringify({agent_id: parseInt(agentId)})
             });
             if (response.ok) {
+                alert("TASK PIPELINE LAUNCHED.");
                 await loadTaskDetail(taskId);
             } else if (response.status === 409) {
                 alert("TASK ALREADY RUNNING");

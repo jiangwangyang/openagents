@@ -19,7 +19,7 @@ async def get_conversations() -> list[dict]:
             "create_time": conversation.create_time,
             "update_time": conversation.update_time,
         }
-        for conversation in conversations
+        for conversation in conversations if not conversation.task_id
     ]
 
 

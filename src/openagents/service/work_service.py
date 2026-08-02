@@ -145,3 +145,5 @@ async def work(conversation_id: int, task_content: str | None) -> None:
         logging.error(f"工作执行异常: {str(e)}", exc_info=True)
     finally:
         finish(conversation_id)
+        if task_content:
+            _work_state_dict.pop(conversation_id)

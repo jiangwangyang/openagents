@@ -1,9 +1,6 @@
 import sys
 
-from openagents.tool import file_tool
-from openagents.tool import mcp_tool
-from openagents.tool import shell_tool
-from openagents.tool import skill_tool
+from openagents.tool import file_tool, task_tool, mcp_tool, shell_tool, skill_tool
 
 POWERSHELL_DESCRIPTION = """
 powershell -Command <command>                                   # Execute a command in PowerShell on Windows.
@@ -21,6 +18,8 @@ mcp server list                                                 # List all MCP s
 mcp server <server_name> tool list                              # List all tools of a specific MCP server.
 mcp server <server_name> tool <tool_name> info                  # Show parameter format of a specific tool.
 mcp server <server_name> tool <tool_name> call <tool_json_args> # Call a specific tool with JSON arguments.
+task handover <agent_id>                                        # Hand over the task to the specified agent.
+task handover user                                              # Hand over the task to the user.
 {POWERSHELL_DESCRIPTION if sys.platform.startswith("win") else BASH_DESCRIPTION}
 """
 COMMAND_TOOL = {
@@ -61,6 +60,8 @@ async def execute_tool(name: str, tool_input: dict, work_dir: str) -> tuple[str,
             return await skill_tool.execute(cmd_and_args, work_dir)
         if cmd_and_args[0] == "mcp":
             return await mcp_tool.execute(cmd_and_args, work_dir)
+        if cmd_and_args[0] == "task":
+            return await task_tool.execute(cmd_and_args, work_dir)
         return await shell_tool.execute(cmd_and_args, work_dir)
     except Exception as e:
         return f"{e}", True

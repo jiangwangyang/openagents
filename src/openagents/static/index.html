@@ -4,6 +4,16 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>OpenAgents</title>
+    <script>
+        // 首屏渲染前预应用主题，避免深色主题下出现浅色闪烁
+        (function () {
+            var savedTheme = localStorage.getItem('openagents_theme');
+            if (savedTheme !== 'dark' && savedTheme !== 'light') {
+                savedTheme = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+            }
+            document.documentElement.dataset.theme = savedTheme;
+        })();
+    </script>
     <style>
         /* ===== 1. 设计变量与全局基础 ===== */
         :root {
@@ -23,8 +33,18 @@
             --danger-color: #e03131;
             --danger-bg: #fff5f5;
 
-            --shadow-hard: 4px 4px 0 rgba(18, 20, 23, 0.06);
-            --shadow-hard-lg: 8px 8px 0 rgba(18, 20, 23, 0.08);
+            --shadow-rgb: 18, 20, 23;
+            --shadow-hard: 4px 4px 0 rgba(var(--shadow-rgb), 0.06);
+            --shadow-hard-lg: 8px 8px 0 rgba(var(--shadow-rgb), 0.08);
+
+            --hover-bg: rgba(0, 0, 0, 0.03);
+            --subtle-bg: rgba(0, 0, 0, 0.01);
+            --summary-bg: #fafafa;
+            --inline-code-bg: rgba(0, 0, 0, 0.05);
+            --overlay-bg: rgba(240, 239, 233, 0.85);
+            --on-accent-muted: rgba(255, 255, 255, 0.4);
+            --noise-opacity: 0.035;
+            --noise-filter: none;
 
             --transition-snap: all 0.2s cubic-bezier(0.2, 0, 0, 1);
             --transition-smooth: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
@@ -36,6 +56,37 @@
             --font-display: 'Syne', 'Arial Narrow', -apple-system, 'Segoe UI', 'PingFang SC', sans-serif;
             --font-body: 'Schibsted Grotesk', -apple-system, 'Segoe UI', 'PingFang SC', sans-serif;
             --font-mono: 'SF Mono', 'Fira Code', 'JetBrains Mono', monospace;
+        }
+
+        /* 深色主题：覆盖全部设计变量 */
+        :root[data-theme='dark'] {
+            --charcoal-900: #e6e8eb;
+            --charcoal-800: #c9cdd3;
+            --charcoal-700: #aab1ba;
+            --slate-400: #7d8590;
+            --slate-300: #5c6470;
+            --bg-canvas: #101214;
+            --bg-surface: #16191d;
+            --bg-panel: #1c2025;
+            --border-hard: #32383f;
+            --border-soft: #272c33;
+
+            --accent-color: #e6e8eb;
+            --danger-color: #ff6b6b;
+            --danger-bg: #2b1d1d;
+
+            --shadow-rgb: 0, 0, 0;
+            --shadow-hard: 4px 4px 0 rgba(var(--shadow-rgb), 0.3);
+            --shadow-hard-lg: 8px 8px 0 rgba(var(--shadow-rgb), 0.35);
+
+            --hover-bg: rgba(255, 255, 255, 0.05);
+            --subtle-bg: rgba(255, 255, 255, 0.02);
+            --summary-bg: #21262c;
+            --inline-code-bg: rgba(255, 255, 255, 0.08);
+            --overlay-bg: rgba(16, 18, 20, 0.85);
+            --on-accent-muted: rgba(0, 0, 0, 0.4);
+            --noise-opacity: 0.06;
+            --noise-filter: invert(1);
         }
 
         * {
@@ -56,7 +107,8 @@
             inset: 0;
             pointer-events: none;
             z-index: 9999;
-            opacity: 0.035;
+            opacity: var(--noise-opacity);
+            filter: var(--noise-filter);
             background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E");
         }
 
@@ -70,6 +122,7 @@
             font-size: 14px;
             box-sizing: border-box;
             box-shadow: inset 0 0 0 1px var(--border-hard);
+            transition: background 0.3s ease, color 0.3s ease;
             -webkit-font-smoothing: antialiased;
         }
 
@@ -172,7 +225,7 @@
             background: var(--charcoal-900);
             color: var(--bg-canvas);
             transform: translate(-1px, -1px);
-            box-shadow: 3px 3px 0 rgba(18, 20, 23, 0.15);
+            box-shadow: 3px 3px 0 rgba(var(--shadow-rgb), 0.15);
         }
 
         .new-chat-btn:active {
@@ -212,7 +265,7 @@
         }
 
         .conversation-item:hover {
-            background: rgba(0, 0, 0, 0.03);
+            background: var(--hover-bg);
             transform: translateX(2px);
         }
 
@@ -221,7 +274,7 @@
             color: var(--charcoal-900);
             font-weight: 600;
             border-color: var(--border-soft);
-            box-shadow: 2px 2px 0 rgba(0, 0, 0, 0.02);
+            box-shadow: 2px 2px 0 rgba(var(--shadow-rgb), 0.02);
         }
 
         .conversation-item.active::before {
@@ -305,6 +358,31 @@
             gap: 8px;
         }
 
+        /* 主题切换下拉框：对齐导航按钮风格，透明底，悬停显现边框 */
+        .form-control.theme-select {
+            width: auto;
+            height: auto;
+            padding: 6px 12px;
+            background: transparent;
+            border: 1px solid transparent;
+            border-radius: 0;
+            font-size: 12px;
+            font-weight: 600;
+            font-family: var(--font-display);
+            color: var(--slate-400);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            cursor: pointer;
+            outline: none;
+            transition: var(--transition-snap);
+        }
+
+        .form-control.theme-select:hover {
+            color: var(--charcoal-900);
+            border-color: var(--border-hard);
+            background: var(--bg-surface);
+        }
+
         .header-nav-btn {
             display: inline-flex;
             align-items: center;
@@ -386,7 +464,7 @@
         }
 
         .user-message .message-time {
-            color: rgba(255, 255, 255, 0.4);
+            color: var(--on-accent-muted);
         }
 
         .assistant-message {
@@ -419,7 +497,7 @@
             user-select: none;
             text-transform: uppercase;
             letter-spacing: 0.5px;
-            background: rgba(0, 0, 0, 0.01);
+            background: var(--subtle-bg);
             transition: var(--transition-snap);
         }
 
@@ -428,7 +506,7 @@
         }
 
         details > summary:hover {
-            background: rgba(0, 0, 0, 0.03);
+            background: var(--hover-bg);
         }
 
         details .fold-icon {
@@ -493,7 +571,7 @@
 
         .reply-content code, .content code {
             font-family: var(--font-mono);
-            background: rgba(0, 0, 0, 0.05);
+            background: var(--inline-code-bg);
             padding: 2px 6px;
             border-radius: 2px;
             font-size: 0.9em;
@@ -552,7 +630,7 @@
             border-radius: var(--radius-sm);
             overflow: hidden;
             transition: var(--transition-snap);
-            box-shadow: 2px 2px 0 rgba(0, 0, 0, 0.01);
+            box-shadow: 2px 2px 0 rgba(var(--shadow-rgb), 0.01);
         }
 
         .info-card::before {
@@ -574,7 +652,7 @@
 
         .info-card:hover {
             border-color: var(--charcoal-900);
-            box-shadow: 4px 4px 0 rgba(0, 0, 0, 0.04);
+            box-shadow: 4px 4px 0 rgba(var(--shadow-rgb), 0.04);
         }
 
         .info-card-summary {
@@ -585,7 +663,7 @@
             justify-content: space-between;
             gap: 24px;
             user-select: none;
-            background: #fafafa;
+            background: var(--summary-bg);
         }
 
         .info-card-main {
@@ -737,7 +815,7 @@
 
         .form-control:focus {
             border-color: var(--charcoal-900);
-            box-shadow: 2px 2px 0 rgba(18, 20, 23, 0.08);
+            box-shadow: 2px 2px 0 rgba(var(--shadow-rgb), 0.08);
         }
 
         .form-control.mono {
@@ -801,7 +879,7 @@
 
         .task-stage-item:hover {
             border-color: var(--charcoal-900);
-            box-shadow: 2px 2px 0 rgba(0, 0, 0, 0.04);
+            box-shadow: 2px 2px 0 rgba(var(--shadow-rgb), 0.04);
         }
 
         .task-stage-title {
@@ -914,7 +992,7 @@
 
         .input-container:focus-within {
             border-color: var(--charcoal-900);
-            box-shadow: 4px 4px 0 rgba(18, 20, 23, 0.1);
+            box-shadow: 4px 4px 0 rgba(var(--shadow-rgb), 0.1);
         }
 
         .input-container::after {
@@ -998,7 +1076,7 @@
         .send-button:hover:not(:disabled) {
             background: var(--charcoal-700);
             transform: translate(-1px, -1px);
-            box-shadow: 3px 3px 0 rgba(18, 20, 23, 0.2);
+            box-shadow: 3px 3px 0 rgba(var(--shadow-rgb), 0.2);
         }
 
         .send-button:active:not(:disabled) {
@@ -1069,7 +1147,7 @@
             display: none;
             position: fixed;
             inset: 0;
-            background: rgba(240, 239, 233, 0.85);
+            background: var(--overlay-bg);
             backdrop-filter: blur(8px);
             z-index: 2000;
         }
@@ -1077,7 +1155,7 @@
         .dir-modal, .confirm-dialog {
             background: var(--bg-panel);
             border: 1px solid var(--charcoal-900);
-            box-shadow: 8px 8px 0 rgba(0, 0, 0, 0.05);
+            box-shadow: 8px 8px 0 rgba(var(--shadow-rgb), 0.05);
             border-radius: 0;
             margin: auto;
             display: flex;
@@ -1166,7 +1244,7 @@
         }
 
         .dir-history-item:hover {
-            background: rgba(0, 0, 0, 0.03);
+            background: var(--hover-bg);
             color: var(--charcoal-900);
         }
 
@@ -1358,6 +1436,10 @@
             <button class="header-nav-btn" id="navSkillBtn" onclick="switchView('skill')">SKILL</button>
             <button class="header-nav-btn" id="navMcpBtn" onclick="switchView('mcp')">MCP</button>
             <button class="header-nav-btn" id="navConfigBtn" onclick="switchView('config')">CONFIG</button>
+            <select id="themeSelect" class="form-control theme-select" title="Switch Theme" onchange="setTheme(this.value)">
+                <option value="light">LIGHT</option>
+                <option value="dark">DARK</option>
+            </select>
         </div>
         <span class="header-conversation-info" id="conversationInfo">NEW TRACE</span>
     </div>
@@ -1671,6 +1753,42 @@
 </div>
 
 <script>
+    // ==========================================
+    // 0. 主题切换引擎（浅色/深色，未手动选择时默认跟随系统）
+    // ==========================================
+    const THEME_STORAGE_KEY = 'openagents_theme';
+    const systemThemeMedia = window.matchMedia('(prefers-color-scheme: dark)');
+
+    function getSystemTheme() {
+        return systemThemeMedia.matches ? 'dark' : 'light';
+    }
+
+    function applyTheme(theme) {
+        document.documentElement.dataset.theme = theme;
+        const themeSelect = document.getElementById('themeSelect');
+        if (themeSelect) {
+            themeSelect.value = theme;
+        }
+    }
+
+    function setTheme(theme) {
+        localStorage.setItem(THEME_STORAGE_KEY, theme);
+        applyTheme(theme);
+    }
+
+    function initTheme() {
+        const savedTheme = localStorage.getItem(THEME_STORAGE_KEY);
+        applyTheme(savedTheme === 'dark' || savedTheme === 'light' ? savedTheme : getSystemTheme());
+        // 未手动选择过主题时，实时跟随系统深浅色变化
+        systemThemeMedia.addEventListener('change', (e) => {
+            if (!localStorage.getItem(THEME_STORAGE_KEY)) {
+                applyTheme(e.matches ? 'dark' : 'light');
+            }
+        });
+    }
+
+    initTheme();
+
     // ==========================================
     // 1. 全局 DOM 节点缓存与核心状态管理
     // ==========================================
@@ -2861,7 +2979,7 @@
                         <input type="hidden" id="mcp-type-${name}" value="${escapeHtml(server.type)}">
                         <div class="details-grid">
                             <div class="details-label">Protocol Type</div>
-                            <div class="details-value"><code style="background:rgba(0,0,0,0.05); padding:2px 6px; border-radius:2px;">${escapeHtml(server.type)}</code></div>
+                            <div class="details-value"><code style="background:var(--inline-code-bg); padding:2px 6px; border-radius:2px;">${escapeHtml(server.type)}</code></div>
 
                             <div class="details-label">Description</div>
                             <div class="details-value">

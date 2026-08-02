@@ -1,24 +1,24 @@
 from fastapi import APIRouter, HTTPException, Body
 
 from openagents.repository import agent_repository
+from openagents.repository.database import AgentEntity
 
 router = APIRouter()
 
 
 # 查询全部 Agent，按 id 升序
 @router.get("/agent/list")
-async def list_agents() -> list[dict]:
-    agents = await agent_repository.list_agents()
-    return [{"id": agent.id, "name": agent.name, "description": agent.description, "prompt": agent.prompt, "create_time": agent.create_time, "update_time": agent.update_time} for agent in agents]
+async def list_agents() -> list[AgentEntity]:
+    return await agent_repository.list_agents()
 
 
 # 按 id 查询 Agent，不存在返回 404
 @router.get("/agent/{agent_id}")
-async def get_agent(agent_id: int) -> dict:
+async def get_agent(agent_id: int) -> AgentEntity:
     agent = await agent_repository.get_agent(agent_id)
     if agent is None:
         raise HTTPException(status_code=404, detail="Agent not found")
-    return {"id": agent.id, "name": agent.name, "description": agent.description, "prompt": agent.prompt, "create_time": agent.create_time, "update_time": agent.update_time}
+    return agent
 
 
 # 新增 Agent，返回自增 id

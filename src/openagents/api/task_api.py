@@ -1,6 +1,7 @@
 from fastapi import APIRouter, HTTPException, Body
 
 from openagents.repository import agent_repository, task_repository
+from openagents.repository.database import TaskEntity
 from openagents.service import task_service
 
 router = APIRouter()
@@ -8,23 +9,11 @@ router = APIRouter()
 
 # 任务列表接口，按 id 升序返回全部任务（仅基本字段，不含阶段对话）
 @router.get("/task/list")
-async def list_tasks() -> list[dict]:
-    tasks = await task_repository.list_tasks()
-    return [
-        {
-            "id": task.id,
-            "title": task.title,
-            "content": task.content,
-            "agent_ids": task.agent_ids,
-            "work_dir": task.work_dir,
-            "create_time": task.create_time,
-            "update_time": task.update_time,
-        }
-        for task in tasks
-    ]
+async def list_tasks() -> list[TaskEntity]:
+    return await task_repository.list_tasks()
 
 
-# 任务详情接口，包含候选 Agent 列表与各阶段对话（对话按 id 升序，每条对话含全部按 id 升序的消息），任务不存在返回 404
+# 任务详情接口，包含各阶段对话（对话按 id 升序，每条对话含全部按 id 升序的消息），任务不存在返回 404
 @router.get("/task/{task_id}")
 async def get_task(task_id: int) -> dict:
     task = await task_repository.get_task(task_id)
@@ -38,14 +27,6 @@ async def get_task(task_id: int) -> dict:
         "work_dir": task.work_dir,
         "create_time": task.create_time,
         "update_time": task.update_time,
-        "agents": [{
-            "id": agent.id,
-            "name": agent.name,
-            "description": agent.description,
-            "prompt": agent.prompt,
-            "create_time": agent.create_time,
-            "update_time": agent.update_time
-        } for agent in task.agents],
         "conversations": [
             {
                 "id": conversation.id,

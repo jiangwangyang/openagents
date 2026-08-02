@@ -3,23 +3,21 @@ from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
 from datetime import datetime
 
-from sqlalchemy import Index, ForeignKey, JSON, event
+from sqlalchemy import JSON, Column, Index, event
 from sqlalchemy.engine import Engine
 from sqlalchemy.ext.asyncio import create_async_engine, async_sessionmaker
-from sqlalchemy.orm import Mapped, mapped_column, relationship
-from sqlalchemy.orm import declarative_base
+from sqlmodel import Field, Relationship, SQLModel
 
 DATABASE_FILE = str(pathlib.Path.home() / ".openagents" / "database.db")
 DATABASE_URL = f"sqlite+aiosqlite:///{DATABASE_FILE}"
 async_engine = create_async_engine(DATABASE_URL)
 async_session = async_sessionmaker(async_engine, expire_on_commit=False)
-Base = declarative_base()
 
 
 @asynccontextmanager
 async def lifespan() -> AsyncIterator[None]:
     async with async_engine.begin() as conn:
-        await conn.run_sync(Base.metadata.create_all, checkfirst=True)
+        await conn.run_sync(SQLModel.metadata.create_all, checkfirst=True)
     yield
     await async_engine.dispose()
 
@@ -34,15 +32,15 @@ def set_sqlite_pragma(dbapi_connection: object, connection_record: object) -> No
 
 
 # Agent 定义
-class AgentEntity(Base):
+class AgentEntity(SQLModel, table=True):
     __tablename__ = "t_agent"
 
-    id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
-    name: Mapped[str] = mapped_column(nullable=False)
-    description: Mapped[str] = mapped_column(nullable=False)
-    prompt: Mapped[str] = mapped_column(nullable=False)
-    create_time: Mapped[datetime] = mapped_column(nullable=False)
-    update_time: Mapped[datetime] = mapped_column(nullable=False)
+    id: int | None = Field(default=None, primary_key=True)
+    name: str
+    description: str
+    prompt: str
+    create_time: datetime
+    update_time: datetime
 
 
 # 任务
@@ -51,53 +49,53 @@ class AgentEntity(Base):
 # 1. agent_id 有值 -> 执行中
 # 2. agent_id 为空（用户对话）且无 message -> 审核中
 # 3. agent_id 为空（用户对话）且有 message -> 已完成
-class TaskEntity(Base):
+class TaskEntity(SQLModel, table=True):
     __tablename__ = "t_task"
 
-    id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
-    title: Mapped[str] = mapped_column(nullable=False)
-    content: Mapped[str] = mapped_column(nullable=False)
-    agent_ids: Mapped[list[int]] = mapped_column(JSON, nullable=False)
-    work_dir: Mapped[str] = mapped_column(nullable=False)
-    create_time: Mapped[datetime] = mapped_column(nullable=False)
-    update_time: Mapped[datetime] = mapped_column(nullable=False)
+    id: int | None = Field(default=None, primary_key=True)
+    title: str
+    content: str
+    agent_ids: list[int] = Field(sa_column=Column(JSON, nullable=False))
+    work_dir: str
+    create_time: datetime
+    update_time: datetime
 
-    conversations: Mapped[list["ConversationEntity"]] = relationship("ConversationEntity", back_populates="task", cascade="all, delete-orphan")
+    conversations: list["ConversationEntity"] = Relationship(back_populates="task", sa_relationship_kwargs={"cascade": "all, delete-orphan"})
 
 
 # 对话
 # task_id 为空为独立对话
 # task_id 有值为任务中的一次阶段流程，agent_id 有值为 Agent 执行阶段，为空为用户审核阶段
-class ConversationEntity(Base):
+class ConversationEntity(SQLModel, table=True):
     __tablename__ = "t_conversation"
 
-    id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
-    task_id: Mapped[int | None] = mapped_column(ForeignKey("t_task.id", ondelete="CASCADE"), nullable=True)
-    agent_id: Mapped[int | None] = mapped_column(ForeignKey("t_agent.id", ondelete="SET NULL"), nullable=True)
-    title: Mapped[str] = mapped_column(nullable=False)
-    work_dir: Mapped[str] = mapped_column(nullable=False)
-    system_prompt: Mapped[str] = mapped_column(nullable=False)
-    create_time: Mapped[datetime] = mapped_column(nullable=False)
-    update_time: Mapped[datetime] = mapped_column(nullable=False)
+    id: int | None = Field(default=None, primary_key=True)
+    task_id: int | None = Field(default=None, foreign_key="t_task.id", ondelete="CASCADE")
+    agent_id: int | None = Field(default=None, foreign_key="t_agent.id", ondelete="SET NULL")
+    title: str
+    work_dir: str
+    system_prompt: str
+    create_time: datetime
+    update_time: datetime
 
-    agent: Mapped["AgentEntity"] = relationship("AgentEntity")
-    task: Mapped["TaskEntity"] = relationship("TaskEntity", back_populates="conversations")
-    messages: Mapped[list["MessageEntity"]] = relationship("MessageEntity", back_populates="conversation", cascade="all, delete-orphan")
+    agent: AgentEntity | None = Relationship()
+    task: TaskEntity | None = Relationship(back_populates="conversations")
+    messages: list["MessageEntity"] = Relationship(back_populates="conversation", sa_relationship_kwargs={"cascade": "all, delete-orphan"})
 
 
 # 对话中 每一次消息
-class MessageEntity(Base):
+class MessageEntity(SQLModel, table=True):
     __tablename__ = "t_message"
 
-    id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
-    conversation_id: Mapped[int] = mapped_column(ForeignKey("t_conversation.id", ondelete="CASCADE"), nullable=False)
-    role: Mapped[str] = mapped_column(nullable=False)
-    content: Mapped[str | list | dict] = mapped_column(JSON, nullable=False)
-    time: Mapped[datetime] = mapped_column(nullable=False)
+    id: int | None = Field(default=None, primary_key=True)
+    conversation_id: int = Field(foreign_key="t_conversation.id", ondelete="CASCADE")
+    role: str
+    content: str | list | dict = Field(sa_column=Column(JSON, nullable=False))
+    time: datetime
 
-    conversation: Mapped["ConversationEntity"] = relationship("ConversationEntity", back_populates="messages")
+    conversation: ConversationEntity = Relationship(back_populates="messages")
 
 
 # 定义索引
-Index("idx_message_conversation", MessageEntity.conversation_id)
-Index("idx_conversation_task", ConversationEntity.task_id)
+Index("idx_message_conversation", MessageEntity.__table__.c.conversation_id)
+Index("idx_conversation_task", ConversationEntity.__table__.c.task_id)

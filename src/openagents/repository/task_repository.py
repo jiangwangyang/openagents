@@ -3,7 +3,7 @@ from datetime import datetime
 from sqlalchemy import select, delete
 from sqlalchemy.orm import selectinload
 
-from openagents.repository.database import AgentEntity, ConversationEntity, TaskEntity, async_session
+from openagents.repository.database import ConversationEntity, TaskEntity, async_session
 
 
 # 查询全部任务，按 id 升序
@@ -13,7 +13,7 @@ async def list_tasks() -> list[TaskEntity]:
         return list(result.scalars().all())
 
 
-# 按 id 查询任务，预加载阶段对话（含每条对话的消息与执行 Agent）并关联候选 Agent 列表，不存在返回 None
+# 按 id 查询任务，预加载阶段对话（含每条对话的消息与执行 Agent），不存在返回 None
 async def get_task(task_id: int) -> TaskEntity | None:
     async with async_session() as session:
         result = await session.execute(
@@ -30,9 +30,6 @@ async def get_task(task_id: int) -> TaskEntity | None:
         task.conversations.sort(key=lambda conversation: conversation.id)
         for conversation in task.conversations:
             conversation.messages.sort(key=lambda message: message.id)
-        # 关联候选 Agent 列表（agent_ids 对应的 Agent）
-        result = await session.execute(select(AgentEntity).where(AgentEntity.id.in_(task.agent_ids)))
-        task.agents = list(result.scalars().all())
         return task
 
 

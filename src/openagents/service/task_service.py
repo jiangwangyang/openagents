@@ -52,7 +52,9 @@ async def run_task(task_id: int, agent_id: int) -> None:
             # 拼接各阶段对话的最后一条消息：agent 对话以 agent 名为标题，用户对话以“用户”为标题
             task_content_list = []
             task_content_list += [f"# Task\n{json.dumps({'title': task.title, 'content': task.content}, ensure_ascii=False)}"]
-            task_content_list += [f"# Team\n{json.dumps([{'id': team_agent.id, 'name': team_agent.name, 'description': team_agent.description} for team_agent in task.agents], ensure_ascii=False)}"]
+            # 团队成员为 agent_ids 候选池对应的 Agent
+            team_agents = [agent for agent in await agent_repository.list_agents() if agent.id in task.agent_ids]
+            task_content_list += [f"# Team\n{json.dumps([{'id': team_agent.id, 'name': team_agent.name, 'description': team_agent.description} for team_agent in team_agents], ensure_ascii=False)}"]
             task_content_list += ["# Tool\n当需要将当前任务的控制权移交予其他智能体或人类时，请先执行上述内置移交命令，随后采用结构化格式（包括：当前状态、已完成事项、阻塞问题及待办计划）对任务进展进行总结。"]
             task_content_list += ["# History"]
             for history_conversation in task.conversations:

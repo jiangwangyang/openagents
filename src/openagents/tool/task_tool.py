@@ -25,7 +25,7 @@ async def execute(cmd_and_args: list[str], work_dir: str) -> tuple[str, bool]:
     except ValueError:
         return f"Invalid agent_id: {cmd_and_args[2]}", True
     agent = await agent_repository.get_agent(agent_id)
-    if agent is None or agent.id not in [team_agent.id for team_agent in task.agents]:
+    if agent is None or agent.id not in task.agent_ids:
         return f"Agent not found in task team: {agent_id}", True
     await conversation_repository.add_conversation(f"{task.title}-{agent.name}", work_dir, str(agent.prompt), task_id, agent_id)
     return f"Task handed over to agent {agent.name}, please summarize the current progress", False

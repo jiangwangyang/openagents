@@ -913,15 +913,6 @@
             cursor: not-allowed;
         }
 
-        .interrupt-button {
-            background: var(--danger-color);
-            color: #fff;
-        }
-
-        .interrupt-button:hover {
-            background: #c92a2a;
-        }
-
         .empty-state {
             display: flex;
             flex-direction: column;
@@ -1491,7 +1482,6 @@
         </div>
         <div class="input-container">
             <textarea class="message-input" id="messageInput" placeholder="Enter instructions..." maxlength="2000" disabled rows="1"></textarea>
-            <button class="interrupt-button btn" id="interruptButton" onclick="interruptConversation()" style="display: none;">Halt</button>
             <button class="send-button btn" id="sendButton" onclick="sendMessage()" disabled>Execute</button>
         </div>
     </div>
@@ -1530,7 +1520,6 @@
     const chatContainer = document.getElementById('chatContainer');
     const messageInput = document.getElementById('messageInput');
     const sendButton = document.getElementById('sendButton');
-    const interruptButton = document.getElementById('interruptButton');
     const conversationList = document.getElementById('conversationList');
     const conversationInfo = document.getElementById('conversationInfo');
     const emptyState = document.getElementById('emptyState');
@@ -3114,19 +3103,6 @@
         isTyping = typing;
         sendButton.disabled = typing;
         messageInput.disabled = typing;
-        interruptButton.style.display = typing ? 'flex' : 'none';
-        sendButton.style.display = typing ? 'none' : 'flex';
-    }
-
-    async function interruptConversation() {
-        // 仅断开前端连接并恢复输入态，已渲染内容保留
-        if (!currentEventSource) {
-            return;
-        }
-        currentEventSource.close();
-        currentEventSource = null;
-        setTyping(false);
-        await loadConversationList();
     }
 
     async function sendMessage() {

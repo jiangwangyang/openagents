@@ -2243,8 +2243,21 @@
     // ==========================================
     // 8.5. TASK 任务流水线管理逻辑
     // ==========================================
-    function toggleAddTaskPanel() {
-        addTaskPanel.style.display = addTaskPanel.style.display === 'none' ? 'flex' : 'none';
+    async function toggleAddTaskPanel() {
+        const isOpening = addTaskPanel.style.display === 'none';
+        addTaskPanel.style.display = isOpening ? 'flex' : 'none';
+        // 打开面板时自动选择服务端默认目录，逻辑与对话页面 initDefaultWorkspace 一致
+        if (isOpening) {
+            try {
+                const response = await fetch(`/dir/list?path=`);
+                const data = await response.json();
+                if (data.current_path) {
+                    updateTaskWorkspaceUI(data.current_path);
+                }
+            } catch (e) {
+                // 默认静默降级逻辑
+            }
+        }
     }
 
     // 渲染候选 Agent 多选列表，checkedIds 为已选中的 Agent id
@@ -2395,8 +2408,43 @@
                 };
                 stageList.appendChild(item);
             });
+            // 最后一条为用户对话（无 agent_id）且尚无消息（审核中）时，追加用户意见输入框与审核按钮，审核即向该对话追加一条用户消息
+            const lastConversation = task.conversations[task.conversations.length - 1];
+            if (lastConversation.agent_id == null && (!lastConversation.messages || lastConversation.messages.length === 0)) {
+                const reviewArea = document.createElement('div');
+                reviewArea.style.cssText = 'display:flex; gap:8px; margin-top:8px; align-items:flex-start;';
+                reviewArea.innerHTML = `
+                    <textarea id="task-review-input-${taskId}" class="form-control" rows="2" style="flex:1; resize:vertical; font-size:11px;" placeholder="Enter review feedback..."></textarea>
+                    <button class="btn btn-sm send-button" onclick="submitTaskReview(${taskId}, ${lastConversation.id})">Review</button>
+                `;
+                stageList.appendChild(reviewArea);
+            }
         } catch (e) {
             stageList.innerHTML = '<div style="font-family:var(--font-mono); font-size:12px; color:var(--danger-color)">FETCH FAILED</div>';
+        }
+    }
+
+    // 提交用户审核意见：向当前用户对话追加一条用户消息后刷新阶段列表
+    async function submitTaskReview(taskId, conversationId) {
+        const input = document.getElementById(`task-review-input-${taskId}`);
+        const content = input.value.trim();
+        if (!content) {
+            alert("REVIEW FEEDBACK IS REQUIRED.");
+            return;
+        }
+        try {
+            const response = await fetch(`/conversation/${conversationId}/message`, {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({content: content})
+            });
+            if (response.ok) {
+                await loadTaskDetail(taskId);
+            } else {
+                alert("REVIEW FAULT");
+            }
+        } catch (e) {
+            alert("REVIEW FAULT");
         }
     }
 

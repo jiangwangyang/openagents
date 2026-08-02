@@ -1203,13 +1203,13 @@
 <div class="main-content">
     <div class="header">
         <div class="header-left">
-            <button class="header-nav-btn active" id="navDialogBtn" onclick="switchView('dialog')">Dialog</button>
-            <button class="header-nav-btn" id="navTaskBtn" onclick="switchView('task')">Tasks</button>
-            <button class="header-nav-btn" id="navCronBtn" onclick="switchView('cron')">Cron</button>
-            <button class="header-nav-btn" id="navSkillBtn" onclick="switchView('skill')">Skills</button>
+            <button class="header-nav-btn active" id="navDialogBtn" onclick="switchView('dialog')">DIALOG</button>
+            <button class="header-nav-btn" id="navTaskBtn" onclick="switchView('task')">TASK</button>
+            <button class="header-nav-btn" id="navAgentBtn" onclick="switchView('agent')">AGENT</button>
+            <button class="header-nav-btn" id="navCronBtn" onclick="switchView('cron')">CRON</button>
+            <button class="header-nav-btn" id="navSkillBtn" onclick="switchView('skill')">SKILL</button>
             <button class="header-nav-btn" id="navMcpBtn" onclick="switchView('mcp')">MCP</button>
-            <button class="header-nav-btn" id="navAgentBtn" onclick="switchView('agent')">Agents</button>
-            <button class="header-nav-btn" id="navConfigBtn" onclick="switchView('config')">Config</button>
+            <button class="header-nav-btn" id="navConfigBtn" onclick="switchView('config')">CONFIG</button>
         </div>
         <span class="header-conversation-info" id="conversationInfo">NEW TRACE</span>
     </div>
@@ -1226,7 +1226,7 @@
         </div>
     </div>
 
-    <!-- 视图: 任务流水线管理 -->
+    <!-- 视图 2: 任务流水线管理 -->
     <div class="view-container" id="viewTask">
         <div class="panel-view-header">
             <h2 class="panel-view-title">Task Pipeline Management</h2>
@@ -1273,7 +1273,41 @@
         <div class="info-card-list" id="taskListContainer"></div>
     </div>
 
-    <!-- 视图 2: 定时任务管理 -->
+    <!-- 视图 3: Agent 管理 -->
+    <div class="view-container" id="viewAgent">
+        <div class="panel-view-header">
+            <h2 class="panel-view-title">Registered Agent Roster</h2>
+            <button class="btn btn-sm send-button" onclick="toggleAddAgentPanel()">+ Create Agent</button>
+        </div>
+
+        <!-- Agent 新增面板 -->
+        <div class="add-cron-panel" id="addAgentPanel" style="display: none;">
+            <div class="form-row">
+                <div class="form-group">
+                    <label>Agent Name</label>
+                    <input type="text" id="agentName" class="form-control" placeholder="e.g. Code Reviewer">
+                </div>
+                <div class="form-group">
+                    <label>Description</label>
+                    <input type="text" id="agentDesc" class="form-control" placeholder="e.g. Reviews pull requests and reports issues">
+                </div>
+            </div>
+            <div class="form-row">
+                <div class="form-group">
+                    <label>System Prompt</label>
+                    <textarea id="agentPrompt" class="form-control mono" rows="5" style="resize: vertical; min-height: 100px;" placeholder="# Enter agent system prompt..."></textarea>
+                </div>
+            </div>
+            <div class="form-row" style="justify-content: flex-end; margin-top: 4px; gap: 12px;">
+                <button class="btn btn-sm btn-secondary" onclick="toggleAddAgentPanel()">Cancel</button>
+                <button class="btn btn-sm send-button" onclick="submitAgent()">Commit Agent</button>
+            </div>
+        </div>
+
+        <div class="info-card-list" id="agentListContainer"></div>
+    </div>
+
+    <!-- 视图 4: 定时任务管理 -->
     <div class="view-container" id="viewCron">
         <div class="panel-view-header">
             <h2 class="panel-view-title">Scheduled Cron Processes</h2>
@@ -1313,7 +1347,7 @@
         <div class="info-card-list" id="cronListContainer"></div>
     </div>
 
-    <!-- 视图 3: 系统核心技能 -->
+    <!-- 视图 5: 系统核心技能 -->
     <div class="view-container" id="viewSkill">
         <div class="panel-view-header">
             <h2 class="panel-view-title">Registered Agent Skills</h2>
@@ -1321,7 +1355,7 @@
         <div class="info-card-list" id="skillListContainer"></div>
     </div>
 
-    <!-- 视图 4: MCP 服务架构生态映射 -->
+    <!-- 视图 6: MCP 服务架构生态映射 -->
     <div class="view-container" id="viewMcp">
         <div class="panel-view-header">
             <h2 class="panel-view-title">Model Context Protocol Servers</h2>
@@ -1379,41 +1413,7 @@
         <div class="info-card-list" id="mcpListContainer"></div>
     </div>
 
-    <!-- 视图 5: Agent 管理 -->
-    <div class="view-container" id="viewAgent">
-        <div class="panel-view-header">
-            <h2 class="panel-view-title">Registered Agent Roster</h2>
-            <button class="btn btn-sm send-button" onclick="toggleAddAgentPanel()">+ Create Agent</button>
-        </div>
-
-        <!-- Agent 新增面板 -->
-        <div class="add-cron-panel" id="addAgentPanel" style="display: none;">
-            <div class="form-row">
-                <div class="form-group">
-                    <label>Agent Name</label>
-                    <input type="text" id="agentName" class="form-control" placeholder="e.g. Code Reviewer">
-                </div>
-                <div class="form-group">
-                    <label>Description</label>
-                    <input type="text" id="agentDesc" class="form-control" placeholder="e.g. Reviews pull requests and reports issues">
-                </div>
-            </div>
-            <div class="form-row">
-                <div class="form-group">
-                    <label>System Prompt</label>
-                    <textarea id="agentPrompt" class="form-control mono" rows="5" style="resize: vertical; min-height: 100px;" placeholder="# Enter agent system prompt..."></textarea>
-                </div>
-            </div>
-            <div class="form-row" style="justify-content: flex-end; margin-top: 4px; gap: 12px;">
-                <button class="btn btn-sm btn-secondary" onclick="toggleAddAgentPanel()">Cancel</button>
-                <button class="btn btn-sm send-button" onclick="submitAgent()">Commit Agent</button>
-            </div>
-        </div>
-
-        <div class="info-card-list" id="agentListContainer"></div>
-    </div>
-
-    <!-- 视图 6: 全局生产环境配置控制台 -->
+    <!-- 视图 7: 全局生产环境配置控制台 -->
     <div class="view-container" id="viewConfig">
         <div class="panel-view-header">
             <h2 class="panel-view-title">System Runtime Configurations</h2>

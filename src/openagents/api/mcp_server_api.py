@@ -77,19 +77,19 @@ async def delete_mcp_server(name: str) -> None:
 
 # 测试指定类型的 MCP 服务连接，创建会话获取工具列表返回，参数缺失返回 400，连接失败返回 502
 @router.post("/mcp-server/{type}/test")
-async def test_mcp_server(type: str, url: str | None = Body(None, embed=True), headers: dict[str, str] | None = Body(None, embed=True), command: str | None = Body(None, embed=True), args: list[str] | None = Body(None, embed=True)) -> list[dict]:
+async def test_mcp_server(_type: str, url: str | None = Body(None, embed=True), headers: dict[str, str] | None = Body(None, embed=True), command: str | None = Body(None, embed=True), args: list[str] | None = Body(None, embed=True)) -> list[dict]:
     # 按协议类型创建客户端
     http_client: httpx.AsyncClient | None = None
-    if type == "streamable_http":
+    if _type == "streamable_http":
         if not url:
             raise HTTPException(status_code=400, detail="url is required")
         http_client = httpx.AsyncClient(headers=headers, timeout=httpx.Timeout(30.0, read=300.0))
         client = streamable_http_client(url, http_client=http_client)
-    elif type == "sse":
+    elif _type == "sse":
         if not url:
             raise HTTPException(status_code=400, detail="url is required")
         client = sse_client(url, headers)
-    elif type == "stdio":
+    elif _type == "stdio":
         if not command:
             raise HTTPException(status_code=400, detail="command is required")
         client = stdio_client(StdioServerParameters(command=command, args=args or []))

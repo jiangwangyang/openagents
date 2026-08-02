@@ -30,7 +30,7 @@ startup_event = threading.Event()
 
 
 @asynccontextmanager
-async def lifespan(app: FastAPI) -> AsyncIterator[None]:
+async def lifespan(_app: FastAPI) -> AsyncIterator[None]:
     # 初始化设置
     await setting.init_setting()
     # 初始化技能

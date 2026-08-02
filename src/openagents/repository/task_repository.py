@@ -27,7 +27,7 @@ async def get_task(task_id: int) -> TaskEntity | None:
         task = result.scalar_one_or_none()
         if task is None:
             return None
-        task.conversations.sort(key=lambda conversation: conversation.id)
+        task.conversations.sort(key=lambda x: x.id)
         for conversation in task.conversations:
             conversation.messages.sort(key=lambda message: message.id)
         return task

@@ -37,23 +37,23 @@ async def get_task(task_id: int) -> TaskEntity | None:
 
 
 # 新增任务，时间字段统一赋当前时间，返回自增 id
-async def add_task(title: str, content: str, agent_ids: list[int]) -> int:
+async def add_task(title: str, content: str, agent_ids: list[int], work_dir: str) -> int:
     async with async_session() as session:
         now = datetime.now()
-        task = TaskEntity(title=title, content=content, agent_ids=agent_ids, create_time=now, update_time=now)
+        task = TaskEntity(title=title, content=content, agent_ids=agent_ids, work_dir=work_dir, create_time=now, update_time=now)
         session.add(task)
         await session.commit()
         await session.refresh(task)
         return task.id
 
 
-# 按 id 更新任务的 title/content/agent_ids，update_time 刷新为当前时间，id 不存在返回 False
-async def update_task(task_id: int, title: str, content: str, agent_ids: list[int]) -> bool:
+# 按 id 更新任务的 title/content/agent_ids/work_dir，update_time 刷新为当前时间，id 不存在返回 False
+async def update_task(task_id: int, title: str, content: str, agent_ids: list[int], work_dir: str) -> bool:
     async with async_session() as session:
         result = await session.execute(
             update(TaskEntity)
             .where(TaskEntity.id == task_id)
-            .values(title=title, content=content, agent_ids=agent_ids, update_time=datetime.now())
+            .values(title=title, content=content, agent_ids=agent_ids, work_dir=work_dir, update_time=datetime.now())
         )
         await session.commit()
         return result.rowcount > 0

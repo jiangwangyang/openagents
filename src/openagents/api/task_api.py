@@ -16,6 +16,7 @@ async def list_tasks() -> list[dict]:
             "title": task.title,
             "content": task.content,
             "agent_ids": task.agent_ids,
+            "work_dir": task.work_dir,
             "create_time": task.create_time,
             "update_time": task.update_time,
         }
@@ -34,6 +35,7 @@ async def get_task(task_id: int) -> dict:
         "title": task.title,
         "content": task.content,
         "agent_ids": task.agent_ids,
+        "work_dir": task.work_dir,
         "create_time": task.create_time,
         "update_time": task.update_time,
         "conversations": [
@@ -59,16 +61,16 @@ async def get_task(task_id: int) -> dict:
     }
 
 
-# 新增任务接口，agent_ids 为可供 Agent 选择下一个执行者的候选池，返回自增 id
+# 新增任务接口，agent_ids 为可供 Agent 选择下一个执行者的候选池，work_dir 为任务阶段对话的工作目录，返回自增 id
 @router.post("/task")
-async def add_task(title: str = Body(...), content: str = Body(...), agent_ids: list[int] = Body(...)) -> int:
-    return await task_repository.add_task(title, content, agent_ids)
+async def add_task(title: str = Body(...), content: str = Body(...), agent_ids: list[int] = Body(...), work_dir: str = Body(...)) -> int:
+    return await task_repository.add_task(title, content, agent_ids, work_dir)
 
 
 # 更新任务接口，任务不存在返回 404
 @router.put("/task/{task_id}")
-async def update_task(task_id: int, title: str = Body(...), content: str = Body(...), agent_ids: list[int] = Body(...)) -> None:
-    if not await task_repository.update_task(task_id, title, content, agent_ids):
+async def update_task(task_id: int, title: str = Body(...), content: str = Body(...), agent_ids: list[int] = Body(...), work_dir: str = Body(...)) -> None:
+    if not await task_repository.update_task(task_id, title, content, agent_ids, work_dir):
         raise HTTPException(status_code=404, detail="Task not found")
 
 
@@ -79,13 +81,13 @@ async def delete_task(task_id: int) -> None:
         raise HTTPException(status_code=404, detail="Task not found")
 
 
-# 启动任务执行循环接口，agent_id 为首个执行的 Agent，work_dir 为首个阶段对话的工作目录
+# 启动任务执行循环接口，agent_id 为首个执行的 Agent，阶段对话的工作目录取任务的 work_dir
 # 任务/agent 不存在返回 404，执行循环已在运行返回 409
 @router.post("/task/{task_id}/start")
-async def start_task(task_id: int, agent_id: int = Body(..., embed=True), work_dir: str = Body(..., embed=True)) -> None:
+async def start_task(task_id: int, agent_id: int = Body(..., embed=True)) -> None:
     if await task_repository.get_task(task_id) is None:
         raise HTTPException(status_code=404, detail="Task not found")
     if await agent_repository.get_agent(agent_id) is None:
         raise HTTPException(status_code=404, detail="Agent not found")
-    if not task_service.start_task(task_id, agent_id, work_dir):
+    if not task_service.start_task(task_id, agent_id):
         raise HTTPException(status_code=409, detail="Task already running")

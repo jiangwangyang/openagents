@@ -19,18 +19,18 @@ def get_task_id() -> int | None:
 
 
 # 启动任务执行循环，agent_id 为首个执行的 Agent，循环已在运行返回 False
-def start_task(task_id: int, agent_id: int, work_dir: str) -> bool:
+def start_task(task_id: int, agent_id: int) -> bool:
     # 同一 task 不允许同时运行多个执行循环
     loop_task = _task_loop_dict.get(task_id)
     if loop_task is not None and not loop_task.done():
         return False
-    _task_loop_dict[task_id] = asyncio.create_task(run_task(task_id, agent_id, work_dir))
+    _task_loop_dict[task_id] = asyncio.create_task(run_task(task_id, agent_id))
     return True
 
 
 # 后台执行循环：先为首个 agent 创建阶段对话，之后每轮取任务最新对话，有 agent 则交给其执行，无 agent（用户审核对话）或对话已执行过则结束
 # agent 指派下一个 agent 即创建一条 agent_id 为新 agent 的对话（dispatch 工具后续实现），下一轮循环自动接续
-async def run_task(task_id: int, agent_id: int, work_dir: str) -> None:
+async def run_task(task_id: int, agent_id: int) -> None:
     # 向当前 async 上下文注入 task_id，下游（work → 工具执行）通过 get_task_id 读取
     token = _task_id_context.set(task_id)
     try:
@@ -39,7 +39,7 @@ async def run_task(task_id: int, agent_id: int, work_dir: str) -> None:
         agent = await agent_repository.get_agent(agent_id)
         if task is None or agent is None:
             return
-        await conversation_repository.add_conversation(f"{task.title}-{agent.name}", work_dir, str(agent.prompt), task_id, agent_id)
+        await conversation_repository.add_conversation(f"{task.title}-{agent.name}", str(task.work_dir), str(agent.prompt), task_id, agent_id)
         while True:
             # 每轮重新查询任务，取最新一条对话
             task = await task_repository.get_task(task_id)

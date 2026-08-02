@@ -1203,6 +1203,18 @@
             </div>
             <div class="form-row">
                 <div class="form-group">
+                    <label>Working Directory</label>
+                    <button class="workspace-btn" id="taskWorkspaceBtn" onclick="selectTaskWorkspace()" style="margin-bottom:0;" title="Set Directory Context">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path>
+                        </svg>
+                        <span>CWD:</span>
+                        <span class="workspace-path" id="taskWorkspaceDisplay">UNSET</span>
+                    </button>
+                </div>
+            </div>
+            <div class="form-row">
+                <div class="form-group">
                     <label>Candidate Agents</label>
                     <div class="agent-check-list" id="addTaskAgentList"></div>
                 </div>
@@ -1491,6 +1503,10 @@
     let currentEventSource = null;
     let currentWorkdir = '';
     let tempSelectedPath = "";
+    // 任务工作目录，由目录选择弹窗写入
+    let taskWorkdir = '';
+    // 目录选择弹窗的确认回调，为空则写入对话工作目录（默认行为）
+    let dirConfirmCallback = null;
 
     // 流式渲染状态变量
     let streamWrapper = null;
@@ -2294,6 +2310,10 @@
                             <div class="details-value">
                                 <textarea id="task-content-${task.id}" class="form-control mono" rows="5" style="resize: vertical; font-size:11px;">${escapeHtml(task.content)}</textarea>
                             </div>
+                            <div class="details-label">Working Directory</div>
+                            <div class="details-value">
+                                <input type="text" id="task-dir-${task.id}" class="form-control mono" value="${escapeHtml(task.work_dir || '')}" placeholder="e.g. /home/project">
+                            </div>
                             <div class="details-label">Candidate Agents</div>
                             <div class="details-value">
                                 <div class="agent-check-list" id="task-agents-${task.id}"></div>
@@ -2302,7 +2322,6 @@
                             <div class="details-value">
                                 <div style="display:flex; gap:8px; flex-wrap:wrap;">
                                     <select id="task-start-agent-${task.id}" class="form-control" style="flex:1; min-width:150px;"></select>
-                                    <input type="text" id="task-start-dir-${task.id}" class="form-control mono" style="flex:2; min-width:200px;" placeholder="Working Directory e.g. /home/project">
                                     <button class="btn btn-sm send-button" onclick="startTask(${task.id})">Start</button>
                                 </div>
                             </div>
@@ -2399,8 +2418,9 @@
     async function submitTask() {
         const title = document.getElementById('taskTitle').value.trim();
         const content = document.getElementById('taskContent').value.trim();
+        const workDir = taskWorkdir;
         const agentIds = getCheckedAgentIds(document.getElementById('addTaskAgentList'));
-        if (!title || !content) {
+        if (!title || !content || !workDir) {
             alert("REQUIRED FIELDS MISSING.");
             return;
         }
@@ -2409,11 +2429,12 @@
             const response = await fetch('/task', {
                 method: 'POST',
                 headers: {'Content-Type': 'application/json'},
-                body: JSON.stringify({title: title, content: content, agent_ids: agentIds})
+                body: JSON.stringify({title: title, content: content, agent_ids: agentIds, work_dir: workDir})
             });
             if (response.ok) {
                 document.getElementById('taskTitle').value = '';
                 document.getElementById('taskContent').value = '';
+                updateTaskWorkspaceUI('');
                 toggleAddTaskPanel();
                 await fetchTaskList();
             }
@@ -2425,8 +2446,9 @@
     async function updateTask(taskId) {
         const title = document.getElementById(`task-title-${taskId}`).value.trim();
         const content = document.getElementById(`task-content-${taskId}`).value.trim();
+        const workDir = document.getElementById(`task-dir-${taskId}`).value.trim();
         const agentIds = getCheckedAgentIds(document.getElementById(`task-agents-${taskId}`));
-        if (!title || !content) {
+        if (!title || !content || !workDir) {
             alert("REQUIRED FIELDS MISSING.");
             return;
         }
@@ -2435,7 +2457,7 @@
             const response = await fetch(`/task/${taskId}`, {
                 method: 'PUT',
                 headers: {'Content-Type': 'application/json'},
-                body: JSON.stringify({title: title, content: content, agent_ids: agentIds})
+                body: JSON.stringify({title: title, content: content, agent_ids: agentIds, work_dir: workDir})
             });
             if (response.ok) {
                 alert(`TASK [${title}] SYNCHRONIZED.`);
@@ -2465,9 +2487,8 @@
 
     async function startTask(taskId) {
         const agentId = document.getElementById(`task-start-agent-${taskId}`).value;
-        const workDir = document.getElementById(`task-start-dir-${taskId}`).value.trim();
-        if (!agentId || !workDir) {
-            alert("AGENT AND WORKING DIRECTORY ARE REQUIRED.");
+        if (!agentId) {
+            alert("AGENT IS REQUIRED.");
             return;
         }
 
@@ -2475,7 +2496,7 @@
             const response = await fetch(`/task/${taskId}/start`, {
                 method: 'POST',
                 headers: {'Content-Type': 'application/json'},
-                body: JSON.stringify({agent_id: parseInt(agentId), work_dir: workDir})
+                body: JSON.stringify({agent_id: parseInt(agentId)})
             });
             if (response.ok) {
                 await loadTaskDetail(taskId);
@@ -2767,8 +2788,16 @@
     }
 
     async function selectWorkspace() {
+        dirConfirmCallback = null;
         document.getElementById('dirModalOverlay').style.display = 'block';
         await loadDirList(currentWorkdir || "");
+    }
+
+    // 打开目录选择弹窗，确认结果写入任务工作目录
+    async function selectTaskWorkspace() {
+        dirConfirmCallback = updateTaskWorkspaceUI;
+        document.getElementById('dirModalOverlay').style.display = 'block';
+        await loadDirList(taskWorkdir || currentWorkdir || "");
     }
 
     function handleManualJump() {
@@ -2787,7 +2816,11 @@
     }
 
     function confirmDirSelection() {
-        updateWorkspaceUI(tempSelectedPath);
+        if (dirConfirmCallback) {
+            dirConfirmCallback(tempSelectedPath);
+        } else {
+            updateWorkspaceUI(tempSelectedPath);
+        }
         closeDirModal();
     }
 
@@ -2795,6 +2828,13 @@
         currentWorkdir = path;
         const display = document.getElementById('workspaceDisplay');
         display.textContent = path;
+        display.title = path;
+    }
+
+    function updateTaskWorkspaceUI(path) {
+        taskWorkdir = path;
+        const display = document.getElementById('taskWorkspaceDisplay');
+        display.textContent = path || 'UNSET';
         display.title = path;
     }
 

@@ -13,8 +13,8 @@ async def execute(cmd_and_args: list[str], work_dir: str) -> tuple[str, bool]:
     task = await task_repository.get_task(task_id)
     if task is None or not task.conversations:
         return f"Task not found: {task_id}", True
-    # 新对话的 work_dir 沿用任务当前对话
-    work_dir = str(task.conversations[-1].work_dir)
+    # 新对话的 work_dir 取任务的工作目录
+    work_dir = str(task.work_dir)
     # 移交给用户：创建 agent_id 为 None 的用户审核对话
     if cmd_and_args[2] == "user":
         await conversation_repository.add_conversation(f"{task.title}-用户", work_dir, "", task_id, None)

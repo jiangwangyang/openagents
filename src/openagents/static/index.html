@@ -1477,13 +1477,18 @@
 
     <!-- 输入层组件包裹器 -->
     <div class="input-wrapper" id="globalInputWrapper">
-        <button class="workspace-btn" id="workspaceBtn" onclick="selectWorkspace()" title="Set Directory Context">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path>
-            </svg>
-            <span>CWD:</span>
-            <span class="workspace-path" id="workspaceDisplay">UNSET</span>
-        </button>
+        <div style="display:flex; gap:8px; align-items:center; margin-bottom:12px;">
+            <button class="workspace-btn" id="workspaceBtn" onclick="selectWorkspace()" title="Set Directory Context" style="margin-bottom:0;">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path>
+                </svg>
+                <span>CWD:</span>
+                <span class="workspace-path" id="workspaceDisplay">UNSET</span>
+            </button>
+            <select id="agentSelect" class="form-control" title="Select Agent" style="width:auto; height:28px; padding:4px 10px; font-size:11px; font-family:var(--font-mono); color:var(--slate-400); text-transform:uppercase;">
+                <option value="">NONE</option>
+            </select>
+        </div>
         <div class="input-container">
             <textarea class="message-input" id="messageInput" placeholder="Enter instructions..." maxlength="2000" disabled rows="1"></textarea>
             <button class="interrupt-button btn" id="interruptButton" onclick="interruptConversation()" style="display: none;">Halt</button>
@@ -3062,6 +3067,8 @@
 
     function loadConversation(conversationId) {
         currentConversationId = conversationId;
+        // 对话已创建，锁定工作目录与智能体选择
+        setContextLocked(true);
         // 从缓存的对话列表中读取工作目录
         const cached = globalConversationsCachedList.find(c => String(c.id) === String(conversationId));
         if (cached) {
@@ -3112,7 +3119,39 @@
             items.forEach(item => item.classList.remove('active'));
         });
         initDefaultWorkspace();
+        loadAgentSelect();
+        setContextLocked(false);
         switchView('dialog');
+    }
+
+    // 锁定/解锁会话上下文：对话创建后工作目录与智能体不允许修改
+    function setContextLocked(locked) {
+        const workspaceBtn = document.getElementById('workspaceBtn');
+        const agentSelect = document.getElementById('agentSelect');
+        workspaceBtn.disabled = locked;
+        agentSelect.disabled = locked;
+        workspaceBtn.style.opacity = locked ? '0.4' : '';
+        agentSelect.style.opacity = locked ? '0.4' : '';
+        workspaceBtn.style.cursor = locked ? 'not-allowed' : '';
+        agentSelect.style.cursor = locked ? 'not-allowed' : '';
+    }
+
+    // 加载智能体下拉框，首项为默认（不选智能体），选择结果仅在新会话首次发送时生效
+    async function loadAgentSelect() {
+        const select = document.getElementById('agentSelect');
+        try {
+            const response = await fetch('/agent/list');
+            const agents = await response.json();
+            select.innerHTML = '<option value="">NONE</option>';
+            agents.forEach(agent => {
+                const opt = document.createElement('option');
+                opt.value = agent.id;
+                opt.textContent = agent.name;
+                select.appendChild(opt);
+            });
+        } catch (e) {
+            // 静默处理错误
+        }
     }
 
     function enableInput() {
@@ -3157,10 +3196,16 @@
         // 启动 work：新会话先创建，已有会话直接启动
         try {
             if (!currentConversationId) {
+                // 新会话可指定智能体，未选择（空值）则不携带 agent_id
+                const payload = {task_content: message, work_dir: currentWorkdir};
+                const agentId = document.getElementById('agentSelect').value;
+                if (agentId) {
+                    payload.agent_id = parseInt(agentId);
+                }
                 const response = await fetch('/work/start', {
                     method: 'POST',
                     headers: {'Content-Type': 'application/json'},
-                    body: JSON.stringify({task_content: message, work_dir: currentWorkdir})
+                    body: JSON.stringify(payload)
                 });
                 if (!response.ok) {
                     alert("START WORK FAILED");
@@ -3168,6 +3213,8 @@
                 }
                 currentConversationId = await response.json();
                 conversationInfo.textContent = `ID: ${currentConversationId}`;
+                // 对话已创建，锁定工作目录与智能体选择
+                setContextLocked(true);
                 await loadConversationList();
             } else {
                 const response = await fetch(`/work/${currentConversationId}/start`, {

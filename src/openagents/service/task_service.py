@@ -39,25 +39,19 @@ async def run_task(task_id: int, agent_id: int, work_dir: str) -> None:
             if conversation.agent_id is None:
                 return
             # 拼接各阶段对话的最后一条消息：agent 对话以 agent 名为标题，用户对话以“用户”为标题
-            history_list = []
+            task_content_list = []
+            task_content_list += [f"# Task\n{json.dumps({"title": task.title, "content": task.content}, ensure_ascii=False)}"]
+            task_content_list += [f"# Team\n{json.dumps([{"id": team_agent.id, "name": team_agent.name, "description": team_agent.description} for team_agent in task.agents], ensure_ascii=False)}"]
+            task_content_list += ["# History"]
             for history_conversation in task.conversations:
                 if not history_conversation.messages:
                     continue
                 name = history_conversation.agent.name if history_conversation.agent else "用户"
-                content = history_conversation.messages[-1].content
+                content = history_conversation.messages[-1].content if history_conversation.messages else ""
                 text = content if isinstance(content, str) else content[-1].get("text", "")
-                history_list += [f"# {name}\n{text}"]
+                task_content_list += [f"## {name}\n{text}"]
+            task_content = "\n\n".join(task_content_list)
             # 触发 work 执行并等待完成
-            task_content = f"""
-            # Task
-            {json.dumps({"title": task.title, "content": task.content}, ensure_ascii=False)}
-            
-            # Team
-            {json.dumps([{"name": team_agent.name, "description": team_agent.description} for team_agent in task.agents], ensure_ascii=False)}
-            
-            {"\n\n".join(history_list)}
-            
-            """
             if not work_service.start_work(conversation.id, task_content):
                 return
             await work_service.get_work_state(conversation.id).task

@@ -1851,10 +1851,6 @@
         autoResize();
         enableInput();
         conversationInfo.textContent = 'NEW TRACE';
-        loadConversationList().then(() => {
-            const items = conversationList.querySelectorAll('.conversation-item');
-            items.forEach(item => item.classList.remove('active'));
-        });
         initDefaultWorkspace();
         loadAgentSelect();
         setContextLocked(false);

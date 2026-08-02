@@ -61,7 +61,7 @@ async def run_task(task_id: int, agent_id: int) -> None:
                 name = history_conversation.agent.name if history_conversation.agent else "用户"
                 content = history_conversation.messages[-1].content if history_conversation.messages else ""
                 text = content if isinstance(content, str) else content[-1].get("text", "")
-                task_content_list += [f"## {name}\n{text}"]
+                task_content_list += [f"## {name}\n{json.dumps(text, ensure_ascii=False)}"]
             task_content = "\n\n".join(task_content_list)
             # 触发 work 执行并等待完成
             if not work_service.start_work(conversation.id, task_content):

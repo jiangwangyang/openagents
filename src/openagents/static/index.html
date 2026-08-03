@@ -9,8 +9,8 @@
         // 首屏渲染前预应用主题，避免深色主题下出现浅色闪烁
         (function () {
             let savedTheme = localStorage.getItem('openagents_theme');
-            if (savedTheme !== 'dark' && savedTheme !== 'light') {
-                savedTheme = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+            if (savedTheme === null) {
+                savedTheme = 'light';
             }
             document.documentElement.dataset.theme = savedTheme;
         })();
@@ -18,8 +18,8 @@
 
     <style>
         /* ===== 1. 设计变量与全局基础 ===== */
-        :root {
-            /* 工业极简冷峻风 */
+        /* 浅色主题 */
+        :root[data-theme='light'] {
             --charcoal-900: #121417;
             --charcoal-800: #1a1d21;
             --charcoal-700: #2c3138;
@@ -60,7 +60,7 @@
             --font-mono: 'SF Mono', 'Fira Code', 'JetBrains Mono', monospace;
         }
 
-        /* 深色主题：覆盖全部设计变量 */
+        /* 深色主题 */
         :root[data-theme='dark'] {
             --charcoal-900: #e6e8eb;
             --charcoal-800: #c9cdd3;
@@ -91,12 +91,276 @@
             --noise-filter: invert(1);
         }
 
+        /* FOREST — 苔藓森林 / 自然有机 理念：以深松绿与暖米白为基调，营造沉稳专注的编辑氛围 */
+        :root[data-theme="forest"] {
+            --charcoal-900: #1a3c1a;
+            --charcoal-800: #2d5a2d;
+            --charcoal-700: #4a7c59;
+            --slate-400: #7a9a7a;
+            --slate-300: #a8c4a8;
+            --bg-canvas: #f4f1ea;
+            --bg-surface: #eef5e6;
+            --bg-panel: #fafcf7;
+            --border-hard: #c8d6c0;
+            --border-soft: #e0ead8;
+
+            --accent-color: #2d5a2d;
+            --danger-color: #c0392b;
+            --danger-bg: #fdf2f0;
+
+            --shadow-rgb: 26, 60, 26;
+            --shadow-hard: 4px 4px 0 rgba(var(--shadow-rgb), 0.06);
+            --shadow-hard-lg: 8px 8px 0 rgba(var(--shadow-rgb), 0.08);
+
+            --hover-bg: rgba(45, 90, 45, 0.04);
+            --subtle-bg: rgba(45, 90, 45, 0.015);
+            --summary-bg: #f5f9f2;
+            --inline-code-bg: rgba(45, 90, 45, 0.06);
+            --overlay-bg: rgba(244, 241, 234, 0.9);
+            --on-accent-muted: rgba(255, 255, 255, 0.45);
+            --noise-opacity: 0.025;
+            --noise-filter: none;
+        }
+
+        :root[data-theme="forest-dark"] {
+            --charcoal-900: #d4e8d4;
+            --charcoal-800: #a8c4a8;
+            --charcoal-700: #7a9a7a;
+            --slate-400: #5a7a5a;
+            --slate-300: #3d5a3d;
+            --bg-canvas: #0f1a0f;
+            --bg-surface: #162216;
+            --bg-panel: #1c2b1c;
+            --border-hard: #2d4a2d;
+            --border-soft: #223822;
+
+            --accent-color: #8fbc8f;
+            --danger-color: #e57373;
+            --danger-bg: #2b1d1d;
+
+            --shadow-rgb: 0, 0, 0;
+            --shadow-hard: 4px 4px 0 rgba(var(--shadow-rgb), 0.25);
+            --shadow-hard-lg: 8px 8px 0 rgba(var(--shadow-rgb), 0.3);
+
+            --hover-bg: rgba(143, 188, 143, 0.06);
+            --subtle-bg: rgba(143, 188, 143, 0.02);
+            --summary-bg: #1e2e1e;
+            --inline-code-bg: rgba(143, 188, 143, 0.08);
+            --overlay-bg: rgba(15, 26, 15, 0.9);
+            --on-accent-muted: rgba(0, 0, 0, 0.45);
+            --noise-opacity: 0.05;
+            --noise-filter: invert(1);
+        }
+
+        /* OCEAN — 深海蓝 / 冷静理性 理念：以深海蓝与冰蓝灰构建冷静、专业的数据工作氛围 */
+        :root[data-theme="ocean"] {
+            --charcoal-900: #0a2540;
+            --charcoal-800: #1a5276;
+            --charcoal-700: #2874a6;
+            --slate-400: #7fb3d5;
+            --slate-300: #aed6f1;
+            --bg-canvas: #f0f4f8;
+            --bg-surface: #e8f0f8;
+            --bg-panel: #ffffff;
+            --border-hard: #b8d4e3;
+            --border-soft: #d6e8f0;
+
+            --accent-color: #0066cc;
+            --danger-color: #c0392b;
+            --danger-bg: #fdf2f0;
+
+            --shadow-rgb: 10, 37, 64;
+            --shadow-hard: 4px 4px 0 rgba(var(--shadow-rgb), 0.06);
+            --shadow-hard-lg: 8px 8px 0 rgba(var(--shadow-rgb), 0.08);
+
+            --hover-bg: rgba(0, 102, 204, 0.04);
+            --subtle-bg: rgba(0, 102, 204, 0.015);
+            --summary-bg: #f5f9fc;
+            --inline-code-bg: rgba(0, 102, 204, 0.06);
+            --overlay-bg: rgba(240, 244, 248, 0.9);
+            --on-accent-muted: rgba(255, 255, 255, 0.5);
+            --noise-opacity: 0.02;
+            --noise-filter: none;
+        }
+
+        :root[data-theme="ocean-dark"] {
+            --charcoal-900: #e0f0ff;
+            --charcoal-800: #a8d4f0;
+            --charcoal-700: #7fb3d5;
+            --slate-400: #5a8ab0;
+            --slate-300: #3d6a8a;
+            --bg-canvas: #081018;
+            --bg-surface: #0e1a25;
+            --bg-panel: #142230;
+            --border-hard: #1e3a52;
+            --border-soft: #162838;
+
+            --accent-color: #4db8ff;
+            --danger-color: #ff6b6b;
+            --danger-bg: #2b1d1d;
+
+            --shadow-rgb: 0, 0, 0;
+            --shadow-hard: 4px 4px 0 rgba(var(--shadow-rgb), 0.3);
+            --shadow-hard-lg: 8px 8px 0 rgba(var(--shadow-rgb), 0.35);
+
+            --hover-bg: rgba(77, 184, 255, 0.06);
+            --subtle-bg: rgba(77, 184, 255, 0.02);
+            --summary-bg: #162838;
+            --inline-code-bg: rgba(77, 184, 255, 0.08);
+            --overlay-bg: rgba(8, 16, 24, 0.9);
+            --on-accent-muted: rgba(0, 0, 0, 0.45);
+            --noise-opacity: 0.05;
+            --noise-filter: invert(1);
+        }
+
+        /* SUNSET — 日落暖橙 / 温暖人文 理念：赭石与暖奶油色调，营造温暖、专注的长文本阅读体验 */
+        :root[data-theme="sunset"] {
+            --charcoal-900: #5c2e00;
+            --charcoal-800: #8b4513;
+            --charcoal-700: #a0522d;
+            --slate-400: #c19a6b;
+            --slate-300: #d4b896;
+            --bg-canvas: #faf6f1;
+            --bg-surface: #fff8f0;
+            --bg-panel: #fffdfb;
+            --border-hard: #e8d5c4;
+            --border-soft: #f0e6d8;
+
+            --accent-color: #c75b39;
+            --danger-color: #b03030;
+            --danger-bg: #fdf2f0;
+
+            --shadow-rgb: 92, 46, 0;
+            --shadow-hard: 4px 4px 0 rgba(var(--shadow-rgb), 0.05);
+            --shadow-hard-lg: 8px 8px 0 rgba(var(--shadow-rgb), 0.07);
+
+            --hover-bg: rgba(199, 91, 57, 0.04);
+            --subtle-bg: rgba(199, 91, 57, 0.01);
+            --summary-bg: #fdf8f3;
+            --inline-code-bg: rgba(199, 91, 57, 0.05);
+            --overlay-bg: rgba(250, 246, 241, 0.9);
+            --on-accent-muted: rgba(255, 255, 255, 0.5);
+            --noise-opacity: 0.02;
+            --noise-filter: none;
+        }
+
+        :root[data-theme="sunset-dark"] {
+            --charcoal-900: #f0d5b8;
+            --charcoal-800: #c9a87a;
+            --charcoal-700: #a08050;
+            --slate-400: #7a6040;
+            --slate-300: #5a4530;
+            --bg-canvas: #1a1410;
+            --bg-surface: #221a14;
+            --bg-panel: #2a2018;
+            --border-hard: #4a3a2a;
+            --border-soft: #3a2e22;
+
+            --accent-color: #e8a87c;
+            --danger-color: #e57373;
+            --danger-bg: #2b1d1d;
+
+            --shadow-rgb: 0, 0, 0;
+            --shadow-hard: 4px 4px 0 rgba(var(--shadow-rgb), 0.25);
+            --shadow-hard-lg: 8px 8px 0 rgba(var(--shadow-rgb), 0.3);
+
+            --hover-bg: rgba(232, 168, 124, 0.06);
+            --subtle-bg: rgba(232, 168, 124, 0.02);
+            --summary-bg: #2e241c;
+            --inline-code-bg: rgba(232, 168, 124, 0.08);
+            --overlay-bg: rgba(26, 20, 16, 0.9);
+            --on-accent-muted: rgba(0, 0, 0, 0.45);
+            --noise-opacity: 0.05;
+            --noise-filter: invert(1);
+        }
+
+        /* PAPER — 高对比白纸 / 编辑模式 理念：极端极简，纯黑白灰，去除一切装饰色，专注内容本身 */
+        :root[data-theme="paper"] {
+            --charcoal-900: #000000;
+            --charcoal-800: #1a1a1a;
+            --charcoal-700: #333333;
+            --slate-400: #666666;
+            --slate-300: #999999;
+            --bg-canvas: #ffffff;
+            --bg-surface: #fafafa;
+            --bg-panel: #ffffff;
+            --border-hard: #000000;
+            --border-soft: #e0e0e0;
+
+            --accent-color: #000000;
+            --danger-color: #cc0000;
+            --danger-bg: #fff0f0;
+
+            --shadow-rgb: 0, 0, 0;
+            --shadow-hard: 4px 4px 0 rgba(var(--shadow-rgb), 0.1);
+            --shadow-hard-lg: 8px 8px 0 rgba(var(--shadow-rgb), 0.12);
+
+            --hover-bg: rgba(0, 0, 0, 0.04);
+            --subtle-bg: rgba(0, 0, 0, 0.02);
+            --summary-bg: #f5f5f5;
+            --inline-code-bg: rgba(0, 0, 0, 0.06);
+            --overlay-bg: rgba(255, 255, 255, 0.95);
+            --on-accent-muted: rgba(255, 255, 255, 0.5);
+            --noise-opacity: 0.015;
+            --noise-filter: none;
+
+            --radius-sm: 0px;
+            --radius-md: 0px;
+            --radius-lg: 0px;
+        }
+
+        :root[data-theme="paper-dark"] {
+            --charcoal-900: #ffffff;
+            --charcoal-800: #e0e0e0;
+            --charcoal-700: #b0b0b0;
+            --slate-400: #707070;
+            --slate-300: #505050;
+            --bg-canvas: #0a0a0a;
+            --bg-surface: #111111;
+            --bg-panel: #161616;
+            --border-hard: #ffffff;
+            --border-soft: #444444;
+
+            --accent-color: #ffffff;
+            --danger-color: #ff4444;
+            --danger-bg: #1a0a0a;
+
+            --shadow-rgb: 255, 255, 255;
+            --shadow-hard: 4px 4px 0 rgba(var(--shadow-rgb), 0.08);
+            --shadow-hard-lg: 8px 8px 0 rgba(var(--shadow-rgb), 0.1);
+
+            --hover-bg: rgba(255, 255, 255, 0.06);
+            --subtle-bg: rgba(255, 255, 255, 0.02);
+            --summary-bg: #1a1a1a;
+            --inline-code-bg: rgba(255, 255, 255, 0.08);
+            --overlay-bg: rgba(10, 10, 10, 0.95);
+            --on-accent-muted: rgba(0, 0, 0, 0.5);
+            --noise-opacity: 0.03;
+            --noise-filter: invert(1);
+        }
+
+        /* 主题切换时的全局过渡 */
+        :root[data-theme="light"] *,
+        :root[data-theme="dark"] *,
+        :root[data-theme="forest"] *,
+        :root[data-theme="forest-dark"] *,
+        :root[data-theme="ocean"] *,
+        :root[data-theme="ocean-dark"] *,
+        :root[data-theme="sunset"] *,
+        :root[data-theme="sunset-dark"] *,
+        :root[data-theme="paper"] *,
+        :root[data-theme="paper-dark"] * {
+            transition: background-color 0.3s ease, color 0.3s ease, border-color 0.3s ease, box-shadow 0.3s ease;
+        }
+
+        /* 全局样式 */
         * {
             margin: 0;
             padding: 0;
             box-sizing: border-box;
         }
 
+        /* 文本选中（高亮）样式 */
         ::selection {
             background: var(--charcoal-900);
             color: var(--bg-canvas);
@@ -1439,8 +1703,16 @@
                 <button class="header-nav-btn" id="navMcpBtn" onclick="switchView('mcp')">MCP</button>
                 <button class="header-nav-btn" id="navConfigBtn" onclick="switchView('config')">CONFIG</button>
                 <select id="themeSelect" class="form-control theme-select" title="Switch Theme" onchange="setTheme(this.value)">
-                    <option value="light">LIGHT</option>
-                    <option value="dark">DARK</option>
+                    <option value="light">LIGHT ◇</option>
+                    <option value="dark">DARK ◆</option>
+                    <option value="forest">FOREST ◇</option>
+                    <option value="forest-dark">FOREST ◆</option>
+                    <option value="ocean">OCEAN ◇</option>
+                    <option value="ocean-dark">OCEAN ◆</option>
+                    <option value="sunset">SUNSET ◇</option>
+                    <option value="sunset-dark">SUNSET ◆</option>
+                    <option value="paper">PAPER ◇</option>
+                    <option value="paper-dark">PAPER ◆</option>
                 </select>
             </div>
             <span class="header-conversation-info" id="conversationInfo">NEW TRACE</span>
@@ -1756,16 +2028,12 @@
 
     <script>
         // ==========================================
-        // 0. 主题切换引擎（浅色/深色，未手动选择时默认跟随系统）
+        // 0. 主题切换引擎（浅色/深色，未手动选择时默认浅色）
         // ==========================================
         const THEME_STORAGE_KEY = 'openagents_theme';
-        const systemThemeMedia = window.matchMedia('(prefers-color-scheme: dark)');
 
-        function getSystemTheme() {
-            return systemThemeMedia.matches ? 'dark' : 'light';
-        }
-
-        function applyTheme(theme) {
+        function setTheme(theme) {
+            localStorage.setItem(THEME_STORAGE_KEY, theme);
             document.documentElement.dataset.theme = theme;
             const themeSelect = document.getElementById('themeSelect');
             if (themeSelect) {
@@ -1773,23 +2041,7 @@
             }
         }
 
-        function setTheme(theme) {
-            localStorage.setItem(THEME_STORAGE_KEY, theme);
-            applyTheme(theme);
-        }
-
-        function initTheme() {
-            const savedTheme = localStorage.getItem(THEME_STORAGE_KEY);
-            applyTheme(savedTheme === 'dark' || savedTheme === 'light' ? savedTheme : getSystemTheme());
-            // 未手动选择过主题时，实时跟随系统深浅色变化
-            systemThemeMedia.addEventListener('change', (e) => {
-                if (!localStorage.getItem(THEME_STORAGE_KEY)) {
-                    applyTheme(e.matches ? 'dark' : 'light');
-                }
-            });
-        }
-
-        initTheme();
+        setTheme(document.documentElement.dataset.theme);
 
         // ==========================================
         // 1. 全局 DOM 节点缓存与核心状态管理

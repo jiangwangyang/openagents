@@ -71,16 +71,16 @@ async def work(conversation_id: int, task_content: str | None) -> None:
             # 字符串消息整体作为用户消息发布，跳过块迭代
             if isinstance(msg["content"], str):
                 publish(conversation_id, "user", msg["content"])
-                continue
-            for block in msg["content"]:
-                if block["type"] == "thinking":
-                    publish(conversation_id, "thinking", block["thinking"])
-                elif block["type"] == "text":
-                    publish(conversation_id, "text", block["text"])
-                elif block["type"] == "tool_use":
-                    publish(conversation_id, "tool_use", json.dumps(block["input"], ensure_ascii=False), _id=block["id"], name=block["name"])
-                elif block["type"] == "tool_result":
-                    publish(conversation_id, "tool_result", block["content"], _id=block["tool_use_id"], is_error=block["is_error"])
+            elif isinstance(msg["content"], list):
+                for block in msg["content"]:
+                    if block["type"] == "thinking":
+                        publish(conversation_id, "thinking", block["thinking"])
+                    elif block["type"] == "text":
+                        publish(conversation_id, "text", block["text"])
+                    elif block["type"] == "tool_use":
+                        publish(conversation_id, "tool_use", json.dumps(block["input"], ensure_ascii=False), _id=block["id"], name=block["name"])
+                    elif block["type"] == "tool_result":
+                        publish(conversation_id, "tool_result", block["content"], _id=block["tool_use_id"], is_error=block["is_error"])
 
         # 没有任务 直接结束
         if not task_content:
@@ -144,7 +144,7 @@ async def work(conversation_id: int, task_content: str | None) -> None:
             # 2. 判断结束
             tool_use_list = [block for block in msg.content if block.type == "tool_use"]
             if not tool_use_list:
-                await conversation_repository.add_conversation_messages(conversation_id, [(msg_dict["role"], msg_dict["content"], msg_dict["time"]) for msg in messages if "id" not in msg])
+                await conversation_repository.add_conversation_messages(conversation_id, [(msg_dict["role"], msg_dict["content"], msg_dict["time"]) for msg_dict in messages if "time" in msg_dict])
                 return
 
             # 3. 工具调用

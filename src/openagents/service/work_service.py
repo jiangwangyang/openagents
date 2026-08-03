@@ -100,46 +100,62 @@ async def work(conversation_id: int, task_content: str | None) -> None:
         while True:
             # 1. 发送 anthropic 请求
             response: AsyncStream[RawMessageStreamEvent] = await anthropic_client.messages.create(messages=messages, tools=tools, system=system_prompt, model=model, max_tokens=16000, stream=True)
-            model_block_list = []
+            input_json = ""
             async for event in response:
-                if event.type == "content_block_start":
+                if event.type == "message_start":
+                    msg = event.message
+                elif event.type == "content_block_start":
+                    msg.content += [event.content_block]
                     if event.content_block.type == "thinking":
-                        model_block_list += [{"type": "thinking", "thinking": "", "signature": ""}]
                         publish(conversation_id, "thinking", "")
                     elif event.content_block.type == "text":
-                        model_block_list += [{"type": "text", "text": ""}]
                         publish(conversation_id, "text", "")
                     elif event.content_block.type == "tool_use":
-                        model_block_list += [{"type": "tool_use", "id": event.content_block.id, "name": event.content_block.name, "input": ""}]
                         publish(conversation_id, "tool_use", "", _id=event.content_block.id, name=event.content_block.name)
                 elif event.type == "content_block_delta":
                     if event.delta.type == "thinking_delta":
-                        model_block_list[-1]["thinking"] += event.delta.thinking
+                        msg.content[-1].thinking += event.delta.thinking
                         publish(conversation_id, "delta", event.delta.thinking)
                     elif event.delta.type == "signature_delta":
-                        model_block_list[-1]["signature"] += event.delta.signature
+                        msg.content[-1].signature += event.delta.signature
                     elif event.delta.type == "text_delta":
-                        model_block_list[-1]["text"] += event.delta.text
+                        msg.content[-1].text += event.delta.text
                         publish(conversation_id, "delta", event.delta.text)
                     elif event.delta.type == "input_json_delta":
-                        model_block_list[-1]["input"] += event.delta.partial_json
+                        input_json += event.delta.partial_json
                         publish(conversation_id, "delta", event.delta.partial_json)
-            for tool_use in [block for block in model_block_list if block["type"] == "tool_use"]:
-                tool_use["input"] = json.loads(tool_use["input"]) if tool_use["input"] else {}
-            messages += [{"role": "assistant", "content": model_block_list, "time": datetime.now()}]
+                elif event.type == "content_block_stop":
+                    if msg.content[-1].type == "tool_use":
+                        msg.content[-1].input = json.loads(input_json)
+                        input_json = ""
+                elif event.type == "message_delta":
+                    msg.container = event.delta.container
+                    msg.stop_details = event.delta.stop_details
+                    msg.stop_reason = event.delta.stop_reason
+                    msg.stop_sequence = event.delta.stop_sequence
+                    msg.usage.output_tokens = event.usage.output_tokens
+                elif event.type == "message_stop":
+                    pass
+            msg_dict = msg.model_dump()
+            msg_dict["time"] = datetime.now()
+            messages += [msg_dict]
+            logging.info(f"Response: {json.dumps(msg_dict, ensure_ascii=False, default=str)}")
 
             # 2. 判断结束
-            if not [block for block in model_block_list if block["type"] == "tool_use"]:
-                await conversation_repository.add_conversation_messages(conversation_id, [(msg["role"], msg["content"], msg["time"]) for msg in messages if "id" not in msg])
+            tool_use_list = [block for block in msg.content if block.type == "tool_use"]
+            if not tool_use_list:
+                await conversation_repository.add_conversation_messages(conversation_id, [(msg_dict["role"], msg_dict["content"], msg_dict["time"]) for msg in messages if "id" not in msg])
                 return
 
             # 3. 工具调用
-            tool_result_list = []
-            for tool_use in [block for block in model_block_list if block["type"] == "tool_use"]:
-                tool_content, is_error = await tool_service.execute_tool(tool_use["name"], tool_use["input"], work_dir)
-                tool_result_list += [{"type": "tool_result", "tool_use_id": tool_use["id"], "content": tool_content, "is_error": is_error}]
-                publish(conversation_id, "tool_result", tool_content, _id=tool_use["id"], is_error=is_error)
-            messages += [{"role": "user", "content": tool_result_list, "time": datetime.now()}]
+            msg_dict = {"role": "user", "content": []}
+            for tool_use in tool_use_list:
+                tool_content, is_error = await tool_service.execute_tool(tool_use.name, tool_use.input, work_dir)
+                msg_dict["content"] += [{"type": "tool_result", "tool_use_id": tool_use.id, "content": tool_content, "is_error": is_error}]
+                publish(conversation_id, "tool_result", tool_content, _id=tool_use.id, is_error=is_error)
+            msg_dict["time"] = datetime.now()
+            messages += [msg_dict]
+            logging.info(f"Tool: {json.dumps(msg_dict, ensure_ascii=False, default=str)}")
     except Exception as e:
         publish(conversation_id, "error", f"Work execution failed: {e}")
         logging.error(f"Work execution failed: {e}", exc_info=True)

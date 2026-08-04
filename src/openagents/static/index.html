@@ -379,6 +379,44 @@
             --noise-filter: invert(1);
         }
 
+        /* NIGHT — 星空 / 静谧深邃 理念：深墨蓝夜空 + 城市剪影，营造专注沉思的夜间氛围 */
+        :root[data-theme="night"] {
+            --charcoal-900: #e8ecf5;
+            --charcoal-800: #c2cbe0;
+            --charcoal-700: #94a1c4;
+            --slate-400: #6a76a0;
+            --slate-300: #4a547a;
+            --bg-canvas: #0a1024;
+            --bg-surface: #111a36;
+            --bg-panel: #182346;
+            --border-hard: #2b3a66;
+            --border-soft: #1f2c50;
+
+            --accent-color: #a8b8e8;
+
+            --backdrop-image: radial-gradient(ellipse at 80% 12%, rgba(140, 170, 255, 0.18) 0%, rgba(140, 170, 255, 0) 45%),
+            url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='600' height='120' viewBox='0 0 600 120'%3E%3Cpath d='M0 120 L0 88 L55 70 L90 82 L150 60 L200 74 L270 52 L330 68 L400 48 L460 62 L540 44 L600 56 L600 120 Z' fill='%230d1328'/%3E%3Cpath d='M40 120 L52 96 L64 120 Z' fill='%23233a6b'/%3E%3Cpath d='M120 120 L132 90 L144 120 Z' fill='%23233a6b'/%3E%3Cpath d='M220 120 L232 98 L244 120 Z' fill='%23233a6b'/%3E%3Cpath d='M330 120 L342 92 L354 120 Z' fill='%23233a6b'/%3E%3Cpath d='M440 120 L452 100 L464 120 Z' fill='%23233a6b'/%3E%3Cpath d='M540 120 L552 96 L564 120 Z' fill='%23233a6b'/%3E%3C/svg%3E"),
+            linear-gradient(180deg, #070b1c 0%, #0a1024 55%, #141d3a 100%);
+            --backdrop-size: auto, auto 30%, cover;
+            --backdrop-position: center, bottom center, center;
+            --backdrop-repeat: no-repeat, repeat-x, no-repeat;
+            --danger-color: #ff7a7a;
+            --danger-bg: #2b1d2b;
+
+            --shadow-rgb: 0, 0, 0;
+            --shadow-hard: 4px 4px 0 rgba(var(--shadow-rgb), 0.3);
+            --shadow-hard-lg: 8px 8px 0 rgba(var(--shadow-rgb), 0.35);
+
+            --hover-bg: rgba(168, 184, 232, 0.06);
+            --subtle-bg: rgba(168, 184, 232, 0.02);
+            --summary-bg: #1b2647;
+            --inline-code-bg: rgba(168, 184, 232, 0.08);
+            --overlay-bg: rgba(10, 16, 36, 0.9);
+            --on-accent-muted: rgba(0, 0, 0, 0.4);
+            --noise-opacity: 0.06;
+            --noise-filter: invert(1);
+        }
+
         /* 主题切换时的全局过渡 */
         :root[data-theme="light"] *,
         :root[data-theme="dark"] *,
@@ -389,7 +427,8 @@
         :root[data-theme="ocean"] *,
         :root[data-theme="ocean-dark"] *,
         :root[data-theme="sunset"] *,
-        :root[data-theme="sunset-dark"] * {
+        :root[data-theme="sunset-dark"] *,
+        :root[data-theme="night"] * {
             transition: background-color 0.3s ease, color 0.3s ease, border-color 0.3s ease, box-shadow 0.3s ease;
         }
 
@@ -1790,6 +1829,7 @@
                     <option value="ocean-dark">OCEAN ◆</option>
                     <option value="sunset">SUNSET ◇</option>
                     <option value="sunset-dark">SUNSET ◆</option>
+                    <option value="night">NIGHT ◆</option>
                 </select>
             </div>
             <span class="header-conversation-info" id="conversationInfo">NEW TRACE</span>
@@ -2120,12 +2160,13 @@
             'dark': null,
             'paper': null,
             'paper-dark': null,
-            'forest': {kind: 'leaves', count: 16},
-            'forest-dark': {kind: 'leaves', count: 16},
+            'forest': {kind: 'wheats', count: 16},
+            'forest-dark': {kind: 'wheats', count: 16},
             'ocean': {kind: 'bubbles', count: 16},
             'ocean-dark': {kind: 'bubbles', count: 16},
             'sunset': {kind: 'dust', count: 16},
-            'sunset-dark': {kind: 'dust', count: 16}
+            'sunset-dark': {kind: 'dust', count: 16},
+            'night': {kind: 'stars', count: 22}
         };
 
         // 运行时状态（纯数据对象）
@@ -2186,25 +2227,28 @@
         function makeParticle(kind, w, h, seed, theme) {
             const rand = (min, max) => min + Math.random() * (max - min);
             const p = {x: rand(0, w), y: rand(0, h), r: rand(1, 6), vx: 0, vy: 0, sway: 0, swaySpeed: rand(0.4, 1.6), phase: rand(0, Math.PI * 2), rot: rand(0, Math.PI * 2), rotSpeed: 0, color: '#ffffff', opacity: 0.4};
-            if (kind === 'leaves') {
-                p.r = rand(3, 7);
-                p.vy = rand(28, 55);
-                p.sway = rand(18, 40);
-                p.swaySpeed = rand(0.6, 1.6);
-                p.rotSpeed = rand(-1.2, 1.2);
-                p.color = ['#c75b39', '#8b4513', '#d4a24e', '#a0522d', '#c19a6b'][seed % 5];
-                p.opacity = rand(0.2, 0.38);
-                p.y = rand(-40, h);
+            if (kind === 'wheats') {
+                // 麦浪飘絮：轻盈的麦穗絮毛
+                p.r = rand(1.5, 3);
+                p.vy = rand(12, 30);
+                p.sway = rand(20, 45);
+                p.swaySpeed = rand(0.6, 1.4);
+                p.rot = rand(0, Math.PI * 2);
+                p.rotSpeed = rand(-1, 1);
+                p.color = ['#c49a45', '#d9b25c', '#b0832e', '#e2c06a'][seed % 4];
+                p.opacity = rand(0.3, 0.55);
+                p.y = rand(-30, h);
             } else if (kind === 'bubbles') {
+                // 海洋：浮动的气泡
                 p.r = rand(3, 8);
                 p.vy = -rand(12, 30);
                 p.sway = rand(8, 20);
                 p.swaySpeed = rand(0.4, 1.2);
-                // 浅色 ocean 用清晰淡蓝，深色 ocean-dark 用柔和淡蓝白，保证两种背景下都可见
-                p.color = theme === 'ocean' ? '#2874a6' : '#a8d4f0';
+                p.color = '#a8d4f0';
                 p.opacity = rand(0.5, 0.72);
                 p.y = rand(0, h + 40);
             } else if (kind === 'dust') {
+                // 夕阳：飘动的光点
                 p.r = rand(1, 2.8);
                 p.vx = rand(-6, 6);
                 p.vy = rand(-8, -3);
@@ -2212,6 +2256,14 @@
                 p.swaySpeed = rand(0.3, 0.9);
                 p.color = '#f5c87a';
                 p.opacity = rand(0.25, 0.6);
+            } else if (kind === 'stars') {
+                // 星空：静止闪烁的星星
+                p.r = rand(0.6, 2.2);
+                p.twinkleSpeed = rand(1.5, 4);
+                p.baseOpacity = rand(0.3, 0.9);
+                p.color = ['#ffffff', '#ffe9b0', '#b8d0ff', '#e0f2ff'][seed % 4];
+                p.opacity = p.baseOpacity;
+                p.y = rand(0, h * 0.7);
             }
             return p;
         }
@@ -2231,15 +2283,15 @@
                 const p = fx.parts[i];
                 p.phase += p.swaySpeed * dt;
                 const swayX = Math.sin(p.phase) * p.sway;
-                if (fx.kind === 'leaves') {
+                if (fx.kind === 'wheats') {
                     p.x += swayX * dt * 2;
                     p.y += p.vy * dt;
                     p.rot += p.rotSpeed * dt;
-                    if (p.y > h + 30) {
-                        p.y = -30;
+                    if (p.y > h + 20) {
+                        p.y = -20;
                         p.x = Math.random() * w;
                     }
-                    drawLeaf(ctx, p);
+                    drawWheat(ctx, p);
                 } else if (fx.kind === 'bubbles') {
                     p.x += swayX * dt * 2;
                     p.y += p.vy * dt;
@@ -2255,20 +2307,25 @@
                     if (p.x > w + 10) p.x = -10;
                     if (p.y < -10) p.y = h + 10;
                     drawDot(ctx, p);
+                } else if (fx.kind === 'stars') {
+                    // 静止闪烁：仅随时间变化透明度
+                    p.opacity = p.baseOpacity * (0.5 + 0.5 * Math.sin(p.phase * p.twinkleSpeed));
+                    p.phase += dt;
+                    drawStar(ctx, p);
                 }
             }
             fx.raf = requestAnimationFrame(tick);
         }
 
-        // 绘制落叶：旋转的椭圆叶片
-        function drawLeaf(ctx, p) {
+        // 绘制麦絮：带旋转的轻盈絮毛
+        function drawWheat(ctx, p) {
             ctx.save();
             ctx.translate(p.x, p.y);
             ctx.rotate(p.rot);
             ctx.globalAlpha = p.opacity;
             ctx.fillStyle = p.color;
             ctx.beginPath();
-            ctx.ellipse(0, 0, p.r * 1.4, p.r * 0.6, 0, 0, Math.PI * 2);
+            ctx.ellipse(0, 0, p.r * 1.6, p.r * 0.4, 0, 0, Math.PI * 2);
             ctx.fill();
             ctx.restore();
         }
@@ -2293,6 +2350,22 @@
             ctx.beginPath();
             ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
             ctx.fill();
+            ctx.restore();
+        }
+
+        // 绘制星星：带十字光芒闪烁
+        function drawStar(ctx, p) {
+            ctx.save();
+            ctx.globalAlpha = p.opacity;
+            ctx.fillStyle = p.color;
+            ctx.beginPath();
+            ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
+            ctx.fill();
+            if (p.r > 1.2) {
+                ctx.globalAlpha = p.opacity * 0.5;
+                ctx.fillRect(p.x - p.r * 3, p.y - 0.4, p.r * 6, 0.8);
+                ctx.fillRect(p.x - 0.4, p.y - p.r * 3, 0.8, p.r * 6);
+            }
             ctx.restore();
         }
 

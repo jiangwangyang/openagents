@@ -127,7 +127,10 @@ async def work(conversation_id: int, task_content: str | None) -> None:
                         publish(conversation_id, "delta", event.delta.partial_json)
                 elif event.type == "content_block_stop":
                     if msg.content[-1].type == "tool_use":
-                        msg.content[-1].input = json.loads(input_json)
+                        try:
+                            msg.content[-1].input = json.loads(input_json)
+                        except Exception as e:
+                            msg.content[-1].input = {"error": str(e)}
                         input_json = ""
                 elif event.type == "message_delta":
                     msg.container = event.delta.container

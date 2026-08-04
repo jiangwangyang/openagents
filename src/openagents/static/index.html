@@ -91,6 +91,82 @@
             --noise-filter: invert(1);
         }
 
+        /* DAWN — 黎明 / 夜之镜像 理念：与 NIGHT 相对的明亮清晨，深墨蓝换作浅紫灰，保留同样的星光与城市剪影，营造清新的凌晨氛围 */
+        :root[data-theme="dawn"] {
+            --charcoal-900: #2c3959;
+            --charcoal-800: #55678f;
+            --charcoal-700: #7a8fb5;
+            --slate-400: #9aa8c8;
+            --slate-300: #c0cbe2;
+            --bg-canvas: #eef1f8;
+            --bg-surface: #f4f6fc;
+            --bg-panel: #ffffff;
+            --border-hard: #d3dced;
+            --border-soft: #e4eaf5;
+
+            --accent-color: #6b7aa8;
+
+            --backdrop-image: radial-gradient(ellipse at 80% 12%, rgba(255, 214, 165, 0.5) 0%, rgba(255, 214, 165, 0) 45%),
+            url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='600' height='120' viewBox='0 0 600 120'%3E%3Cpath d='M0 120 L0 88 L55 70 L90 82 L150 60 L200 74 L270 52 L330 68 L400 48 L460 62 L540 44 L600 56 L600 120 Z' fill='%23c9d3ea'/%3E%3Cpath d='M40 120 L52 96 L64 120 Z' fill='%23ffffff'/%3E%3Cpath d='M120 120 L132 90 L144 120 Z' fill='%23ffffff'/%3E%3Cpath d='M220 120 L232 98 L244 120 Z' fill='%23ffffff'/%3E%3Cpath d='M330 120 L342 92 L354 120 Z' fill='%23ffffff'/%3E%3Cpath d='M440 120 L452 100 L464 120 Z' fill='%23ffffff'/%3E%3Cpath d='M540 120 L552 96 L564 120 Z' fill='%23ffffff'/%3E%3C/svg%3E"),
+            linear-gradient(180deg, #fdf4e9 0%, #f6e7f0 50%, #e5dcf2 100%);
+            --backdrop-size: auto, auto 30%, cover;
+            --backdrop-position: center, bottom center, center;
+            --backdrop-repeat: no-repeat, repeat-x, no-repeat;
+            --danger-color: #c0392b;
+            --danger-bg: #fdf0f0;
+
+            --shadow-rgb: 44, 57, 89;
+            --shadow-hard: 4px 4px 0 rgba(var(--shadow-rgb), 0.06);
+            --shadow-hard-lg: 8px 8px 0 rgba(var(--shadow-rgb), 0.08);
+
+            --hover-bg: rgba(107, 122, 168, 0.05);
+            --subtle-bg: rgba(107, 122, 168, 0.015);
+            --summary-bg: #f6f8fd;
+            --inline-code-bg: rgba(107, 122, 168, 0.06);
+            --overlay-bg: rgba(238, 241, 248, 0.9);
+            --on-accent-muted: rgba(255, 255, 255, 0.45);
+            --noise-opacity: 0.025;
+            --noise-filter: none;
+        }
+
+        /* NIGHT — 星空 / 静谧深邃 理念：深墨蓝夜空 + 城市剪影，营造专注沉思的夜间氛围 */
+        :root[data-theme="night"] {
+            --charcoal-900: #e8ecf5;
+            --charcoal-800: #c2cbe0;
+            --charcoal-700: #94a1c4;
+            --slate-400: #6a76a0;
+            --slate-300: #4a547a;
+            --bg-canvas: #0a1024;
+            --bg-surface: #111a36;
+            --bg-panel: #182346;
+            --border-hard: #2b3a66;
+            --border-soft: #1f2c50;
+
+            --accent-color: #a8b8e8;
+
+            --backdrop-image: radial-gradient(ellipse at 80% 12%, rgba(140, 170, 255, 0.18) 0%, rgba(140, 170, 255, 0) 45%),
+            url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='600' height='120' viewBox='0 0 600 120'%3E%3Cpath d='M0 120 L0 88 L55 70 L90 82 L150 60 L200 74 L270 52 L330 68 L400 48 L460 62 L540 44 L600 56 L600 120 Z' fill='%230d1328'/%3E%3Cpath d='M40 120 L52 96 L64 120 Z' fill='%23233a6b'/%3E%3Cpath d='M120 120 L132 90 L144 120 Z' fill='%23233a6b'/%3E%3Cpath d='M220 120 L232 98 L244 120 Z' fill='%23233a6b'/%3E%3Cpath d='M330 120 L342 92 L354 120 Z' fill='%23233a6b'/%3E%3Cpath d='M440 120 L452 100 L464 120 Z' fill='%23233a6b'/%3E%3Cpath d='M540 120 L552 96 L564 120 Z' fill='%23233a6b'/%3E%3C/svg%3E"),
+            linear-gradient(180deg, #070b1c 0%, #0a1024 55%, #141d3a 100%);
+            --backdrop-size: auto, auto 30%, cover;
+            --backdrop-position: center, bottom center, center;
+            --backdrop-repeat: no-repeat, repeat-x, no-repeat;
+            --danger-color: #ff7a7a;
+            --danger-bg: #2b1d2b;
+
+            --shadow-rgb: 0, 0, 0;
+            --shadow-hard: 4px 4px 0 rgba(var(--shadow-rgb), 0.3);
+            --shadow-hard-lg: 8px 8px 0 rgba(var(--shadow-rgb), 0.35);
+
+            --hover-bg: rgba(168, 184, 232, 0.06);
+            --subtle-bg: rgba(168, 184, 232, 0.02);
+            --summary-bg: #1b2647;
+            --inline-code-bg: rgba(168, 184, 232, 0.08);
+            --overlay-bg: rgba(10, 16, 36, 0.9);
+            --on-accent-muted: rgba(0, 0, 0, 0.4);
+            --noise-opacity: 0.06;
+            --noise-filter: invert(1);
+        }
+
         /* PAPER — 高对比白纸 / 编辑模式 理念：极端极简，纯黑白灰，去除一切装饰色，专注内容本身 */
         :root[data-theme="paper"] {
             --charcoal-900: #000000;
@@ -379,47 +455,11 @@
             --noise-filter: invert(1);
         }
 
-        /* NIGHT — 星空 / 静谧深邃 理念：深墨蓝夜空 + 城市剪影，营造专注沉思的夜间氛围 */
-        :root[data-theme="night"] {
-            --charcoal-900: #e8ecf5;
-            --charcoal-800: #c2cbe0;
-            --charcoal-700: #94a1c4;
-            --slate-400: #6a76a0;
-            --slate-300: #4a547a;
-            --bg-canvas: #0a1024;
-            --bg-surface: #111a36;
-            --bg-panel: #182346;
-            --border-hard: #2b3a66;
-            --border-soft: #1f2c50;
-
-            --accent-color: #a8b8e8;
-
-            --backdrop-image: radial-gradient(ellipse at 80% 12%, rgba(140, 170, 255, 0.18) 0%, rgba(140, 170, 255, 0) 45%),
-            url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='600' height='120' viewBox='0 0 600 120'%3E%3Cpath d='M0 120 L0 88 L55 70 L90 82 L150 60 L200 74 L270 52 L330 68 L400 48 L460 62 L540 44 L600 56 L600 120 Z' fill='%230d1328'/%3E%3Cpath d='M40 120 L52 96 L64 120 Z' fill='%23233a6b'/%3E%3Cpath d='M120 120 L132 90 L144 120 Z' fill='%23233a6b'/%3E%3Cpath d='M220 120 L232 98 L244 120 Z' fill='%23233a6b'/%3E%3Cpath d='M330 120 L342 92 L354 120 Z' fill='%23233a6b'/%3E%3Cpath d='M440 120 L452 100 L464 120 Z' fill='%23233a6b'/%3E%3Cpath d='M540 120 L552 96 L564 120 Z' fill='%23233a6b'/%3E%3C/svg%3E"),
-            linear-gradient(180deg, #070b1c 0%, #0a1024 55%, #141d3a 100%);
-            --backdrop-size: auto, auto 30%, cover;
-            --backdrop-position: center, bottom center, center;
-            --backdrop-repeat: no-repeat, repeat-x, no-repeat;
-            --danger-color: #ff7a7a;
-            --danger-bg: #2b1d2b;
-
-            --shadow-rgb: 0, 0, 0;
-            --shadow-hard: 4px 4px 0 rgba(var(--shadow-rgb), 0.3);
-            --shadow-hard-lg: 8px 8px 0 rgba(var(--shadow-rgb), 0.35);
-
-            --hover-bg: rgba(168, 184, 232, 0.06);
-            --subtle-bg: rgba(168, 184, 232, 0.02);
-            --summary-bg: #1b2647;
-            --inline-code-bg: rgba(168, 184, 232, 0.08);
-            --overlay-bg: rgba(10, 16, 36, 0.9);
-            --on-accent-muted: rgba(0, 0, 0, 0.4);
-            --noise-opacity: 0.06;
-            --noise-filter: invert(1);
-        }
-
         /* 主题切换时的全局过渡 */
         :root[data-theme="light"] *,
         :root[data-theme="dark"] *,
+        :root[data-theme="dawn"] *,
+        :root[data-theme="night"] *,
         :root[data-theme="paper"] *,
         :root[data-theme="paper-dark"] *,
         :root[data-theme="forest"] *,
@@ -427,8 +467,7 @@
         :root[data-theme="ocean"] *,
         :root[data-theme="ocean-dark"] *,
         :root[data-theme="sunset"] *,
-        :root[data-theme="sunset-dark"] *,
-        :root[data-theme="night"] * {
+        :root[data-theme="sunset-dark"] * {
             transition: background-color 0.3s ease, color 0.3s ease, border-color 0.3s ease, box-shadow 0.3s ease;
         }
 
@@ -1821,6 +1860,8 @@
                 <select id="themeSelect" class="form-control theme-select" title="Switch Theme" onchange="setTheme(this.value)">
                     <option value="light">LIGHT ◇</option>
                     <option value="dark">DARK ◆</option>
+                    <option value="dawn">DAWN ◇</option>
+                    <option value="night">NIGHT ◆</option>
                     <option value="paper">PAPER ◇</option>
                     <option value="paper-dark">PAPER ◆</option>
                     <option value="forest">FOREST ◇</option>
@@ -1829,7 +1870,6 @@
                     <option value="ocean-dark">OCEAN ◆</option>
                     <option value="sunset">SUNSET ◇</option>
                     <option value="sunset-dark">SUNSET ◆</option>
-                    <option value="night">NIGHT ◆</option>
                 </select>
             </div>
             <span class="header-conversation-info" id="conversationInfo">NEW TRACE</span>
@@ -2158,6 +2198,8 @@
         const THEME_EFFECTS = {
             'light': null,
             'dark': null,
+            'dawn': {kind: 'stars-dawn', count: 22},
+            'night': {kind: 'stars-night', count: 22},
             'paper': null,
             'paper-dark': null,
             'forest': {kind: 'wheats', count: 16},
@@ -2165,8 +2207,7 @@
             'ocean': {kind: 'bubbles', count: 16},
             'ocean-dark': {kind: 'bubbles', count: 16},
             'sunset': {kind: 'dust', count: 16},
-            'sunset-dark': {kind: 'dust', count: 16},
-            'night': {kind: 'stars', count: 22}
+            'sunset-dark': {kind: 'dust', count: 16}
         };
 
         // 运行时状态（纯数据对象）
@@ -2227,7 +2268,23 @@
         function makeParticle(kind, w, h, seed, theme) {
             const rand = (min, max) => min + Math.random() * (max - min);
             const p = {x: rand(0, w), y: rand(0, h), r: rand(1, 6), vx: 0, vy: 0, sway: 0, swaySpeed: rand(0.4, 1.6), phase: rand(0, Math.PI * 2), rot: rand(0, Math.PI * 2), rotSpeed: 0, color: '#ffffff', opacity: 0.4};
-            if (kind === 'wheats') {
+            if (kind === 'stars-night') {
+                // 星空·夜：深墨蓝夜空下的浅色明星，静止闪烁
+                p.r = rand(0.6, 2.2);
+                p.twinkleSpeed = rand(1.5, 4);
+                p.baseOpacity = rand(0.3, 0.9);
+                p.color = ['#ffffff', '#ffe9b0', '#b8d0ff', '#e0f2ff'][seed % 4];
+                p.opacity = p.baseOpacity;
+                p.y = rand(0, h * 0.7);
+            } else if (kind === 'stars-dawn') {
+                // 星空·黎明：明亮浅紫灰背景下的深色晨星，避免融入画布，以暖橙点缀呼应黎明氛围
+                p.r = rand(0.8, 2.4);
+                p.twinkleSpeed = rand(1.5, 4);
+                p.baseOpacity = rand(0.55, 0.95);
+                p.color = ['#4a5a8c', '#6b4b8a', '#c96f4a', '#3d4f7d', '#b85c7a'][seed % 5];
+                p.opacity = p.baseOpacity;
+                p.y = rand(0, h * 0.7);
+            } else if (kind === 'wheats') {
                 // 麦浪飘絮：轻盈的麦穗絮毛
                 p.r = rand(1.5, 3);
                 p.vy = rand(12, 30);
@@ -2256,14 +2313,6 @@
                 p.swaySpeed = rand(0.3, 0.9);
                 p.color = '#f5c87a';
                 p.opacity = rand(0.25, 0.6);
-            } else if (kind === 'stars') {
-                // 星空：静止闪烁的星星
-                p.r = rand(0.6, 2.2);
-                p.twinkleSpeed = rand(1.5, 4);
-                p.baseOpacity = rand(0.3, 0.9);
-                p.color = ['#ffffff', '#ffe9b0', '#b8d0ff', '#e0f2ff'][seed % 4];
-                p.opacity = p.baseOpacity;
-                p.y = rand(0, h * 0.7);
             }
             return p;
         }
@@ -2283,7 +2332,12 @@
                 const p = fx.parts[i];
                 p.phase += p.swaySpeed * dt;
                 const swayX = Math.sin(p.phase) * p.sway;
-                if (fx.kind === 'wheats') {
+                if (fx.kind === 'stars-night' || fx.kind === 'stars-dawn') {
+                    // 静止闪烁：仅随时间变化透明度
+                    p.opacity = p.baseOpacity * (0.5 + 0.5 * Math.sin(p.phase * p.twinkleSpeed));
+                    p.phase += dt;
+                    drawStar(ctx, p);
+                } else if (fx.kind === 'wheats') {
                     p.x += swayX * dt * 2;
                     p.y += p.vy * dt;
                     p.rot += p.rotSpeed * dt;
@@ -2307,11 +2361,6 @@
                     if (p.x > w + 10) p.x = -10;
                     if (p.y < -10) p.y = h + 10;
                     drawDot(ctx, p);
-                } else if (fx.kind === 'stars') {
-                    // 静止闪烁：仅随时间变化透明度
-                    p.opacity = p.baseOpacity * (0.5 + 0.5 * Math.sin(p.phase * p.twinkleSpeed));
-                    p.phase += dt;
-                    drawStar(ctx, p);
                 }
             }
             fx.raf = requestAnimationFrame(tick);

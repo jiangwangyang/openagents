@@ -41,6 +41,7 @@ class Setting(BaseModel):
 
     model_provider: str | None = None
     model: str | None = None
+    thinking: bool = True
     model_providers: dict[str, ModelProvider] = Field(default_factory=dict)
     mcp_servers: dict[str, McpServer] = Field(default_factory=dict)
 

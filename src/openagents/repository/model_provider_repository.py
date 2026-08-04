@@ -34,6 +34,19 @@ async def set_current_model(model: str) -> bool:
     return True
 
 
+# 获取 thinking 开关状态
+async def get_thinking() -> bool:
+    setting = await load_setting()
+    return setting.thinking
+
+
+# 修改 thinking 开关状态
+async def set_thinking(thinking: bool) -> None:
+    setting = await load_setting()
+    setting.thinking = thinking
+    await save_setting(setting)
+
+
 # 查询全部模型提供商，按名称升序
 async def list_model_providers() -> list[ModelProvider]:
     setting = await load_setting()

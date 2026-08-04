@@ -2017,6 +2017,13 @@
                             <label>Active Engine Model</label>
                             <select id="configActiveModel" class="form-control"></select>
                         </div>
+                        <div class="form-group" style="flex: 0 0 180px;">
+                            <label>Thinking Mode</label>
+                            <select id="configThinking" class="form-control">
+                                <option value="true">ON</option>
+                                <option value="false">OFF</option>
+                            </select>
+                        </div>
                     </div>
                 </div>
 
@@ -3724,6 +3731,17 @@
                 } catch (e) {
                 }
 
+                let thinkingValue = true;
+                try {
+                    const tResponse = await fetch('/thinking');
+                    if (tResponse.ok) {
+                        const t = await tResponse.json();
+                        thinkingValue = t.thinking;
+                    }
+                } catch (e) {
+                }
+                document.getElementById('configThinking').value = String(thinkingValue);
+
                 const activeProviderSelect = document.getElementById('configActiveProvider');
                 activeProviderSelect.innerHTML = '';
 
@@ -3923,6 +3941,15 @@
                     method: 'PUT',
                     headers: {'Content-Type': 'application/json'},
                     body: JSON.stringify({model: modelSelect.value})
+                });
+                if (!response.ok) {
+                    alert("MODEL ROUTING FAILED");
+                    return;
+                }
+                response = await fetch('/thinking', {
+                    method: 'PUT',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({thinking: document.getElementById('configThinking').value === 'true'})
                 });
                 if (response.ok) {
                     alert("GLOBAL CONTEXT ACTIVE ROUTE MOUNTED.");

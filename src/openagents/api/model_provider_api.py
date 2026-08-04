@@ -38,6 +38,18 @@ async def set_current_model(model: str = Body(..., embed=True)) -> None:
         raise HTTPException(status_code=400, detail="Model not found in current provider")
 
 
+# 获取 thinking 开关状态
+@router.get("/thinking")
+async def get_thinking() -> dict:
+    return {"thinking": await model_provider_repository.get_thinking()}
+
+
+# 修改 thinking 开关状态
+@router.put("/thinking")
+async def set_thinking(thinking: bool = Body(..., embed=True)) -> None:
+    await model_provider_repository.set_thinking(thinking)
+
+
 # 查询全部模型提供商，按名称升序
 @router.get("/model-provider/list")
 async def list_model_providers() -> list[ModelProvider]:

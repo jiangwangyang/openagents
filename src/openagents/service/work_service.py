@@ -91,6 +91,7 @@ async def work(conversation_id: int, task_content: str | None) -> None:
         base_url = model_provider.base_url if model_provider else ""
         api_key = model_provider.api_key if model_provider else ""
         model = await model_provider_repository.get_current_model() or ""
+        thinking = {"type": "enabled", "display": "summarized"} if await model_provider_repository.get_thinking() else {"type": "disabled"}
         work_dir = str(conversation.work_dir)
         system_prompt = str(conversation.system_prompt)
         tools = tool_service.list_tools()
@@ -99,7 +100,7 @@ async def work(conversation_id: int, task_content: str | None) -> None:
         anthropic_client: AsyncAnthropic = AsyncAnthropic(base_url=base_url, api_key=api_key)
         while True:
             # 1. 发送 anthropic 请求
-            response: AsyncStream[RawMessageStreamEvent] = await anthropic_client.messages.create(messages=messages, tools=tools, system=system_prompt, model=model, max_tokens=16000, stream=True)
+            response: AsyncStream[RawMessageStreamEvent] = await anthropic_client.messages.create(messages=messages, tools=tools, system=system_prompt, model=model, thinking=thinking, max_tokens=16000, stream=True)
             input_json = ""
             async for event in response:
                 if event.type == "message_start":

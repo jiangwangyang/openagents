@@ -91,6 +91,71 @@
             --noise-filter: invert(1);
         }
 
+        /* PAPER — 高对比白纸 / 编辑模式 理念：极端极简，纯黑白灰，去除一切装饰色，专注内容本身 */
+        :root[data-theme="paper"] {
+            --charcoal-900: #000000;
+            --charcoal-800: #1a1a1a;
+            --charcoal-700: #333333;
+            --slate-400: #666666;
+            --slate-300: #999999;
+            --bg-canvas: #ffffff;
+            --bg-surface: #fafafa;
+            --bg-panel: #ffffff;
+            --border-hard: #000000;
+            --border-soft: #e0e0e0;
+
+            --accent-color: #000000;
+            --danger-color: #cc0000;
+            --danger-bg: #fff0f0;
+
+            --shadow-rgb: 0, 0, 0;
+            --shadow-hard: 4px 4px 0 rgba(var(--shadow-rgb), 0.1);
+            --shadow-hard-lg: 8px 8px 0 rgba(var(--shadow-rgb), 0.12);
+
+            --hover-bg: rgba(0, 0, 0, 0.04);
+            --subtle-bg: rgba(0, 0, 0, 0.02);
+            --summary-bg: #f5f5f5;
+            --inline-code-bg: rgba(0, 0, 0, 0.06);
+            --overlay-bg: rgba(255, 255, 255, 0.95);
+            --on-accent-muted: rgba(255, 255, 255, 0.5);
+            --noise-opacity: 0.015;
+            --noise-filter: none;
+
+            --radius-sm: 0px;
+            --radius-md: 0px;
+            --radius-lg: 0px;
+        }
+
+        :root[data-theme="paper-dark"] {
+            --charcoal-900: #ffffff;
+            --charcoal-800: #e0e0e0;
+            --charcoal-700: #b0b0b0;
+            --slate-400: #707070;
+            --slate-300: #505050;
+            --bg-canvas: #0a0a0a;
+            --bg-surface: #111111;
+            --bg-panel: #161616;
+            --border-hard: #ffffff;
+            --border-soft: #444444;
+
+            --accent-color: #ffffff;
+            --danger-color: #ff4444;
+            --danger-bg: #1a0a0a;
+
+            --shadow-rgb: 255, 255, 255;
+            --shadow-hard: 4px 4px 0 rgba(var(--shadow-rgb), 0.08);
+            --shadow-hard-lg: 8px 8px 0 rgba(var(--shadow-rgb), 0.1);
+
+            --hover-bg: rgba(255, 255, 255, 0.06);
+            --subtle-bg: rgba(255, 255, 255, 0.02);
+            --summary-bg: #1a1a1a;
+            --inline-code-bg: rgba(255, 255, 255, 0.08);
+            --overlay-bg: rgba(10, 10, 10, 0.95);
+            --on-accent-muted: rgba(0, 0, 0, 0.5);
+            --noise-opacity: 0.03;
+            --noise-filter: invert(1);
+        }
+
         /* FOREST — 苔藓森林 / 自然有机 理念：以深松绿与暖米白为基调，营造沉稳专注的编辑氛围 */
         :root[data-theme="forest"] {
             --charcoal-900: #1a3c1a;
@@ -314,82 +379,17 @@
             --noise-filter: invert(1);
         }
 
-        /* PAPER — 高对比白纸 / 编辑模式 理念：极端极简，纯黑白灰，去除一切装饰色，专注内容本身 */
-        :root[data-theme="paper"] {
-            --charcoal-900: #000000;
-            --charcoal-800: #1a1a1a;
-            --charcoal-700: #333333;
-            --slate-400: #666666;
-            --slate-300: #999999;
-            --bg-canvas: #ffffff;
-            --bg-surface: #fafafa;
-            --bg-panel: #ffffff;
-            --border-hard: #000000;
-            --border-soft: #e0e0e0;
-
-            --accent-color: #000000;
-            --danger-color: #cc0000;
-            --danger-bg: #fff0f0;
-
-            --shadow-rgb: 0, 0, 0;
-            --shadow-hard: 4px 4px 0 rgba(var(--shadow-rgb), 0.1);
-            --shadow-hard-lg: 8px 8px 0 rgba(var(--shadow-rgb), 0.12);
-
-            --hover-bg: rgba(0, 0, 0, 0.04);
-            --subtle-bg: rgba(0, 0, 0, 0.02);
-            --summary-bg: #f5f5f5;
-            --inline-code-bg: rgba(0, 0, 0, 0.06);
-            --overlay-bg: rgba(255, 255, 255, 0.95);
-            --on-accent-muted: rgba(255, 255, 255, 0.5);
-            --noise-opacity: 0.015;
-            --noise-filter: none;
-
-            --radius-sm: 0px;
-            --radius-md: 0px;
-            --radius-lg: 0px;
-        }
-
-        :root[data-theme="paper-dark"] {
-            --charcoal-900: #ffffff;
-            --charcoal-800: #e0e0e0;
-            --charcoal-700: #b0b0b0;
-            --slate-400: #707070;
-            --slate-300: #505050;
-            --bg-canvas: #0a0a0a;
-            --bg-surface: #111111;
-            --bg-panel: #161616;
-            --border-hard: #ffffff;
-            --border-soft: #444444;
-
-            --accent-color: #ffffff;
-            --danger-color: #ff4444;
-            --danger-bg: #1a0a0a;
-
-            --shadow-rgb: 255, 255, 255;
-            --shadow-hard: 4px 4px 0 rgba(var(--shadow-rgb), 0.08);
-            --shadow-hard-lg: 8px 8px 0 rgba(var(--shadow-rgb), 0.1);
-
-            --hover-bg: rgba(255, 255, 255, 0.06);
-            --subtle-bg: rgba(255, 255, 255, 0.02);
-            --summary-bg: #1a1a1a;
-            --inline-code-bg: rgba(255, 255, 255, 0.08);
-            --overlay-bg: rgba(10, 10, 10, 0.95);
-            --on-accent-muted: rgba(0, 0, 0, 0.5);
-            --noise-opacity: 0.03;
-            --noise-filter: invert(1);
-        }
-
         /* 主题切换时的全局过渡 */
         :root[data-theme="light"] *,
         :root[data-theme="dark"] *,
+        :root[data-theme="paper"] *,
+        :root[data-theme="paper-dark"] *,
         :root[data-theme="forest"] *,
         :root[data-theme="forest-dark"] *,
         :root[data-theme="ocean"] *,
         :root[data-theme="ocean-dark"] *,
         :root[data-theme="sunset"] *,
-        :root[data-theme="sunset-dark"] *,
-        :root[data-theme="paper"] *,
-        :root[data-theme="paper-dark"] * {
+        :root[data-theme="sunset-dark"] * {
             transition: background-color 0.3s ease, color 0.3s ease, border-color 0.3s ease, box-shadow 0.3s ease;
         }
 
@@ -1782,14 +1782,14 @@
                 <select id="themeSelect" class="form-control theme-select" title="Switch Theme" onchange="setTheme(this.value)">
                     <option value="light">LIGHT ◇</option>
                     <option value="dark">DARK ◆</option>
+                    <option value="paper">PAPER ◇</option>
+                    <option value="paper-dark">PAPER ◆</option>
                     <option value="forest">FOREST ◇</option>
                     <option value="forest-dark">FOREST ◆</option>
                     <option value="ocean">OCEAN ◇</option>
                     <option value="ocean-dark">OCEAN ◆</option>
                     <option value="sunset">SUNSET ◇</option>
                     <option value="sunset-dark">SUNSET ◆</option>
-                    <option value="paper">PAPER ◇</option>
-                    <option value="paper-dark">PAPER ◆</option>
                 </select>
             </div>
             <span class="header-conversation-info" id="conversationInfo">NEW TRACE</span>
@@ -2116,16 +2116,16 @@
         // ==========================================
         // 主题特效配置表：key 为 data-theme 值，null 表示该主题无动态特效
         const THEME_EFFECTS = {
-            light: null,
-            dark: null,
-            forest: {kind: 'leaves', count: 16},
+            'light': null,
+            'dark': null,
+            'paper': null,
+            'paper-dark': null,
+            'forest': {kind: 'leaves', count: 16},
             'forest-dark': {kind: 'leaves', count: 16},
-            ocean: {kind: 'bubbles', count: 16},
+            'ocean': {kind: 'bubbles', count: 16},
             'ocean-dark': {kind: 'bubbles', count: 16},
-            sunset: {kind: 'dust', count: 16},
-            'sunset-dark': {kind: 'dust', count: 16},
-            paper: null,
-            'paper-dark': null
+            'sunset': {kind: 'dust', count: 16},
+            'sunset-dark': {kind: 'dust', count: 16}
         };
 
         // 运行时状态（纯数据对象）

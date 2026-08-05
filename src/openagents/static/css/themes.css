@@ -158,7 +158,8 @@
     --radius-md: 16px;
     --radius-lg: 24px;
 
-    --font-display: 'Avenir Next', 'Century Gothic', 'Futura', -apple-system, 'PingFang SC', sans-serif;
+    --font-display: 'Quicksand', 'Segoe UI', 'PingFang SC', 'Microsoft YaHei', sans-serif;
+    --font-body: 'Quicksand', 'Segoe UI', 'PingFang SC', 'Microsoft YaHei', sans-serif;
 
     --backdrop-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='720' height='140' viewBox='0 0 720 140'%3E%3Cpath d='M0 140 L0 84 C120 64 220 96 330 80 C440 64 540 92 720 70 L720 140 Z' fill='%236f3644' opacity='0.72'/%3E%3C/svg%3E"),
     url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='720' height='180' viewBox='0 0 720 180'%3E%3Cpath d='M0 180 L0 96 C90 78 180 108 270 92 C360 76 450 104 540 88 C630 74 680 92 720 84 L720 180 Z' fill='%23b87f9b' opacity='0.5'/%3E%3C/svg%3E"),
@@ -303,6 +304,9 @@
     --radius-md: 14px;
     --radius-lg: 20px;
 
+    --font-display: 'Outfit', 'Segoe UI', 'PingFang SC', 'Microsoft YaHei', sans-serif;
+    --font-body: 'Outfit', 'Segoe UI', 'PingFang SC', 'Microsoft YaHei', sans-serif;
+
     --backdrop-image: radial-gradient(ellipse at 20% 0%, rgba(95, 240, 192, 0.1) 0%, rgba(95, 240, 192, 0) 45%),
     radial-gradient(ellipse at 85% 15%, rgba(123, 108, 240, 0.12) 0%, rgba(123, 108, 240, 0) 50%),
     linear-gradient(180deg, #04060f 0%, #0a1028 55%, #101a3c 100%);
@@ -341,7 +345,8 @@
     --noise-opacity: 0.05;
     --noise-filter: none;
 
-    --font-display: Georgia, 'Times New Roman', 'Noto Serif SC', 'Songti SC', serif;
+    --font-display: 'JetBrains Mono', 'SF Mono', 'Fira Code', 'Courier New', monospace;
+    --font-body: 'JetBrains Mono', 'SF Mono', 'Fira Code', 'Courier New', monospace;
 
     --backdrop-image: radial-gradient(circle at 50% 68%, rgba(255, 220, 120, 0.35) 0%, rgba(255, 113, 206, 0.18) 22%, rgba(255, 113, 206, 0) 42%),
     linear-gradient(180deg, #12082a 0%, #2a1250 45%, #5b2a86 75%, #b84aa0 100%);
@@ -379,6 +384,9 @@
     --on-accent-muted: rgba(4, 4, 12, 0.5);
     --noise-opacity: 0.05;
     --noise-filter: none;
+
+    --font-display: 'JetBrains Mono', 'SF Mono', 'Fira Code', 'Courier New', monospace;
+    --font-body: 'JetBrains Mono', 'SF Mono', 'Fira Code', 'Courier New', monospace;
 
     --backdrop-image: radial-gradient(ellipse at 50% 115%, rgba(255, 42, 109, 0.22) 0%, rgba(255, 42, 109, 0) 55%),
     radial-gradient(ellipse at 50% -10%, rgba(0, 240, 255, 0.1) 0%, rgba(0, 240, 255, 0) 50%),

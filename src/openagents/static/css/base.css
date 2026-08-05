@@ -224,6 +224,9 @@
     display: flex;
     align-items: center;
     justify-content: space-between;
+    /* 提升 header 整体层级：防止其内部弹出层（如主题下拉）被后续视图中 position:relative 的卡片遮挡 */
+    position: relative;
+    z-index: 20;
 }
 
 .header-left {

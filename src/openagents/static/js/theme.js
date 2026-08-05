@@ -5,7 +5,7 @@
 const THEME_EFFECTS = {
     'light': null,
     'dark': null,
-    'draft': null,
+    'draft': {kind: 'draft', count: 16},
     'botanica': {kind: 'botanica', count: 26},
     'sunset': {kind: 'sunset', count: 22},
     'ink': {kind: 'ink', count: 14},
@@ -196,6 +196,29 @@ function makeParticle(kind, w, h, seed, theme) {
             p.opacity = rand(0.25, 0.5);
             p.y = rand(-40, h);
         }
+    } else if (kind === 'draft') {
+        // 蓝图：十字测绘光标 + 旋转虚线圆规圆 + 飘移尺寸标注碎片，制图蓝为主，偶现铅笔橙
+        p.vx = rand(-9, 9);
+        p.vy = rand(-7, 7);
+        p.color = '#1a56c4';
+        if (seed % 4 === 0) {
+            p.shape = 'compass';
+            p.r = rand(26, 62);
+            p.rotSpeed = rand(-0.3, 0.3);
+            p.baseOpacity = rand(0.09, 0.17);
+        } else if (seed % 4 === 3) {
+            p.shape = 'dim';
+            p.text = ['\u230018', 'R47', '45\u00b0', '\u2300128', '1:1', 'A-01'][seed % 6];
+            p.r = rand(10, 14);
+            p.rot = rand(-0.14, 0.14);
+            p.color = seed % 8 === 3 ? '#e8710a' : '#1a56c4';
+            p.baseOpacity = rand(0.1, 0.2);
+        } else {
+            p.shape = 'cross';
+            p.r = rand(5, 11);
+            p.baseOpacity = rand(0.14, 0.3);
+        }
+        p.opacity = p.baseOpacity;
     }
     return p;
 }
@@ -332,6 +355,19 @@ function tick(now) {
                 }
                 drawLeaf(ctx, p);
             }
+        } else if (fx.kind === 'draft') {
+            // 蓝图制图标记：缓慢漂移巡游 + 透明度呼吸，出界后从另一侧环绕入场
+            p.x += p.vx * dt;
+            p.y += p.vy * dt;
+            p.opacity = p.baseOpacity * (0.55 + 0.45 * Math.sin(p.phase * 1.3));
+            if (p.shape === 'compass') {
+                p.rot += p.rotSpeed * dt;
+            }
+            if (p.x < -80) p.x = w + 80;
+            if (p.x > w + 80) p.x = -80;
+            if (p.y < -80) p.y = h + 80;
+            if (p.y > h + 80) p.y = -80;
+            drawDraftMark(ctx, p);
         }
     }
     fx.raf = requestAnimationFrame(tick);
@@ -345,6 +381,50 @@ function drawDot(ctx, p) {
     ctx.beginPath();
     ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
     ctx.fill();
+    ctx.restore();
+}
+
+// 绘制蓝图制图标记：十字测绘准线 / 旋转虚线圆规圆 / 尺寸标注文字
+function drawDraftMark(ctx, p) {
+    ctx.save();
+    ctx.translate(p.x, p.y);
+    ctx.globalAlpha = Math.max(p.opacity, 0);
+    ctx.strokeStyle = p.color;
+    ctx.fillStyle = p.color;
+    ctx.lineWidth = 1.2;
+    if (p.shape === 'compass') {
+        // 圆规圆：虚线圆绕心旋转，中心带小十字定位标记
+        ctx.rotate(p.rot);
+        ctx.setLineDash([7, 6]);
+        ctx.beginPath();
+        ctx.arc(0, 0, p.r, 0, Math.PI * 2);
+        ctx.stroke();
+        ctx.setLineDash([]);
+        ctx.beginPath();
+        ctx.moveTo(-p.r * 0.16, 0);
+        ctx.lineTo(p.r * 0.16, 0);
+        ctx.moveTo(0, -p.r * 0.16);
+        ctx.lineTo(0, p.r * 0.16);
+        ctx.stroke();
+    } else if (p.shape === 'dim') {
+        // 尺寸标注碎片：等宽字体微倾斜飘移
+        ctx.rotate(p.rot);
+        ctx.font = p.r + 'px "JetBrains Mono", monospace';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText(p.text, 0, 0);
+    } else {
+        // 十字测绘准线：十字线 + 内圈同心圆
+        ctx.beginPath();
+        ctx.moveTo(-p.r, 0);
+        ctx.lineTo(p.r, 0);
+        ctx.moveTo(0, -p.r);
+        ctx.lineTo(0, p.r);
+        ctx.stroke();
+        ctx.beginPath();
+        ctx.arc(0, 0, p.r * 0.45, 0, Math.PI * 2);
+        ctx.stroke();
+    }
     ctx.restore();
 }
 

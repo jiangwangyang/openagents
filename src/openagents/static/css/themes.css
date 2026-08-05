@@ -72,34 +72,35 @@
     --noise-filter: invert(1);
 }
 
-/* DRAFT — 工程蓝图手稿 理念：冰白绘图纸 + 双线方格网 + 制图蓝墨线，全等宽字体与直角虚线批注，绘图板上的工程美学 */
+/* DRAFT — 白图 · 制图室 理念：绘图纸白底 + 制图蓝墨线 + 铅笔橙批注，完整标题栏与法兰剖视图，一张正在测绘中的工程图纸 */
 :root[data-theme="draft"] {
-    --charcoal-900: #102a5c;
-    --charcoal-800: #1e3f7d;
-    --charcoal-700: #3d5a99;
-    --slate-400: #6b82b8;
-    --slate-300: #9db1d6;
-    --bg-canvas: #eaf1fb;
-    --bg-surface: #f2f7ff;
+    --charcoal-900: #12275c;
+    --charcoal-800: #1d3d7a;
+    --charcoal-700: #3f5c9e;
+    --slate-400: #6d84b8;
+    --slate-300: #9db1d9;
+    --bg-canvas: #eef4fd;
+    --bg-surface: #f5f9ff;
     --bg-panel: #ffffff;
-    --border-hard: #b4c8ec;
-    --border-soft: #d7e4f8;
+    --border-hard: #c2d2f0;
+    --border-soft: #dce7fa;
 
-    --accent-color: #1d4ed8;
-    --danger-color: #dc2626;
-    --danger-bg: #fef2f2;
+    --accent-color: #1a56c4;
+    --pencil-color: #e8710a;
+    --danger-color: #d63c2f;
+    --danger-bg: #fdf0ec;
 
-    --shadow-rgb: 29, 78, 216;
+    --shadow-rgb: 26, 86, 196;
     --shadow-hard: 4px 4px 0 rgba(var(--shadow-rgb), 0.1);
     --shadow-hard-lg: 8px 8px 0 rgba(var(--shadow-rgb), 0.12);
 
-    --hover-bg: rgba(29, 78, 216, 0.05);
-    --subtle-bg: rgba(29, 78, 216, 0.02);
+    --hover-bg: rgba(26, 86, 196, 0.05);
+    --subtle-bg: rgba(26, 86, 196, 0.02);
     --summary-bg: #eef4fd;
-    --inline-code-bg: rgba(29, 78, 216, 0.08);
-    --overlay-bg: rgba(234, 241, 251, 0.92);
+    --inline-code-bg: rgba(26, 86, 196, 0.08);
+    --overlay-bg: rgba(238, 244, 253, 0.92);
     --on-accent-muted: rgba(255, 255, 255, 0.5);
-    --noise-opacity: 0.012;
+    --noise-opacity: 0.02;
     --noise-filter: none;
 
     --radius-sm: 0px;
@@ -109,15 +110,17 @@
     --font-display: 'JetBrains Mono', 'SF Mono', 'Fira Code', 'Courier New', monospace;
     --font-body: 'JetBrains Mono', 'SF Mono', 'Fira Code', 'Courier New', monospace;
 
-    --backdrop-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='240' height='240' viewBox='0 0 240 240'%3E%3Cg fill='none' stroke='%231d4ed8' stroke-width='1' opacity='0.45'%3E%3Ccircle cx='120' cy='120' r='62'/%3E%3Ccircle cx='120' cy='120' r='44'/%3E%3Cpath d='M120 34v172M34 120h172'/%3E%3Cpath d='M120 34v-14M120 206v14M34 120h-14M206 120h14'/%3E%3C/g%3E%3Ctext x='128' y='52' font-family='monospace' font-size='10' fill='%231d4ed8' opacity='0.6'%3EA-01%3C/text%3E%3Ctext x='148' y='114' font-family='monospace' font-size='9' fill='%231d4ed8' opacity='0.5'%3ER62%3C/text%3E%3C/svg%3E"),
-    repeating-linear-gradient(0deg, rgba(29, 78, 216, 0.05) 0px, rgba(29, 78, 216, 0.05) 1px, transparent 1px, transparent 28px),
-    repeating-linear-gradient(90deg, rgba(29, 78, 216, 0.05) 0px, rgba(29, 78, 216, 0.05) 1px, transparent 1px, transparent 28px),
-    repeating-linear-gradient(0deg, rgba(29, 78, 216, 0.13) 0px, rgba(29, 78, 216, 0.13) 1px, transparent 1px, transparent 140px),
-    repeating-linear-gradient(90deg, rgba(29, 78, 216, 0.13) 0px, rgba(29, 78, 216, 0.13) 1px, transparent 1px, transparent 140px),
-    linear-gradient(180deg, #eef4fc 0%, #e8f0fa 60%, #e2ecf8 100%);
-    --backdrop-size: 240px 240px, auto, auto, auto, auto, cover;
-    --backdrop-position: right 48px top 48px, center, center, center, center, center;
-    --backdrop-repeat: no-repeat, repeat, repeat, repeat, repeat, no-repeat;
+    --backdrop-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='300' height='300' viewBox='0 0 300 300'%3E%3Cg fill='none' stroke='%231a56c4' opacity='0.55'%3E%3Ccircle cx='150' cy='150' r='64' stroke-width='1.6'/%3E%3Ccircle cx='150' cy='150' r='47' stroke-width='1'/%3E%3Ccircle cx='150' cy='150' r='27' stroke-width='1.6'/%3E%3Ccircle cx='150' cy='150' r='37' stroke-width='0.9' stroke-dasharray='6 5'/%3E%3Cpath d='M150 42V258M42 150H258' stroke-width='0.8' stroke-dasharray='16 5 3 5'/%3E%3Ccircle cx='183' cy='117' r='5.5' stroke-width='1'/%3E%3Ccircle cx='117' cy='117' r='5.5' stroke-width='1'/%3E%3Ccircle cx='117' cy='183' r='5.5' stroke-width='1'/%3E%3Ccircle cx='183' cy='183' r='5.5' stroke-width='1'/%3E%3Cpath d='M86 92V30M214 92V30' stroke-width='0.8' opacity='0.6'/%3E%3Cpath d='M86 36H214' stroke-width='1'/%3E%3Cpath d='M81 41L91 31M209 41L219 31' stroke-width='1.5'/%3E%3Cpath d='M150 150L183 117' stroke-width='0.9'/%3E%3C/g%3E%3Cg font-family='monospace' fill='%231a56c4' opacity='0.7'%3E%3Ctext x='150' y='26' font-size='13' text-anchor='middle'%3E%E2%8C%80128%3C/text%3E%3Ctext x='172' y='108' font-size='11'%3ER47%3C/text%3E%3C/g%3E%3Cg fill='%23e8710a' opacity='0.85' font-family='monospace'%3E%3Ctext x='222' y='238' font-size='14' transform='rotate(-8 222 238)'%3E%E2%9C%93 OK%3C/text%3E%3Ctext x='34' y='70' font-size='12' transform='rotate(-6 34 70)'%3EREV-B%3C/text%3E%3C/g%3E%3Ccircle cx='117' cy='117' r='12' fill='none' stroke='%23e8710a' stroke-width='1.2' stroke-dasharray='4 3' opacity='0.8'/%3E%3C/svg%3E"),
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='380' height='210' viewBox='0 0 380 210'%3E%3Cg fill='%23ffffff' fill-opacity='0.55' stroke='%231a56c4' opacity='0.7'%3E%3Crect x='2' y='2' width='376' height='206' stroke-width='1.6'/%3E%3Cpath d='M2 68H378M2 134H378M240 2V134M312 68V134' fill='none' stroke-width='1'/%3E%3C/g%3E%3Cg font-family='monospace' fill='%2312275c' opacity='0.85'%3E%3Ctext x='16' y='42' font-size='14' font-weight='bold'%3EPROJECT: OPENAGENTS%3C/text%3E%3Ctext x='252' y='36' font-size='9' fill='%233f5c9e'%3ESCALE%3C/text%3E%3Ctext x='252' y='54' font-size='14'%3E1:1%3C/text%3E%3Ctext x='16' y='104' font-size='12'%3EDRAWN: DRAFT STUDIO%3C/text%3E%3Ctext x='252' y='96' font-size='9' fill='%233f5c9e'%3ESHEET%3C/text%3E%3Ctext x='326' y='110' font-size='17' font-weight='bold'%3EA-01%3C/text%3E%3Ctext x='16' y='172' font-size='10' fill='%233f5c9e'%3ETOLERANCE %C2%B10.1 UNLESS NOTED%3C/text%3E%3C/g%3E%3Ctext x='250' y='174' font-family='monospace' font-size='13' font-weight='bold' fill='%23e8710a' opacity='0.9' transform='rotate(-2 250 174)'%3E%E2%9C%93 APPROVED%3C/text%3E%3C/svg%3E"),
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='100%25' height='100%25' viewBox='0 0 100 100' preserveAspectRatio='none'%3E%3Cg fill='none' stroke='%231a56c4'%3E%3Crect x='1.6' y='2' width='96.8' height='96' stroke-width='2' vector-effect='non-scaling-stroke' opacity='0.28'/%3E%3Crect x='2.8' y='3.4' width='94.4' height='93.2' stroke-width='1' vector-effect='non-scaling-stroke' opacity='0.2'/%3E%3Cpath d='M2.8 1V6.2M0.6 3.4H5.4M97.2 1V6.2M94.6 3.4H99.4M2.8 93.8V99M0.6 96.6H5.4M97.2 93.8V99M94.6 96.6H99.4' stroke-width='1' vector-effect='non-scaling-stroke' opacity='0.3'/%3E%3C/g%3E%3C/svg%3E"),
+    repeating-linear-gradient(0deg, rgba(26, 86, 196, 0.045) 0px, rgba(26, 86, 196, 0.045) 1px, transparent 1px, transparent 20px),
+    repeating-linear-gradient(90deg, rgba(26, 86, 196, 0.045) 0px, rgba(26, 86, 196, 0.045) 1px, transparent 1px, transparent 20px),
+    repeating-linear-gradient(0deg, rgba(26, 86, 196, 0.11) 0px, rgba(26, 86, 196, 0.11) 1px, transparent 1px, transparent 100px),
+    repeating-linear-gradient(90deg, rgba(26, 86, 196, 0.11) 0px, rgba(26, 86, 196, 0.11) 1px, transparent 1px, transparent 100px),
+    linear-gradient(180deg, #fcfdff 0%, #f3f8fe 55%, #eaf2fc 100%);
+    --backdrop-size: 300px 300px, 380px 210px, 100% 100%, auto, auto, auto, auto, cover;
+    --backdrop-position: right 48px top 48px, right 40px bottom 40px, center, center, center, center, center, center;
+    --backdrop-repeat: no-repeat, no-repeat, no-repeat, repeat, repeat, repeat, repeat, no-repeat;
 }
 
 /* BOTANICA — 晨雾植物图鉴 理念：暖象牙纸底 + 深松绿墨色 + 陶土橙点缀，两侧蕨叶剪影与顶部晨光，衬线斜体的植物学画册排版 */
@@ -661,18 +664,23 @@
     border-radius: 2px 14px 2px 14px;
 }
 
-/* DRAFT 覆写：制图蓝印章 + 虚线批注 + 剖面线 hover */
+/* DRAFT 覆写：蓝图钉章 + 铅笔橙批注 + 剖面线 hover */
 :root[data-theme="draft"] .logo-icon {
-    background: #1d4ed8;
+    background: #1a56c4;
     color: #ffffff;
     border: 2px solid #ffffff;
-    outline: 2px solid #1d4ed8;
+    outline: 2px solid #1a56c4;
     transform: rotate(-3deg);
-    box-shadow: 3px 3px 0 rgba(29, 78, 216, 0.3);
+    box-shadow: 3px 3px 0 rgba(26, 86, 196, 0.3);
 }
 
 :root[data-theme="draft"] .logo-text {
     letter-spacing: 2px;
+}
+
+:root[data-theme="draft"] .panel-view-header {
+    border-bottom: 2px solid #1a56c4;
+    box-shadow: 0 4px 0 -2px rgba(232, 113, 10, 0.45);
 }
 
 :root[data-theme="draft"] .panel-view-title,
@@ -682,57 +690,57 @@
 
 :root[data-theme="draft"] .panel-view-title::after {
     content: ' [A-01]';
-    color: #1d4ed8;
+    color: var(--pencil-color);
     font-weight: 400;
 }
 
 :root[data-theme="draft"] .send-button {
-    background: #1d4ed8;
+    background: #1a56c4;
     color: #ffffff;
-    box-shadow: 3px 3px 0 rgba(29, 78, 216, 0.25);
+    box-shadow: 3px 3px 0 rgba(26, 86, 196, 0.25);
 }
 
 :root[data-theme="draft"] .send-button:hover:not(:disabled) {
-    background: #102a5c;
-    box-shadow: 5px 5px 0 rgba(29, 78, 216, 0.3);
+    background: #12275c;
+    box-shadow: 5px 5px 0 rgba(232, 113, 10, 0.4);
 }
 
 :root[data-theme="draft"] .new-chat-btn:hover {
-    background: #1d4ed8;
-    border-color: #1d4ed8;
+    background: #1a56c4;
+    border-color: #1a56c4;
     color: #ffffff;
 }
 
 :root[data-theme="draft"] .header-nav-btn:hover,
 :root[data-theme="draft"] .header-nav-btn.active {
-    border-color: #1d4ed8;
+    border-color: #1a56c4;
     border-style: dashed;
-    color: #1d4ed8;
+    color: #1a56c4;
 }
 
 :root[data-theme="draft"] .user-message {
-    background: #1d4ed8;
+    background: #1a56c4;
     color: #ffffff;
     border-radius: 0;
-    box-shadow: 4px 4px 0 rgba(29, 78, 216, 0.22);
+    box-shadow: 4px 4px 0 rgba(26, 86, 196, 0.22);
 }
 
 :root[data-theme="draft"] .conversation-item.active {
-    border-color: #1d4ed8;
-    box-shadow: 3px 3px 0 rgba(29, 78, 216, 0.18);
+    border-color: #1a56c4;
+    box-shadow: inset 3px 0 0 var(--pencil-color), 3px 3px 0 rgba(26, 86, 196, 0.15);
 }
 
 :root[data-theme="draft"] .info-card:hover,
 :root[data-theme="draft"] .conversation-item:hover {
-    border-color: #1d4ed8;
+    border-color: #1a56c4;
     border-style: dashed;
-    background-image: repeating-linear-gradient(45deg, rgba(29, 78, 216, 0.06) 0px, rgba(29, 78, 216, 0.06) 5px, transparent 5px, transparent 10px);
+    background-image: repeating-linear-gradient(45deg, rgba(26, 86, 196, 0.06) 0px, rgba(26, 86, 196, 0.06) 5px, transparent 5px, transparent 10px);
 }
 
 :root[data-theme="draft"] .input-container:focus-within {
-    border-color: #1d4ed8;
+    border-color: #1a56c4;
     border-style: dashed;
-    box-shadow: 3px 3px 0 rgba(29, 78, 216, 0.15);
+    box-shadow: 3px 3px 0 rgba(232, 113, 10, 0.28);
 }
 
 /* BOTANICA 覆写：衬线图鉴排版 + 叶形元素 + 陶土橙点缀 */

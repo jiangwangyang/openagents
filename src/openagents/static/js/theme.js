@@ -5,14 +5,14 @@
 const THEME_EFFECTS = {
     'light': null,
     'dark': null,
-    'draft': {kind: 'draft', count: 16},
-    'botanica': {kind: 'botanica', count: 26},
-    'sunset': {kind: 'sunset', count: 22},
     'ink': {kind: 'ink', count: 14},
+    'sunset': {kind: 'sunset', count: 22},
+    'botanica': {kind: 'botanica', count: 26},
+    'draft': {kind: 'draft', count: 16},
     'aurora': {kind: 'aurora', count: 90},
+    'vaporwave': {kind: 'vapor', count: 55},
     'cyberpunk': {kind: 'neon-rain', count: 42},
-    'matrix': {kind: 'matrix', count: 0},
-    'vaporwave': {kind: 'vapor', count: 55}
+    'matrix': {kind: 'matrix', count: 0}
 };
 
 // 矩阵字符雨字符集：日文片假名 + 数字 + 符号
@@ -681,15 +681,15 @@ function setTheme(theme) {
 // 主题选择器元数据：菜单顺序即数组顺序，bg/accent 用于色板预览
 const THEME_META = [
     {id: 'light', label: 'LIGHT', bg: '#f0efe9', accent: '#121417'},
-    {id: 'draft', label: 'DRAFT', bg: '#eef4fd', accent: '#1a56c4'},
-    {id: 'botanica', label: 'BOTANICA', bg: '#f4f2e4', accent: '#2e6b34'},
-    {id: 'sunset', label: 'SUNSET', bg: '#ffd6bd', accent: '#e85d3d'},
     {id: 'ink', label: 'INK', bg: '#f2ecdf', accent: '#b03a2e'},
+    {id: 'sunset', label: 'SUNSET', bg: '#ffd6bd', accent: '#e85d3d'},
+    {id: 'botanica', label: 'BOTANICA', bg: '#f4f2e4', accent: '#2e6b34'},
+    {id: 'draft', label: 'DRAFT', bg: '#eef4fd', accent: '#1a56c4'},
     {id: 'dark', label: 'DARK', bg: '#101214', accent: '#e6e8eb'},
     {id: 'aurora', label: 'AURORA', bg: '#060a18', accent: '#5ff0c0'},
+    {id: 'vaporwave', label: 'VAPORWAVE', bg: '#1b1035', accent: '#ff71ce'},
     {id: 'cyberpunk', label: 'CYBERPUNK', bg: '#04040c', accent: '#ff2a6d'},
-    {id: 'matrix', label: 'MATRIX', bg: '#000000', accent: '#00ff41'},
-    {id: 'vaporwave', label: 'VAPORWAVE', bg: '#1b1035', accent: '#ff71ce'}
+    {id: 'matrix', label: 'MATRIX', bg: '#000000', accent: '#00ff41'}
 ];
 
 // 同步主题选择器显示：按钮色板与标签 + 菜单项高亮

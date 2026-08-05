@@ -36,8 +36,8 @@
     --radius-md: 8px;
     --radius-lg: 12px;
 
-    --font-display: 'Syne', 'Arial Narrow', -apple-system, 'Segoe UI', 'PingFang SC', sans-serif;
-    --font-body: 'Schibsted Grotesk', -apple-system, 'Segoe UI', 'PingFang SC', sans-serif;
+    --font-display: -apple-system, 'Segoe UI', 'PingFang SC', 'Microsoft YaHei', sans-serif;
+    --font-body: -apple-system, 'Segoe UI', 'PingFang SC', 'Microsoft YaHei', sans-serif;
     --font-mono: 'SF Mono', 'Fira Code', 'JetBrains Mono', monospace;
 }
 
@@ -70,6 +70,10 @@
     --on-accent-muted: rgba(0, 0, 0, 0.4);
     --noise-opacity: 0.06;
     --noise-filter: invert(1);
+
+    --font-display: -apple-system, 'Segoe UI', 'PingFang SC', 'Microsoft YaHei', sans-serif;
+    --font-body: -apple-system, 'Segoe UI', 'PingFang SC', 'Microsoft YaHei', sans-serif;
+    --font-mono: 'SF Mono', 'Fira Code', 'JetBrains Mono', monospace;
 }
 
 /* DRAFT — 白图 · 制图室 理念：绘图纸白底 + 制图蓝墨线 + 铅笔橙批注，完整标题栏与法兰剖视图，一张正在测绘中的工程图纸 */
@@ -157,8 +161,8 @@
     --radius-md: 16px;
     --radius-lg: 24px;
 
-    --font-display: Georgia, 'Palatino Linotype', 'Times New Roman', 'Songti SC', serif;
-    --font-body: Georgia, 'Palatino Linotype', 'Times New Roman', 'Songti SC', serif;
+    --font-display: Georgia, 'Palatino Linotype', 'Times New Roman', 'Noto Serif SC', 'Songti SC', serif;
+    --font-body: Georgia, 'Palatino Linotype', 'Times New Roman', 'Noto Serif SC', 'Songti SC', serif;
 
     --backdrop-image: radial-gradient(ellipse at 50% -12%, rgba(255, 250, 214, 0.85) 0%, rgba(255, 250, 214, 0) 55%),
     url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='320' height='560' viewBox='0 0 320 560'%3E%3Cg fill='%232c5236'%3E%3Cpath d='M84 560 C96 420 120 300 176 160 C188 128 204 100 228 76 L232 82 C210 106 194 134 182 166 C128 304 104 424 94 560 Z' opacity='0.5'/%3E%3Cg opacity='0.32'%3E%3Cellipse cx='150' cy='430' rx='58' ry='10' transform='rotate(-28 150 430)'/%3E%3Cellipse cx='88' cy='404' rx='44' ry='8' transform='rotate(14 88 404)'/%3E%3Cellipse cx='168' cy='360' rx='52' ry='9' transform='rotate(-30 168 360)'/%3E%3Cellipse cx='106' cy='332' rx='40' ry='8' transform='rotate(12 106 332)'/%3E%3Cellipse cx='186' cy='292' rx='46' ry='8' transform='rotate(-32 186 292)'/%3E%3Cellipse cx='128' cy='262' rx='34' ry='7' transform='rotate(10 128 262)'/%3E%3Cellipse cx='200' cy='224' rx='38' ry='7' transform='rotate(-34 200 224)'/%3E%3Cellipse cx='148' cy='196' rx='28' ry='6' transform='rotate(8 148 196)'/%3E%3Cellipse cx='212' cy='160' rx='30' ry='6' transform='rotate(-36 212 160)'/%3E%3Cellipse cx='170' cy='130' rx='22' ry='5' transform='rotate(6 170 130)'/%3E%3Cellipse cx='222' cy='102' rx='20' ry='4' transform='rotate(-38 222 102)'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E"),
@@ -207,13 +211,14 @@
 
     --backdrop-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='720' height='140' viewBox='0 0 720 140'%3E%3Cpath d='M0 140 L0 84 C120 64 220 96 330 80 C440 64 540 92 720 70 L720 140 Z' fill='%236f3644' opacity='0.72'/%3E%3C/svg%3E"),
     url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='720' height='180' viewBox='0 0 720 180'%3E%3Cpath d='M0 180 L0 96 C90 78 180 108 270 92 C360 76 450 104 540 88 C630 74 680 92 720 84 L720 180 Z' fill='%23b87f9b' opacity='0.5'/%3E%3C/svg%3E"),
-    radial-gradient(circle 110px at 50% 62%, rgba(255, 224, 140, 0.95) 0%, rgba(255, 176, 102, 0.92) 97%, rgba(255, 176, 102, 0) 100%),
-    radial-gradient(circle 320px at 50% 62%, rgba(255, 196, 120, 0.4) 0%, rgba(255, 196, 120, 0) 70%),
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='900' height='110' viewBox='0 0 900 110'%3E%3Cpath d='M0 110 L0 60 C150 44 260 70 400 56 C540 42 660 66 900 50 L900 110 Z' fill='%23d6a9b8' opacity='0.35'/%3E%3C/svg%3E"),
+    radial-gradient(circle 110px at 50% 58%, rgba(255, 224, 140, 0.95) 0%, rgba(255, 176, 102, 0.92) 97%, rgba(255, 176, 102, 0) 100%),
+    radial-gradient(circle 320px at 50% 58%, rgba(255, 196, 120, 0.4) 0%, rgba(255, 196, 120, 0) 70%),
     radial-gradient(ellipse 180px 260px at 50% 98%, rgba(255, 205, 140, 0.35) 0%, rgba(255, 205, 140, 0) 70%),
     linear-gradient(180deg, #ffe8d2 0%, #ffd6bd 26%, #ffbfa8 44%, #eba091 58%, #c98ba4 78%, #9d7398 100%);
-    --backdrop-size: auto 26%, auto 34%, cover, cover, cover, cover;
-    --backdrop-position: bottom center, bottom center, center, center, center, center;
-    --backdrop-repeat: repeat-x, repeat-x, no-repeat, no-repeat, no-repeat, no-repeat;
+    --backdrop-size: auto 26%, auto 34%, auto 20%, cover, cover, cover, cover;
+    --backdrop-position: bottom center, bottom center, bottom center, center, center, center, center;
+    --backdrop-repeat: repeat-x, repeat-x, repeat-x, no-repeat, no-repeat, no-repeat, no-repeat;
 }
 
 /* CYBERPUNK — 赛博朋克霓虹都市 理念：深空黑底 + 霓虹青/品红双色辉光，透视网格地平线 + 霓虹雨，全息终端质感 */
@@ -369,7 +374,7 @@
     --noise-opacity: 0.05;
     --noise-filter: none;
 
-    --font-display: Georgia, 'Times New Roman', 'Songti SC', serif;
+    --font-display: Georgia, 'Times New Roman', 'Noto Serif SC', 'Songti SC', serif;
 
     --backdrop-image: radial-gradient(circle at 50% 68%, rgba(255, 220, 120, 0.35) 0%, rgba(255, 113, 206, 0.18) 22%, rgba(255, 113, 206, 0) 42%),
     linear-gradient(180deg, #12082a 0%, #2a1250 45%, #5b2a86 75%, #b84aa0 100%);
@@ -378,7 +383,7 @@
     --backdrop-repeat: no-repeat, no-repeat;
 }
 
-/* INK — 东方水墨 理念：宣纸米白底 + 墨色浓淡 + 朱砂印章红点缀，墨滴晕染扩散与竹叶飘落 */
+/* INK — 东方水墨 理念：宣纸米白底 + 底部远山淡墨 + 顶部枯笔飞白 + 右上角朱红闲章，墨滴在宣纸四缘晕染、竹叶飘落 */
 :root[data-theme="ink"] {
     --charcoal-900: #1c1a17;
     --charcoal-800: #3a352e;
@@ -415,12 +420,15 @@
     --radius-md: 4px;
     --radius-lg: 6px;
 
-    --backdrop-image: radial-gradient(ellipse at 90% 8%, rgba(176, 58, 46, 0.05) 0%, rgba(176, 58, 46, 0) 40%),
+    --backdrop-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='64' height='64' viewBox='0 0 64 64'%3E%3Cg transform='rotate(3 32 32)'%3E%3Crect x='8' y='8' width='48' height='48' rx='4' fill='%23b03a2e' opacity='0.85'/%3E%3Ctext x='32' y='43' font-size='26' text-anchor='middle' fill='%23faf6ec' font-family='serif'%3E%E5%A2%A8%3C/text%3E%3C/g%3E%3C/svg%3E"),
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='600' height='90' viewBox='0 0 600 90'%3E%3Cg fill='%231c1a17'%3E%3Cpath d='M20 40 C140 30 300 26 580 34 C500 40 300 42 60 48 Z' opacity='0.1'/%3E%3Cpath d='M40 52 C200 46 380 44 560 50 C420 54 220 56 50 60 Z' opacity='0.07'/%3E%3Cpath d='M90 62 C240 58 400 57 530 62 C400 65 240 66 100 68 Z' opacity='0.05'/%3E%3C/g%3E%3C/svg%3E"),
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='1600' height='300' viewBox='0 0 1600 300'%3E%3Cpath d='M0 300 L0 210 C160 170 260 120 400 150 C520 175 600 90 760 110 C900 128 980 60 1140 95 C1300 130 1420 100 1600 140 L1600 300 Z' fill='%231c1a17' opacity='0.05'/%3E%3Cpath d='M0 300 L0 250 C200 215 320 190 480 210 C640 230 720 160 880 180 C1040 200 1160 150 1320 180 C1440 202 1520 190 1600 205 L1600 300 Z' fill='%231c1a17' opacity='0.08'/%3E%3C/svg%3E"),
+    radial-gradient(ellipse at 90% 8%, rgba(176, 58, 46, 0.05) 0%, rgba(176, 58, 46, 0) 40%),
     radial-gradient(ellipse at 8% 95%, rgba(28, 26, 23, 0.06) 0%, rgba(28, 26, 23, 0) 45%),
     linear-gradient(180deg, #f5f1e6 0%, #f2ecdf 55%, #ece3d0 100%);
-    --backdrop-size: cover, cover, cover;
-    --backdrop-position: center, center, center;
-    --backdrop-repeat: no-repeat, no-repeat, no-repeat;
+    --backdrop-size: 64px 64px, 420px 63px, 100% auto, cover, cover, cover;
+    --backdrop-position: right 56px top 64px, right 150px top 78px, bottom center, center, center, center;
+    --backdrop-repeat: no-repeat, no-repeat, no-repeat, no-repeat, no-repeat, no-repeat;
 }
 
 /* ===== 1.7 新主题专属组件覆写 ===== */
@@ -534,7 +542,7 @@
     caret-color: #00ff41;
 }
 
-/* AURORA 覆写：玻璃拟态 + 渐变按钮 */
+/* AURORA 覆写：玻璃拟态 + 渐变按钮（面板半透明 + 背景模糊，极光可透过面板弥散） */
 :root[data-theme="aurora"] .sidebar,
 :root[data-theme="aurora"] .sidebar-header,
 :root[data-theme="aurora"] .main-content,
@@ -542,6 +550,31 @@
 :root[data-theme="aurora"] .input-wrapper {
     backdrop-filter: blur(18px);
     -webkit-backdrop-filter: blur(18px);
+}
+
+:root[data-theme="aurora"] .sidebar {
+    background: color-mix(in srgb, var(--bg-surface) 60%, transparent);
+}
+
+:root[data-theme="aurora"] .sidebar-header {
+    background: color-mix(in srgb, var(--bg-panel) 50%, transparent);
+}
+
+:root[data-theme="aurora"] .main-content {
+    background: color-mix(in srgb, var(--bg-panel) 60%, transparent);
+}
+
+:root[data-theme="aurora"] .header {
+    background: color-mix(in srgb, var(--bg-panel) 52%, transparent);
+}
+
+:root[data-theme="aurora"] .input-wrapper {
+    background: color-mix(in srgb, var(--bg-panel) 60%, transparent);
+}
+
+/* 输入区上方渐隐条同步半透明，避免一条不透明色带切断玻璃质感 */
+:root[data-theme="aurora"] .input-wrapper::before {
+    background: linear-gradient(to top, color-mix(in srgb, var(--bg-panel) 60%, transparent), transparent);
 }
 
 :root[data-theme="aurora"] .info-card,
@@ -819,7 +852,41 @@
     letter-spacing: 1px;
 }
 
-/* SUNSET 覆写：落日圆盘 logo + 暮色渐变标题 + 胶囊按钮 */
+/* SUNSET 覆写：落日圆盘 logo + 暮色渐变标题 + 胶囊按钮（面板磨砂半透，落日余晖透过面板弥散） */
+:root[data-theme="sunset"] .sidebar,
+:root[data-theme="sunset"] .sidebar-header,
+:root[data-theme="sunset"] .main-content,
+:root[data-theme="sunset"] .header,
+:root[data-theme="sunset"] .input-wrapper {
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+}
+
+:root[data-theme="sunset"] .sidebar {
+    background: color-mix(in srgb, var(--bg-surface) 78%, transparent);
+}
+
+:root[data-theme="sunset"] .sidebar-header {
+    background: color-mix(in srgb, var(--bg-panel) 72%, transparent);
+}
+
+:root[data-theme="sunset"] .main-content {
+    background: color-mix(in srgb, var(--bg-panel) 80%, transparent);
+}
+
+:root[data-theme="sunset"] .header {
+    background: color-mix(in srgb, var(--bg-panel) 74%, transparent);
+}
+
+:root[data-theme="sunset"] .input-wrapper {
+    background: color-mix(in srgb, var(--bg-panel) 80%, transparent);
+}
+
+/* 输入区上方渐隐条同步半透明，保持暮光通透 */
+:root[data-theme="sunset"] .input-wrapper::before {
+    background: linear-gradient(to top, color-mix(in srgb, var(--bg-panel) 80%, transparent), transparent);
+}
+
 :root[data-theme="sunset"] .logo-icon {
     background: radial-gradient(circle at 35% 35%, #ffd66e 0%, #ff9d5c 55%, #e85d3d 100%);
     color: #4e2333;
@@ -989,5 +1056,15 @@ body {
     display: block;
     width: 100%;
     height: 100%;
+}
+
+/* ===== 1.8 减少动态效果（无障碍）：关闭全部 CSS 动画与过渡，粒子特效由 theme.js 的 reducedMotion 同步关闭 ===== */
+@media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+        animation: none !important;
+        transition: none !important;
+    }
 }
 

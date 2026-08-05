@@ -962,3 +962,98 @@ select.form-control {
 .skeleton-loader span:nth-child(3) {
     width: 45%;
 }
+
+/* ===== 主题选择器（色板预览下拉） ===== */
+.theme-picker {
+    position: relative;
+}
+
+/* 按钮上的当前主题色点：底色为画布色，描边为强调色 */
+.theme-picker-dot {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    border: 2px solid var(--charcoal-900);
+    background: var(--bg-canvas);
+    flex-shrink: 0;
+}
+
+.theme-picker-menu {
+    position: absolute;
+    top: calc(100% + 8px);
+    right: 0;
+    min-width: 190px;
+    background: var(--bg-panel);
+    border: 1px solid var(--border-hard);
+    border-radius: var(--radius-md);
+    box-shadow: var(--shadow-hard-lg);
+    padding: 6px;
+    display: none;
+    flex-direction: column;
+    gap: 2px;
+    z-index: 3000;
+}
+
+.theme-picker-menu.open {
+    display: flex;
+}
+
+.theme-picker-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 8px 10px;
+    border: 1px solid transparent;
+    background: transparent;
+    border-radius: var(--radius-sm);
+    cursor: pointer;
+    font-family: var(--font-display);
+    font-size: 12px;
+    font-weight: 600;
+    letter-spacing: 0.5px;
+    color: var(--charcoal-800);
+    text-align: left;
+    transition: var(--transition-snap);
+}
+
+.theme-picker-item:hover {
+    background: var(--hover-bg);
+    border-color: var(--border-soft);
+}
+
+.theme-picker-item.active {
+    background: var(--hover-bg);
+    color: var(--charcoal-900);
+}
+
+.theme-picker-item.active::after {
+    content: '\2713';
+    margin-left: auto;
+    color: var(--accent-color);
+    font-weight: 700;
+}
+
+/* 菜单项色板：外圈画布底色 + 内点强调色，未切换即可预览主题配色 */
+.theme-picker-swatch {
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+    border: 1px solid var(--border-hard);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+
+.theme-picker-swatch-dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+}
+
+/* 明暗两组主题之间的分隔线 */
+.theme-picker-divider {
+    height: 1px;
+    background: var(--border-soft);
+    margin: 4px 6px;
+}

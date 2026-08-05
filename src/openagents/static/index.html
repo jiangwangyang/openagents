@@ -18,6 +18,11 @@
         })();
     </script>
 
+    <!-- 主题字体（仅特色主题使用，light/dark 用系统默认字体）：JetBrains Mono(等宽) / Noto Serif SC(中文衬线) -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&family=Noto+Serif+SC:wght@400;600;700&display=swap">
+
     <link rel="stylesheet" href="css/themes.css">
     <link rel="stylesheet" href="css/base.css">
     <link rel="stylesheet" href="css/components.css">
@@ -58,18 +63,14 @@
                 <button class="header-nav-btn" id="navSkillBtn" onclick="switchView('skill')">SKILL</button>
                 <button class="header-nav-btn" id="navMcpBtn" onclick="switchView('mcp')">MCP</button>
                 <button class="header-nav-btn" id="navConfigBtn" onclick="switchView('config')">CONFIG</button>
-                <select id="themeSelect" class="form-control theme-select" title="Switch Theme" onchange="setTheme(this.value)">
-                    <option value="light">LIGHT ◇</option>
-                    <option value="draft">DRAFT ◇</option>
-                    <option value="botanica">BOTANICA ◇</option>
-                    <option value="sunset">SUNSET ◇</option>
-                    <option value="ink">INK ◇</option>
-                    <option value="dark">DARK ◆</option>
-                    <option value="aurora">AURORA ◆</option>
-                    <option value="cyberpunk">CYBERPUNK ◆</option>
-                    <option value="matrix">MATRIX ◆</option>
-                    <option value="vaporwave">VAPORWAVE ◆</option>
-                </select>
+                <!-- 主题选择器：色板预览下拉，菜单项由 theme.js 按 THEME_META 动态生成 -->
+                <div class="theme-picker" id="themePicker">
+                    <button class="header-nav-btn theme-picker-btn" id="themePickerBtn" type="button" title="Switch Theme">
+                        <span class="theme-picker-dot" id="themePickerDot"></span>
+                        <span id="themePickerLabel">LIGHT</span>
+                    </button>
+                    <div class="theme-picker-menu" id="themePickerMenu"></div>
+                </div>
             </div>
             <span class="header-conversation-info" id="conversationInfo">NEW TRACE</span>
         </div>

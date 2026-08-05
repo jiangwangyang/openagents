@@ -10,7 +10,7 @@
         (function () {
             let savedTheme = localStorage.getItem('openagents_theme');
             // 校验是否为有效主题（防止已删除主题残留导致样式失效），非法值回退浅色
-            const validThemes = ['light', 'dark', 'paper', 'forest', 'sunset', 'ink', 'aurora', 'cyberpunk', 'matrix', 'vaporwave'];
+            const validThemes = ['light', 'dark', 'draft', 'botanica', 'sunset', 'ink', 'aurora', 'cyberpunk', 'matrix', 'vaporwave'];
             if (!validThemes.includes(savedTheme)) {
                 savedTheme = 'light';
             }
@@ -60,8 +60,8 @@
                 <button class="header-nav-btn" id="navConfigBtn" onclick="switchView('config')">CONFIG</button>
                 <select id="themeSelect" class="form-control theme-select" title="Switch Theme" onchange="setTheme(this.value)">
                     <option value="light">LIGHT ◇</option>
-                    <option value="paper">PAPER ◇</option>
-                    <option value="forest">FOREST ◇</option>
+                    <option value="draft">DRAFT ◇</option>
+                    <option value="botanica">BOTANICA ◇</option>
                     <option value="sunset">SUNSET ◇</option>
                     <option value="ink">INK ◇</option>
                     <option value="dark">DARK ◆</option>

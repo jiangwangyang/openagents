@@ -72,114 +72,145 @@
     --noise-filter: invert(1);
 }
 
-/* PAPER — 高对比白纸 / 编辑模式 理念：极端极简，纯黑白灰，去除一切装饰色，专注内容本身 */
-:root[data-theme="paper"] {
-    --charcoal-900: #000000;
-    --charcoal-800: #1a1a1a;
-    --charcoal-700: #333333;
-    --slate-400: #666666;
-    --slate-300: #999999;
-    --bg-canvas: #ffffff;
-    --bg-surface: #fafafa;
+/* DRAFT — 工程蓝图手稿 理念：冰白绘图纸 + 双线方格网 + 制图蓝墨线，全等宽字体与直角虚线批注，绘图板上的工程美学 */
+:root[data-theme="draft"] {
+    --charcoal-900: #102a5c;
+    --charcoal-800: #1e3f7d;
+    --charcoal-700: #3d5a99;
+    --slate-400: #6b82b8;
+    --slate-300: #9db1d6;
+    --bg-canvas: #eaf1fb;
+    --bg-surface: #f2f7ff;
     --bg-panel: #ffffff;
-    --border-hard: #000000;
-    --border-soft: #e0e0e0;
+    --border-hard: #b4c8ec;
+    --border-soft: #d7e4f8;
 
-    --accent-color: #000000;
-    --danger-color: #cc0000;
-    --danger-bg: #fff0f0;
+    --accent-color: #1d4ed8;
+    --danger-color: #dc2626;
+    --danger-bg: #fef2f2;
 
-    --shadow-rgb: 0, 0, 0;
+    --shadow-rgb: 29, 78, 216;
     --shadow-hard: 4px 4px 0 rgba(var(--shadow-rgb), 0.1);
     --shadow-hard-lg: 8px 8px 0 rgba(var(--shadow-rgb), 0.12);
 
-    --hover-bg: rgba(0, 0, 0, 0.04);
-    --subtle-bg: rgba(0, 0, 0, 0.02);
-    --summary-bg: #f5f5f5;
-    --inline-code-bg: rgba(0, 0, 0, 0.06);
-    --overlay-bg: rgba(255, 255, 255, 0.95);
+    --hover-bg: rgba(29, 78, 216, 0.05);
+    --subtle-bg: rgba(29, 78, 216, 0.02);
+    --summary-bg: #eef4fd;
+    --inline-code-bg: rgba(29, 78, 216, 0.08);
+    --overlay-bg: rgba(234, 241, 251, 0.92);
     --on-accent-muted: rgba(255, 255, 255, 0.5);
-    --noise-opacity: 0.015;
+    --noise-opacity: 0.012;
     --noise-filter: none;
 
     --radius-sm: 0px;
     --radius-md: 0px;
     --radius-lg: 0px;
+
+    --font-display: 'JetBrains Mono', 'SF Mono', 'Fira Code', 'Courier New', monospace;
+    --font-body: 'JetBrains Mono', 'SF Mono', 'Fira Code', 'Courier New', monospace;
+
+    --backdrop-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='240' height='240' viewBox='0 0 240 240'%3E%3Cg fill='none' stroke='%231d4ed8' stroke-width='1' opacity='0.45'%3E%3Ccircle cx='120' cy='120' r='62'/%3E%3Ccircle cx='120' cy='120' r='44'/%3E%3Cpath d='M120 34v172M34 120h172'/%3E%3Cpath d='M120 34v-14M120 206v14M34 120h-14M206 120h14'/%3E%3C/g%3E%3Ctext x='128' y='52' font-family='monospace' font-size='10' fill='%231d4ed8' opacity='0.6'%3EA-01%3C/text%3E%3Ctext x='148' y='114' font-family='monospace' font-size='9' fill='%231d4ed8' opacity='0.5'%3ER62%3C/text%3E%3C/svg%3E"),
+    repeating-linear-gradient(0deg, rgba(29, 78, 216, 0.05) 0px, rgba(29, 78, 216, 0.05) 1px, transparent 1px, transparent 28px),
+    repeating-linear-gradient(90deg, rgba(29, 78, 216, 0.05) 0px, rgba(29, 78, 216, 0.05) 1px, transparent 1px, transparent 28px),
+    repeating-linear-gradient(0deg, rgba(29, 78, 216, 0.13) 0px, rgba(29, 78, 216, 0.13) 1px, transparent 1px, transparent 140px),
+    repeating-linear-gradient(90deg, rgba(29, 78, 216, 0.13) 0px, rgba(29, 78, 216, 0.13) 1px, transparent 1px, transparent 140px),
+    linear-gradient(180deg, #eef4fc 0%, #e8f0fa 60%, #e2ecf8 100%);
+    --backdrop-size: 240px 240px, auto, auto, auto, auto, cover;
+    --backdrop-position: right 48px top 48px, center, center, center, center, center;
+    --backdrop-repeat: no-repeat, repeat, repeat, repeat, repeat, no-repeat;
 }
 
-/* FOREST — 苔藓森林 / 自然有机 理念：以深松绿与暖米白为基调，营造沉稳专注的编辑氛围 */
-:root[data-theme="forest"] {
-    --charcoal-900: #1a3c1a;
-    --charcoal-800: #2d5a2d;
-    --charcoal-700: #4a7c59;
-    --slate-400: #7a9a7a;
-    --slate-300: #a8c4a8;
-    --bg-canvas: #f4f1ea;
-    --bg-surface: #eef5e6;
-    --bg-panel: #fafcf7;
-    --border-hard: #c8d6c0;
-    --border-soft: #e0ead8;
+/* BOTANICA — 晨雾植物图鉴 理念：暖象牙纸底 + 深松绿墨色 + 陶土橙点缀，两侧蕨叶剪影与顶部晨光，衬线斜体的植物学画册排版 */
+:root[data-theme="botanica"] {
+    --charcoal-900: #1c3a24;
+    --charcoal-800: #2c5236;
+    --charcoal-700: #47724f;
+    --slate-400: #7d9a80;
+    --slate-300: #a7bda6;
+    --bg-canvas: #f4f2e4;
+    --bg-surface: #efeedd;
+    --bg-panel: #fdfcf3;
+    --border-hard: #ccd4b6;
+    --border-soft: #e0e4cc;
 
-    --accent-color: #2d5a2d;
+    --accent-color: #2e6b34;
+    --danger-color: #b3402a;
+    --danger-bg: #f9ece4;
 
-    --backdrop-image: radial-gradient(ellipse at 18% 0%, rgba(255, 255, 255, 0.55) 0%, rgba(255, 255, 255, 0) 45%),
-    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='600' height='150' viewBox='0 0 600 150'%3E%3Cpath d='M0 150 L0 108 C60 94 110 102 160 90 C220 76 260 84 320 70 C380 58 430 66 490 52 C540 44 570 50 600 44 L600 150 Z' fill='%234a7c59' opacity='0.3'/%3E%3Cpath d='M30 150 L62 76 L94 150 Z' fill='%232d5a2d' opacity='0.5'/%3E%3Cpath d='M86 150 L116 64 L146 150 Z' fill='%234a7c59' opacity='0.55'/%3E%3Cpath d='M148 150 L176 80 L204 150 Z' fill='%233f6b4f' opacity='0.5'/%3E%3Cpath d='M214 150 L240 84 L266 150 Z' fill='%232d5a2d' opacity='0.55'/%3E%3Cpath d='M286 150 L318 58 L350 150 Z' fill='%234a7c59' opacity='0.6'/%3E%3Cpath d='M352 150 L378 80 L404 150 Z' fill='%233f6b4f' opacity='0.55'/%3E%3Cpath d='M420 150 L450 68 L480 150 Z' fill='%232d5a2d' opacity='0.6'/%3E%3Cpath d='M500 150 L532 62 L564 150 Z' fill='%234a7c59' opacity='0.55'/%3E%3Cpath d='M548 150 L572 84 L596 150 Z' fill='%233f6b4f' opacity='0.5'/%3E%3C/svg%3E"),
-    linear-gradient(180deg, #f4f1ea 0%, #e7eed9 52%, #d2e0be 100%);
-    --backdrop-size: auto, auto 42%, cover;
-    --backdrop-position: center, bottom center, center;
-    --backdrop-repeat: no-repeat, repeat-x, no-repeat;
-    --danger-color: #c0392b;
-    --danger-bg: #fdf2f0;
+    --shadow-rgb: 28, 58, 36;
+    --shadow-hard: 4px 4px 0 rgba(var(--shadow-rgb), 0.07);
+    --shadow-hard-lg: 8px 8px 0 rgba(var(--shadow-rgb), 0.09);
 
-    --shadow-rgb: 26, 60, 26;
+    --hover-bg: rgba(46, 107, 52, 0.05);
+    --subtle-bg: rgba(46, 107, 52, 0.02);
+    --summary-bg: #f3f4e6;
+    --inline-code-bg: rgba(46, 107, 52, 0.08);
+    --overlay-bg: rgba(244, 242, 228, 0.9);
+    --on-accent-muted: rgba(253, 252, 243, 0.5);
+    --noise-opacity: 0.04;
+    --noise-filter: none;
+
+    --radius-sm: 8px;
+    --radius-md: 16px;
+    --radius-lg: 24px;
+
+    --font-display: Georgia, 'Palatino Linotype', 'Times New Roman', 'Songti SC', serif;
+    --font-body: Georgia, 'Palatino Linotype', 'Times New Roman', 'Songti SC', serif;
+
+    --backdrop-image: radial-gradient(ellipse at 50% -12%, rgba(255, 250, 214, 0.85) 0%, rgba(255, 250, 214, 0) 55%),
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='320' height='560' viewBox='0 0 320 560'%3E%3Cg fill='%232c5236'%3E%3Cpath d='M84 560 C96 420 120 300 176 160 C188 128 204 100 228 76 L232 82 C210 106 194 134 182 166 C128 304 104 424 94 560 Z' opacity='0.5'/%3E%3Cg opacity='0.32'%3E%3Cellipse cx='150' cy='430' rx='58' ry='10' transform='rotate(-28 150 430)'/%3E%3Cellipse cx='88' cy='404' rx='44' ry='8' transform='rotate(14 88 404)'/%3E%3Cellipse cx='168' cy='360' rx='52' ry='9' transform='rotate(-30 168 360)'/%3E%3Cellipse cx='106' cy='332' rx='40' ry='8' transform='rotate(12 106 332)'/%3E%3Cellipse cx='186' cy='292' rx='46' ry='8' transform='rotate(-32 186 292)'/%3E%3Cellipse cx='128' cy='262' rx='34' ry='7' transform='rotate(10 128 262)'/%3E%3Cellipse cx='200' cy='224' rx='38' ry='7' transform='rotate(-34 200 224)'/%3E%3Cellipse cx='148' cy='196' rx='28' ry='6' transform='rotate(8 148 196)'/%3E%3Cellipse cx='212' cy='160' rx='30' ry='6' transform='rotate(-36 212 160)'/%3E%3Cellipse cx='170' cy='130' rx='22' ry='5' transform='rotate(6 170 130)'/%3E%3Cellipse cx='222' cy='102' rx='20' ry='4' transform='rotate(-38 222 102)'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E"),
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='320' height='560' viewBox='0 0 320 560'%3E%3Cg transform='translate(320 0) scale(-1 1)'%3E%3Cg fill='%2347724f'%3E%3Cpath d='M84 560 C96 420 120 300 176 160 C188 128 204 100 228 76 L232 82 C210 106 194 134 182 166 C128 304 104 424 94 560 Z' opacity='0.5'/%3E%3Cg opacity='0.28'%3E%3Cellipse cx='150' cy='430' rx='58' ry='10' transform='rotate(-28 150 430)'/%3E%3Cellipse cx='88' cy='404' rx='44' ry='8' transform='rotate(14 88 404)'/%3E%3Cellipse cx='168' cy='360' rx='52' ry='9' transform='rotate(-30 168 360)'/%3E%3Cellipse cx='106' cy='332' rx='40' ry='8' transform='rotate(12 106 332)'/%3E%3Cellipse cx='186' cy='292' rx='46' ry='8' transform='rotate(-32 186 292)'/%3E%3Cellipse cx='128' cy='262' rx='34' ry='7' transform='rotate(10 128 262)'/%3E%3Cellipse cx='200' cy='224' rx='38' ry='7' transform='rotate(-34 200 224)'/%3E%3Cellipse cx='148' cy='196' rx='28' ry='6' transform='rotate(8 148 196)'/%3E%3Cellipse cx='212' cy='160' rx='30' ry='6' transform='rotate(-36 212 160)'/%3E%3Cellipse cx='170' cy='130' rx='22' ry='5' transform='rotate(6 170 130)'/%3E%3Cellipse cx='222' cy='102' rx='20' ry='4' transform='rotate(-38 222 102)'/%3E%3C/g%3E%3C/g%3E%3C/g%3E%3C/svg%3E"),
+    linear-gradient(180deg, #f7f4e6 0%, #eff0d9 55%, #e2e7c4 100%);
+    --backdrop-size: cover, auto 80%, auto 80%, cover;
+    --backdrop-position: center, left -60px bottom 0px, right -60px bottom 0px, center;
+    --backdrop-repeat: no-repeat, no-repeat, no-repeat, no-repeat;
+}
+
+/* SUNSET — 黄金时刻 理念：蜜桃-珊瑚-薰衣草三色天空 + 巨大落日圆盘沉入海平线 + 双层海浪剪影，海鸥掠过，暮色电影场景 */
+:root[data-theme="sunset"] {
+    --charcoal-900: #4e2333;
+    --charcoal-800: #6f3644;
+    --charcoal-700: #93555f;
+    --slate-400: #bb8891;
+    --slate-300: #d6b3b3;
+    --bg-canvas: #fff1e4;
+    --bg-surface: #fff7ee;
+    --bg-panel: #fffdf8;
+    --border-hard: #f0d4bf;
+    --border-soft: #f7e4d2;
+
+    --accent-color: #e85d3d;
+    --danger-color: #c22e49;
+    --danger-bg: #fdeef2;
+
+    --shadow-rgb: 78, 35, 51;
     --shadow-hard: 4px 4px 0 rgba(var(--shadow-rgb), 0.06);
     --shadow-hard-lg: 8px 8px 0 rgba(var(--shadow-rgb), 0.08);
 
-    --hover-bg: rgba(45, 90, 45, 0.04);
-    --subtle-bg: rgba(45, 90, 45, 0.015);
-    --summary-bg: #f5f9f2;
-    --inline-code-bg: rgba(45, 90, 45, 0.06);
-    --overlay-bg: rgba(244, 241, 234, 0.9);
-    --on-accent-muted: rgba(255, 255, 255, 0.45);
+    --hover-bg: rgba(232, 93, 61, 0.05);
+    --subtle-bg: rgba(232, 93, 61, 0.02);
+    --summary-bg: #fdf3ea;
+    --inline-code-bg: rgba(232, 93, 61, 0.07);
+    --overlay-bg: rgba(255, 241, 228, 0.9);
+    --on-accent-muted: rgba(255, 253, 248, 0.5);
     --noise-opacity: 0.025;
     --noise-filter: none;
-}
 
-/* SUNSET — 日落暖橙 / 温暖人文 理念：赭石与暖奶油色调，营造温暖、专注的长文本阅读体验 */
-:root[data-theme="sunset"] {
-    --charcoal-900: #5c2e00;
-    --charcoal-800: #8b4513;
-    --charcoal-700: #a0522d;
-    --slate-400: #c19a6b;
-    --slate-300: #d4b896;
-    --bg-canvas: #faf6f1;
-    --bg-surface: #fff8f0;
-    --bg-panel: #fffdfb;
-    --border-hard: #e8d5c4;
-    --border-soft: #f0e6d8;
+    --radius-sm: 10px;
+    --radius-md: 16px;
+    --radius-lg: 24px;
 
-    --accent-color: #c75b39;
+    --font-display: 'Avenir Next', 'Century Gothic', 'Futura', -apple-system, 'PingFang SC', sans-serif;
 
-    --backdrop-image: radial-gradient(ellipse at 82% 6%, rgba(255, 190, 110, 0.55) 0%, rgba(255, 190, 110, 0) 45%),
-    linear-gradient(180deg, #faf6f1 0%, #f7e3c6 45%, #f2cf9e 75%, #ecb98a 100%);
-    --backdrop-size: auto, cover;
-    --backdrop-position: center, center;
-    --backdrop-repeat: no-repeat, no-repeat;
-    --danger-color: #b03030;
-    --danger-bg: #fdf2f0;
-
-    --shadow-rgb: 92, 46, 0;
-    --shadow-hard: 4px 4px 0 rgba(var(--shadow-rgb), 0.05);
-    --shadow-hard-lg: 8px 8px 0 rgba(var(--shadow-rgb), 0.07);
-
-    --hover-bg: rgba(199, 91, 57, 0.04);
-    --subtle-bg: rgba(199, 91, 57, 0.01);
-    --summary-bg: #fdf8f3;
-    --inline-code-bg: rgba(199, 91, 57, 0.05);
-    --overlay-bg: rgba(250, 246, 241, 0.9);
-    --on-accent-muted: rgba(255, 255, 255, 0.5);
-    --noise-opacity: 0.02;
-    --noise-filter: none;
+    --backdrop-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='720' height='140' viewBox='0 0 720 140'%3E%3Cpath d='M0 140 L0 84 C120 64 220 96 330 80 C440 64 540 92 720 70 L720 140 Z' fill='%236f3644' opacity='0.72'/%3E%3C/svg%3E"),
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='720' height='180' viewBox='0 0 720 180'%3E%3Cpath d='M0 180 L0 96 C90 78 180 108 270 92 C360 76 450 104 540 88 C630 74 680 92 720 84 L720 180 Z' fill='%23b87f9b' opacity='0.5'/%3E%3C/svg%3E"),
+    radial-gradient(circle 110px at 50% 62%, rgba(255, 224, 140, 0.95) 0%, rgba(255, 176, 102, 0.92) 97%, rgba(255, 176, 102, 0) 100%),
+    radial-gradient(circle 320px at 50% 62%, rgba(255, 196, 120, 0.4) 0%, rgba(255, 196, 120, 0) 70%),
+    radial-gradient(ellipse 180px 260px at 50% 98%, rgba(255, 205, 140, 0.35) 0%, rgba(255, 205, 140, 0) 70%),
+    linear-gradient(180deg, #ffe8d2 0%, #ffd6bd 26%, #ffbfa8 44%, #eba091 58%, #c98ba4 78%, #9d7398 100%);
+    --backdrop-size: auto 26%, auto 34%, cover, cover, cover, cover;
+    --backdrop-position: bottom center, bottom center, center, center, center, center;
+    --backdrop-repeat: repeat-x, repeat-x, no-repeat, no-repeat, no-repeat, no-repeat;
 }
 
 /* CYBERPUNK — 赛博朋克霓虹都市 理念：深空黑底 + 霓虹青/品红双色辉光，透视网格地平线 + 霓虹雨，全息终端质感 */
@@ -630,108 +661,225 @@
     border-radius: 2px 14px 2px 14px;
 }
 
-/* FOREST 覆写：有机圆角 + 苔藓绿渐变 + 叶形 logo */
-:root[data-theme="forest"] {
-    --radius-sm: 6px;
-    --radius-md: 12px;
-    --radius-lg: 18px;
+/* DRAFT 覆写：制图蓝印章 + 虚线批注 + 剖面线 hover */
+:root[data-theme="draft"] .logo-icon {
+    background: #1d4ed8;
+    color: #ffffff;
+    border: 2px solid #ffffff;
+    outline: 2px solid #1d4ed8;
+    transform: rotate(-3deg);
+    box-shadow: 3px 3px 0 rgba(29, 78, 216, 0.3);
 }
 
-:root[data-theme="forest"] .logo-icon {
-    background: linear-gradient(135deg, #2d5a2d, #4a7c59);
-    color: #fafcf7;
+:root[data-theme="draft"] .logo-text {
+    letter-spacing: 2px;
+}
+
+:root[data-theme="draft"] .panel-view-title,
+:root[data-theme="draft"] .empty-state-title {
+    letter-spacing: 3px;
+}
+
+:root[data-theme="draft"] .panel-view-title::after {
+    content: ' [A-01]';
+    color: #1d4ed8;
+    font-weight: 400;
+}
+
+:root[data-theme="draft"] .send-button {
+    background: #1d4ed8;
+    color: #ffffff;
+    box-shadow: 3px 3px 0 rgba(29, 78, 216, 0.25);
+}
+
+:root[data-theme="draft"] .send-button:hover:not(:disabled) {
+    background: #102a5c;
+    box-shadow: 5px 5px 0 rgba(29, 78, 216, 0.3);
+}
+
+:root[data-theme="draft"] .new-chat-btn:hover {
+    background: #1d4ed8;
+    border-color: #1d4ed8;
+    color: #ffffff;
+}
+
+:root[data-theme="draft"] .header-nav-btn:hover,
+:root[data-theme="draft"] .header-nav-btn.active {
+    border-color: #1d4ed8;
+    border-style: dashed;
+    color: #1d4ed8;
+}
+
+:root[data-theme="draft"] .user-message {
+    background: #1d4ed8;
+    color: #ffffff;
+    border-radius: 0;
+    box-shadow: 4px 4px 0 rgba(29, 78, 216, 0.22);
+}
+
+:root[data-theme="draft"] .conversation-item.active {
+    border-color: #1d4ed8;
+    box-shadow: 3px 3px 0 rgba(29, 78, 216, 0.18);
+}
+
+:root[data-theme="draft"] .info-card:hover,
+:root[data-theme="draft"] .conversation-item:hover {
+    border-color: #1d4ed8;
+    border-style: dashed;
+    background-image: repeating-linear-gradient(45deg, rgba(29, 78, 216, 0.06) 0px, rgba(29, 78, 216, 0.06) 5px, transparent 5px, transparent 10px);
+}
+
+:root[data-theme="draft"] .input-container:focus-within {
+    border-color: #1d4ed8;
+    border-style: dashed;
+    box-shadow: 3px 3px 0 rgba(29, 78, 216, 0.15);
+}
+
+/* BOTANICA 覆写：衬线图鉴排版 + 叶形元素 + 陶土橙点缀 */
+:root[data-theme="botanica"] .logo-icon {
+    background: linear-gradient(135deg, #2c5236, #5a8c69);
+    color: #fdfcf3;
     border-radius: 50% 4px 50% 4px;
-    box-shadow: 0 2px 10px rgba(45, 90, 45, 0.35);
+    transform: rotate(-4deg);
+    box-shadow: 0 3px 10px rgba(28, 58, 36, 0.3);
 }
 
-:root[data-theme="forest"] .send-button {
-    background: linear-gradient(135deg, #2d5a2d 0%, #4a7c59 100%);
-    color: #fafcf7;
-    box-shadow: 0 3px 12px rgba(45, 90, 45, 0.28);
+:root[data-theme="botanica"] .panel-view-title,
+:root[data-theme="botanica"] .empty-state-title {
+    font-style: italic;
+    letter-spacing: 1px;
+    text-transform: none;
+    color: #2c5236;
 }
 
-:root[data-theme="forest"] .send-button:hover:not(:disabled) {
-    background: linear-gradient(135deg, #3f6b3f 0%, #5a8c69 100%);
-    box-shadow: 0 6px 18px rgba(74, 124, 89, 0.4);
+:root[data-theme="botanica"] .panel-view-title::after {
+    content: ' ❦';
+    color: #c25e3a;
+    font-weight: 400;
+}
+
+:root[data-theme="botanica"] .send-button {
+    background: linear-gradient(135deg, #2c5236 0%, #47724f 100%);
+    color: #fdfcf3;
+    box-shadow: 0 3px 12px rgba(28, 58, 36, 0.28);
+}
+
+:root[data-theme="botanica"] .send-button:hover:not(:disabled) {
+    background: linear-gradient(135deg, #c25e3a 0%, #d97b4f 100%);
+    box-shadow: 0 6px 18px rgba(194, 94, 58, 0.38);
     transform: translateY(-2px);
 }
 
-:root[data-theme="forest"] .new-chat-btn:hover {
-    background: #2d5a2d;
-    border-color: #2d5a2d;
-    color: #fafcf7;
+:root[data-theme="botanica"] .new-chat-btn:hover {
+    background: #2c5236;
+    border-color: #2c5236;
+    color: #fdfcf3;
 }
 
-:root[data-theme="forest"] .header-nav-btn:hover,
-:root[data-theme="forest"] .header-nav-btn.active {
-    border-color: #4a7c59;
-    color: #2d5a2d;
-    box-shadow: 0 2px 8px rgba(74, 124, 89, 0.2);
+:root[data-theme="botanica"] .header-nav-btn:hover,
+:root[data-theme="botanica"] .header-nav-btn.active {
+    border-color: #47724f;
+    color: #2c5236;
+    box-shadow: 0 2px 8px rgba(71, 114, 79, 0.2);
 }
 
-:root[data-theme="forest"] .user-message {
-    background: linear-gradient(135deg, #3f6b4f 0%, #5a8c69 100%);
-    color: #fafcf7;
-    border-radius: 16px 16px 4px 16px;
-    box-shadow: 0 4px 14px rgba(45, 90, 45, 0.22);
+:root[data-theme="botanica"] .user-message {
+    background: linear-gradient(135deg, #2c5236 0%, #5a8c69 100%);
+    color: #fdfcf3;
+    border-radius: 20px 20px 4px 20px;
+    box-shadow: 0 4px 14px rgba(28, 58, 36, 0.22);
 }
 
-:root[data-theme="forest"] .info-card:hover {
-    border-color: #7a9a7a;
-    box-shadow: 0 6px 16px rgba(74, 124, 89, 0.16);
+:root[data-theme="botanica"] .conversation-item.active {
+    border-color: #c25e3a;
+    box-shadow: inset 3px 0 0 #c25e3a;
 }
 
-:root[data-theme="forest"] .input-container:focus-within {
-    border-color: #4a7c59;
-    box-shadow: 0 0 0 3px rgba(74, 124, 89, 0.14);
+:root[data-theme="botanica"] .info-card:hover {
+    border-color: #7d9a80;
+    box-shadow: 0 8px 20px rgba(71, 114, 79, 0.18);
+    transform: translateY(-2px);
 }
 
-/* SUNSET 覆写：落日渐变 + 暮光暖晕 */
+:root[data-theme="botanica"] .input-container:focus-within {
+    border-color: #47724f;
+    box-shadow: 0 0 0 3px rgba(71, 114, 79, 0.14);
+}
+
+:root[data-theme="botanica"] details > summary {
+    font-style: italic;
+    letter-spacing: 1px;
+}
+
+/* SUNSET 覆写：落日圆盘 logo + 暮色渐变标题 + 胶囊按钮 */
 :root[data-theme="sunset"] .logo-icon {
-    background: linear-gradient(135deg, #c75b39 0%, #e8a06b 100%);
-    color: #fffdfb;
-    box-shadow: 0 2px 12px rgba(199, 91, 57, 0.4);
+    background: radial-gradient(circle at 35% 35%, #ffd66e 0%, #ff9d5c 55%, #e85d3d 100%);
+    color: #4e2333;
+    border-radius: 50%;
+    box-shadow: 0 0 16px rgba(232, 93, 61, 0.45);
+}
+
+:root[data-theme="sunset"] .panel-view-title,
+:root[data-theme="sunset"] .empty-state-title {
+    letter-spacing: 5px;
+    background: linear-gradient(90deg, #e85d3d 0%, #c95d8e 60%, #8d6b9e 100%);
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+    color: transparent;
+}
+
+:root[data-theme="sunset"] .panel-view-title::after {
+    content: '';
 }
 
 :root[data-theme="sunset"] .send-button {
-    background: linear-gradient(135deg, #c75b39 0%, #e8956b 100%);
-    color: #fffdfb;
-    box-shadow: 0 3px 14px rgba(199, 91, 57, 0.32);
+    background: linear-gradient(135deg, #e85d3d 0%, #ff9d5c 100%);
+    color: #fffdf8;
+    border-radius: 999px;
+    box-shadow: 0 4px 16px rgba(232, 93, 61, 0.35);
 }
 
 :root[data-theme="sunset"] .send-button:hover:not(:disabled) {
-    background: linear-gradient(135deg, #d96a42 0%, #f0a878 100%);
-    box-shadow: 0 6px 22px rgba(232, 149, 107, 0.5);
+    background: linear-gradient(135deg, #c95d8e 0%, #e85d3d 100%);
+    box-shadow: 0 6px 24px rgba(201, 93, 142, 0.45);
     transform: translateY(-2px);
 }
 
 :root[data-theme="sunset"] .new-chat-btn:hover {
-    background: #c75b39;
-    border-color: #c75b39;
-    color: #fffdfb;
+    background: linear-gradient(135deg, #e85d3d, #ff9d5c);
+    border-color: #e85d3d;
+    color: #fffdf8;
 }
 
 :root[data-theme="sunset"] .header-nav-btn:hover,
 :root[data-theme="sunset"] .header-nav-btn.active {
-    border-color: #c75b39;
-    color: #c75b39;
-    box-shadow: 0 2px 10px rgba(199, 91, 57, 0.22);
+    border-color: #e85d3d;
+    color: #e85d3d;
+    box-shadow: 0 2px 10px rgba(232, 93, 61, 0.2);
 }
 
 :root[data-theme="sunset"] .user-message {
-    background: linear-gradient(135deg, #c75b39 0%, #e0956b 100%);
-    color: #fffdfb;
-    box-shadow: 0 4px 16px rgba(199, 91, 57, 0.28);
+    background: linear-gradient(135deg, #e85d3d 0%, #c95d8e 100%);
+    color: #fffdf8;
+    border-radius: 20px 20px 4px 20px;
+    box-shadow: 0 6px 18px rgba(201, 93, 142, 0.3);
+}
+
+:root[data-theme="sunset"] .conversation-item.active {
+    border-color: #e85d3d;
+    box-shadow: inset 3px 0 0 #e85d3d;
 }
 
 :root[data-theme="sunset"] .info-card:hover {
-    border-color: #d4a27a;
-    box-shadow: 0 6px 18px rgba(199, 91, 57, 0.18);
+    border-color: #eba091;
+    box-shadow: 0 8px 20px rgba(232, 93, 61, 0.16);
+    transform: translateY(-2px);
 }
 
 :root[data-theme="sunset"] .input-container:focus-within {
-    border-color: #c75b39;
-    box-shadow: 0 0 0 3px rgba(199, 91, 57, 0.14);
+    border-color: #e85d3d;
+    box-shadow: 0 0 0 3px rgba(232, 93, 61, 0.14);
 }
 
 /* 新主题专属动画 */
@@ -757,8 +905,8 @@
 /* 主题切换时的全局过渡 */
 :root[data-theme="light"] *,
 :root[data-theme="dark"] *,
-:root[data-theme="paper"] *,
-:root[data-theme="forest"] *,
+:root[data-theme="draft"] *,
+:root[data-theme="botanica"] *,
 :root[data-theme="sunset"] *,
 :root[data-theme="ink"] *,
 :root[data-theme="aurora"] *,

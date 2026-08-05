@@ -5,9 +5,9 @@
 const THEME_EFFECTS = {
     'light': null,
     'dark': null,
-    'paper': null,
-    'forest': {kind: 'leaves', count: 18},
-    'sunset': {kind: 'dust', count: 16},
+    'draft': null,
+    'botanica': {kind: 'botanica', count: 26},
+    'sunset': {kind: 'sunset', count: 22},
     'ink': {kind: 'ink', count: 14},
     'aurora': {kind: 'aurora', count: 90},
     'cyberpunk': {kind: 'neon-rain', count: 42},
@@ -85,26 +85,51 @@ function startThemeEffects(theme) {
 function makeParticle(kind, w, h, seed, theme) {
     const rand = (min, max) => min + Math.random() * (max - min);
     const p = {x: rand(0, w), y: rand(0, h), r: rand(1, 6), vx: 0, vy: 0, sway: 0, swaySpeed: rand(0.4, 1.6), phase: rand(0, Math.PI * 2), rot: rand(0, Math.PI * 2), rotSpeed: 0, color: '#ffffff', opacity: 0.4};
-    if (kind === 'leaves') {
-        // 森林飘叶：深浅不一的绿叶随风飘落，旋转摆动
-        p.r = rand(4, 8);
-        p.vy = rand(16, 34);
-        p.sway = rand(24, 48);
-        p.swaySpeed = rand(0.5, 1.2);
-        p.rot = rand(0, Math.PI * 2);
-        p.rotSpeed = rand(-1, 1);
-        p.color = ['#4a7c59', '#2d5a2d', '#6a9a5a', '#3f6b4f'][seed % 4];
-        p.opacity = rand(0.25, 0.5);
-        p.y = rand(-40, h);
-    } else if (kind === 'dust') {
-        // 夕阳：飘动的光点
-        p.r = rand(1, 2.8);
-        p.vx = rand(-6, 6);
-        p.vy = rand(-8, -3);
-        p.sway = rand(4, 12);
-        p.swaySpeed = rand(0.3, 0.9);
-        p.color = '#f5c87a';
-        p.opacity = rand(0.25, 0.6);
+    if (kind === 'botanica') {
+        // 植物图鉴：2/3 为半透明落叶剪影，1/3 为缓慢上浮的孢子光点
+        if (seed % 3 === 2) {
+            p.shape = 'spore';
+            p.r = rand(1, 2.2);
+            p.vy = -rand(8, 20);
+            p.sway = rand(16, 36);
+            p.swaySpeed = rand(0.3, 0.8);
+            p.twinkleSpeed = rand(0.8, 2);
+            p.baseOpacity = rand(0.2, 0.5);
+            p.opacity = p.baseOpacity;
+            p.color = '#d9b84f';
+        } else {
+            p.shape = 'leaf';
+            p.r = rand(6, 12);
+            p.vy = rand(14, 30);
+            p.sway = rand(30, 60);
+            p.swaySpeed = rand(0.4, 1);
+            p.rot = rand(0, Math.PI * 2);
+            p.rotSpeed = rand(-0.6, 0.6);
+            p.color = ['#2c5236', '#47724f', '#6b8f5e', '#8aa96f'][seed % 4];
+            p.opacity = rand(0.1, 0.24);
+            p.y = rand(-40, h);
+        }
+    } else if (kind === 'sunset') {
+        // 黄金时刻：3/4 为上升的暖光尘，1/4 为掠过天空的海鸥剪影
+        if (seed % 4 === 3) {
+            p.shape = 'bird';
+            p.r = rand(6, 13);
+            p.dir = seed % 2 === 0 ? 1 : -1;
+            p.vx = rand(18, 42) * p.dir;
+            p.swaySpeed = rand(4, 7);
+            p.y = rand(h * 0.08, h * 0.42);
+            p.color = '#4e2333';
+            p.opacity = rand(0.3, 0.55);
+        } else {
+            p.shape = 'mote';
+            p.r = rand(1, 2.8);
+            p.vx = rand(-6, 6);
+            p.vy = rand(-9, -4);
+            p.sway = rand(4, 12);
+            p.swaySpeed = rand(0.3, 0.9);
+            p.color = '#f7c873';
+            p.opacity = rand(0.3, 0.65);
+        }
     } else if (kind === 'neon-rain') {
         // 赛博朋克：高速坠落的霓虹雨 streak
         p.x = rand(0, w);
@@ -199,23 +224,49 @@ function tick(now) {
         const p = fx.parts[i];
         p.phase += p.swaySpeed * dt;
         const swayX = Math.sin(p.phase) * p.sway;
-        if (fx.kind === 'leaves') {
-            // 森林飘叶：下落摆动旋转，出底后回顶部重生（复用水墨竹叶叶形绘制）
-            p.x += Math.sin(p.phase) * p.sway * dt;
-            p.y += p.vy * dt;
-            p.rot += p.rotSpeed * dt;
-            if (p.y > h + 30) {
-                p.y = -30;
-                p.x = Math.random() * w;
+        if (fx.kind === 'botanica') {
+            if (p.shape === 'spore') {
+                // 孢子光点：缓慢上浮、左右摇曳、明暗呼吸，出顶后回到底部
+                p.x += Math.sin(p.phase) * p.sway * dt;
+                p.y += p.vy * dt;
+                p.opacity = p.baseOpacity * (0.55 + 0.45 * Math.sin(p.phase * p.twinkleSpeed));
+                if (p.y < -12) {
+                    p.y = h + 12;
+                    p.x = Math.random() * w;
+                }
+                drawDot(ctx, p);
+            } else {
+                // 落叶剪影：下落摆动旋转，出底后回顶部重生（复用水墨竹叶叶形绘制）
+                p.x += Math.sin(p.phase) * p.sway * dt;
+                p.y += p.vy * dt;
+                p.rot += p.rotSpeed * dt;
+                if (p.y > h + 30) {
+                    p.y = -30;
+                    p.x = Math.random() * w;
+                }
+                drawLeaf(ctx, p);
             }
-            drawLeaf(ctx, p);
-        } else if (fx.kind === 'dust') {
-            p.x += (p.vx + swayX * 2) * dt;
-            p.y += p.vy * dt;
-            if (p.x < -10) p.x = w + 10;
-            if (p.x > w + 10) p.x = -10;
-            if (p.y < -10) p.y = h + 10;
-            drawDot(ctx, p);
+        } else if (fx.kind === 'sunset') {
+            if (p.shape === 'bird') {
+                // 海鸥：水平滑翔掠过天空，出屏后从另一侧重新入场
+                p.x += p.vx * dt;
+                if (p.dir > 0 && p.x > w + 40) {
+                    p.x = -40;
+                    p.y = h * (0.08 + Math.random() * 0.34);
+                } else if (p.dir < 0 && p.x < -40) {
+                    p.x = w + 40;
+                    p.y = h * (0.08 + Math.random() * 0.34);
+                }
+                drawBird(ctx, p);
+            } else {
+                // 暖光尘：缓升漂移，出界后循环
+                p.x += (p.vx + swayX * 2) * dt;
+                p.y += p.vy * dt;
+                if (p.x < -10) p.x = w + 10;
+                if (p.x > w + 10) p.x = -10;
+                if (p.y < -10) p.y = h + 10;
+                drawDot(ctx, p);
+            }
         } else if (fx.kind === 'neon-rain') {
             // 霓虹雨：垂直高速坠落，出屏后回到顶部重生
             p.y += p.vy * dt;
@@ -286,7 +337,7 @@ function tick(now) {
     fx.raf = requestAnimationFrame(tick);
 }
 
-// 绘制光点（光尘/星光通用）
+// 绘制光点（光尘/星光/孢子通用）
 function drawDot(ctx, p) {
     ctx.save();
     ctx.globalAlpha = p.opacity;
@@ -294,6 +345,26 @@ function drawDot(ctx, p) {
     ctx.beginPath();
     ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
     ctx.fill();
+    ctx.restore();
+}
+
+// 绘制海鸥：v 形双翼剪影，翼尖随相位上下扇动，按飞行方向镜像
+function drawBird(ctx, p) {
+    const wing = Math.sin(p.phase) * p.r * 0.55;
+    ctx.save();
+    ctx.translate(p.x, p.y);
+    if (p.dir < 0) {
+        ctx.scale(-1, 1);
+    }
+    ctx.globalAlpha = p.opacity;
+    ctx.strokeStyle = p.color;
+    ctx.lineWidth = 1.8;
+    ctx.lineCap = 'round';
+    ctx.beginPath();
+    ctx.moveTo(-p.r, wing);
+    ctx.quadraticCurveTo(-p.r * 0.45, -p.r * 0.3, 0, 0);
+    ctx.quadraticCurveTo(p.r * 0.45, -p.r * 0.3, p.r, wing);
+    ctx.stroke();
     ctx.restore();
 }
 

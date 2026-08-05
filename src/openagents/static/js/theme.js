@@ -1,25 +1,19 @@
 // ==========================================
-// 13. 主题动态粒子特效引擎（背景装饰由 CSS 变量驱动，此引擎负责落叶/气泡/光尘/星光）
+// 13. 主题动态粒子特效引擎（背景装饰由 CSS 变量驱动，此引擎负责麦絮/光尘/星光/字符雨等）
 // ==========================================
 // 主题特效配置表：key 为 data-theme 值，null 表示该主题无动态特效
 const THEME_EFFECTS = {
     'light': null,
     'dark': null,
-    'dawn': {kind: 'stars-dawn', count: 22},
-    'night': {kind: 'stars-night', count: 22},
     'paper': null,
-    'paper-dark': null,
     'forest': {kind: 'wheats', count: 16},
-    'forest-dark': {kind: 'wheats', count: 16},
-    'ocean': {kind: 'bubbles', count: 16},
-    'ocean-dark': {kind: 'bubbles', count: 16},
     'sunset': {kind: 'dust', count: 16},
-    'sunset-dark': {kind: 'dust', count: 16},
+    'ink': {kind: 'ink', count: 14},
+    'night': {kind: 'stars-night', count: 22},
+    'aurora': {kind: 'aurora', count: 90},
     'cyberpunk': {kind: 'neon-rain', count: 42},
     'matrix': {kind: 'matrix', count: 0},
-    'aurora': {kind: 'aurora', count: 90},
-    'vaporwave': {kind: 'vapor', count: 55},
-    'ink': {kind: 'ink', count: 14}
+    'vaporwave': {kind: 'vapor', count: 55}
 };
 
 // 矩阵字符雨字符集：日文片假名 + 数字 + 符号
@@ -88,7 +82,7 @@ function startThemeEffects(theme) {
     fx.raf = requestAnimationFrame(tick);
 }
 
-// 生成单个粒子对象（叶子/气泡/光尘/星光四种类型）
+// 生成单个粒子对象（麦絮/光尘/星光/字符雨等类型，按主题特效 kind 分发）
 function makeParticle(kind, w, h, seed, theme) {
     const rand = (min, max) => min + Math.random() * (max - min);
     const p = {x: rand(0, w), y: rand(0, h), r: rand(1, 6), vx: 0, vy: 0, sway: 0, swaySpeed: rand(0.4, 1.6), phase: rand(0, Math.PI * 2), rot: rand(0, Math.PI * 2), rotSpeed: 0, color: '#ffffff', opacity: 0.4};
@@ -98,14 +92,6 @@ function makeParticle(kind, w, h, seed, theme) {
         p.twinkleSpeed = rand(1.5, 4);
         p.baseOpacity = rand(0.3, 0.9);
         p.color = ['#ffffff', '#ffe9b0', '#b8d0ff', '#e0f2ff'][seed % 4];
-        p.opacity = p.baseOpacity;
-        p.y = rand(0, h * 0.7);
-    } else if (kind === 'stars-dawn') {
-        // 星空·黎明：明亮浅紫灰背景下的深色晨星，避免融入画布，以暖橙点缀呼应黎明氛围
-        p.r = rand(0.8, 2.4);
-        p.twinkleSpeed = rand(1.5, 4);
-        p.baseOpacity = rand(0.55, 0.95);
-        p.color = ['#4a5a8c', '#6b4b8a', '#c96f4a', '#3d4f7d', '#b85c7a'][seed % 5];
         p.opacity = p.baseOpacity;
         p.y = rand(0, h * 0.7);
     } else if (kind === 'wheats') {
@@ -119,15 +105,6 @@ function makeParticle(kind, w, h, seed, theme) {
         p.color = ['#c49a45', '#d9b25c', '#b0832e', '#e2c06a'][seed % 4];
         p.opacity = rand(0.3, 0.55);
         p.y = rand(-30, h);
-    } else if (kind === 'bubbles') {
-        // 海洋：浮动的气泡
-        p.r = rand(3, 8);
-        p.vy = -rand(12, 30);
-        p.sway = rand(8, 20);
-        p.swaySpeed = rand(0.4, 1.2);
-        p.color = '#a8d4f0';
-        p.opacity = rand(0.5, 0.72);
-        p.y = rand(0, h + 40);
     } else if (kind === 'dust') {
         // 夕阳：飘动的光点
         p.r = rand(1, 2.8);
@@ -231,7 +208,7 @@ function tick(now) {
         const p = fx.parts[i];
         p.phase += p.swaySpeed * dt;
         const swayX = Math.sin(p.phase) * p.sway;
-        if (fx.kind === 'stars-night' || fx.kind === 'stars-dawn') {
+        if (fx.kind === 'stars-night') {
             // 静止闪烁：仅随时间变化透明度
             p.opacity = p.baseOpacity * (0.5 + 0.5 * Math.sin(p.phase * p.twinkleSpeed));
             p.phase += dt;
@@ -245,14 +222,6 @@ function tick(now) {
                 p.x = Math.random() * w;
             }
             drawWheat(ctx, p);
-        } else if (fx.kind === 'bubbles') {
-            p.x += swayX * dt * 2;
-            p.y += p.vy * dt;
-            if (p.y < -30) {
-                p.y = h + 30;
-                p.x = Math.random() * w;
-            }
-            drawBubble(ctx, p);
         } else if (fx.kind === 'dust') {
             p.x += (p.vx + swayX * 2) * dt;
             p.y += p.vy * dt;
@@ -340,18 +309,6 @@ function drawWheat(ctx, p) {
     ctx.beginPath();
     ctx.ellipse(0, 0, p.r * 1.6, p.r * 0.4, 0, 0, Math.PI * 2);
     ctx.fill();
-    ctx.restore();
-}
-
-// 绘制气泡：描边圆
-function drawBubble(ctx, p) {
-    ctx.save();
-    ctx.globalAlpha = p.opacity;
-    ctx.strokeStyle = p.color;
-    ctx.lineWidth = 1.5;
-    ctx.beginPath();
-    ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
-    ctx.stroke();
     ctx.restore();
 }
 
@@ -589,6 +546,10 @@ function drawLeaf(ctx, p) {
 const THEME_STORAGE_KEY = 'openagents_theme';
 
 function setTheme(theme) {
+    // 校验主题合法性（已删除主题/非法值回退浅色），THEME_EFFECTS 的 key 即有效主题白名单
+    if (!Object.prototype.hasOwnProperty.call(THEME_EFFECTS, theme)) {
+        theme = 'light';
+    }
     localStorage.setItem(THEME_STORAGE_KEY, theme);
     document.documentElement.dataset.theme = theme;
     const themeSelect = document.getElementById('themeSelect');

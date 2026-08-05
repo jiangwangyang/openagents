@@ -9,7 +9,9 @@
         // 首屏渲染前预应用主题，避免深色主题下出现浅色闪烁
         (function () {
             let savedTheme = localStorage.getItem('openagents_theme');
-            if (savedTheme === null) {
+            // 校验是否为有效主题（防止已删除主题残留导致样式失效），非法值回退浅色
+            const validThemes = ['light', 'dark', 'paper', 'forest', 'sunset', 'ink', 'night', 'aurora', 'cyberpunk', 'matrix', 'vaporwave'];
+            if (!validThemes.includes(savedTheme)) {
                 savedTheme = 'light';
             }
             document.documentElement.dataset.theme = savedTheme;
@@ -58,22 +60,16 @@
                 <button class="header-nav-btn" id="navConfigBtn" onclick="switchView('config')">CONFIG</button>
                 <select id="themeSelect" class="form-control theme-select" title="Switch Theme" onchange="setTheme(this.value)">
                     <option value="light">LIGHT ◇</option>
-                    <option value="dark">DARK ◆</option>
-                    <option value="dawn">DAWN ◇</option>
-                    <option value="night">NIGHT ◆</option>
                     <option value="paper">PAPER ◇</option>
-                    <option value="paper-dark">PAPER ◆</option>
                     <option value="forest">FOREST ◇</option>
-                    <option value="forest-dark">FOREST ◆</option>
-                    <option value="ocean">OCEAN ◇</option>
-                    <option value="ocean-dark">OCEAN ◆</option>
                     <option value="sunset">SUNSET ◇</option>
-                    <option value="sunset-dark">SUNSET ◆</option>
+                    <option value="ink">INK ◇</option>
+                    <option value="dark">DARK ◆</option>
+                    <option value="night">NIGHT ◆</option>
+                    <option value="aurora">AURORA ◆</option>
                     <option value="cyberpunk">CYBERPUNK ◆</option>
                     <option value="matrix">MATRIX ◆</option>
-                    <option value="aurora">AURORA ◆</option>
                     <option value="vaporwave">VAPORWAVE ◆</option>
-                    <option value="ink">INK ◇</option>
                 </select>
             </div>
             <span class="header-conversation-info" id="conversationInfo">NEW TRACE</span>

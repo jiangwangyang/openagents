@@ -72,44 +72,6 @@
     --noise-filter: invert(1);
 }
 
-/* DAWN — 黎明 / 夜之镜像 理念：与 NIGHT 相对的明亮清晨，深墨蓝换作浅紫灰，保留同样的星光与城市剪影，营造清新的凌晨氛围 */
-:root[data-theme="dawn"] {
-    --charcoal-900: #2c3959;
-    --charcoal-800: #55678f;
-    --charcoal-700: #7a8fb5;
-    --slate-400: #9aa8c8;
-    --slate-300: #c0cbe2;
-    --bg-canvas: #eef1f8;
-    --bg-surface: #f4f6fc;
-    --bg-panel: #ffffff;
-    --border-hard: #d3dced;
-    --border-soft: #e4eaf5;
-
-    --accent-color: #6b7aa8;
-
-    --backdrop-image: radial-gradient(ellipse at 80% 12%, rgba(255, 214, 165, 0.5) 0%, rgba(255, 214, 165, 0) 45%),
-    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='600' height='120' viewBox='0 0 600 120'%3E%3Cpath d='M0 120 L0 88 L55 70 L90 82 L150 60 L200 74 L270 52 L330 68 L400 48 L460 62 L540 44 L600 56 L600 120 Z' fill='%23c9d3ea'/%3E%3Cpath d='M40 120 L52 96 L64 120 Z' fill='%23ffffff'/%3E%3Cpath d='M120 120 L132 90 L144 120 Z' fill='%23ffffff'/%3E%3Cpath d='M220 120 L232 98 L244 120 Z' fill='%23ffffff'/%3E%3Cpath d='M330 120 L342 92 L354 120 Z' fill='%23ffffff'/%3E%3Cpath d='M440 120 L452 100 L464 120 Z' fill='%23ffffff'/%3E%3Cpath d='M540 120 L552 96 L564 120 Z' fill='%23ffffff'/%3E%3C/svg%3E"),
-    linear-gradient(180deg, #fdf4e9 0%, #f6e7f0 50%, #e5dcf2 100%);
-    --backdrop-size: auto, auto 30%, cover;
-    --backdrop-position: center, bottom center, center;
-    --backdrop-repeat: no-repeat, repeat-x, no-repeat;
-    --danger-color: #c0392b;
-    --danger-bg: #fdf0f0;
-
-    --shadow-rgb: 44, 57, 89;
-    --shadow-hard: 4px 4px 0 rgba(var(--shadow-rgb), 0.06);
-    --shadow-hard-lg: 8px 8px 0 rgba(var(--shadow-rgb), 0.08);
-
-    --hover-bg: rgba(107, 122, 168, 0.05);
-    --subtle-bg: rgba(107, 122, 168, 0.015);
-    --summary-bg: #f6f8fd;
-    --inline-code-bg: rgba(107, 122, 168, 0.06);
-    --overlay-bg: rgba(238, 241, 248, 0.9);
-    --on-accent-muted: rgba(255, 255, 255, 0.45);
-    --noise-opacity: 0.025;
-    --noise-filter: none;
-}
-
 /* NIGHT — 星空 / 静谧深邃 理念：深墨蓝夜空 + 城市剪影，营造专注沉思的夜间氛围 */
 :root[data-theme="night"] {
     --charcoal-900: #e8ecf5;
@@ -183,36 +145,6 @@
     --radius-lg: 0px;
 }
 
-:root[data-theme="paper-dark"] {
-    --charcoal-900: #ffffff;
-    --charcoal-800: #e0e0e0;
-    --charcoal-700: #b0b0b0;
-    --slate-400: #707070;
-    --slate-300: #505050;
-    --bg-canvas: #0a0a0a;
-    --bg-surface: #111111;
-    --bg-panel: #161616;
-    --border-hard: #ffffff;
-    --border-soft: #444444;
-
-    --accent-color: #ffffff;
-    --danger-color: #ff4444;
-    --danger-bg: #1a0a0a;
-
-    --shadow-rgb: 255, 255, 255;
-    --shadow-hard: 4px 4px 0 rgba(var(--shadow-rgb), 0.08);
-    --shadow-hard-lg: 8px 8px 0 rgba(var(--shadow-rgb), 0.1);
-
-    --hover-bg: rgba(255, 255, 255, 0.06);
-    --subtle-bg: rgba(255, 255, 255, 0.02);
-    --summary-bg: #1a1a1a;
-    --inline-code-bg: rgba(255, 255, 255, 0.08);
-    --overlay-bg: rgba(10, 10, 10, 0.95);
-    --on-accent-muted: rgba(0, 0, 0, 0.5);
-    --noise-opacity: 0.03;
-    --noise-filter: invert(1);
-}
-
 /* FOREST — 苔藓森林 / 自然有机 理念：以深松绿与暖米白为基调，营造沉稳专注的编辑氛围 */
 :root[data-theme="forest"] {
     --charcoal-900: #1a3c1a;
@@ -251,118 +183,6 @@
     --noise-filter: none;
 }
 
-:root[data-theme="forest-dark"] {
-    --charcoal-900: #d4e8d4;
-    --charcoal-800: #a8c4a8;
-    --charcoal-700: #7a9a7a;
-    --slate-400: #5a7a5a;
-    --slate-300: #3d5a3d;
-    --bg-canvas: #0f1a0f;
-    --bg-surface: #162216;
-    --bg-panel: #1c2b1c;
-    --border-hard: #2d4a2d;
-    --border-soft: #223822;
-
-    --accent-color: #8fbc8f;
-
-    --backdrop-image: radial-gradient(ellipse at 18% 0%, rgba(255, 255, 255, 0.05) 0%, rgba(255, 255, 255, 0) 45%),
-    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='600' height='150' viewBox='0 0 600 150'%3E%3Cpath d='M0 150 L0 108 C60 94 110 102 160 90 C220 76 260 84 320 70 C380 58 430 66 490 52 C540 44 570 50 600 44 L600 150 Z' fill='%235a8a5a' opacity='0.15'/%3E%3Cpath d='M30 150 L62 76 L94 150 Z' fill='%234a7c59' opacity='0.25'/%3E%3Cpath d='M86 150 L116 64 L146 150 Z' fill='%235a8a5a' opacity='0.28'/%3E%3Cpath d='M148 150 L176 80 L204 150 Z' fill='%236b9a6b' opacity='0.22'/%3E%3Cpath d='M214 150 L240 84 L266 150 Z' fill='%234a7c59' opacity='0.25'/%3E%3Cpath d='M286 150 L318 58 L350 150 Z' fill='%235a8a5a' opacity='0.3'/%3E%3Cpath d='M352 150 L378 80 L404 150 Z' fill='%236b9a6b' opacity='0.25'/%3E%3Cpath d='M420 150 L450 68 L480 150 Z' fill='%234a7c59' opacity='0.3'/%3E%3Cpath d='M500 150 L532 62 L564 150 Z' fill='%235a8a5a' opacity='0.28'/%3E%3Cpath d='M548 150 L572 84 L596 150 Z' fill='%236b9a6b' opacity='0.22'/%3E%3C/svg%3E"),
-    linear-gradient(180deg, #0f1a0f 0%, #142114 55%, #1b2d1b 100%);
-    --backdrop-size: auto, auto 42%, cover;
-    --backdrop-position: center, bottom center, center;
-    --backdrop-repeat: no-repeat, repeat-x, no-repeat;
-    --danger-color: #e57373;
-    --danger-bg: #2b1d1d;
-
-    --shadow-rgb: 0, 0, 0;
-    --shadow-hard: 4px 4px 0 rgba(var(--shadow-rgb), 0.25);
-    --shadow-hard-lg: 8px 8px 0 rgba(var(--shadow-rgb), 0.3);
-
-    --hover-bg: rgba(143, 188, 143, 0.06);
-    --subtle-bg: rgba(143, 188, 143, 0.02);
-    --summary-bg: #1e2e1e;
-    --inline-code-bg: rgba(143, 188, 143, 0.08);
-    --overlay-bg: rgba(15, 26, 15, 0.9);
-    --on-accent-muted: rgba(0, 0, 0, 0.45);
-    --noise-opacity: 0.05;
-    --noise-filter: invert(1);
-}
-
-/* OCEAN — 深海蓝 / 冷静理性 理念：以深海蓝与冰蓝灰构建冷静、专业的数据工作氛围 */
-:root[data-theme="ocean"] {
-    --charcoal-900: #0a2540;
-    --charcoal-800: #1a5276;
-    --charcoal-700: #2874a6;
-    --slate-400: #7fb3d5;
-    --slate-300: #aed6f1;
-    --bg-canvas: #f0f4f8;
-    --bg-surface: #e8f0f8;
-    --bg-panel: #ffffff;
-    --border-hard: #b8d4e3;
-    --border-soft: #d6e8f0;
-
-    --accent-color: #0066cc;
-
-    --backdrop-image: radial-gradient(ellipse at 80% 12%, rgba(255, 255, 255, 0.6) 0%, rgba(255, 255, 255, 0) 42%),
-    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='600' height='90' viewBox='0 0 600 90'%3E%3Cpath d='M0 55 Q50 35 100 55 T200 55 T300 55 T400 55 T500 55 T600 55 L600 90 L0 90 Z' fill='%237fb3d5' opacity='0.3'/%3E%3Cpath d='M0 70 Q60 52 120 70 T240 70 T360 70 T480 70 T600 70 L600 90 L0 90 Z' fill='%235a8ab0' opacity='0.4'/%3E%3C/svg%3E"),
-    linear-gradient(180deg, #f0f4f8 0%, #dcebf5 55%, #bcd8ea 100%);
-    --backdrop-size: auto, auto 30%, cover;
-    --backdrop-position: center, bottom center, center;
-    --backdrop-repeat: no-repeat, repeat-x, no-repeat;
-    --danger-color: #c0392b;
-    --danger-bg: #fdf2f0;
-
-    --shadow-rgb: 10, 37, 64;
-    --shadow-hard: 4px 4px 0 rgba(var(--shadow-rgb), 0.06);
-    --shadow-hard-lg: 8px 8px 0 rgba(var(--shadow-rgb), 0.08);
-
-    --hover-bg: rgba(0, 102, 204, 0.04);
-    --subtle-bg: rgba(0, 102, 204, 0.015);
-    --summary-bg: #f5f9fc;
-    --inline-code-bg: rgba(0, 102, 204, 0.06);
-    --overlay-bg: rgba(240, 244, 248, 0.9);
-    --on-accent-muted: rgba(255, 255, 255, 0.5);
-    --noise-opacity: 0.02;
-    --noise-filter: none;
-}
-
-:root[data-theme="ocean-dark"] {
-    --charcoal-900: #e0f0ff;
-    --charcoal-800: #a8d4f0;
-    --charcoal-700: #7fb3d5;
-    --slate-400: #5a8ab0;
-    --slate-300: #3d6a8a;
-    --bg-canvas: #081018;
-    --bg-surface: #0e1a25;
-    --bg-panel: #142230;
-    --border-hard: #1e3a52;
-    --border-soft: #162838;
-
-    --accent-color: #4db8ff;
-
-    --backdrop-image: radial-gradient(ellipse at 80% 12%, rgba(120, 180, 220, 0.12) 0%, rgba(120, 180, 220, 0) 45%),
-    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='600' height='90' viewBox='0 0 600 90'%3E%3Cpath d='M0 55 Q50 35 100 55 T200 55 T300 55 T400 55 T500 55 T600 55 L600 90 L0 90 Z' fill='%233d6a8a' opacity='0.25'/%3E%3Cpath d='M0 70 Q60 52 120 70 T240 70 T360 70 T480 70 T600 70 L600 90 L0 90 Z' fill='%232a5270' opacity='0.35'/%3E%3C/svg%3E"),
-    linear-gradient(180deg, #081018 0%, #0a1622 55%, #0e2230 100%);
-    --backdrop-size: auto, auto 30%, cover;
-    --backdrop-position: center, bottom center, center;
-    --backdrop-repeat: no-repeat, repeat-x, no-repeat;
-    --danger-color: #ff6b6b;
-    --danger-bg: #2b1d1d;
-
-    --shadow-rgb: 0, 0, 0;
-    --shadow-hard: 4px 4px 0 rgba(var(--shadow-rgb), 0.3);
-    --shadow-hard-lg: 8px 8px 0 rgba(var(--shadow-rgb), 0.35);
-
-    --hover-bg: rgba(77, 184, 255, 0.06);
-    --subtle-bg: rgba(77, 184, 255, 0.02);
-    --summary-bg: #162838;
-    --inline-code-bg: rgba(77, 184, 255, 0.08);
-    --overlay-bg: rgba(8, 16, 24, 0.9);
-    --on-accent-muted: rgba(0, 0, 0, 0.45);
-    --noise-opacity: 0.05;
-    --noise-filter: invert(1);
-}
-
 /* SUNSET — 日落暖橙 / 温暖人文 理念：赭石与暖奶油色调，营造温暖、专注的长文本阅读体验 */
 :root[data-theme="sunset"] {
     --charcoal-900: #5c2e00;
@@ -398,42 +218,6 @@
     --on-accent-muted: rgba(255, 255, 255, 0.5);
     --noise-opacity: 0.02;
     --noise-filter: none;
-}
-
-:root[data-theme="sunset-dark"] {
-    --charcoal-900: #f0d5b8;
-    --charcoal-800: #c9a87a;
-    --charcoal-700: #a08050;
-    --slate-400: #7a6040;
-    --slate-300: #5a4530;
-    --bg-canvas: #1a1410;
-    --bg-surface: #221a14;
-    --bg-panel: #2a2018;
-    --border-hard: #4a3a2a;
-    --border-soft: #3a2e22;
-
-    --accent-color: #e8a87c;
-
-    --backdrop-image: radial-gradient(ellipse at 82% 6%, rgba(255, 170, 90, 0.25) 0%, rgba(255, 170, 90, 0) 50%),
-    linear-gradient(180deg, #1a1410 0%, #2a1f14 50%, #3c2a17 100%);
-    --backdrop-size: auto, cover;
-    --backdrop-position: center, center;
-    --backdrop-repeat: no-repeat, no-repeat;
-    --danger-color: #e57373;
-    --danger-bg: #2b1d1d;
-
-    --shadow-rgb: 0, 0, 0;
-    --shadow-hard: 4px 4px 0 rgba(var(--shadow-rgb), 0.25);
-    --shadow-hard-lg: 8px 8px 0 rgba(var(--shadow-rgb), 0.3);
-
-    --hover-bg: rgba(232, 168, 124, 0.06);
-    --subtle-bg: rgba(232, 168, 124, 0.02);
-    --summary-bg: #2e241c;
-    --inline-code-bg: rgba(232, 168, 124, 0.08);
-    --overlay-bg: rgba(26, 20, 16, 0.9);
-    --on-accent-muted: rgba(0, 0, 0, 0.45);
-    --noise-opacity: 0.05;
-    --noise-filter: invert(1);
 }
 
 /* CYBERPUNK — 赛博朋克霓虹都市 理念：深空黑底 + 霓虹青/品红双色辉光，透视网格地平线 + 霓虹雨，全息终端质感 */
@@ -907,21 +691,15 @@
 /* 主题切换时的全局过渡 */
 :root[data-theme="light"] *,
 :root[data-theme="dark"] *,
-:root[data-theme="dawn"] *,
-:root[data-theme="night"] *,
 :root[data-theme="paper"] *,
-:root[data-theme="paper-dark"] *,
 :root[data-theme="forest"] *,
-:root[data-theme="forest-dark"] *,
-:root[data-theme="ocean"] *,
-:root[data-theme="ocean-dark"] *,
 :root[data-theme="sunset"] *,
-:root[data-theme="sunset-dark"] *,
+:root[data-theme="ink"] *,
+:root[data-theme="night"] *,
+:root[data-theme="aurora"] *,
 :root[data-theme="cyberpunk"] *,
 :root[data-theme="matrix"] *,
-:root[data-theme="aurora"] *,
-:root[data-theme="vaporwave"] *,
-:root[data-theme="ink"] * {
+:root[data-theme="vaporwave"] * {
     transition: background-color 0.3s ease, color 0.3s ease, border-color 0.3s ease, box-shadow 0.3s ease;
 }
 

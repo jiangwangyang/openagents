@@ -11,16 +11,6 @@ const emptyState = document.getElementById('emptyState');
 const manualPathInput = document.getElementById('manualPathInput');
 
 const globalInputWrapper = document.getElementById('globalInputWrapper');
-const cronListContainer = document.getElementById('cronListContainer');
-const skillListContainer = document.getElementById('skillListContainer');
-const mcpListContainer = document.getElementById('mcpListContainer');
-const addCronPanel = document.getElementById('addCronPanel');
-const addMcpPanel = document.getElementById('addMcpPanel');
-const agentListContainer = document.getElementById('agentListContainer');
-const addAgentPanel = document.getElementById('addAgentPanel');
-const addProviderPanel = document.getElementById('addProviderPanel');
-const taskListContainer = document.getElementById('taskListContainer');
-const addTaskPanel = document.getElementById('addTaskPanel');
 
 // 初始化基础交互输入状态
 messageInput.disabled = false;
@@ -46,10 +36,7 @@ let isAtBottom = true;
 let userScroll = false;
 let programScroll = false;
 
-// 全局运行时数据拓扑缓存
-let globalMcpCachedList = [];
-let globalAgentsCachedList = [];
-let globalProvidersCachedList = [];
+// 全局运行时数据拓扑缓存（面板专属缓存已内聚到各 panel_*.js）
 let globalConversationsCachedList = [];
 
 // SVG 图标核心资产定义

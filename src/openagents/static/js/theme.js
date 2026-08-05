@@ -1,15 +1,14 @@
 // ==========================================
-// 13. 主题动态粒子特效引擎（背景装饰由 CSS 变量驱动，此引擎负责麦絮/光尘/星光/字符雨等）
+// 13. 主题动态粒子特效引擎（背景装饰由 CSS 变量驱动，此引擎负责飘叶/光尘/星尘/字符雨等）
 // ==========================================
 // 主题特效配置表：key 为 data-theme 值，null 表示该主题无动态特效
 const THEME_EFFECTS = {
     'light': null,
     'dark': null,
     'paper': null,
-    'forest': {kind: 'wheats', count: 16},
+    'forest': {kind: 'leaves', count: 18},
     'sunset': {kind: 'dust', count: 16},
     'ink': {kind: 'ink', count: 14},
-    'night': {kind: 'stars-night', count: 22},
     'aurora': {kind: 'aurora', count: 90},
     'cyberpunk': {kind: 'neon-rain', count: 42},
     'matrix': {kind: 'matrix', count: 0},
@@ -82,29 +81,21 @@ function startThemeEffects(theme) {
     fx.raf = requestAnimationFrame(tick);
 }
 
-// 生成单个粒子对象（麦絮/光尘/星光/字符雨等类型，按主题特效 kind 分发）
+// 生成单个粒子对象（飘叶/光尘/星尘/字符雨等类型，按主题特效 kind 分发）
 function makeParticle(kind, w, h, seed, theme) {
     const rand = (min, max) => min + Math.random() * (max - min);
     const p = {x: rand(0, w), y: rand(0, h), r: rand(1, 6), vx: 0, vy: 0, sway: 0, swaySpeed: rand(0.4, 1.6), phase: rand(0, Math.PI * 2), rot: rand(0, Math.PI * 2), rotSpeed: 0, color: '#ffffff', opacity: 0.4};
-    if (kind === 'stars-night') {
-        // 星空·夜：深墨蓝夜空下的浅色明星，静止闪烁
-        p.r = rand(0.6, 2.2);
-        p.twinkleSpeed = rand(1.5, 4);
-        p.baseOpacity = rand(0.3, 0.9);
-        p.color = ['#ffffff', '#ffe9b0', '#b8d0ff', '#e0f2ff'][seed % 4];
-        p.opacity = p.baseOpacity;
-        p.y = rand(0, h * 0.7);
-    } else if (kind === 'wheats') {
-        // 麦浪飘絮：轻盈的麦穗絮毛
-        p.r = rand(1.5, 3);
-        p.vy = rand(12, 30);
-        p.sway = rand(20, 45);
-        p.swaySpeed = rand(0.6, 1.4);
+    if (kind === 'leaves') {
+        // 森林飘叶：深浅不一的绿叶随风飘落，旋转摆动
+        p.r = rand(4, 8);
+        p.vy = rand(16, 34);
+        p.sway = rand(24, 48);
+        p.swaySpeed = rand(0.5, 1.2);
         p.rot = rand(0, Math.PI * 2);
         p.rotSpeed = rand(-1, 1);
-        p.color = ['#c49a45', '#d9b25c', '#b0832e', '#e2c06a'][seed % 4];
-        p.opacity = rand(0.3, 0.55);
-        p.y = rand(-30, h);
+        p.color = ['#4a7c59', '#2d5a2d', '#6a9a5a', '#3f6b4f'][seed % 4];
+        p.opacity = rand(0.25, 0.5);
+        p.y = rand(-40, h);
     } else if (kind === 'dust') {
         // 夕阳：飘动的光点
         p.r = rand(1, 2.8);
@@ -208,20 +199,16 @@ function tick(now) {
         const p = fx.parts[i];
         p.phase += p.swaySpeed * dt;
         const swayX = Math.sin(p.phase) * p.sway;
-        if (fx.kind === 'stars-night') {
-            // 静止闪烁：仅随时间变化透明度
-            p.opacity = p.baseOpacity * (0.5 + 0.5 * Math.sin(p.phase * p.twinkleSpeed));
-            p.phase += dt;
-            drawStar(ctx, p);
-        } else if (fx.kind === 'wheats') {
-            p.x += swayX * dt * 2;
+        if (fx.kind === 'leaves') {
+            // 森林飘叶：下落摆动旋转，出底后回顶部重生（复用水墨竹叶叶形绘制）
+            p.x += Math.sin(p.phase) * p.sway * dt;
             p.y += p.vy * dt;
             p.rot += p.rotSpeed * dt;
-            if (p.y > h + 20) {
-                p.y = -20;
+            if (p.y > h + 30) {
+                p.y = -30;
                 p.x = Math.random() * w;
             }
-            drawWheat(ctx, p);
+            drawLeaf(ctx, p);
         } else if (fx.kind === 'dust') {
             p.x += (p.vx + swayX * 2) * dt;
             p.y += p.vy * dt;
@@ -299,19 +286,6 @@ function tick(now) {
     fx.raf = requestAnimationFrame(tick);
 }
 
-// 绘制麦絮：带旋转的轻盈絮毛
-function drawWheat(ctx, p) {
-    ctx.save();
-    ctx.translate(p.x, p.y);
-    ctx.rotate(p.rot);
-    ctx.globalAlpha = p.opacity;
-    ctx.fillStyle = p.color;
-    ctx.beginPath();
-    ctx.ellipse(0, 0, p.r * 1.6, p.r * 0.4, 0, 0, Math.PI * 2);
-    ctx.fill();
-    ctx.restore();
-}
-
 // 绘制光点（光尘/星光通用）
 function drawDot(ctx, p) {
     ctx.save();
@@ -320,22 +294,6 @@ function drawDot(ctx, p) {
     ctx.beginPath();
     ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
     ctx.fill();
-    ctx.restore();
-}
-
-// 绘制星星：带十字光芒闪烁
-function drawStar(ctx, p) {
-    ctx.save();
-    ctx.globalAlpha = p.opacity;
-    ctx.fillStyle = p.color;
-    ctx.beginPath();
-    ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
-    ctx.fill();
-    if (p.r > 1.2) {
-        ctx.globalAlpha = p.opacity * 0.5;
-        ctx.fillRect(p.x - p.r * 3, p.y - 0.4, p.r * 6, 0.8);
-        ctx.fillRect(p.x - 0.4, p.y - p.r * 3, 0.8, p.r * 6);
-    }
     ctx.restore();
 }
 

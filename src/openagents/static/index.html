@@ -10,7 +10,7 @@
         (function () {
             let savedTheme = localStorage.getItem('openagents_theme');
             // 校验是否为有效主题（防止已删除主题残留导致样式失效），非法值回退浅色
-            const validThemes = ['light', 'dark', 'paper', 'forest', 'sunset', 'ink', 'night', 'aurora', 'cyberpunk', 'matrix', 'vaporwave'];
+            const validThemes = ['light', 'dark', 'paper', 'forest', 'sunset', 'ink', 'aurora', 'cyberpunk', 'matrix', 'vaporwave'];
             if (!validThemes.includes(savedTheme)) {
                 savedTheme = 'light';
             }
@@ -65,7 +65,6 @@
                     <option value="sunset">SUNSET ◇</option>
                     <option value="ink">INK ◇</option>
                     <option value="dark">DARK ◆</option>
-                    <option value="night">NIGHT ◆</option>
                     <option value="aurora">AURORA ◆</option>
                     <option value="cyberpunk">CYBERPUNK ◆</option>
                     <option value="matrix">MATRIX ◆</option>

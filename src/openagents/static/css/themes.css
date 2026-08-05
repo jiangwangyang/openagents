@@ -72,44 +72,6 @@
     --noise-filter: invert(1);
 }
 
-/* NIGHT — 星空 / 静谧深邃 理念：深墨蓝夜空 + 城市剪影，营造专注沉思的夜间氛围 */
-:root[data-theme="night"] {
-    --charcoal-900: #e8ecf5;
-    --charcoal-800: #c2cbe0;
-    --charcoal-700: #94a1c4;
-    --slate-400: #6a76a0;
-    --slate-300: #4a547a;
-    --bg-canvas: #0a1024;
-    --bg-surface: #111a36;
-    --bg-panel: #182346;
-    --border-hard: #2b3a66;
-    --border-soft: #1f2c50;
-
-    --accent-color: #a8b8e8;
-
-    --backdrop-image: radial-gradient(ellipse at 80% 12%, rgba(140, 170, 255, 0.18) 0%, rgba(140, 170, 255, 0) 45%),
-    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='600' height='120' viewBox='0 0 600 120'%3E%3Cpath d='M0 120 L0 88 L55 70 L90 82 L150 60 L200 74 L270 52 L330 68 L400 48 L460 62 L540 44 L600 56 L600 120 Z' fill='%230d1328'/%3E%3Cpath d='M40 120 L52 96 L64 120 Z' fill='%23233a6b'/%3E%3Cpath d='M120 120 L132 90 L144 120 Z' fill='%23233a6b'/%3E%3Cpath d='M220 120 L232 98 L244 120 Z' fill='%23233a6b'/%3E%3Cpath d='M330 120 L342 92 L354 120 Z' fill='%23233a6b'/%3E%3Cpath d='M440 120 L452 100 L464 120 Z' fill='%23233a6b'/%3E%3Cpath d='M540 120 L552 96 L564 120 Z' fill='%23233a6b'/%3E%3C/svg%3E"),
-    linear-gradient(180deg, #070b1c 0%, #0a1024 55%, #141d3a 100%);
-    --backdrop-size: auto, auto 30%, cover;
-    --backdrop-position: center, bottom center, center;
-    --backdrop-repeat: no-repeat, repeat-x, no-repeat;
-    --danger-color: #ff7a7a;
-    --danger-bg: #2b1d2b;
-
-    --shadow-rgb: 0, 0, 0;
-    --shadow-hard: 4px 4px 0 rgba(var(--shadow-rgb), 0.3);
-    --shadow-hard-lg: 8px 8px 0 rgba(var(--shadow-rgb), 0.35);
-
-    --hover-bg: rgba(168, 184, 232, 0.06);
-    --subtle-bg: rgba(168, 184, 232, 0.02);
-    --summary-bg: #1b2647;
-    --inline-code-bg: rgba(168, 184, 232, 0.08);
-    --overlay-bg: rgba(10, 16, 36, 0.9);
-    --on-accent-muted: rgba(0, 0, 0, 0.4);
-    --noise-opacity: 0.06;
-    --noise-filter: invert(1);
-}
-
 /* PAPER — 高对比白纸 / 编辑模式 理念：极端极简，纯黑白灰，去除一切装饰色，专注内容本身 */
 :root[data-theme="paper"] {
     --charcoal-900: #000000;
@@ -668,6 +630,110 @@
     border-radius: 2px 14px 2px 14px;
 }
 
+/* FOREST 覆写：有机圆角 + 苔藓绿渐变 + 叶形 logo */
+:root[data-theme="forest"] {
+    --radius-sm: 6px;
+    --radius-md: 12px;
+    --radius-lg: 18px;
+}
+
+:root[data-theme="forest"] .logo-icon {
+    background: linear-gradient(135deg, #2d5a2d, #4a7c59);
+    color: #fafcf7;
+    border-radius: 50% 4px 50% 4px;
+    box-shadow: 0 2px 10px rgba(45, 90, 45, 0.35);
+}
+
+:root[data-theme="forest"] .send-button {
+    background: linear-gradient(135deg, #2d5a2d 0%, #4a7c59 100%);
+    color: #fafcf7;
+    box-shadow: 0 3px 12px rgba(45, 90, 45, 0.28);
+}
+
+:root[data-theme="forest"] .send-button:hover:not(:disabled) {
+    background: linear-gradient(135deg, #3f6b3f 0%, #5a8c69 100%);
+    box-shadow: 0 6px 18px rgba(74, 124, 89, 0.4);
+    transform: translateY(-2px);
+}
+
+:root[data-theme="forest"] .new-chat-btn:hover {
+    background: #2d5a2d;
+    border-color: #2d5a2d;
+    color: #fafcf7;
+}
+
+:root[data-theme="forest"] .header-nav-btn:hover,
+:root[data-theme="forest"] .header-nav-btn.active {
+    border-color: #4a7c59;
+    color: #2d5a2d;
+    box-shadow: 0 2px 8px rgba(74, 124, 89, 0.2);
+}
+
+:root[data-theme="forest"] .user-message {
+    background: linear-gradient(135deg, #3f6b4f 0%, #5a8c69 100%);
+    color: #fafcf7;
+    border-radius: 16px 16px 4px 16px;
+    box-shadow: 0 4px 14px rgba(45, 90, 45, 0.22);
+}
+
+:root[data-theme="forest"] .info-card:hover {
+    border-color: #7a9a7a;
+    box-shadow: 0 6px 16px rgba(74, 124, 89, 0.16);
+}
+
+:root[data-theme="forest"] .input-container:focus-within {
+    border-color: #4a7c59;
+    box-shadow: 0 0 0 3px rgba(74, 124, 89, 0.14);
+}
+
+/* SUNSET 覆写：落日渐变 + 暮光暖晕 */
+:root[data-theme="sunset"] .logo-icon {
+    background: linear-gradient(135deg, #c75b39 0%, #e8a06b 100%);
+    color: #fffdfb;
+    box-shadow: 0 2px 12px rgba(199, 91, 57, 0.4);
+}
+
+:root[data-theme="sunset"] .send-button {
+    background: linear-gradient(135deg, #c75b39 0%, #e8956b 100%);
+    color: #fffdfb;
+    box-shadow: 0 3px 14px rgba(199, 91, 57, 0.32);
+}
+
+:root[data-theme="sunset"] .send-button:hover:not(:disabled) {
+    background: linear-gradient(135deg, #d96a42 0%, #f0a878 100%);
+    box-shadow: 0 6px 22px rgba(232, 149, 107, 0.5);
+    transform: translateY(-2px);
+}
+
+:root[data-theme="sunset"] .new-chat-btn:hover {
+    background: #c75b39;
+    border-color: #c75b39;
+    color: #fffdfb;
+}
+
+:root[data-theme="sunset"] .header-nav-btn:hover,
+:root[data-theme="sunset"] .header-nav-btn.active {
+    border-color: #c75b39;
+    color: #c75b39;
+    box-shadow: 0 2px 10px rgba(199, 91, 57, 0.22);
+}
+
+:root[data-theme="sunset"] .user-message {
+    background: linear-gradient(135deg, #c75b39 0%, #e0956b 100%);
+    color: #fffdfb;
+    box-shadow: 0 4px 16px rgba(199, 91, 57, 0.28);
+}
+
+:root[data-theme="sunset"] .info-card:hover {
+    border-color: #d4a27a;
+    box-shadow: 0 6px 18px rgba(199, 91, 57, 0.18);
+}
+
+:root[data-theme="sunset"] .input-container:focus-within {
+    border-color: #c75b39;
+    box-shadow: 0 0 0 3px rgba(199, 91, 57, 0.14);
+}
+
 /* 新主题专属动画 */
 @keyframes neonFlicker {
     0%, 100% { opacity: 1; }
@@ -695,7 +761,6 @@
 :root[data-theme="forest"] *,
 :root[data-theme="sunset"] *,
 :root[data-theme="ink"] *,
-:root[data-theme="night"] *,
 :root[data-theme="aurora"] *,
 :root[data-theme="cyberpunk"] *,
 :root[data-theme="matrix"] *,

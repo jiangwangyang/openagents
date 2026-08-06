@@ -1,9 +1,13 @@
+import shutil
 import sys
 
 from openagents.tool import file_tool, task_tool, mcp_tool, shell_tool, skill_tool
 
+PWSH_DESCRIPTION = """
+pwsh -Command <command>                                         # Execute a command in PowerShell 7 on Windows.
+"""
 POWERSHELL_DESCRIPTION = """
-powershell -Command <command>                                   # Execute a command in PowerShell on Windows.
+powershell -Command <command>                                   # Execute a command in Windows PowerShell 5.1 on Windows.
 """
 BASH_DESCRIPTION = """
 bash -c <command>                                               # Execute a command in Bash on Linux/macOS.
@@ -20,7 +24,7 @@ mcp server <server_name> tool <tool_name> info                  # Show parameter
 mcp server <server_name> tool <tool_name> call <tool_json_args> # Call a specific tool with JSON arguments.
 task handover <agent_id>                                        # Hand over the task to the specified agent.
 task handover user                                              # Hand over the task to the user.
-{POWERSHELL_DESCRIPTION if sys.platform.startswith("win") else BASH_DESCRIPTION}
+{PWSH_DESCRIPTION if sys.platform.startswith("win") and shutil.which("pwsh") else POWERSHELL_DESCRIPTION if sys.platform.startswith("win") else BASH_DESCRIPTION}
 """
 COMMAND_TOOL = {
     "name": "command",

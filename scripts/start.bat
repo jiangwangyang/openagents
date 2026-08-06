@@ -1,18 +1,18 @@
 @echo off
 
-REM 切换到项目根目录（脚本所在目录的上一级）
+REM Switch to the project root directory (one level above the script directory)
 cd /d "%~dp0.."
 
-REM 检查 uv 是否已安装
+REM Check if uv is installed
 where uv >nul 2>nul
 if errorlevel 1 (
-    echo 错误: 未找到 uv，请先安装 uv: https://docs.astral.sh/uv/getting-started/installation/
+    echo Error: uv not found. Please install uv first: https://docs.astral.sh/uv/getting-started/installation/
     exit /b 1
 )
 
-REM 初始化/同步 uv 环境（自动创建 .venv 并安装依赖）
+REM Initialize/sync the uv environment (creates .venv and installs dependencies)
 uv sync
 if errorlevel 1 exit /b 1
 
-REM 启动应用
+REM Start the application
 uv run openagents

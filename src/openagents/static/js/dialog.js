@@ -17,11 +17,16 @@ async function loadConversationList() {
             item.className = 'conversation-item';
             item.dataset.id = conversation.id;
             item.innerHTML = `
-                <span class="conversation-item-text">${conversation.title}</span>
-                <button class="delete-btn" onclick="event.stopPropagation(); confirmDeleteConversation('${conversation.id}', '${escapeHtml(conversation.title.replaceAll('\n', ''))}')">
+                <span class="conversation-item-text">${escapeHtml(conversation.title)}</span>
+                <button class="delete-btn">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
                 </button>
             `;
+            // 删除按钮通过闭包绑定，避免标题中的引号破坏内联 onclick 字符串
+            item.querySelector('.delete-btn').onclick = (event) => {
+                event.stopPropagation();
+                confirmDeleteConversation(conversation.id, conversation.title.replaceAll('\n', ''));
+            };
             item.onclick = () => {
                 switchView('dialog');
                 loadConversation(conversation.id);

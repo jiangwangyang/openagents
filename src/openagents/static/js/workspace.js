@@ -125,7 +125,7 @@ function handleManualJump() {
 function createDirItem(name, path) {
     const div = document.createElement('div');
     div.className = 'dir-item';
-    div.innerHTML = `<span>[DIR]</span><span>${name}</span>`;
+    div.innerHTML = `<span>[DIR]</span><span>${escapeHtml(name)}</span>`;
     div.onclick = () => loadDirList(path);
     return div;
 }

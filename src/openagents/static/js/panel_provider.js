@@ -74,11 +74,12 @@ function renderProvidersFormList() {
     const providerList = document.getElementById('providerConfigList');
     providerList.innerHTML = '';
 
-    globalProvidersCachedList.forEach(provider => {
+    globalProvidersCachedList.forEach((provider, index) => {
         const name = provider.name;
         const card = document.createElement('div');
         card.className = 'info-card';
-        card.id = `provider-card-${name}`;
+        // 元素 id 使用列表索引生成（供应商名可能包含引号等特殊字符）
+        card.id = `provider-card-${index}`;
 
         const snippet = provider.base_url || 'Endpoint missing';
 
@@ -90,8 +91,8 @@ function renderProvidersFormList() {
                     <span class="info-card-snippet">${escapeHtml(snippet)}</span>
                 </div>
                 <div style="display:flex; gap:12px; align-items:center;" onclick="event.stopPropagation();">
-                    <button class="btn btn-sm send-button" style="height:28px; padding:0 8px; font-size:10px;" onclick="updateSingleProvider('${name}')">Save</button>
-                    <button class="delete-btn" style="opacity:1; color:var(--danger-color); font-size:11px; font-family:var(--font-mono); font-weight:700; padding:6px;" onclick="removeModelProvider('${name}')">
+                    <button class="btn btn-sm send-button provider-save-btn" style="height:28px; padding:0 8px; font-size:10px;">Save</button>
+                    <button class="delete-btn" style="opacity:1; color:var(--danger-color); font-size:11px; font-family:var(--font-mono); font-weight:700; padding:6px;">
                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
                     </button>
                 </div>
@@ -100,21 +101,24 @@ function renderProvidersFormList() {
                 <div class="form-row" style="margin-bottom: 12px;">
                     <div class="form-group" style="flex: 2;">
                         <label style="font-family: var(--font-display); font-size: 11px; font-weight: 700; text-transform: uppercase; color: var(--charcoal-700);">Base URL Endpoint</label>
-                        <input type="text" id="provider-url-${name}" class="form-control mono" value="${escapeHtml(provider.base_url || '')}">
+                        <input type="text" id="provider-url-${index}" class="form-control mono" value="${escapeHtml(provider.base_url || '')}">
                     </div>
                     <div class="form-group" style="flex: 1;">
                         <label style="font-family: var(--font-display); font-size: 11px; font-weight: 700; text-transform: uppercase; color: var(--charcoal-700);">Secret Token (API Key)</label>
-                        <input type="password" id="provider-key-${name}" class="form-control mono" value="${escapeHtml(provider.api_key || '')}" placeholder="••••••••••••">
+                        <input type="password" id="provider-key-${index}" class="form-control mono" value="${escapeHtml(provider.api_key || '')}" placeholder="••••••••••••">
                     </div>
                 </div>
                 <div class="form-row">
                     <div class="form-group">
                         <label style="font-family: var(--font-display); font-size: 11px; font-weight: 700; text-transform: uppercase; color: var(--charcoal-700);">Engine Clusters (Comma Separated Models)</label>
-                        <input type="text" id="provider-models-${name}" class="form-control mono" value="${escapeHtml(provider.models?.join(', ') || '')}">
+                        <input type="text" id="provider-models-${index}" class="form-control mono" value="${escapeHtml(provider.models?.join(', ') || '')}">
                     </div>
                 </div>
             </div>
         `;
+        // 按钮通过闭包绑定，避免供应商名中的引号破坏内联 onclick 字符串
+        card.querySelector('.provider-save-btn').onclick = () => updateSingleProvider(name);
+        card.querySelector('.delete-btn').onclick = () => removeModelProvider(name);
         providerList.appendChild(card);
     });
 }
@@ -181,9 +185,14 @@ async function submitNewProvider() {
 }
 
 async function updateSingleProvider(name) {
-    const urlValue = document.getElementById(`provider-url-${name}`).value.trim();
-    const keyValue = document.getElementById(`provider-key-${name}`).value.trim();
-    const modelsValue = document.getElementById(`provider-models-${name}`).value.trim();
+    // 元素 id 使用列表索引生成（供应商名可能包含引号等特殊字符）
+    const index = globalProvidersCachedList.findIndex(p => p.name === name);
+    if (index === -1) {
+        return;
+    }
+    const urlValue = document.getElementById(`provider-url-${index}`).value.trim();
+    const keyValue = document.getElementById(`provider-key-${index}`).value.trim();
+    const modelsValue = document.getElementById(`provider-models-${index}`).value.trim();
 
     const bodyPayload = {
         base_url: urlValue,

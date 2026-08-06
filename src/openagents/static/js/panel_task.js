@@ -63,7 +63,7 @@ async function fetchTaskList() {
                         <span class="info-card-snippet">${escapeHtml(task.content)}</span>
                     </div>
                     <div style="display:flex; gap:8px; align-items:center;" onclick="event.stopPropagation();">
-                        <button class="delete-btn" style="opacity:1; padding:6px;" onclick="removeTask(${task.id}, '${escapeHtml(task.title).replace(/'/g, "\\'")}')">
+                        <button class="delete-btn" style="opacity:1; padding:6px;">
                             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
                         </button>
                     </div>
@@ -95,6 +95,8 @@ async function fetchTaskList() {
                     </div>
                 </div>
             `;
+            // 删除按钮通过闭包绑定，避免标题中的引号破坏内联 onclick 字符串
+            card.querySelector('.delete-btn').onclick = () => removeTask(task.id, task.title);
             taskListContainer.appendChild(card);
             // 启动下拉仅列出候选 Agent
             const startSelect = document.getElementById(`task-start-agent-${task.id}`);

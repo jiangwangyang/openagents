@@ -14,7 +14,7 @@ async def execute(cmd_and_args: list[str], task_id: int | None) -> tuple[str, bo
     work_dir = str(task.work_dir)
     # 移交给用户：创建 agent_id 为 None 的用户审核对话
     if cmd_and_args[2] == "user":
-        await conversation_repository.add_conversation(f"{task.title}-用户", work_dir, "", task_id, None)
+        await conversation_repository.add_conversation(f"{task.title}-User", work_dir, "", task_id, None)
         return "Task handed over to the user, please summarize the current progress", False
     # 移交给智能体：校验 agent 存在且属于该任务团队
     try:

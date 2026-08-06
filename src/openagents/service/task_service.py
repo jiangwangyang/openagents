@@ -44,12 +44,11 @@ async def run_task(task_id: int, agent_id: int) -> None:
             # 团队成员为 agent_ids 候选池对应的 Agent
             team_agents = [agent for agent in await agent_repository.list_agents() if agent.id in task.agent_ids]
             task_content_list += [f"# Team\n{json.dumps([{'id': team_agent.id, 'name': team_agent.name, 'description': team_agent.description} for team_agent in team_agents], ensure_ascii=False)}"]
-            task_content_list += ["# Tool\n当需要将当前任务的控制权移交予其他智能体或人类时，请先执行上述内置移交命令，随后采用结构化格式（包括：当前状态、已完成事项、阻塞问题及待办计划）对任务进展进行总结。"]
             task_content_list += ["# History"]
             for history_conversation in task.conversations:
                 if not history_conversation.messages:
                     continue
-                name = history_conversation.agent.name if history_conversation.agent else "用户"
+                name = history_conversation.agent.name if history_conversation.agent else "User"
                 content = history_conversation.messages[-1].content
                 text = content if isinstance(content, str) else content[-1].get("text", "")
                 task_content_list += [f"## {name}\n{json.dumps(text, ensure_ascii=False)}"]

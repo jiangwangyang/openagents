@@ -5,7 +5,7 @@ import sys
 
 import anyio
 
-POWERSHELL_SETTING = """# UTF-8 编码设置
+POWERSHELL_SETTING = """# UTF-8 encoding setting
 [Console]::OutputEncoding = [System.Text.Encoding]::UTF8
 $OutputEncoding = [System.Text.Encoding]::UTF8
 """
@@ -19,7 +19,7 @@ async def setup_powershell_utf8():
         profile_path = home_dir / "Documents" / "WindowsPowerShell" / "Microsoft.PowerShell_profile.ps1"
         await profile_path.parent.mkdir(parents=True, exist_ok=True)
         await profile_path.write_text(POWERSHELL_SETTING, encoding="utf-8")
-        logging.info("已配置PowerShell默认编码")
+        logging.info("PowerShell default encoding configured")
 
 
 async def execute(cmd_and_args: list[str], work_dir: str) -> tuple[str, bool]:

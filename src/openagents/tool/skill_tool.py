@@ -59,7 +59,7 @@ def list_skills() -> list[SkillInfo]:
 
 
 # 执行
-async def execute(cmd_and_args: list[str], work_dir: str) -> tuple[str, bool]:
+async def execute(cmd_and_args: list[str]) -> tuple[str, bool]:
     # 1. skill list
     if len(cmd_and_args) == 2 and cmd_and_args[0] == "skill" and cmd_and_args[1] == "list":
         tool_content = json.dumps([{"name": s.name, "description": s.description, "path": s.path} for s in SKILLS], ensure_ascii=False)

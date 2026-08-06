@@ -72,7 +72,7 @@ async def lifespan() -> AsyncIterator[None]:
 
 
 # 执行
-async def execute(cmd_and_args: list[str], work_dir: str) -> tuple[str, bool]:
+async def execute(cmd_and_args: list[str]) -> tuple[str, bool]:
     # 1. mcp server list
     if len(cmd_and_args) == 3 and cmd_and_args[0] == "mcp" and cmd_and_args[1] == "server" and cmd_and_args[2] == "list":
         result = [{"name": name, "description": mcp_server_info.description} for name, mcp_server_info in MCP_DICT.items()]

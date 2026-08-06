@@ -1,11 +1,8 @@
 from openagents.repository import task_repository, conversation_repository, agent_repository
-from openagents.service import task_service
 
 
-async def execute(cmd_and_args: list[str], work_dir: str) -> tuple[str, bool]:
-    # 任务移交：从当前 async 上下文读取 task_id，为该任务创建新对话，run_task 下一轮循环自动接续
-    # 顶层导入 task_service 不构成循环依赖：导入本模块时 task_service 已在 sys.modules 中，其函数仅在运行时被访问
-    task_id = task_service.get_task_id()
+async def execute(cmd_and_args: list[str], task_id: int | None) -> tuple[str, bool]:
+    # 任务移交：task_id 为当前对话所属任务（独立对话为空），为该任务创建新对话，run_task 下一轮循环自动接续
     if task_id is None:
         return "Not in a task context, cannot hand over", True
     if len(cmd_and_args) < 3 or cmd_and_args[1] != "handover":

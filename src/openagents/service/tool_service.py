@@ -1,6 +1,7 @@
 import shutil
 import sys
 
+from openagents.repository.database import ConversationEntity
 from openagents.tool import file_tool, task_tool, mcp_tool, shell_tool, skill_tool
 
 PWSH_DESCRIPTION = """
@@ -50,8 +51,8 @@ def list_tools() -> list[dict]:
     return [COMMAND_TOOL]
 
 
-# 执行选择的工具
-async def execute_tool(name: str, tool_input: dict, work_dir: str) -> tuple[str, bool]:
+# 执行选择的工具，下游工具所需参数直接从 conversation 取
+async def execute_tool(name: str, tool_input: dict, conversation: ConversationEntity) -> tuple[str, bool]:
     try:
         if name != "command":
             return f"Unknown tool: {name}", True
@@ -59,13 +60,13 @@ async def execute_tool(name: str, tool_input: dict, work_dir: str) -> tuple[str,
             return "No cmd_and_args", True
         cmd_and_args: list[str] = tool_input["cmd_and_args"]
         if cmd_and_args[0] == "file":
-            return await file_tool.execute(cmd_and_args, work_dir)
+            return await file_tool.execute(cmd_and_args, str(conversation.work_dir))
         if cmd_and_args[0] == "skill":
-            return await skill_tool.execute(cmd_and_args, work_dir)
+            return await skill_tool.execute(cmd_and_args)
         if cmd_and_args[0] == "mcp":
-            return await mcp_tool.execute(cmd_and_args, work_dir)
+            return await mcp_tool.execute(cmd_and_args)
         if cmd_and_args[0] == "task":
-            return await task_tool.execute(cmd_and_args, work_dir)
-        return await shell_tool.execute(cmd_and_args, work_dir)
+            return await task_tool.execute(cmd_and_args, conversation.task_id)
+        return await shell_tool.execute(cmd_and_args, str(conversation.work_dir))
     except Exception as e:
         return f"{e}", True

@@ -63,6 +63,8 @@ async def work(conversation_id: int, task_content: str | None) -> None:
         if not conversation:
             # 没有对话 直接结束
             return
+
+        # 发布历史消息
         for msg in conversation.messages:
             # 字符串消息整体作为用户消息发布，跳过块迭代
             if isinstance(msg.content, str):
@@ -79,6 +81,8 @@ async def work(conversation_id: int, task_content: str | None) -> None:
                         publish(conversation_id, "tool_result", block["content"], _id=block["tool_use_id"], is_error=block["is_error"])
             # 发布使用量消息
             publish(conversation_id, "usage", cache_read_input_tokens=msg.cache_read_input_tokens, input_tokens=msg.input_tokens, output_tokens=msg.output_tokens)
+        if task_content:
+            publish(conversation_id, "user", task_content)
 
         # 没有任务 直接结束
         if not task_content:
@@ -90,7 +94,6 @@ async def work(conversation_id: int, task_content: str | None) -> None:
         api_key = model_provider.api_key if model_provider else ""
         model = await model_provider_repository.get_current_model() or ""
         thinking = {"type": "enabled", "display": "summarized"} if await model_provider_repository.get_thinking() else {"type": "disabled"}
-        work_dir = str(conversation.work_dir)
         system_prompt = str(conversation.system_prompt)
         tools = tool_service.list_tools()
         messages = [{"id": msg.id, "role": msg.role, "content": msg.content, "time": msg.time} for msg in conversation.messages]
@@ -163,7 +166,7 @@ async def work(conversation_id: int, task_content: str | None) -> None:
             # 3. 工具调用
             msg_dict = {"role": "user", "content": []}
             for tool_use in tool_use_list:
-                tool_content, is_error = await tool_service.execute_tool(tool_use.name, tool_use.input, work_dir)
+                tool_content, is_error = await tool_service.execute_tool(tool_use.name, tool_use.input, conversation)
                 msg_dict["content"] += [{"type": "tool_result", "tool_use_id": tool_use.id, "content": tool_content, "is_error": is_error}]
                 publish(conversation_id, "tool_result", tool_content, _id=tool_use.id, is_error=is_error)
             msg_dict["time"] = datetime.now()

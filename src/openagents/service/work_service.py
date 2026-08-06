@@ -143,7 +143,6 @@ async def work(conversation_id: int, task_content: str | None) -> None:
             msg_dict = msg.model_dump()
             msg_dict["time"] = datetime.now()
             messages += [msg_dict]
-            logging.info(f"Response: {json.dumps(msg_dict, ensure_ascii=False, default=str)}")
 
             # 2. 判断结束
             tool_use_list = [block for block in msg.content if block.type == "tool_use"]
@@ -159,7 +158,6 @@ async def work(conversation_id: int, task_content: str | None) -> None:
                 publish(conversation_id, "tool_result", tool_content, _id=tool_use.id, is_error=is_error)
             msg_dict["time"] = datetime.now()
             messages += [msg_dict]
-            logging.info(f"Tool: {json.dumps(msg_dict, ensure_ascii=False, default=str)}")
     except Exception as e:
         publish(conversation_id, "error", f"Work execution failed: {e}")
         logging.error(f"Work execution failed: {e}", exc_info=True)

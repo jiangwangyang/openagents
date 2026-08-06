@@ -7,6 +7,7 @@ const messageInput = document.getElementById('messageInput');
 const sendButton = document.getElementById('sendButton');
 const conversationList = document.getElementById('conversationList');
 const conversationInfo = document.getElementById('conversationInfo');
+const usageInfo = document.getElementById('usageInfo');
 const emptyState = document.getElementById('emptyState');
 const manualPathInput = document.getElementById('manualPathInput');
 
@@ -30,6 +31,10 @@ let streamWrapper = null;
 let streamContentNode = null;
 let streamRawText = '';
 let streamChunkCount = 0;
+// token 用量累计（每次 connectStream 时重置）
+let usageInputTokens = 0;
+let usageOutputTokens = 0;
+let usageCacheTokens = 0;
 
 // 运行时会话滚动控制变量
 let isAtBottom = true;

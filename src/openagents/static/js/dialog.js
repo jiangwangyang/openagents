@@ -93,6 +93,7 @@ function startNewChat() {
     autoResize();
     enableInput();
     conversationInfo.textContent = 'NEW TRACE';
+    usageInfo.textContent = '';
     initDefaultWorkspace();
     loadAgentSelect();
     setContextLocked(false);
@@ -226,6 +227,11 @@ function connectStream(conversationId) {
     streamContentNode = null;
     streamRawText = '';
     streamChunkCount = 0;
+    // 重置 token 用量累计并清空 header 展示
+    usageInputTokens = 0;
+    usageOutputTokens = 0;
+    usageCacheTokens = 0;
+    usageInfo.textContent = '';
     setTyping(true);
 
     const source = new EventSource(`/work/${conversationId}/stream`);
@@ -297,6 +303,19 @@ function connectStream(conversationId) {
             if (streamRawText && streamContentNode) {
                 streamContentNode.innerHTML = formatMarkdown(streamRawText);
             }
+        }
+
+        // token 用量：累计本次连接的全部 usage（工具循环会有多条），更新 header 展示
+        if (data.type === 'usage') {
+            usageInputTokens += data.input_tokens || 0;
+            usageOutputTokens += data.output_tokens || 0;
+            usageCacheTokens += data.cache_read_input_tokens || 0;
+            const formatTokens = (count) => count >= 1000 ? (count / 1000).toFixed(1) + 'k' : String(count);
+            let usageText = `↑ ${formatTokens(usageInputTokens)} in · ${formatTokens(usageOutputTokens)} out`;
+            if (usageCacheTokens > 0) {
+                usageText += ` · ${formatTokens(usageCacheTokens)} cache`;
+            }
+            usageInfo.textContent = usageText;
         }
 
         // 追加消息文本

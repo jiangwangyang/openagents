@@ -284,6 +284,18 @@
     background: var(--bg-surface);
 }
 
+.header-right {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+}
+
+.header-usage-info {
+    font-size: 11px;
+    color: var(--slate-400);
+    font-family: var(--font-mono);
+}
+
 .header-conversation-info {
     font-size: 11px;
     color: var(--slate-400);

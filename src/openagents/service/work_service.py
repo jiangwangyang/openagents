@@ -2,6 +2,7 @@ import asyncio
 import json
 import logging
 from datetime import datetime
+from typing import Any
 
 from anthropic import AsyncAnthropic, AsyncStream
 from anthropic.types.raw_message_stream_event import RawMessageStreamEvent
@@ -37,10 +38,9 @@ def get_work_state(conversation_id: int) -> WorkState | None:
     return _work_state_dict.get(conversation_id)
 
 
-def publish(conversation_id: int, _type: str, text: str, _id: str | None = None, name: str | None = None, is_error: bool | None = None) -> None:
-    # 构造SSE数据
-    chunk = {"type": _type, "text": text, "id": _id, "name": name, "is_error": is_error}
-    chunk = {k: v for k, v in chunk.items() if v is not None}
+def publish(conversation_id: int, _type: str, text: str = "", **kwargs: Any) -> None:
+    # 构造SSE数据，kwargs 可追加任意字段
+    chunk = {"type": _type, "text": text, **kwargs}
     # 追加到列表
     work_state = _work_state_dict[conversation_id]
     work_state.chunks.append(chunk)
@@ -133,11 +133,9 @@ async def work(conversation_id: int, task_content: str | None) -> None:
                             msg.content[-1].input = {"error": str(e)}
                         input_json = ""
                 elif event.type == "message_delta":
-                    msg.container = event.delta.container
-                    msg.stop_details = event.delta.stop_details
                     msg.stop_reason = event.delta.stop_reason
-                    msg.stop_sequence = event.delta.stop_sequence
                     msg.usage.output_tokens = event.usage.output_tokens
+                    publish(conversation_id, "usage", cache_read_input_tokens=event.usage.cache_read_input_tokens, input_tokens=event.usage.input_tokens, output_tokens=event.usage.output_tokens)
                 elif event.type == "message_stop":
                     pass
             msg_dict = msg.model_dump()

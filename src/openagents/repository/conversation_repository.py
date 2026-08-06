@@ -39,10 +39,10 @@ async def add_conversation(title: str, work_dir: str, system_prompt: str, task_i
         return conversation.id
 
 
-# 批量追加对话消息，每条消息为 (role, content, time)，归属对话由 conversation_id 统一指定，并原子刷新对话的更新时间
-async def add_conversation_messages(conversation_id: int, messages: list[tuple[str, str | list | dict, datetime]]) -> None:
+# 批量追加对话消息，每条消息为 (role, content, stop_reason, cache_read_input_tokens, input_tokens, output_tokens, time)，归属对话由 conversation_id 统一指定，并原子刷新对话的更新时间
+async def add_conversation_messages(conversation_id: int, messages: list[tuple[str, str | list | dict, str, int, int, int, datetime]]) -> None:
     async with async_session() as session:
-        session.add_all([MessageEntity(conversation_id=conversation_id, role=role, content=content, time=time) for role, content, time in messages])
+        session.add_all([MessageEntity(conversation_id=conversation_id, role=role, content=content, cache_read_input_tokens=cache_read_input_tokens, input_tokens=input_tokens, output_tokens=output_tokens, stop_reason=stop_reason, time=time) for role, content, stop_reason, cache_read_input_tokens, input_tokens, output_tokens, time in messages])
         await session.execute(update(ConversationEntity).where(ConversationEntity.id == conversation_id).values(update_time=datetime.now()))
         await session.commit()
 

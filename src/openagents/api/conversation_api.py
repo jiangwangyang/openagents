@@ -27,4 +27,4 @@ async def delete_conversation(conversation_id: int) -> None:
 async def add_conversation_message(conversation_id: int, content: str = Body(..., embed=True)) -> None:
     if await conversation_repository.get_conversation(conversation_id) is None:
         raise HTTPException(status_code=404, detail="Conversation not found")
-    await conversation_repository.add_conversation_messages(conversation_id, [("user", content, datetime.now())])
+    await conversation_repository.add_conversation_messages(conversation_id, [("user", content, "", 0, 0, 0, datetime.now())])

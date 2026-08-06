@@ -91,6 +91,10 @@ class MessageEntity(SQLModel, table=True):
     conversation_id: int = Field(foreign_key="t_conversation.id", ondelete="CASCADE")
     role: str
     content: str | list | dict = Field(sa_column=Column(JSON, nullable=False))
+    stop_reason: str
+    cache_read_input_tokens: int
+    input_tokens: int
+    output_tokens: int
     time: datetime
 
     conversation: ConversationEntity = Relationship(back_populates="messages")

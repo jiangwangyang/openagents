@@ -63,16 +63,12 @@ async def work(conversation_id: int, task_content: str | None) -> None:
         if not conversation:
             # 没有对话 直接结束
             return
-        messages = [{"id": msg.id, "role": msg.role, "content": msg.content, "time": msg.time} for msg in conversation.messages]
-        # 无任务内容时为查询模式，不追加用户消息
-        if task_content:
-            messages += [{"role": "user", "content": task_content, "time": datetime.now()}]
-        for msg in messages:
+        for msg in conversation.messages:
             # 字符串消息整体作为用户消息发布，跳过块迭代
-            if isinstance(msg["content"], str):
-                publish(conversation_id, "user", msg["content"])
-            elif isinstance(msg["content"], list):
-                for block in msg["content"]:
+            if isinstance(msg.content, str):
+                publish(conversation_id, "user", msg.content)
+            elif isinstance(msg.content, list):
+                for block in msg.content:
                     if block["type"] == "thinking":
                         publish(conversation_id, "thinking", block["thinking"])
                     elif block["type"] == "text":
@@ -81,12 +77,14 @@ async def work(conversation_id: int, task_content: str | None) -> None:
                         publish(conversation_id, "tool_use", json.dumps(block["input"], ensure_ascii=False), _id=block["id"], name=block["name"])
                     elif block["type"] == "tool_result":
                         publish(conversation_id, "tool_result", block["content"], _id=block["tool_use_id"], is_error=block["is_error"])
+            # 发布使用量消息
+            publish(conversation_id, "usage", cache_read_input_tokens=msg.cache_read_input_tokens, input_tokens=msg.input_tokens, output_tokens=msg.output_tokens)
 
         # 没有任务 直接结束
         if not task_content:
             return
 
-        # 模型
+        # 模型调用数据
         model_provider = await model_provider_repository.get_current_model_provider()
         base_url = model_provider.base_url if model_provider else ""
         api_key = model_provider.api_key if model_provider else ""
@@ -95,6 +93,8 @@ async def work(conversation_id: int, task_content: str | None) -> None:
         work_dir = str(conversation.work_dir)
         system_prompt = str(conversation.system_prompt)
         tools = tool_service.list_tools()
+        messages = [{"id": msg.id, "role": msg.role, "content": msg.content, "time": msg.time} for msg in conversation.messages]
+        messages += [{"role": "user", "content": task_content, "time": datetime.now()}]
 
         # 执行
         anthropic_client: AsyncAnthropic = AsyncAnthropic(base_url=base_url, api_key=api_key)
@@ -145,7 +145,19 @@ async def work(conversation_id: int, task_content: str | None) -> None:
             # 2. 判断结束
             tool_use_list = [block for block in msg.content if block.type == "tool_use"]
             if not tool_use_list:
-                await conversation_repository.add_conversation_messages(conversation_id, [(msg_dict["role"], msg_dict["content"], msg_dict["time"]) for msg_dict in messages if "time" in msg_dict])
+                # assistant 消息从 usage/stop_reason 提取 token 与结束原因，user 消息无这些字段统一填 None、None、0、""
+                await conversation_repository.add_conversation_messages(conversation_id, [
+                    (
+                        msg_dict["role"],
+                        msg_dict["content"],
+                        msg_dict.get("stop_reason") or "",
+                        (msg_dict.get("usage") or {}).get("cache_read_input_tokens") or 0,
+                        (msg_dict.get("usage") or {}).get("input_tokens") or 0,
+                        (msg_dict.get("usage") or {}).get("output_tokens") or 0,
+                        msg_dict["time"],
+                    )
+                    for msg_dict in messages if "time" in msg_dict
+                ])
                 return
 
             # 3. 工具调用

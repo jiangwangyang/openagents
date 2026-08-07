@@ -1057,3 +1057,79 @@ select.form-control {
     background: var(--border-soft);
     margin: 4px 6px;
 }
+
+/* ===== 模型输入组合框（可输入+下拉记忆+可删除） ===== */
+.model-combo-wrapper {
+    position: relative;
+}
+
+.model-combo-list {
+    position: absolute;
+    bottom: calc(100% + 4px);
+    left: 0;
+    min-width: 100%;
+    background: var(--bg-panel);
+    border: 1px solid var(--border-hard);
+    border-radius: var(--radius-sm);
+    box-shadow: var(--shadow-hard-lg);
+    display: none;
+    flex-direction: column;
+    z-index: 3000;
+    max-height: 200px;
+    overflow-y: auto;
+}
+
+.model-combo-list.open {
+    display: flex;
+}
+
+.model-combo-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 6px 10px;
+    font-size: 11px;
+    font-family: var(--font-mono);
+    color: var(--charcoal-800);
+    cursor: pointer;
+    transition: var(--transition-snap);
+    border-bottom: 1px dashed var(--border-soft);
+}
+
+.model-combo-item:last-child {
+    border-bottom: none;
+}
+
+.model-combo-item:hover {
+    background: var(--hover-bg);
+}
+
+.model-combo-item-text {
+    flex: 1;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.model-combo-item-delete {
+    flex-shrink: 0;
+    width: 18px;
+    height: 18px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: none;
+    background: transparent;
+    color: var(--slate-300);
+    cursor: pointer;
+    font-size: 12px;
+    padding: 0;
+    margin-left: 6px;
+    border-radius: 2px;
+    transition: var(--transition-snap);
+}
+
+.model-combo-item-delete:hover {
+    color: var(--danger-color);
+    background: var(--danger-bg);
+}

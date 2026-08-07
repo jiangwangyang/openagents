@@ -168,8 +168,70 @@ async function onAgentSelectChange() {
     }
 }
 
+// 模型输入历史记忆（localStorage）
+const MODEL_HISTORY_KEY = 'openagents_model_history';
+const MODEL_HISTORY_LIMIT = 20;
 // 上次模型配置记忆（localStorage）
 const LAST_MODEL_CONFIG_KEY = 'openagents_last_model_config';
+
+function getModelHistory() {
+    try {
+        const raw = localStorage.getItem(MODEL_HISTORY_KEY);
+        const list = raw ? JSON.parse(raw) : [];
+        return Array.isArray(list) ? list : [];
+    } catch (e) {
+        return [];
+    }
+}
+
+function addModelHistory(model) {
+    if (!model) {
+        return;
+    }
+    const list = getModelHistory().filter(item => item !== model);
+    list.unshift(model);
+    localStorage.setItem(MODEL_HISTORY_KEY, JSON.stringify(list.slice(0, MODEL_HISTORY_LIMIT)));
+}
+
+function removeModelHistory(model) {
+    const list = getModelHistory().filter(item => item !== model);
+    localStorage.setItem(MODEL_HISTORY_KEY, JSON.stringify(list));
+    renderModelComboList();
+}
+
+// 渲染模型下拉列表，展示全部历史记录
+function renderModelComboList() {
+    const comboList = document.getElementById('modelComboList');
+    const input = document.getElementById('modelSelect');
+    const history = getModelHistory();
+    comboList.innerHTML = '';
+    if (history.length === 0) {
+        comboList.classList.remove('open');
+        return;
+    }
+    history.forEach(model => {
+        const item = document.createElement('div');
+        item.className = 'model-combo-item';
+        const textSpan = document.createElement('span');
+        textSpan.className = 'model-combo-item-text';
+        textSpan.textContent = model;
+        textSpan.onclick = () => {
+            input.value = model;
+            comboList.classList.remove('open');
+        };
+        const deleteBtn = document.createElement('button');
+        deleteBtn.className = 'model-combo-item-delete';
+        deleteBtn.textContent = '\u00d7';
+        deleteBtn.onclick = (e) => {
+            e.stopPropagation();
+            removeModelHistory(model);
+        };
+        item.appendChild(textSpan);
+        item.appendChild(deleteBtn);
+        comboList.appendChild(item);
+    });
+    comboList.classList.add('open');
+}
 
 // 读取上次模型配置
 function getLastModelConfig() {
@@ -271,6 +333,8 @@ async function sendMessage() {
         return;
     }
     const modelConfig = {model_provider_id: parseInt(providerId), model: modelName, thinking: document.getElementById('thinkingSelect').value === 'true'};
+    // 发送成功后把模型记入历史
+    addModelHistory(modelName);
     // 保存当前模型配置供下次新对话自动填入
     saveLastModelConfig();
 

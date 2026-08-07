@@ -4,21 +4,18 @@
 const taskListContainer = document.getElementById('taskListContainer');
 const addTaskPanel = document.getElementById('addTaskPanel');
 
-// 全局 Agent 花名册缓存（任务面板候选 Agent 多选/启动下拉共用）
-let globalAgentsCachedList = [];
-
 function toggleAddTaskPanel() {
     addTaskPanel.style.display = addTaskPanel.style.display === 'none' ? 'flex' : 'none';
 }
 
-// 渲染候选 Agent 多选列表，checkedIds 为已选中的 Agent id
-function renderAgentCheckList(container, checkedIds) {
+// 渲染候选 Agent 多选列表，agents 为 Agent 列表，checkedIds 为已选中的 Agent id
+function renderAgentCheckList(container, agents, checkedIds) {
     container.innerHTML = '';
-    if (globalAgentsCachedList.length === 0) {
+    if (agents.length === 0) {
         container.innerHTML = `<div style="font-size:12px; color:var(--slate-400); font-family:var(--font-mono);">${t('task.noAgents')}</div>`;
         return;
     }
-    globalAgentsCachedList.forEach(agent => {
+    agents.forEach(agent => {
         const label = document.createElement('label');
         label.className = 'agent-check-item';
         label.innerHTML = `<input type="checkbox" value="${agent.id}" ${checkedIds.includes(agent.id) ? 'checked' : ''}> ${escapeHtml(agent.name)}`;
@@ -37,9 +34,9 @@ async function fetchTaskList() {
         // 并行拉取任务清单与 Agent 花名册（用于候选 Agent 多选与启动下拉）
         const [taskResponse, agentResponse] = await Promise.all([fetch('/task/list'), fetch('/agent/list')]);
         const tasks = await taskResponse.json();
-        globalAgentsCachedList = await agentResponse.json();
+        const agents = await agentResponse.json();
         taskListContainer.innerHTML = '';
-        renderAgentCheckList(document.getElementById('addTaskAgentList'), []);
+        renderAgentCheckList(document.getElementById('addTaskAgentList'), agents, []);
 
         if (tasks.length === 0) {
             taskListContainer.innerHTML = `<div style="padding:30px; text-align:center; border:1px dashed var(--border-hard); color:var(--slate-400)">${t('task.empty')}</div>`;
@@ -49,7 +46,7 @@ async function fetchTaskList() {
         tasks.forEach(task => {
             // 候选 Agent 名称列表（只读展示）
             const agentNames = (task.agent_ids || []).map(agentId => {
-                const agent = globalAgentsCachedList.find(a => a.id === agentId);
+                const agent = agents.find(a => a.id === agentId);
                 return agent ? agent.name : String(agentId);
             }).join(', ');
             const card = document.createElement('div');
@@ -101,7 +98,7 @@ async function fetchTaskList() {
             // 启动下拉仅列出候选 Agent
             const startSelect = document.getElementById(`task-start-agent-${task.id}`);
             (task.agent_ids || []).forEach(agentId => {
-                const agent = globalAgentsCachedList.find(a => a.id === agentId);
+                const agent = agents.find(a => a.id === agentId);
                 if (agent) {
                     const opt = document.createElement('option');
                     opt.value = agent.id;

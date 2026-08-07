@@ -162,6 +162,23 @@
                         <textarea id="agentPrompt" class="form-control mono" rows="5" style="resize: vertical; min-height: 100px;" placeholder="# Enter agent system prompt..." data-i18n-placeholder="agent.promptPlaceholder"></textarea>
                     </div>
                 </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label data-i18n="input.providerTitle">Select Provider</label>
+                        <select id="agentProvider" class="form-control"></select>
+                    </div>
+                    <div class="form-group">
+                        <label data-i18n="input.modelTitle">Select Model</label>
+                        <input type="text" id="agentModel" class="form-control mono" placeholder="e.g. deepseek-v4-pro">
+                    </div>
+                    <div class="form-group" style="flex: 0 0 140px;">
+                        <label data-i18n="input.thinkingTitle">Thinking Mode</label>
+                        <select id="agentThinking" class="form-control">
+                            <option value="true">ON</option>
+                            <option value="false">OFF</option>
+                        </select>
+                    </div>
+                </div>
                 <div class="form-row" style="justify-content: flex-end; margin-top: 4px; gap: 12px;">
                     <button class="btn btn-sm btn-secondary" onclick="toggleAddAgentPanel()" data-i18n="common.cancel">Cancel</button>
                     <button class="btn btn-sm send-button" onclick="submitAgent()" data-i18n="common.save">Save</button>
@@ -285,31 +302,6 @@
             </div>
 
             <div id="configFormContainer" style="display: flex; flex-direction: column; gap: 24px;">
-                <!-- 骨干路由单元：核心模型路由 -->
-                <div class="config-section-card">
-                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
-                        <h3 class="panel-view-title" style="font-size: 14px; margin-bottom: 0;" data-i18n="config.activeRoute">Active Context Route</h3>
-                        <button class="btn btn-sm send-button" style="height: 32px;" onclick="saveActiveModelRoute()" data-i18n="common.save">Save</button>
-                    </div>
-                    <div class="form-row">
-                        <div class="form-group">
-                            <label data-i18n="config.targetProvider">Target Provider (Name)</label>
-                            <select id="configActiveProvider" class="form-control" onchange="syncModelDropdown()"></select>
-                        </div>
-                        <div class="form-group">
-                            <label data-i18n="config.activeModel">Active Engine Model</label>
-                            <select id="configActiveModel" class="form-control"></select>
-                        </div>
-                        <div class="form-group" style="flex: 0 0 180px;">
-                            <label data-i18n="config.thinkingMode">Thinking Mode</label>
-                            <select id="configThinking" class="form-control">
-                                <option value="true">ON</option>
-                                <option value="false">OFF</option>
-                            </select>
-                        </div>
-                    </div>
-                </div>
-
                 <!-- 动态新增 Provider 表单控制卡 -->
                 <div class="add-cron-panel" id="addProviderPanel" style="display: none;">
                     <h3 class="panel-view-title" style="font-size: 12px; color: var(--charcoal-700); margin-bottom: 4px;" data-i18n="config.newProviderCard">+ New Model Provider</h3>
@@ -327,12 +319,6 @@
                         <div class="form-group" style="flex: 1;">
                             <label data-i18n="config.secretToken">Secret Token (API Key)</label>
                             <input type="password" id="newProviderKey" class="form-control mono" placeholder="••••••••••••">
-                        </div>
-                    </div>
-                    <div class="form-row">
-                        <div class="form-group">
-                            <label data-i18n="config.engineClusters">Engine Clusters (Comma Separated Models)</label>
-                            <input type="text" id="newProviderModels" class="form-control mono" placeholder="model-1, model-2">
                         </div>
                     </div>
                     <div class="form-row" style="justify-content: flex-end; margin-top: 4px; gap: 12px;">
@@ -356,12 +342,13 @@
                     <span>CWD:</span>
                     <span class="workspace-path" id="workspaceDisplay">UNSET</span>
                 </button>
-                <select id="agentSelect" class="form-control" title="Select Agent" data-i18n-title="input.agentTitle" style="width:auto; height:28px; padding:4px 10px; font-size:11px; font-family:var(--font-mono); color:var(--slate-400); text-transform:uppercase;">
+                <select id="agentSelect" class="form-control" title="Select Agent" data-i18n-title="input.agentTitle" onchange="onAgentSelectChange()" style="width:auto; height:28px; padding:4px 10px; font-size:11px; font-family:var(--font-mono); color:var(--slate-400); text-transform:uppercase;">
                     <option value="" data-i18n="common.none">NONE</option>
                 </select>
-                <!-- 模型路由选择：供应商联动模型下拉，思考开关，每次发送消息时生效 -->
-                <select id="providerSelect" class="form-control" title="Select Provider" data-i18n-title="input.providerTitle" onchange="syncDialogModelDropdown()" style="width:auto; height:28px; padding:4px 10px; font-size:11px; font-family:var(--font-mono); color:var(--slate-400); text-transform:uppercase;"></select>
-                <select id="modelSelect" class="form-control" title="Select Model" data-i18n-title="input.modelTitle" style="width:auto; height:28px; padding:4px 10px; font-size:11px; font-family:var(--font-mono); color:var(--slate-400); text-transform:uppercase;"></select>
+                <!-- 模型路由选择：供应商下拉，模型输入记忆历史，思考开关，每次发送消息时生效 -->
+                <select id="providerSelect" class="form-control" title="Select Provider" data-i18n-title="input.providerTitle" style="width:auto; height:28px; padding:4px 10px; font-size:11px; font-family:var(--font-mono); color:var(--slate-400); text-transform:uppercase;"></select>
+                <input id="modelSelect" class="form-control" title="Select Model" data-i18n-title="input.modelTitle" list="modelHistoryList" placeholder="MODEL" style="width:160px; height:28px; padding:4px 10px; font-size:11px; font-family:var(--font-mono); color:var(--slate-400); text-transform:uppercase;">
+                <datalist id="modelHistoryList"></datalist>
                 <select id="thinkingSelect" class="form-control" title="Thinking Mode" data-i18n-title="input.thinkingTitle" style="width:auto; height:28px; padding:4px 10px; font-size:11px; font-family:var(--font-mono); color:var(--slate-400); text-transform:uppercase;">
                     <option value="true">THINK</option>
                     <option value="false">NO THINK</option>

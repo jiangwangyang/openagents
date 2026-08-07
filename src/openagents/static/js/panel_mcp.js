@@ -4,9 +4,6 @@
 const mcpListContainer = document.getElementById('mcpListContainer');
 const addMcpPanel = document.getElementById('addMcpPanel');
 
-// 全局 MCP 服务拓扑缓存（列表渲染与 Test Probe 探测共用）
-let globalMcpCachedList = [];
-
 function toggleAddMcpPanel() {
     addMcpPanel.style.display = addMcpPanel.style.display === 'none' ? 'flex' : 'none';
 }
@@ -21,15 +18,15 @@ async function fetchMcpRegistry() {
     mcpListContainer.innerHTML = SKELETON_HTML;
     try {
         const response = await fetch('/mcp-server/list');
-        globalMcpCachedList = await response.json();
+        const servers = await response.json();
         mcpListContainer.innerHTML = '';
 
-        if (globalMcpCachedList.length === 0) {
+        if (servers.length === 0) {
             mcpListContainer.innerHTML = `<div style="padding:30px; text-align:center; border:1px dashed var(--border-hard); color:var(--slate-400)">${t('mcp.empty')}</div>`;
             return;
         }
 
-        globalMcpCachedList.forEach((server, index) => {
+        servers.forEach((server, index) => {
             const name = server.name;
             const card = document.createElement('div');
             card.className = 'info-card';
@@ -93,9 +90,9 @@ async function fetchMcpRegistry() {
                 </div>
             `;
             // 按钮通过闭包绑定，避免服务名中的引号破坏内联 onclick 字符串
-            card.querySelector('.mcp-save-btn').onclick = () => updateSingleMcp(name);
-            card.querySelector('.mcp-test-btn').onclick = () => testMcpServerTools(name);
-            card.querySelector('.delete-btn').onclick = () => removeMcpServer(name);
+            card.querySelector('.mcp-save-btn').onclick = () => updateSingleMcp(server.id, server.name, index);
+            card.querySelector('.mcp-test-btn').onclick = () => testMcpServerTools(server, index);
+            card.querySelector('.delete-btn').onclick = () => removeMcpServer(server.id, name);
             mcpListContainer.appendChild(card);
         });
     } catch (e) {
@@ -153,15 +150,10 @@ async function submitMcpServer() {
     }
 }
 
-async function updateSingleMcp(name) {
-    // 元素 id 使用列表索引生成（服务名可能包含引号等特殊字符）
-    const index = globalMcpCachedList.findIndex(s => s.name === name);
-    if (index === -1) {
-        return;
-    }
+async function updateSingleMcp(id, name, index) {
     const type = document.getElementById(`mcp-type-${index}`).value;
     const description = document.getElementById(`mcp-desc-${index}`).value.trim();
-    let bodyPayload = {description: description};
+    let bodyPayload = {name: name, description: description};
 
     if (type === 'stdio') {
         bodyPayload.command = document.getElementById(`mcp-command-${index}`).value.trim();
@@ -183,7 +175,8 @@ async function updateSingleMcp(name) {
     }
 
     try {
-        const response = await fetch(`/mcp-server/${encodeURIComponent(name)}/${encodeURIComponent(type)}`, {
+        // server.type 为下划线形式（streamable_http），接口路径使用连字符形式（streamable-http）
+        const response = await fetch(`/mcp-server/${id}/${encodeURIComponent(type.replace('_', '-'))}`, {
             method: 'PUT',
             headers: {'Content-Type': 'application/json'},
             body: JSON.stringify(bodyPayload)
@@ -197,13 +190,13 @@ async function updateSingleMcp(name) {
     }
 }
 
-function removeMcpServer(name) {
+function removeMcpServer(id, name) {
     showConfirmDialog({
         title: t('mcp.purgeTitle'),
         text: t('mcp.purgeText', {name: name}),
         onConfirm: async () => {
             try {
-                const response = await fetch(`/mcp-server/${encodeURIComponent(name)}`, {method: 'DELETE'});
+                const response = await fetch(`/mcp-server/${id}`, {method: 'DELETE'});
                 if (response.ok) {
                     await fetchMcpRegistry();
                 }
@@ -214,13 +207,7 @@ function removeMcpServer(name) {
     });
 }
 
-async function testMcpServerTools(name) {
-    const targetServer = globalMcpCachedList.find(s => s.name === name);
-    if (!targetServer) {
-        return;
-    }
-
-    const index = globalMcpCachedList.indexOf(targetServer);
+async function testMcpServerTools(targetServer, index) {
     const card = document.getElementById(`mcp-card-${index}`);
     const detailsZone = document.getElementById(`mcp-tools-zone-${index}`);
     const listContainer = document.getElementById(`mcp-tools-list-${index}`);

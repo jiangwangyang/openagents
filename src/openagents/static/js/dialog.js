@@ -10,7 +10,6 @@ async function loadConversationList() {
     try {
         const response = await fetch('/conversation/list');
         const conversations = await response.json();
-        globalConversationsCachedList = conversations;
         conversationList.innerHTML = '';
         conversations.forEach(conversation => {
             const item = document.createElement('div');
@@ -42,14 +41,23 @@ async function loadConversationList() {
     }
 }
 
-function loadConversation(conversationId) {
+// 加载指定对话：切换当前会话并从对话列表接口获取工作目录
+async function loadConversation(conversationId) {
     currentConversationId = conversationId;
     // 对话已创建，锁定工作目录与智能体选择
     setContextLocked(true);
-    // 从缓存的对话列表中读取工作目录
-    const cached = globalConversationsCachedList.find(c => String(c.id) === String(conversationId));
-    if (cached) {
-        updateWorkspaceUI(cached.work_dir);
+    // 从对话列表接口查找当前对话的工作目录
+    try {
+        const listResponse = await fetch('/conversation/list');
+        if (listResponse.ok) {
+            const conversations = await listResponse.json();
+            const target = conversations.find(c => String(c.id) === String(conversationId));
+            if (target) {
+                updateWorkspaceUI(target.work_dir);
+            }
+        }
+    } catch (e) {
+        // 静默处理错误
     }
     chatContainer.innerHTML = '';
     emptyState.style.display = 'none';
@@ -131,76 +139,97 @@ async function loadAgentSelect() {
     }
 }
 
-// 加载对话输入区的模型选择器，初始值取当前配置，刷新时保留仍有效的已选项，供应商缓存与 CONFIG 面板共用
-async function loadModelSelect() {
+// 选择智能体后填入其模型配置并禁止修改，取消选择（NONE）后解除禁用
+async function onAgentSelectChange() {
+    const agentId = document.getElementById('agentSelect').value;
     const providerSelect = document.getElementById('providerSelect');
+    const modelInput = document.getElementById('modelSelect');
     const thinkingSelect = document.getElementById('thinkingSelect');
-    const prevProvider = providerSelect.value;
-    const prevModel = document.getElementById('modelSelect').value;
+    if (!agentId) {
+        providerSelect.disabled = false;
+        modelInput.disabled = false;
+        thinkingSelect.disabled = false;
+        return;
+    }
     try {
-        const pResponse = await fetch('/model-provider/list');
-        globalProvidersCachedList = await pResponse.json();
-
-        // 首次加载取当前配置作为默认值，刷新时保留用户已选项
-        let selectedProvider = prevProvider;
-        let selectedModel = prevModel;
-        if (!selectedProvider) {
-            try {
-                const cpResponse = await fetch('/model-provider/current');
-                if (cpResponse.ok) {
-                    selectedProvider = (await cpResponse.json()).name;
-                }
-                const cmResponse = await fetch('/model/current');
-                if (cmResponse.ok) {
-                    selectedModel = (await cmResponse.json()).model;
-                }
-            } catch (e) {
-            }
+        const response = await fetch('/agent/list');
+        const agents = await response.json();
+        const agent = agents.find(a => String(a.id) === String(agentId));
+        if (agent) {
+            providerSelect.value = String(agent.model_provider_id);
+            modelInput.value = agent.model || '';
+            thinkingSelect.value = String(agent.thinking);
+            providerSelect.disabled = true;
+            modelInput.disabled = true;
+            thinkingSelect.disabled = true;
         }
-        // 思考开关仅在首次加载时取当前配置，之后保留用户选择
-        if (!thinkingSelect.dataset.initialized) {
-            try {
-                const tResponse = await fetch('/thinking');
-                if (tResponse.ok) {
-                    thinkingSelect.value = String((await tResponse.json()).thinking);
-                    thinkingSelect.dataset.initialized = '1';
-                }
-            } catch (e) {
-            }
-        }
-
-        providerSelect.innerHTML = '';
-        globalProvidersCachedList.forEach(provider => {
-            const opt = document.createElement('option');
-            opt.value = provider.name;
-            opt.textContent = provider.name;
-            if (provider.name === selectedProvider) {
-                opt.selected = true;
-            }
-            providerSelect.appendChild(opt);
-        });
-        syncDialogModelDropdown(selectedModel);
     } catch (e) {
         // 静默处理错误
     }
 }
 
-// 对话输入区供应商联动模型下拉框，targetModel 指定后优先选中
-function syncDialogModelDropdown(targetModel = null) {
+// 模型输入历史记忆（localStorage）
+const MODEL_HISTORY_KEY = 'openagents_model_history';
+const MODEL_HISTORY_LIMIT = 20;
+
+function getModelHistory() {
+    try {
+        const raw = localStorage.getItem(MODEL_HISTORY_KEY);
+        const list = raw ? JSON.parse(raw) : [];
+        return Array.isArray(list) ? list : [];
+    } catch (e) {
+        return [];
+    }
+}
+
+function addModelHistory(model) {
+    if (!model) {
+        return;
+    }
+    const list = getModelHistory().filter(item => item !== model);
+    list.unshift(model);
+    localStorage.setItem(MODEL_HISTORY_KEY, JSON.stringify(list.slice(0, MODEL_HISTORY_LIMIT)));
+    renderModelHistory();
+}
+
+function removeModelHistory(model) {
+    const list = getModelHistory().filter(item => item !== model);
+    localStorage.setItem(MODEL_HISTORY_KEY, JSON.stringify(list));
+    renderModelHistory();
+}
+
+// 历史条目渲染为 datalist 选项供输入时选择
+function renderModelHistory() {
+    const datalist = document.getElementById('modelHistoryList');
+    datalist.innerHTML = '';
+    getModelHistory().forEach(model => {
+        const opt = document.createElement('option');
+        opt.value = model;
+        datalist.appendChild(opt);
+    });
+}
+
+// 加载对话输入区的供应商下拉框，模型为自由输入（datalist 记忆历史）
+async function loadModelSelect() {
     const providerSelect = document.getElementById('providerSelect');
-    const modelSelect = document.getElementById('modelSelect');
-    modelSelect.innerHTML = '';
-    const targetProvider = globalProvidersCachedList.find(p => p.name === providerSelect.value);
-    if (targetProvider && targetProvider.models) {
-        targetProvider.models.forEach(modelStr => {
+    const prevProvider = providerSelect.value;
+    try {
+        const pResponse = await fetch('/model-provider/list');
+        const providers = await pResponse.json();
+
+        providerSelect.innerHTML = '';
+        providers.forEach(provider => {
             const opt = document.createElement('option');
-            opt.value = modelStr;
-            opt.textContent = modelStr;
-            if (targetModel && modelStr === targetModel) {
+            opt.value = provider.id;
+            opt.textContent = provider.name;
+            if (String(provider.id) === String(prevProvider)) {
                 opt.selected = true;
             }
-            modelSelect.appendChild(opt);
+            providerSelect.appendChild(opt);
         });
+        renderModelHistory();
+    } catch (e) {
+        // 静默处理错误
     }
 }
 
@@ -230,14 +259,16 @@ async function sendMessage() {
         return;
     }
 
-    // 从模型路由下拉框读取发送参数，未选择时提示并终止
-    const providerName = document.getElementById('providerSelect').value;
-    const modelName = document.getElementById('modelSelect').value;
-    if (!providerName || !modelName) {
+    // 从模型路由控件读取发送参数，未填写时提示并终止
+    const providerId = document.getElementById('providerSelect').value;
+    const modelName = document.getElementById('modelSelect').value.trim();
+    if (!providerId || !modelName) {
         alert(t('stream.startFailed'));
         return;
     }
-    const modelConfig = {model_provider: providerName, model: modelName, thinking: document.getElementById('thinkingSelect').value === 'true'};
+    const modelConfig = {model_provider_id: parseInt(providerId), model: modelName, thinking: document.getElementById('thinkingSelect').value === 'true'};
+    // 发送成功后把模型记入历史
+    addModelHistory(modelName);
 
     // 启动 work：新会话先创建，已有会话直接启动
     try {

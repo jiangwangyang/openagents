@@ -6,6 +6,31 @@ const addAgentPanel = document.getElementById('addAgentPanel');
 
 function toggleAddAgentPanel() {
     addAgentPanel.style.display = addAgentPanel.style.display === 'none' ? 'flex' : 'none';
+    // 打开面板时刷新供应商下拉
+    if (addAgentPanel.style.display !== 'none') {
+        loadAgentProviderOptions('agentProvider', null);
+    }
+}
+
+// 加载供应商下拉选项（必填，无空选项），selectedId 指定后选中
+async function loadAgentProviderOptions(elementId, selectedId) {
+    const select = document.getElementById(elementId);
+    try {
+        const response = await fetch('/model-provider/list');
+        const providers = await response.json();
+        select.innerHTML = '';
+        providers.forEach(provider => {
+            const opt = document.createElement('option');
+            opt.value = provider.id;
+            opt.textContent = provider.name;
+            if (selectedId !== null && String(provider.id) === String(selectedId)) {
+                opt.selected = true;
+            }
+            select.appendChild(opt);
+        });
+    } catch (e) {
+        // 静默处理错误
+    }
 }
 
 async function fetchAgentRegistry() {
@@ -55,12 +80,32 @@ async function fetchAgentRegistry() {
                         <div class="details-value">
                             <textarea id="agent-prompt-${agent.id}" class="form-control mono" rows="6" style="resize: vertical; font-size:11px;">${escapeHtml(agent.prompt)}</textarea>
                         </div>
+
+                        <div class="details-label">${t('input.providerTitle')}</div>
+                        <div class="details-value">
+                            <select id="agent-provider-${agent.id}" class="form-control"></select>
+                        </div>
+
+                        <div class="details-label">${t('input.modelTitle')}</div>
+                        <div class="details-value">
+                            <input type="text" id="agent-model-${agent.id}" class="form-control mono" value="${escapeHtml(agent.model || '')}">
+                        </div>
+
+                        <div class="details-label">${t('input.thinkingTitle')}</div>
+                        <div class="details-value">
+                            <select id="agent-thinking-${agent.id}" class="form-control">
+                                <option value="true" ${agent.thinking ? 'selected' : ''}>ON</option>
+                                <option value="false" ${agent.thinking ? '' : 'selected'}>OFF</option>
+                            </select>
+                        </div>
                     </div>
                 </div>
             `;
             // 删除按钮通过闭包绑定，避免名称中的引号破坏内联 onclick 字符串
             card.querySelector('.delete-btn').onclick = () => removeAgent(agent.id, agent.name);
             agentListContainer.appendChild(card);
+            // 异步填充供应商下拉
+            loadAgentProviderOptions(`agent-provider-${agent.id}`, agent.model_provider_id);
         });
     } catch (e) {
         agentListContainer.innerHTML = `<div style="padding:20px; color:var(--danger-color)">${t('agent.rosterCrashed')}</div>`;
@@ -75,17 +120,30 @@ async function submitAgent() {
         alert(t('agent.nameRequired'));
         return;
     }
+    const providerValue = document.getElementById('agentProvider').value;
+    if (!providerValue) {
+        alert(t('agent.providerRequired'));
+        return;
+    }
 
     try {
         const response = await fetch('/agent', {
             method: 'POST',
             headers: {'Content-Type': 'application/json'},
-            body: JSON.stringify({name: name, description: description, prompt: prompt})
+            body: JSON.stringify({
+                name: name,
+                description: description,
+                prompt: prompt,
+                model_provider_id: parseInt(providerValue),
+                model: document.getElementById('agentModel').value.trim(),
+                thinking: document.getElementById('agentThinking').value === 'true'
+            })
         });
         if (response.ok) {
             document.getElementById('agentName').value = '';
             document.getElementById('agentDesc').value = '';
             document.getElementById('agentPrompt').value = '';
+            document.getElementById('agentModel').value = '';
             toggleAddAgentPanel();
             await fetchAgentRegistry();
         }
@@ -102,12 +160,24 @@ async function updateSingleAgent(id) {
         alert(t('agent.nameRequired'));
         return;
     }
+    const providerValue = document.getElementById(`agent-provider-${id}`).value;
+    if (!providerValue) {
+        alert(t('agent.providerRequired'));
+        return;
+    }
 
     try {
         const response = await fetch(`/agent/${id}`, {
             method: 'PUT',
             headers: {'Content-Type': 'application/json'},
-            body: JSON.stringify({name: name, description: description, prompt: prompt})
+            body: JSON.stringify({
+                name: name,
+                description: description,
+                prompt: prompt,
+                model_provider_id: parseInt(providerValue),
+                model: document.getElementById(`agent-model-${id}`).value.trim(),
+                thinking: document.getElementById(`agent-thinking-${id}`).value === 'true'
+            })
         });
         if (response.ok) {
             alert(t('agent.synced', {name: name}));
@@ -134,4 +204,3 @@ function removeAgent(id, name) {
         }
     });
 }
-

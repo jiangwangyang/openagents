@@ -3,7 +3,7 @@ from datetime import datetime
 from sqlalchemy import select, delete
 from sqlalchemy.orm import selectinload
 
-from openagents.repository.database import ConversationEntity, TaskEntity, async_session
+from openagents.repository.database import AgentEntity, ConversationEntity, TaskEntity, async_session
 
 
 # 查询全部任务，按 id 升序
@@ -21,7 +21,7 @@ async def get_task(task_id: int) -> TaskEntity | None:
             .where(TaskEntity.id == task_id)
             .options(
                 selectinload(TaskEntity.conversations).selectinload(ConversationEntity.messages),
-                selectinload(TaskEntity.conversations).selectinload(ConversationEntity.agent),
+                selectinload(TaskEntity.conversations).selectinload(ConversationEntity.agent).selectinload(AgentEntity.model_provider),
             )
         )
         task = result.scalar_one_or_none()

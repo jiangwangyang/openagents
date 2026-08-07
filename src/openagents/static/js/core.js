@@ -41,9 +41,6 @@ let isAtBottom = true;
 let userScroll = false;
 let programScroll = false;
 
-// 全局运行时数据拓扑缓存（面板专属缓存已内聚到各 panel_*.js）
-let globalConversationsCachedList = [];
-
 // SVG 图标核心资产定义
 const FOLD_SVG = `<svg viewBox="0 0 24 24" class="fold-icon" width="14" height="14" stroke="currentColor" stroke-width="2.5" fill="none" stroke-linecap="square" stroke-linejoin="miter"><polyline points="6 9 12 15 18 9"></polyline></svg>`;
 const ARROW_SVG = `<svg viewBox="0 0 24 24" class="info-card-arrow" width="14" height="14" stroke="currentColor" stroke-width="2.5" fill="none"><polyline points="9 18 15 12 9 6"></polyline></svg>`;

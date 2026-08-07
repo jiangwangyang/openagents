@@ -2,7 +2,7 @@ import asyncio
 import json
 import logging
 
-from openagents.repository import agent_repository, conversation_repository, model_provider_repository, task_repository
+from openagents.repository import agent_repository, conversation_repository, task_repository
 from openagents.service import work_service
 
 # 每个 task 的执行循环后台任务，同一 task 同时只允许一个循环运行
@@ -53,15 +53,13 @@ async def run_task(task_id: int, agent_id: int) -> None:
                 text = content if isinstance(content, str) else content[-1].get("text", "")
                 task_content_list += [f"## {name}\n{json.dumps(text, ensure_ascii=False)}"]
             task_content = "\n\n".join(task_content_list)
-            # 模型配置从全局设置读取，缺失时记录日志并结束循环
-            model_provider = await model_provider_repository.get_current_model_provider()
-            model = await model_provider_repository.get_current_model()
-            if model_provider is None or model is None:
-                logging.error("Task execution failed: model provider or model not configured")
+            # 模型配置从当前对话的 Agent 读取，缺失时记录日志并结束循环
+            agent = conversation.agent
+            if agent is None or agent.model_provider is None or not agent.model:
+                logging.error("Task execution failed: agent model provider or model not configured")
                 return
-            thinking = await model_provider_repository.get_thinking()
             # 触发 work 执行并等待完成
-            if not work_service.start_work(conversation.id, task_content, model_provider.name, model, thinking):
+            if not work_service.start_work(conversation.id, task_content, agent.model_provider.id, str(agent.model), bool(agent.thinking)):
                 return
             await work_service.get_work_state(conversation.id).task
     except Exception as e:

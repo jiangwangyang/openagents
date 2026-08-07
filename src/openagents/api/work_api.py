@@ -12,7 +12,7 @@ router = APIRouter()
 
 
 @router.post("/work/start")
-async def create_work(task_content: str = Body(..., embed=True), work_dir: str = Body(..., embed=True), model_provider: str = Body(..., embed=True), model: str = Body(..., embed=True), thinking: bool = Body(..., embed=True), agent_id: int | None = Body(None, embed=True)) -> int:
+async def create_work(task_content: str = Body(..., embed=True), work_dir: str = Body(..., embed=True), model_provider_id: int = Body(..., embed=True), model: str = Body(..., embed=True), thinking: bool = Body(..., embed=True), agent_id: int | None = Body(None, embed=True)) -> int:
     # 指定 agent 时使用其 prompt 作为 system_prompt（与任务流水线的 Agent 阶段对话一致），否则读取 AGENTS.md，按优先级取第一个存在的文件
     system_prompt = ""
     if agent_id is not None:
@@ -27,7 +27,7 @@ async def create_work(task_content: str = Body(..., embed=True), work_dir: str =
                 break
     # 先创建对话，再根据对话ID开始任务
     conversation_id = await conversation_repository.add_conversation(task_content, work_dir, system_prompt, agent_id=agent_id)
-    if not work_service.start_work(conversation_id, task_content, model_provider, model, thinking):
+    if not work_service.start_work(conversation_id, task_content, model_provider_id, model, thinking):
         # 启动失败时清理刚创建的对话，避免产生孤儿数据
         await conversation_repository.delete_conversation(conversation_id)
         raise HTTPException(status_code=409, detail="Work already running")
@@ -35,8 +35,8 @@ async def create_work(task_content: str = Body(..., embed=True), work_dir: str =
 
 
 @router.post("/work/{conversation_id}/start")
-async def start_work(conversation_id: int, task_content: str = Body(..., embed=True), model_provider: str = Body(..., embed=True), model: str = Body(..., embed=True), thinking: bool = Body(..., embed=True)) -> None:
-    if not work_service.start_work(conversation_id, task_content, model_provider, model, thinking):
+async def start_work(conversation_id: int, task_content: str = Body(..., embed=True), model_provider_id: int = Body(..., embed=True), model: str = Body(..., embed=True), thinking: bool = Body(..., embed=True)) -> None:
+    if not work_service.start_work(conversation_id, task_content, model_provider_id, model, thinking):
         raise HTTPException(status_code=409, detail="Work already running")
 
 

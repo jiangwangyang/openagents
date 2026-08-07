@@ -10,7 +10,7 @@ from fastapi import FastAPI
 from fastapi.staticfiles import StaticFiles
 
 from openagents.api import conversation_api, work_api, app_api, model_provider_api, mcp_server_api, task_api, agent_api, skill_api
-from openagents.repository import setting, database
+from openagents.repository import database
 from openagents.tool import mcp_tool, shell_tool
 from openagents.tool import skill_tool
 
@@ -31,8 +31,6 @@ startup_event = threading.Event()
 
 @asynccontextmanager
 async def lifespan(_app: FastAPI) -> AsyncIterator[None]:
-    # 初始化设置
-    await setting.init_setting()
     # 配置 Windows PowerShell 5.1 输出编码
     await shell_tool.setup_powershell_utf8()
     # 初始化技能

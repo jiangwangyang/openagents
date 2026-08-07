@@ -25,13 +25,13 @@ class WorkState(BaseModel):
 _work_state_dict: dict[int, WorkState] = {}
 
 
-# model_provider 为提供商名称，work 内按名称查询配置
-def start_work(conversation_id: int, task_content: str, model_provider: str, model: str, thinking: bool) -> bool:
+# model_provider_id 为提供商 id，work 内按 id 查询配置
+def start_work(conversation_id: int, task_content: str, model_provider_id: int, model: str, thinking: bool) -> bool:
     # 同一 conversation 不允许同时运行多个 work 任务
     work_state = _work_state_dict.get(conversation_id)
     if work_state is not None and not work_state.done:
         return False
-    _work_state_dict[conversation_id] = WorkState(chunks=[], done=False, event=asyncio.Event(), task=asyncio.create_task(work(conversation_id, task_content, model_provider, model, thinking)))
+    _work_state_dict[conversation_id] = WorkState(chunks=[], done=False, event=asyncio.Event(), task=asyncio.create_task(work(conversation_id, task_content, model_provider_id, model, thinking)))
     return True
 
 
@@ -41,7 +41,7 @@ def start_query(conversation_id: int) -> bool:
     work_state = _work_state_dict.get(conversation_id)
     if work_state is not None and not work_state.done:
         return False
-    _work_state_dict[conversation_id] = WorkState(chunks=[], done=False, event=asyncio.Event(), task=asyncio.create_task(work(conversation_id, "", "", "", False)))
+    _work_state_dict[conversation_id] = WorkState(chunks=[], done=False, event=asyncio.Event(), task=asyncio.create_task(work(conversation_id, "", 0, "", False)))
     return True
 
 
@@ -67,7 +67,7 @@ def finish(conversation_id: int) -> None:
 
 
 # 后台执行
-async def work(conversation_id: int, task_content: str, model_provider: str, model: str, thinking: bool) -> None:
+async def work(conversation_id: int, task_content: str, model_provider_id: int, model: str, thinking: bool) -> None:
     try:
         # 查询历史消息
         conversation = await conversation_repository.get_conversation(conversation_id)
@@ -99,8 +99,8 @@ async def work(conversation_id: int, task_content: str, model_provider: str, mod
         if not task_content:
             return
 
-        # 模型调用数据，按提供商名称查询配置
-        provider = await model_provider_repository.get_model_provider(model_provider)
+        # 模型调用数据，按提供商 id 查询配置
+        provider = await model_provider_repository.get_model_provider(model_provider_id)
         base_url = provider.base_url if provider else ""
         api_key = provider.api_key if provider else ""
         thinking_config = {"type": "enabled", "display": "summarized"} if thinking else {"type": "disabled"}

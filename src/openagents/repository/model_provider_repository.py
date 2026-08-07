@@ -1,89 +1,59 @@
-from openagents.repository.setting import ModelProvider, load_setting, save_setting
+from datetime import datetime
+
+from sqlalchemy import select, delete, update
+
+from openagents.repository.database import AgentEntity, ModelProviderEntity, async_session
 
 
-# 获取当前选中的模型提供商，不存在返回 None
-async def get_current_model_provider() -> ModelProvider | None:
-    setting = await load_setting()
-    return setting.model_providers.get(setting.model_provider or "")
+# 查询全部模型提供商，按 id 升序
+async def list_model_providers() -> list[ModelProviderEntity]:
+    async with async_session() as session:
+        result = await session.execute(select(ModelProviderEntity).order_by(ModelProviderEntity.id))
+        return list(result.scalars().all())
 
 
-# 修改当前选中的模型提供商，名称不存在返回 False
-async def set_current_model_provider(name: str) -> bool:
-    setting = await load_setting()
-    if name not in setting.model_providers:
-        return False
-    setting.model_provider = name
-    await save_setting(setting)
-    return True
+# 按 id 查询模型提供商，不存在返回 None
+async def get_model_provider(provider_id: int) -> ModelProviderEntity | None:
+    async with async_session() as session:
+        result = await session.execute(select(ModelProviderEntity).where(ModelProviderEntity.id == provider_id))
+        return result.scalar_one_or_none()
 
 
-# 获取当前选中的模型，未设置返回 None
-async def get_current_model() -> str | None:
-    setting = await load_setting()
-    return setting.model
+# 新增模型提供商，名称已存在返回 None，成功返回自增 id
+async def add_model_provider(name: str, type: str, base_url: str, api_key: str) -> int | None:
+    async with async_session() as session:
+        result = await session.execute(select(ModelProviderEntity).where(ModelProviderEntity.name == name))
+        if result.scalar_one_or_none() is not None:
+            return None
+        now = datetime.now()
+        provider = ModelProviderEntity(name=name, type=type, base_url=base_url, api_key=api_key, create_time=now, update_time=now)
+        session.add(provider)
+        await session.commit()
+        await session.refresh(provider)
+        return provider.id
 
 
-# 修改当前选中的模型，模型不在当前提供商的模型列表中返回 False
-async def set_current_model(model: str) -> bool:
-    setting = await load_setting()
-    provider = setting.model_providers.get(setting.model_provider or "")
-    if provider is None or model not in provider.models:
-        return False
-    setting.model = model
-    await save_setting(setting)
-    return True
+# 按 id 更新模型提供商，名称被其它记录占用或 id 不存在返回 False
+async def update_model_provider(provider_id: int, name: str, type: str, base_url: str, api_key: str) -> bool:
+    async with async_session() as session:
+        result = await session.execute(select(ModelProviderEntity).where(ModelProviderEntity.name == name, ModelProviderEntity.id != provider_id))
+        if result.scalar_one_or_none() is not None:
+            return False
+        result = await session.execute(
+            update(ModelProviderEntity)
+            .where(ModelProviderEntity.id == provider_id)
+            .values(name=name, type=type, base_url=base_url, api_key=api_key, update_time=datetime.now())
+        )
+        await session.commit()
+        return result.rowcount > 0
 
 
-# 获取 thinking 开关状态
-async def get_thinking() -> bool:
-    setting = await load_setting()
-    return setting.thinking
-
-
-# 修改 thinking 开关状态
-async def set_thinking(thinking: bool) -> None:
-    setting = await load_setting()
-    setting.thinking = thinking
-    await save_setting(setting)
-
-
-# 查询全部模型提供商，按名称升序
-async def list_model_providers() -> list[ModelProvider]:
-    setting = await load_setting()
-    return sorted(setting.model_providers.values(), key=lambda provider: provider.name)
-
-
-# 按名称查询模型提供商，不存在返回 None
-async def get_model_provider(name: str) -> ModelProvider | None:
-    setting = await load_setting()
-    return setting.model_providers.get(name)
-
-
-# 新增模型提供商，名称已存在返回 False
-async def add_model_provider(name: str, base_url: str, api_key: str, models: list[str]) -> bool:
-    setting = await load_setting()
-    if name in setting.model_providers:
-        return False
-    setting.model_providers[name] = ModelProvider(name=name, base_url=base_url, api_key=api_key, models=models)
-    await save_setting(setting)
-    return True
-
-
-# 按名称更新模型提供商，不存在返回 False
-async def update_model_provider(name: str, base_url: str, api_key: str, models: list[str]) -> bool:
-    setting = await load_setting()
-    if name not in setting.model_providers:
-        return False
-    setting.model_providers[name] = ModelProvider(name=name, base_url=base_url, api_key=api_key, models=models)
-    await save_setting(setting)
-    return True
-
-
-# 按名称删除模型提供商，不存在返回 False
-async def delete_model_provider(name: str) -> bool:
-    setting = await load_setting()
-    if name not in setting.model_providers:
-        return False
-    del setting.model_providers[name]
-    await save_setting(setting)
-    return True
+# 按 id 删除模型提供商，不存在或被 Agent 引用返回 False
+async def delete_model_provider(provider_id: int) -> bool:
+    async with async_session() as session:
+        referenced = await session.execute(select(AgentEntity.id).where(AgentEntity.model_provider_id == provider_id).limit(1))
+        if referenced.scalar_one_or_none() is not None:
+            return False
+        result = await session.execute(delete(ModelProviderEntity).where(ModelProviderEntity.id == provider_id))
+        await session.commit()
+        return result.rowcount > 0

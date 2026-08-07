@@ -1,83 +1,56 @@
-from openagents.repository.setting import McpServer, load_setting, save_setting
+from datetime import datetime
+
+from sqlalchemy import select, delete, update
+
+from openagents.repository.database import McpServerEntity, async_session
 
 
-# 查询全部 MCP 服务，按名称升序
-async def list_mcp_servers() -> list[McpServer]:
-    setting = await load_setting()
-    return sorted(setting.mcp_servers.values(), key=lambda server: server.name)
+# 查询全部 MCP 服务，按 id 升序
+async def list_mcp_servers() -> list[McpServerEntity]:
+    async with async_session() as session:
+        result = await session.execute(select(McpServerEntity).order_by(McpServerEntity.id))
+        return list(result.scalars().all())
 
 
-# 按名称查询 MCP 服务，不存在返回 None
-async def get_mcp_server(name: str) -> McpServer | None:
-    setting = await load_setting()
-    return setting.mcp_servers.get(name)
+# 按 id 查询 MCP 服务，不存在返回 None
+async def get_mcp_server(server_id: int) -> McpServerEntity | None:
+    async with async_session() as session:
+        result = await session.execute(select(McpServerEntity).where(McpServerEntity.id == server_id))
+        return result.scalar_one_or_none()
 
 
-# 新增 streamable_http 类型的 MCP 服务，名称已存在返回 False
-async def add_mcp_streamable_http_server(name: str, description: str, url: str, headers: dict[str, str] | None = None) -> bool:
-    setting = await load_setting()
-    if name in setting.mcp_servers:
-        return False
-    setting.mcp_servers[name] = McpServer(name=name, description=description, type="streamable_http", url=url, headers=headers)
-    await save_setting(setting)
-    return True
+# 新增 MCP 服务，按类型使用 url+headers 或 command+args，名称已存在返回 None，成功返回自增 id
+async def add_mcp_server(name: str, description: str, type: str, url: str | None = None, headers: dict[str, str] | None = None, command: str | None = None, args: list[str] | None = None) -> int | None:
+    async with async_session() as session:
+        result = await session.execute(select(McpServerEntity).where(McpServerEntity.name == name))
+        if result.scalar_one_or_none() is not None:
+            return None
+        now = datetime.now()
+        server = McpServerEntity(name=name, description=description, type=type, url=url, headers=headers, command=command, args=args, create_time=now, update_time=now)
+        session.add(server)
+        await session.commit()
+        await session.refresh(server)
+        return server.id
 
 
-# 新增 sse 类型的 MCP 服务，名称已存在返回 False
-async def add_mcp_sse_server(name: str, description: str, url: str, headers: dict[str, str] | None = None) -> bool:
-    setting = await load_setting()
-    if name in setting.mcp_servers:
-        return False
-    setting.mcp_servers[name] = McpServer(name=name, description=description, type="sse", url=url, headers=headers)
-    await save_setting(setting)
-    return True
+# 按 id 更新 MCP 服务，名称被其它记录占用或 id 不存在返回 False
+async def update_mcp_server(server_id: int, name: str, description: str, type: str, url: str | None = None, headers: dict[str, str] | None = None, command: str | None = None, args: list[str] | None = None) -> bool:
+    async with async_session() as session:
+        result = await session.execute(select(McpServerEntity).where(McpServerEntity.name == name, McpServerEntity.id != server_id))
+        if result.scalar_one_or_none() is not None:
+            return False
+        result = await session.execute(
+            update(McpServerEntity)
+            .where(McpServerEntity.id == server_id)
+            .values(name=name, description=description, type=type, url=url, headers=headers, command=command, args=args, update_time=datetime.now())
+        )
+        await session.commit()
+        return result.rowcount > 0
 
 
-# 新增 stdio 类型的 MCP 服务，名称已存在返回 False
-async def add_mcp_stdio_server(name: str, description: str, command: str, args: list[str] | None = None) -> bool:
-    setting = await load_setting()
-    if name in setting.mcp_servers:
-        return False
-    setting.mcp_servers[name] = McpServer(name=name, description=description, type="stdio", command=command, args=args)
-    await save_setting(setting)
-    return True
-
-
-# 按名称更新 streamable_http 类型的 MCP 服务，不存在返回 False
-async def update_mcp_streamable_http_server(name: str, description: str, url: str, headers: dict[str, str] | None = None) -> bool:
-    setting = await load_setting()
-    if name not in setting.mcp_servers:
-        return False
-    setting.mcp_servers[name] = McpServer(name=name, description=description, type="streamable_http", url=url, headers=headers)
-    await save_setting(setting)
-    return True
-
-
-# 按名称更新 sse 类型的 MCP 服务，不存在返回 False
-async def update_mcp_sse_server(name: str, description: str, url: str, headers: dict[str, str] | None = None) -> bool:
-    setting = await load_setting()
-    if name not in setting.mcp_servers:
-        return False
-    setting.mcp_servers[name] = McpServer(name=name, description=description, type="sse", url=url, headers=headers)
-    await save_setting(setting)
-    return True
-
-
-# 按名称更新 stdio 类型的 MCP 服务，不存在返回 False
-async def update_mcp_stdio_server(name: str, description: str, command: str, args: list[str] | None = None) -> bool:
-    setting = await load_setting()
-    if name not in setting.mcp_servers:
-        return False
-    setting.mcp_servers[name] = McpServer(name=name, description=description, type="stdio", command=command, args=args)
-    await save_setting(setting)
-    return True
-
-
-# 按名称删除 MCP 服务，不存在返回 False
-async def delete_mcp_server(name: str) -> bool:
-    setting = await load_setting()
-    if name not in setting.mcp_servers:
-        return False
-    del setting.mcp_servers[name]
-    await save_setting(setting)
-    return True
+# 按 id 删除 MCP 服务，不存在返回 False
+async def delete_mcp_server(server_id: int) -> bool:
+    async with async_session() as session:
+        result = await session.execute(delete(McpServerEntity).where(McpServerEntity.id == server_id))
+        await session.commit()
+        return result.rowcount > 0

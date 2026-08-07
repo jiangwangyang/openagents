@@ -168,48 +168,51 @@ async function onAgentSelectChange() {
     }
 }
 
-// 模型输入历史记忆（localStorage）
-const MODEL_HISTORY_KEY = 'openagents_model_history';
-const MODEL_HISTORY_LIMIT = 20;
+// 上次模型配置记忆（localStorage）
+const LAST_MODEL_CONFIG_KEY = 'openagents_last_model_config';
 
-function getModelHistory() {
+// 读取上次模型配置
+function getLastModelConfig() {
     try {
-        const raw = localStorage.getItem(MODEL_HISTORY_KEY);
-        const list = raw ? JSON.parse(raw) : [];
-        return Array.isArray(list) ? list : [];
+        const raw = localStorage.getItem(LAST_MODEL_CONFIG_KEY);
+        return raw ? JSON.parse(raw) : null;
     } catch (e) {
-        return [];
+        return null;
     }
 }
 
-function addModelHistory(model) {
-    if (!model) {
+// 保存当前模型配置到 localStorage
+function saveLastModelConfig() {
+    const providerId = document.getElementById('providerSelect').value;
+    const model = document.getElementById('modelSelect').value.trim();
+    const thinking = document.getElementById('thinkingSelect').value;
+    if (providerId) {
+        localStorage.setItem(LAST_MODEL_CONFIG_KEY, JSON.stringify({provider_id: providerId, model: model, thinking: thinking}));
+    }
+}
+
+// 恢复上次模型配置到控件
+function restoreLastModelConfig() {
+    const config = getLastModelConfig();
+    if (!config) {
         return;
     }
-    const list = getModelHistory().filter(item => item !== model);
-    list.unshift(model);
-    localStorage.setItem(MODEL_HISTORY_KEY, JSON.stringify(list.slice(0, MODEL_HISTORY_LIMIT)));
-    renderModelHistory();
+    const providerSelect = document.getElementById('providerSelect');
+    const modelInput = document.getElementById('modelSelect');
+    const thinkingSelect = document.getElementById('thinkingSelect');
+    // 供应商下拉框需等选项加载完再赋值
+    if (config.provider_id) {
+        providerSelect.value = config.provider_id;
+    }
+    if (config.model) {
+        modelInput.value = config.model;
+    }
+    if (config.thinking) {
+        thinkingSelect.value = config.thinking;
+    }
 }
 
-function removeModelHistory(model) {
-    const list = getModelHistory().filter(item => item !== model);
-    localStorage.setItem(MODEL_HISTORY_KEY, JSON.stringify(list));
-    renderModelHistory();
-}
-
-// 历史条目渲染为 datalist 选项供输入时选择
-function renderModelHistory() {
-    const datalist = document.getElementById('modelHistoryList');
-    datalist.innerHTML = '';
-    getModelHistory().forEach(model => {
-        const opt = document.createElement('option');
-        opt.value = model;
-        datalist.appendChild(opt);
-    });
-}
-
-// 加载对话输入区的供应商下拉框，模型为自由输入（datalist 记忆历史）
+// 加载对话输入区的供应商下拉框
 async function loadModelSelect() {
     const providerSelect = document.getElementById('providerSelect');
     const prevProvider = providerSelect.value;
@@ -227,7 +230,8 @@ async function loadModelSelect() {
             }
             providerSelect.appendChild(opt);
         });
-        renderModelHistory();
+        // 供应商列表加载完成后恢复上次模型配置
+        restoreLastModelConfig();
     } catch (e) {
         // 静默处理错误
     }
@@ -267,8 +271,8 @@ async function sendMessage() {
         return;
     }
     const modelConfig = {model_provider_id: parseInt(providerId), model: modelName, thinking: document.getElementById('thinkingSelect').value === 'true'};
-    // 发送成功后把模型记入历史
-    addModelHistory(modelName);
+    // 保存当前模型配置供下次新对话自动填入
+    saveLastModelConfig();
 
     // 启动 work：新会话先创建，已有会话直接启动
     try {

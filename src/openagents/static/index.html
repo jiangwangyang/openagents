@@ -359,6 +359,13 @@
                 <select id="agentSelect" class="form-control" title="Select Agent" data-i18n-title="input.agentTitle" style="width:auto; height:28px; padding:4px 10px; font-size:11px; font-family:var(--font-mono); color:var(--slate-400); text-transform:uppercase;">
                     <option value="" data-i18n="common.none">NONE</option>
                 </select>
+                <!-- 模型路由选择：供应商联动模型下拉，思考开关，每次发送消息时生效 -->
+                <select id="providerSelect" class="form-control" title="Select Provider" data-i18n-title="input.providerTitle" onchange="syncDialogModelDropdown()" style="width:auto; height:28px; padding:4px 10px; font-size:11px; font-family:var(--font-mono); color:var(--slate-400); text-transform:uppercase;"></select>
+                <select id="modelSelect" class="form-control" title="Select Model" data-i18n-title="input.modelTitle" style="width:auto; height:28px; padding:4px 10px; font-size:11px; font-family:var(--font-mono); color:var(--slate-400); text-transform:uppercase;"></select>
+                <select id="thinkingSelect" class="form-control" title="Thinking Mode" data-i18n-title="input.thinkingTitle" style="width:auto; height:28px; padding:4px 10px; font-size:11px; font-family:var(--font-mono); color:var(--slate-400); text-transform:uppercase;">
+                    <option value="true">THINK</option>
+                    <option value="false">NO THINK</option>
+                </select>
             </div>
             <div class="input-container">
                 <textarea class="message-input" id="messageInput" placeholder="Enter instructions..." data-i18n-placeholder="input.placeholder" maxlength="2000" disabled rows="1"></textarea>

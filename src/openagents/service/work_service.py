@@ -25,12 +25,23 @@ class WorkState(BaseModel):
 _work_state_dict: dict[int, WorkState] = {}
 
 
-def start_work(conversation_id: int, task_content: str | None = None) -> bool:
+# model_provider 为提供商名称，work 内按名称查询配置
+def start_work(conversation_id: int, task_content: str, model_provider: str, model: str, thinking: bool) -> bool:
     # 同一 conversation 不允许同时运行多个 work 任务
     work_state = _work_state_dict.get(conversation_id)
     if work_state is not None and not work_state.done:
         return False
-    _work_state_dict[conversation_id] = WorkState(chunks=[], done=False, event=asyncio.Event(), task=asyncio.create_task(work(conversation_id, task_content)))
+    _work_state_dict[conversation_id] = WorkState(chunks=[], done=False, event=asyncio.Event(), task=asyncio.create_task(work(conversation_id, task_content, model_provider, model, thinking)))
+    return True
+
+
+# 启动历史回放查询，不执行模型调用（task_content=None 时 work 在模型调用前结束，模型参数不会被使用）
+def start_query(conversation_id: int) -> bool:
+    # 同一 conversation 不允许同时运行多个 work 任务
+    work_state = _work_state_dict.get(conversation_id)
+    if work_state is not None and not work_state.done:
+        return False
+    _work_state_dict[conversation_id] = WorkState(chunks=[], done=False, event=asyncio.Event(), task=asyncio.create_task(work(conversation_id, "", "", "", False)))
     return True
 
 
@@ -56,7 +67,7 @@ def finish(conversation_id: int) -> None:
 
 
 # 后台执行
-async def work(conversation_id: int, task_content: str | None) -> None:
+async def work(conversation_id: int, task_content: str, model_provider: str, model: str, thinking: bool) -> None:
     try:
         # 查询历史消息
         conversation = await conversation_repository.get_conversation(conversation_id)
@@ -88,12 +99,11 @@ async def work(conversation_id: int, task_content: str | None) -> None:
         if not task_content:
             return
 
-        # 模型调用数据
-        model_provider = await model_provider_repository.get_current_model_provider()
-        base_url = model_provider.base_url if model_provider else ""
-        api_key = model_provider.api_key if model_provider else ""
-        model = await model_provider_repository.get_current_model() or ""
-        thinking = {"type": "enabled", "display": "summarized"} if await model_provider_repository.get_thinking() else {"type": "disabled"}
+        # 模型调用数据，按提供商名称查询配置
+        provider = await model_provider_repository.get_model_provider(model_provider)
+        base_url = provider.base_url if provider else ""
+        api_key = provider.api_key if provider else ""
+        thinking_config = {"type": "enabled", "display": "summarized"} if thinking else {"type": "disabled"}
         system_prompt = str(conversation.system_prompt)
         tools = tool_service.list_tools()
         messages = [{"role": msg.role, "content": msg.content} for msg in conversation.messages]
@@ -103,7 +113,7 @@ async def work(conversation_id: int, task_content: str | None) -> None:
         anthropic_client: AsyncAnthropic = AsyncAnthropic(base_url=base_url, api_key=api_key)
         while True:
             # 1. 发送 anthropic 请求
-            response: AsyncStream[RawMessageStreamEvent] = await anthropic_client.messages.create(messages=messages, tools=tools, system=system_prompt, model=model, thinking=thinking, max_tokens=16000, stream=True)
+            response: AsyncStream[RawMessageStreamEvent] = await anthropic_client.messages.create(messages=messages, tools=tools, system=system_prompt, model=model, thinking=thinking_config, max_tokens=16000, stream=True)
             input_json = ""
             async for event in response:
                 if event.type == "message_start":

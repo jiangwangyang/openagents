@@ -96,6 +96,7 @@ function startNewChat() {
     usageInfo.textContent = '';
     initDefaultWorkspace();
     loadAgentSelect();
+    loadModelSelect();
     setContextLocked(false);
     switchView('dialog');
 }
@@ -130,6 +131,79 @@ async function loadAgentSelect() {
     }
 }
 
+// 加载对话输入区的模型选择器，初始值取当前配置，刷新时保留仍有效的已选项，供应商缓存与 CONFIG 面板共用
+async function loadModelSelect() {
+    const providerSelect = document.getElementById('providerSelect');
+    const thinkingSelect = document.getElementById('thinkingSelect');
+    const prevProvider = providerSelect.value;
+    const prevModel = document.getElementById('modelSelect').value;
+    try {
+        const pResponse = await fetch('/model-provider/list');
+        globalProvidersCachedList = await pResponse.json();
+
+        // 首次加载取当前配置作为默认值，刷新时保留用户已选项
+        let selectedProvider = prevProvider;
+        let selectedModel = prevModel;
+        if (!selectedProvider) {
+            try {
+                const cpResponse = await fetch('/model-provider/current');
+                if (cpResponse.ok) {
+                    selectedProvider = (await cpResponse.json()).name;
+                }
+                const cmResponse = await fetch('/model/current');
+                if (cmResponse.ok) {
+                    selectedModel = (await cmResponse.json()).model;
+                }
+            } catch (e) {
+            }
+        }
+        // 思考开关仅在首次加载时取当前配置，之后保留用户选择
+        if (!thinkingSelect.dataset.initialized) {
+            try {
+                const tResponse = await fetch('/thinking');
+                if (tResponse.ok) {
+                    thinkingSelect.value = String((await tResponse.json()).thinking);
+                    thinkingSelect.dataset.initialized = '1';
+                }
+            } catch (e) {
+            }
+        }
+
+        providerSelect.innerHTML = '';
+        globalProvidersCachedList.forEach(provider => {
+            const opt = document.createElement('option');
+            opt.value = provider.name;
+            opt.textContent = provider.name;
+            if (provider.name === selectedProvider) {
+                opt.selected = true;
+            }
+            providerSelect.appendChild(opt);
+        });
+        syncDialogModelDropdown(selectedModel);
+    } catch (e) {
+        // 静默处理错误
+    }
+}
+
+// 对话输入区供应商联动模型下拉框，targetModel 指定后优先选中
+function syncDialogModelDropdown(targetModel = null) {
+    const providerSelect = document.getElementById('providerSelect');
+    const modelSelect = document.getElementById('modelSelect');
+    modelSelect.innerHTML = '';
+    const targetProvider = globalProvidersCachedList.find(p => p.name === providerSelect.value);
+    if (targetProvider && targetProvider.models) {
+        targetProvider.models.forEach(modelStr => {
+            const opt = document.createElement('option');
+            opt.value = modelStr;
+            opt.textContent = modelStr;
+            if (targetModel && modelStr === targetModel) {
+                opt.selected = true;
+            }
+            modelSelect.appendChild(opt);
+        });
+    }
+}
+
 function enableInput() {
     messageInput.disabled = false;
     sendButton.disabled = false;
@@ -156,11 +230,20 @@ async function sendMessage() {
         return;
     }
 
+    // 从模型路由下拉框读取发送参数，未选择时提示并终止
+    const providerName = document.getElementById('providerSelect').value;
+    const modelName = document.getElementById('modelSelect').value;
+    if (!providerName || !modelName) {
+        alert(t('stream.startFailed'));
+        return;
+    }
+    const modelConfig = {model_provider: providerName, model: modelName, thinking: document.getElementById('thinkingSelect').value === 'true'};
+
     // 启动 work：新会话先创建，已有会话直接启动
     try {
         if (!currentConversationId) {
             // 新会话可指定智能体，未选择（空值）则不携带 agent_id
-            const payload = {task_content: message, work_dir: currentWorkdir};
+            const payload = {task_content: message, work_dir: currentWorkdir, ...modelConfig};
             const agentId = document.getElementById('agentSelect').value;
             if (agentId) {
                 payload.agent_id = parseInt(agentId);
@@ -183,7 +266,7 @@ async function sendMessage() {
             const response = await fetch(`/work/${currentConversationId}/start`, {
                 method: 'POST',
                 headers: {'Content-Type': 'application/json'},
-                body: JSON.stringify({task_content: message})
+                body: JSON.stringify({task_content: message, ...modelConfig})
             });
             if (!response.ok) {
                 alert(t('stream.startFailed'));

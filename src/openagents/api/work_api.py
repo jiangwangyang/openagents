@@ -12,7 +12,7 @@ router = APIRouter()
 
 
 @router.post("/work/start")
-async def create_work(task_content: str = Body(..., embed=True), work_dir: str = Body(..., embed=True), model_provider_id: int = Body(..., embed=True), model: str = Body(..., embed=True), thinking: bool = Body(..., embed=True), agent_id: int | None = Body(None, embed=True)) -> int:
+async def create_work(task_content: str = Body(..., embed=True), work_dir: str = Body(..., embed=True), model_provider_id: int | None = Body(None, embed=True), model: str | None = Body(None, embed=True), thinking: bool | None = Body(None, embed=True), agent_id: int | None = Body(None, embed=True)) -> int:
     # 指定 agent 时使用其 prompt 作为 system_prompt（与任务流水线的 Agent 阶段对话一致），否则读取 AGENTS.md，按优先级取第一个存在的文件
     system_prompt = ""
     if agent_id is not None:
@@ -20,7 +20,17 @@ async def create_work(task_content: str = Body(..., embed=True), work_dir: str =
         if agent is None:
             raise HTTPException(status_code=404, detail="Agent not found")
         system_prompt = str(agent.prompt)
+        # 模型配置必须全部为 None 或全部与 agent 配置一致，否则拒绝请求
+        user_configs = [model_provider_id, model, thinking]
+        agent_configs = [agent.model_provider_id, agent.model, agent.thinking]
+        if any(config is not None for config in user_configs) and user_configs != agent_configs:
+            raise HTTPException(status_code=400, detail="Model config must be all None or all consistent with agent config")
+        # 使用 agent 的模型配置，忽略用户传入的参数
+        model_provider_id, model, thinking = agent.model_provider_id, agent.model, agent.thinking
     else:
+        # 未指定 agent 时模型配置必填
+        if model_provider_id is None or model is None or thinking is None:
+            raise HTTPException(status_code=400, detail="Model config is required when agent_id is not provided")
         for agents_file in [anyio.Path(work_dir) / "AGENTS.md", await anyio.Path.home() / ".openagents" / "AGENTS.md", await anyio.Path.home() / ".agents" / "AGENTS.md"]:
             if await agents_file.exists() and await agents_file.is_file():
                 system_prompt = await agents_file.read_text(encoding="utf-8")

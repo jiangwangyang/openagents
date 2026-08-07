@@ -160,8 +160,8 @@ function showConfirmDialog({title, text, onConfirm}) {
             <div class="confirm-title">${escapeHtml(title)}</div>
             <div class="confirm-text">${escapeHtml(text)}</div>
             <div class="confirm-buttons">
-                <button class="confirm-btn cancel" onclick="closeConfirmDialog()">Abort</button>
-                <button class="confirm-btn danger" id="globalConfirmExecuteBtn">Purge</button>
+                <button class="confirm-btn cancel" onclick="closeConfirmDialog()">${t('common.abort')}</button>
+                <button class="confirm-btn danger" id="globalConfirmExecuteBtn">${t('common.purge')}</button>
             </div>
         </div>
     `;
@@ -201,38 +201,38 @@ function switchView(viewName) {
         document.getElementById('navDialogBtn').classList.add('active');
         document.getElementById('viewDialog').classList.add('active');
         globalInputWrapper.style.display = 'block';
-        conversationInfo.textContent = currentConversationId ? `ID: ${currentConversationId}` : 'NEW TRACE';
+        conversationInfo.textContent = currentConversationId ? `ID: ${currentConversationId}` : t('header.newTrace');
     } else {
         globalInputWrapper.style.display = 'none';
         if (viewName === 'task') {
             document.getElementById('navTaskBtn').classList.add('active');
             document.getElementById('viewTask').classList.add('active');
-            conversationInfo.textContent = 'CORE::TASK_PIPELINE';
+            conversationInfo.textContent = t('header.coreTask');
             fetchTaskList();
         } else if (viewName === 'cron') {
             document.getElementById('navCronBtn').classList.add('active');
             document.getElementById('viewCron').classList.add('active');
-            conversationInfo.textContent = 'CORE::SCHEDULE';
+            conversationInfo.textContent = t('header.coreCron');
             fetchCronTasks();
         } else if (viewName === 'skill') {
             document.getElementById('navSkillBtn').classList.add('active');
             document.getElementById('viewSkill').classList.add('active');
-            conversationInfo.textContent = 'CORE::SKILLS';
+            conversationInfo.textContent = t('header.coreSkill');
             fetchSkillData();
         } else if (viewName === 'mcp') {
             document.getElementById('navMcpBtn').classList.add('active');
             document.getElementById('viewMcp').classList.add('active');
-            conversationInfo.textContent = 'CORE::MCP_ECOSYSTEM';
+            conversationInfo.textContent = t('header.coreMcp');
             fetchMcpRegistry();
         } else if (viewName === 'agent') {
             document.getElementById('navAgentBtn').classList.add('active');
             document.getElementById('viewAgent').classList.add('active');
-            conversationInfo.textContent = 'CORE::AGENT_ROSTER';
+            conversationInfo.textContent = t('header.coreAgent');
             fetchAgentRegistry();
         } else if (viewName === 'config') {
             document.getElementById('navConfigBtn').classList.add('active');
             document.getElementById('viewConfig').classList.add('active');
-            conversationInfo.textContent = 'CORE::CONFIG_CONSOLE';
+            conversationInfo.textContent = t('header.coreConfig');
             fetchGlobalSettings();
         }
     }

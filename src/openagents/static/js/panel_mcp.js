@@ -25,7 +25,7 @@ async function fetchMcpRegistry() {
         mcpListContainer.innerHTML = '';
 
         if (globalMcpCachedList.length === 0) {
-            mcpListContainer.innerHTML = '<div style="padding:30px; text-align:center; border:1px dashed var(--border-hard); color:var(--slate-400)">NO REGISTERED MCP CONTEXTS</div>';
+            mcpListContainer.innerHTML = `<div style="padding:30px; text-align:center; border:1px dashed var(--border-hard); color:var(--slate-400)">${t('mcp.empty')}</div>`;
             return;
         }
 
@@ -36,7 +36,7 @@ async function fetchMcpRegistry() {
             // 元素 id 使用列表索引生成（服务名可能包含引号等特殊字符）
             card.id = `mcp-card-${index}`;
 
-            const snippet = server.url || (server.command ? `${server.command} ${server.args?.join(' ')}` : 'Local Context');
+            const snippet = server.url || (server.command ? `${server.command} ${server.args?.join(' ')}` : t('mcp.localContext'));
             const isStdio = server.type === 'stdio';
 
             card.innerHTML = `
@@ -47,8 +47,8 @@ async function fetchMcpRegistry() {
                         <span class="info-card-snippet">${escapeHtml(snippet)}</span>
                     </div>
                     <div style="display:flex; gap:8px; align-items:center;" onclick="event.stopPropagation();">
-                        <button class="btn btn-sm send-button mcp-save-btn" style="height:28px; padding:0 8px; font-size:10px;">Save</button>
-                        <button class="btn btn-sm send-button mcp-test-btn" style="height:28px;">Test Probe</button>
+                        <button class="btn btn-sm send-button mcp-save-btn" style="height:28px; padding:0 8px; font-size:10px;">${t('common.save')}</button>
+                        <button class="btn btn-sm send-button mcp-test-btn" style="height:28px;">${t('mcp.testProbe')}</button>
                         <button class="delete-btn" style="opacity:1; padding:6px;">
                             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
                         </button>
@@ -57,36 +57,36 @@ async function fetchMcpRegistry() {
                 <div class="info-card-details" style="display: none;">
                     <input type="hidden" id="mcp-type-${index}" value="${escapeHtml(server.type)}">
                     <div class="details-grid">
-                        <div class="details-label">Protocol Type</div>
+                        <div class="details-label">${t('mcp.protocolType')}</div>
                         <div class="details-value"><code style="background:var(--inline-code-bg); padding:2px 6px; border-radius:2px;">${escapeHtml(server.type)}</code></div>
 
-                        <div class="details-label">Description</div>
+                        <div class="details-label">${t('common.description')}</div>
                         <div class="details-value">
                             <input type="text" id="mcp-desc-${index}" class="form-control" value="${escapeHtml(server.description || '')}">
                         </div>
 
                         ${!isStdio ? `
-                            <div class="details-label">Target URL</div>
+                            <div class="details-label">${t('mcp.targetUrl')}</div>
                             <div class="details-value">
                                 <input type="text" id="mcp-url-${index}" class="form-control mono" value="${escapeHtml(server.url || '')}">
                             </div>
-                            <div class="details-label">HTTP Context Headers (JSON)</div>
+                            <div class="details-label">${t('mcp.httpHeaders')}</div>
                             <div class="details-value">
                                 <textarea id="mcp-headers-${index}" class="form-control mono" rows="3" style="resize: vertical; font-size:11px;">${escapeHtml(JSON.stringify(server.headers || {}, null, 2))}</textarea>
                             </div>
                         ` : `
-                            <div class="details-label">Command Execution</div>
+                            <div class="details-label">${t('mcp.cmdExec')}</div>
                             <div class="details-value">
                                 <input type="text" id="mcp-command-${index}" class="form-control mono" value="${escapeHtml(server.command || '')}">
                             </div>
-                            <div class="details-label">Arguments (Comma Separated)</div>
+                            <div class="details-label">${t('mcp.args')}</div>
                             <div class="details-value">
                                 <input type="text" id="mcp-args-${index}" class="form-control mono" value="${escapeHtml(server.args?.join(', ') || '')}">
                             </div>
                         `}
 
                         <div class="details-block-container" id="mcp-tools-zone-${index}" style="display:none;">
-                            <div class="details-label" style="margin-bottom: 6px;">Exposed Capabilities Registry</div>
+                            <div class="details-label" style="margin-bottom: 6px;">${t('mcp.exposedCaps')}</div>
                             <div class="mcp-tool-badge-list" id="mcp-tools-list-${index}"></div>
                         </div>
                     </div>
@@ -99,7 +99,7 @@ async function fetchMcpRegistry() {
             mcpListContainer.appendChild(card);
         });
     } catch (e) {
-        mcpListContainer.innerHTML = '<div style="padding:20px; color:var(--danger-color)">TOPOLOGY CAPTURE CRASHED</div>';
+        mcpListContainer.innerHTML = `<div style="padding:20px; color:var(--danger-color)">${t('mcp.topologyCrashed')}</div>`;
     }
 }
 
@@ -108,7 +108,7 @@ async function submitMcpServer() {
     const description = document.getElementById('mcpDesc').value.trim();
     const type = document.getElementById('mcpType').value;
     if (!name) {
-        alert("SERVER UNIQUE NAME IS REQUIRED.");
+        alert(t('mcp.nameRequired'));
         return;
     }
 
@@ -124,7 +124,7 @@ async function submitMcpServer() {
             try {
                 bodyPayload.headers = JSON.parse(headersStr);
             } catch (e) {
-                alert("HEADERS MUST BE A VALID JSON STRING.");
+                alert(t('mcp.headersInvalid'));
                 return;
             }
         } else {
@@ -149,7 +149,7 @@ async function submitMcpServer() {
             await fetchMcpRegistry();
         }
     } catch (e) {
-        alert("REGISTRATION REJECTED");
+        alert(t('mcp.regRejected'));
     }
 }
 
@@ -174,7 +174,7 @@ async function updateSingleMcp(name) {
             try {
                 bodyPayload.headers = JSON.parse(headersStr);
             } catch (e) {
-                alert("HEADERS MUST BE A VALID JSON STRING.");
+                alert(t('mcp.headersInvalid'));
                 return;
             }
         } else {
@@ -189,18 +189,18 @@ async function updateSingleMcp(name) {
             body: JSON.stringify(bodyPayload)
         });
         if (response.ok) {
-            alert(`MCP SERVER [${name}] SYNCHRONIZED.`);
+            alert(t('mcp.synced', {name: name}));
             await fetchMcpRegistry();
         }
     } catch (e) {
-        alert("SYNC CRASHED");
+        alert(t('common.syncCrashed'));
     }
 }
 
 function removeMcpServer(name) {
     showConfirmDialog({
-        title: "PURGE MCP NODE",
-        text: `Are you sure you want to completely eject MCP node [${name}] from system environment? Bridge tunnels attached will be disconnected instantly.`,
+        title: t('mcp.purgeTitle'),
+        text: t('mcp.purgeText', {name: name}),
         onConfirm: async () => {
             try {
                 const response = await fetch(`/mcp-server/${encodeURIComponent(name)}`, {method: 'DELETE'});
@@ -208,7 +208,7 @@ function removeMcpServer(name) {
                     await fetchMcpRegistry();
                 }
             } catch (e) {
-                alert("PURGE FAILURE");
+                alert(t('common.purgeFailure'));
             }
         }
     });
@@ -240,7 +240,7 @@ async function testMcpServerTools(name) {
         const tools = await response.json();
         listContainer.innerHTML = '';
         if (!tools || tools.length === 0) {
-            listContainer.innerHTML = '<div style="font-size:12px; color:var(--slate-400); font-style:italic;">CONNECTED SUCCESSFULLY. ZERO TOOLS EXPOSED.</div>';
+            listContainer.innerHTML = `<div style="font-size:12px; color:var(--slate-400); font-style:italic;">${t('mcp.connectedNoTools')}</div>`;
             return;
         }
         tools.forEach(tool => {
@@ -248,12 +248,12 @@ async function testMcpServerTools(name) {
             item.className = 'mcp-tool-item';
             item.innerHTML = `
                 <div class="mcp-tool-name">/tools::${escapeHtml(tool.name)}</div>
-                <div class="mcp-tool-desc">${escapeHtml(tool.description || 'No instruction manifest provided.')}</div>
+                <div class="mcp-tool-desc">${escapeHtml(tool.description || t('mcp.noManifest'))}</div>
             `;
             listContainer.appendChild(item);
         });
     } catch (e) {
-        listContainer.innerHTML = `<div style="font-family:var(--font-mono); font-size:12px; color:var(--danger-color)">SESSION CRASHED: REFUSED CONNECTION</div>`;
+        listContainer.innerHTML = `<div style="font-family:var(--font-mono); font-size:12px; color:var(--danger-color)">${t('mcp.sessionCrashed')}</div>`;
     }
 }
 

@@ -16,7 +16,7 @@ async function fetchAgentRegistry() {
         agentListContainer.innerHTML = '';
 
         if (agents.length === 0) {
-            agentListContainer.innerHTML = '<div style="padding:30px; text-align:center; border:1px dashed var(--border-hard); color:var(--slate-400)">NO REGISTERED AGENTS FOUND</div>';
+            agentListContainer.innerHTML = `<div style="padding:30px; text-align:center; border:1px dashed var(--border-hard); color:var(--slate-400)">${t('agent.empty')}</div>`;
             return;
         }
 
@@ -33,7 +33,7 @@ async function fetchAgentRegistry() {
                         <span class="info-card-snippet">${escapeHtml(agent.description)}</span>
                     </div>
                     <div style="display:flex; gap:8px; align-items:center;" onclick="event.stopPropagation();">
-                        <button class="btn btn-sm send-button" style="height:28px; padding:0 8px; font-size:10px;" onclick="updateSingleAgent(${agent.id})">Save</button>
+                        <button class="btn btn-sm send-button" style="height:28px; padding:0 8px; font-size:10px;" onclick="updateSingleAgent(${agent.id})">${t('common.save')}</button>
                         <button class="delete-btn" style="opacity:1; padding:6px;">
                             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
                         </button>
@@ -41,17 +41,17 @@ async function fetchAgentRegistry() {
                 </div>
                 <div class="info-card-details" style="display: none;">
                     <div class="details-grid">
-                        <div class="details-label">Agent Name</div>
+                        <div class="details-label">${t('agent.name')}</div>
                         <div class="details-value">
                             <input type="text" id="agent-name-${agent.id}" class="form-control" value="${escapeHtml(agent.name)}">
                         </div>
 
-                        <div class="details-label">Description</div>
+                        <div class="details-label">${t('common.description')}</div>
                         <div class="details-value">
                             <input type="text" id="agent-desc-${agent.id}" class="form-control" value="${escapeHtml(agent.description)}">
                         </div>
 
-                        <div class="details-label">System Prompt</div>
+                        <div class="details-label">${t('agent.prompt')}</div>
                         <div class="details-value">
                             <textarea id="agent-prompt-${agent.id}" class="form-control mono" rows="6" style="resize: vertical; font-size:11px;">${escapeHtml(agent.prompt)}</textarea>
                         </div>
@@ -63,7 +63,7 @@ async function fetchAgentRegistry() {
             agentListContainer.appendChild(card);
         });
     } catch (e) {
-        agentListContainer.innerHTML = '<div style="padding:20px; color:var(--danger-color)">ROSTER CAPTURE CRASHED</div>';
+        agentListContainer.innerHTML = `<div style="padding:20px; color:var(--danger-color)">${t('agent.rosterCrashed')}</div>`;
     }
 }
 
@@ -72,7 +72,7 @@ async function submitAgent() {
     const description = document.getElementById('agentDesc').value.trim();
     const prompt = document.getElementById('agentPrompt').value.trim();
     if (!name) {
-        alert("AGENT NAME IS REQUIRED.");
+        alert(t('agent.nameRequired'));
         return;
     }
 
@@ -90,7 +90,7 @@ async function submitAgent() {
             await fetchAgentRegistry();
         }
     } catch (e) {
-        alert("COMMIT FAILURE");
+        alert(t('agent.commitFailure'));
     }
 }
 
@@ -99,7 +99,7 @@ async function updateSingleAgent(id) {
     const description = document.getElementById(`agent-desc-${id}`).value.trim();
     const prompt = document.getElementById(`agent-prompt-${id}`).value.trim();
     if (!name) {
-        alert("AGENT NAME IS REQUIRED.");
+        alert(t('agent.nameRequired'));
         return;
     }
 
@@ -110,18 +110,18 @@ async function updateSingleAgent(id) {
             body: JSON.stringify({name: name, description: description, prompt: prompt})
         });
         if (response.ok) {
-            alert(`AGENT [${name}] SYNCHRONIZED.`);
+            alert(t('agent.synced', {name: name}));
             await fetchAgentRegistry();
         }
     } catch (e) {
-        alert("SYNC CRASHED");
+        alert(t('common.syncCrashed'));
     }
 }
 
 function removeAgent(id, name) {
     showConfirmDialog({
-        title: "PURGE AGENT NODE",
-        text: `Are you sure you want to completely eject agent [${name}] from system roster? Conversations attached will be detached instantly.`,
+        title: t('agent.purgeTitle'),
+        text: t('agent.purgeText', {name: name}),
         onConfirm: async () => {
             try {
                 const response = await fetch(`/agent/${id}`, {method: 'DELETE'});
@@ -129,7 +129,7 @@ function removeAgent(id, name) {
                     await fetchAgentRegistry();
                 }
             } catch (e) {
-                alert("PURGE FAILURE");
+                alert(t('common.purgeFailure'));
             }
         }
     });

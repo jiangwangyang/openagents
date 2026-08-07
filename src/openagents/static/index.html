@@ -43,11 +43,9 @@
                 <div class="logo-icon">A</div>
                 <span class="logo-text">OpenAgents</span>
             </div>
-            <button class="new-chat-btn" onclick="startNewChat()">
-                + New Dialog
-            </button>
+            <button class="new-chat-btn" onclick="startNewChat()" data-i18n="sidebar.newDialog">+ New Dialog</button>
         </div>
-        <div class="sidebar-title">History Logs</div>
+        <div class="sidebar-title" data-i18n="sidebar.history">History Logs</div>
         <div class="conversation-list" id="conversationList"></div>
     </div>
 
@@ -56,25 +54,27 @@
         <!-- 头部导航 -->
         <div class="header">
             <div class="header-left">
-                <button class="header-nav-btn active" id="navDialogBtn" onclick="switchView('dialog')">DIALOG</button>
-                <button class="header-nav-btn" id="navTaskBtn" onclick="switchView('task')">TASK</button>
-                <button class="header-nav-btn" id="navAgentBtn" onclick="switchView('agent')">AGENT</button>
-                <button class="header-nav-btn" id="navCronBtn" onclick="switchView('cron')">CRON</button>
-                <button class="header-nav-btn" id="navSkillBtn" onclick="switchView('skill')">SKILL</button>
-                <button class="header-nav-btn" id="navMcpBtn" onclick="switchView('mcp')">MCP</button>
-                <button class="header-nav-btn" id="navConfigBtn" onclick="switchView('config')">CONFIG</button>
+                <button class="header-nav-btn active" id="navDialogBtn" onclick="switchView('dialog')" data-i18n="nav.dialog">DIALOG</button>
+                <button class="header-nav-btn" id="navTaskBtn" onclick="switchView('task')" data-i18n="nav.task">TASK</button>
+                <button class="header-nav-btn" id="navAgentBtn" onclick="switchView('agent')" data-i18n="nav.agent">AGENT</button>
+                <button class="header-nav-btn" id="navCronBtn" onclick="switchView('cron')" data-i18n="nav.cron">CRON</button>
+                <button class="header-nav-btn" id="navSkillBtn" onclick="switchView('skill')" data-i18n="nav.skill">SKILL</button>
+                <button class="header-nav-btn" id="navMcpBtn" onclick="switchView('mcp')" data-i18n="nav.mcp">MCP</button>
+                <button class="header-nav-btn" id="navConfigBtn" onclick="switchView('config')" data-i18n="nav.config">CONFIG</button>
                 <!-- 主题选择器：色板预览下拉，菜单项由 theme.js 按 THEME_META 动态生成 -->
                 <div class="theme-picker" id="themePicker">
-                    <button class="header-nav-btn theme-picker-btn" id="themePickerBtn" type="button" title="Switch Theme">
+                    <button class="header-nav-btn theme-picker-btn" id="themePickerBtn" type="button" title="Switch Theme" data-i18n-title="header.switchTheme">
                         <span class="theme-picker-dot" id="themePickerDot"></span>
                         <span id="themePickerLabel">LIGHT</span>
                     </button>
                     <div class="theme-picker-menu" id="themePickerMenu"></div>
                 </div>
+                <!-- 语言切换按钮：点击中英直接互换，按钮显示目标语言 -->
+                <button class="header-nav-btn" id="langToggleBtn" type="button" title="Switch Language" data-i18n-title="lang.toggleTitle" onclick="toggleLanguage()">中</button>
             </div>
             <div class="header-right">
                 <span class="header-usage-info" id="usageInfo"></span>
-                <span class="header-conversation-info" id="conversationInfo">NEW TRACE</span>
+                <span class="header-conversation-info" id="conversationInfo" data-i18n="header.newTrace">NEW TRACE</span>
             </div>
         </div>
 
@@ -83,9 +83,9 @@
             <div class="chat-container" id="chatContainer" style="padding:0; flex:1; display:flex; flex-direction:column;">
                 <div class="empty-state" id="emptyState">
                     <div class="empty-state-icon"><span>✦</span></div>
-                    <div class="empty-state-title">Initialize Process</div>
-                    <div class="empty-state-text">Start a new conversation or select an existing trace from the sidebar to continue.</div>
-                    <div class="empty-state-hint">Press Enter to execute / Shift+Enter for newline</div>
+                    <div class="empty-state-title" data-i18n="empty.title">Initialize Process</div>
+                    <div class="empty-state-text" data-i18n="empty.text">Start a new conversation or select an existing trace from the sidebar to continue.</div>
+                    <div class="empty-state-hint" data-i18n="empty.hint">Press Enter to execute / Shift+Enter for newline</div>
                 </div>
             </div>
         </div>
@@ -93,27 +93,27 @@
         <!-- ===== 视图 2: 任务流水线管理 (TASK) ===== -->
         <div class="view-container" id="viewTask">
             <div class="panel-view-header">
-                <h2 class="panel-view-title">Task Pipeline Management</h2>
-                <button class="btn btn-sm send-button" onclick="toggleAddTaskPanel()">+ New Task</button>
+                <h2 class="panel-view-title" data-i18n="task.viewTitle">Task Pipeline Management</h2>
+                <button class="btn btn-sm send-button" onclick="toggleAddTaskPanel()" data-i18n="task.newTask">+ New Task</button>
             </div>
 
             <div class="add-cron-panel" id="addTaskPanel" style="display: none;">
                 <div class="form-row">
                     <div class="form-group">
-                        <label>Task Title</label>
-                        <input type="text" id="taskTitle" class="form-control" placeholder="e.g. Daily Code Review Pipeline">
+                        <label data-i18n="task.title">Task Title</label>
+                        <input type="text" id="taskTitle" class="form-control" placeholder="e.g. Daily Code Review Pipeline" data-i18n-placeholder="task.titlePlaceholder">
                     </div>
                 </div>
                 <div class="form-row">
                     <div class="form-group">
-                        <label>Task Content</label>
-                        <textarea id="taskContent" class="form-control mono" rows="5" style="resize: vertical; min-height: 100px;" placeholder="# Enter task description..."></textarea>
+                        <label data-i18n="task.content">Task Content</label>
+                        <textarea id="taskContent" class="form-control mono" rows="5" style="resize: vertical; min-height: 100px;" placeholder="# Enter task description..." data-i18n-placeholder="task.contentPlaceholder"></textarea>
                     </div>
                 </div>
                 <div class="form-row">
                     <div class="form-group">
-                        <label>Working Directory</label>
-                        <button class="workspace-btn" id="taskWorkspaceBtn" onclick="selectWorkspace()" style="margin-bottom:0;" title="Set Directory Context">
+                        <label data-i18n="task.workDir">Working Directory</label>
+                        <button class="workspace-btn" id="taskWorkspaceBtn" onclick="selectWorkspace()" style="margin-bottom:0;" title="Set Directory Context" data-i18n-title="input.cwdTitle">
                             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                                 <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path>
                             </svg>
@@ -124,13 +124,13 @@
                 </div>
                 <div class="form-row">
                     <div class="form-group">
-                        <label>Candidate Agents</label>
+                        <label data-i18n="task.candidateAgents">Candidate Agents</label>
                         <div class="agent-check-list" id="addTaskAgentList"></div>
                     </div>
                 </div>
                 <div class="form-row" style="justify-content: flex-end; margin-top: 4px; gap: 12px;">
-                    <button class="btn btn-sm btn-secondary" onclick="toggleAddTaskPanel()">Cancel</button>
-                    <button class="btn btn-sm send-button" onclick="submitTask()">Save</button>
+                    <button class="btn btn-sm btn-secondary" onclick="toggleAddTaskPanel()" data-i18n="common.cancel">Cancel</button>
+                    <button class="btn btn-sm send-button" onclick="submitTask()" data-i18n="common.save">Save</button>
                 </div>
             </div>
 
@@ -140,31 +140,31 @@
         <!-- ===== 视图 3: Agent 管理 (AGENT) ===== -->
         <div class="view-container" id="viewAgent">
             <div class="panel-view-header">
-                <h2 class="panel-view-title">Registered Agent Roster</h2>
-                <button class="btn btn-sm send-button" onclick="toggleAddAgentPanel()">+ New Agent</button>
+                <h2 class="panel-view-title" data-i18n="agent.viewTitle">Registered Agent Roster</h2>
+                <button class="btn btn-sm send-button" onclick="toggleAddAgentPanel()" data-i18n="agent.newAgent">+ New Agent</button>
             </div>
 
             <!-- Agent 新增面板 -->
             <div class="add-cron-panel" id="addAgentPanel" style="display: none;">
                 <div class="form-row">
                     <div class="form-group">
-                        <label>Agent Name</label>
-                        <input type="text" id="agentName" class="form-control" placeholder="e.g. Code Reviewer">
+                        <label data-i18n="agent.name">Agent Name</label>
+                        <input type="text" id="agentName" class="form-control" placeholder="e.g. Code Reviewer" data-i18n-placeholder="agent.namePlaceholder">
                     </div>
                     <div class="form-group">
-                        <label>Description</label>
-                        <input type="text" id="agentDesc" class="form-control" placeholder="e.g. Reviews pull requests and reports issues">
+                        <label data-i18n="common.description">Description</label>
+                        <input type="text" id="agentDesc" class="form-control" placeholder="e.g. Reviews pull requests and reports issues" data-i18n-placeholder="agent.descPlaceholder">
                     </div>
                 </div>
                 <div class="form-row">
                     <div class="form-group">
-                        <label>System Prompt</label>
-                        <textarea id="agentPrompt" class="form-control mono" rows="5" style="resize: vertical; min-height: 100px;" placeholder="# Enter agent system prompt..."></textarea>
+                        <label data-i18n="agent.prompt">System Prompt</label>
+                        <textarea id="agentPrompt" class="form-control mono" rows="5" style="resize: vertical; min-height: 100px;" placeholder="# Enter agent system prompt..." data-i18n-placeholder="agent.promptPlaceholder"></textarea>
                     </div>
                 </div>
                 <div class="form-row" style="justify-content: flex-end; margin-top: 4px; gap: 12px;">
-                    <button class="btn btn-sm btn-secondary" onclick="toggleAddAgentPanel()">Cancel</button>
-                    <button class="btn btn-sm send-button" onclick="submitAgent()">Save</button>
+                    <button class="btn btn-sm btn-secondary" onclick="toggleAddAgentPanel()" data-i18n="common.cancel">Cancel</button>
+                    <button class="btn btn-sm send-button" onclick="submitAgent()" data-i18n="common.save">Save</button>
                 </div>
             </div>
 
@@ -174,37 +174,37 @@
         <!-- ===== 视图 4: 定时任务管理 (CRON) ===== -->
         <div class="view-container" id="viewCron">
             <div class="panel-view-header">
-                <h2 class="panel-view-title">Scheduled Cron Processes</h2>
-                <button class="btn btn-sm send-button" onclick="toggleAddCronPanel()">+ New Cron</button>
+                <h2 class="panel-view-title" data-i18n="cron.viewTitle">Scheduled Cron Processes</h2>
+                <button class="btn btn-sm send-button" onclick="toggleAddCronPanel()" data-i18n="cron.newCron">+ New Cron</button>
             </div>
 
             <div class="add-cron-panel" id="addCronPanel" style="display: none;">
                 <div class="form-row">
                     <div class="form-group">
-                        <label>Task Name</label>
-                        <input type="text" id="cronName" class="form-control" placeholder="e.g. Daily Market Scraper">
+                        <label data-i18n="cron.name">Task Name</label>
+                        <input type="text" id="cronName" class="form-control" placeholder="e.g. Daily Market Scraper" data-i18n-placeholder="cron.namePlaceholder">
                     </div>
                     <div class="form-group">
-                        <label>Working Directory</label>
-                        <input type="text" id="cronWorkDir" class="form-control" placeholder="e.g. /home/project/miniclaw">
+                        <label data-i18n="task.workDir">Working Directory</label>
+                        <input type="text" id="cronWorkDir" class="form-control" placeholder="e.g. /home/project/miniclaw" data-i18n-placeholder="cron.workDirPlaceholder">
                     </div>
                 </div>
                 <div class="form-row">
-                    <div class="form-group"><label>Min</label><input type="text" id="cronMin" class="form-control mono" value="0"></div>
-                    <div class="form-group"><label>Hour</label><input type="text" id="cronHour" class="form-control mono" value="9"></div>
-                    <div class="form-group"><label>Day</label><input type="text" id="cronDay" class="form-control mono" value="*"></div>
-                    <div class="form-group"><label>Month</label><input type="text" id="cronMonth" class="form-control mono" value="*"></div>
-                    <div class="form-group"><label>Week</label><input type="text" id="cronWeek" class="form-control mono" value="*"></div>
+                    <div class="form-group"><label data-i18n="cron.minute">Min</label><input type="text" id="cronMin" class="form-control mono" value="0"></div>
+                    <div class="form-group"><label data-i18n="cron.hour">Hour</label><input type="text" id="cronHour" class="form-control mono" value="9"></div>
+                    <div class="form-group"><label data-i18n="cron.day">Day</label><input type="text" id="cronDay" class="form-control mono" value="*"></div>
+                    <div class="form-group"><label data-i18n="cron.month">Month</label><input type="text" id="cronMonth" class="form-control mono" value="*"></div>
+                    <div class="form-group"><label data-i18n="cron.week">Week</label><input type="text" id="cronWeek" class="form-control mono" value="*"></div>
                 </div>
                 <div class="form-row">
                     <div class="form-group">
-                        <label>Execution Content / Script Context</label>
-                        <textarea id="cronContent" class="form-control mono" rows="5" style="resize: vertical; min-height: 100px;" placeholder="# Enter detailed script steps..."></textarea>
+                        <label data-i18n="cron.contentLabel">Execution Content / Script Context</label>
+                        <textarea id="cronContent" class="form-control mono" rows="5" style="resize: vertical; min-height: 100px;" placeholder="# Enter detailed script steps..." data-i18n-placeholder="cron.contentPlaceholder"></textarea>
                     </div>
                 </div>
                 <div class="form-row" style="justify-content: flex-end; margin-top: 4px; gap: 12px;">
-                    <button class="btn btn-sm btn-secondary" onclick="toggleAddCronPanel()">Cancel</button>
-                    <button class="btn btn-sm send-button" onclick="submitCronTask()">Save</button>
+                    <button class="btn btn-sm btn-secondary" onclick="toggleAddCronPanel()" data-i18n="common.cancel">Cancel</button>
+                    <button class="btn btn-sm send-button" onclick="submitCronTask()" data-i18n="common.save">Save</button>
                 </div>
             </div>
 
@@ -214,7 +214,7 @@
         <!-- ===== 视图 5: 系统核心技能 (SKILL) ===== -->
         <div class="view-container" id="viewSkill">
             <div class="panel-view-header">
-                <h2 class="panel-view-title">Registered Agent Skills</h2>
+                <h2 class="panel-view-title" data-i18n="skill.viewTitle">Registered Agent Skills</h2>
             </div>
             <div class="info-card-list" id="skillListContainer"></div>
         </div>
@@ -222,25 +222,25 @@
         <!-- ===== 视图 6: MCP 服务架构生态映射 (MCP) ===== -->
         <div class="view-container" id="viewMcp">
             <div class="panel-view-header">
-                <h2 class="panel-view-title">Model Context Protocol Servers</h2>
-                <button class="btn btn-sm send-button" onclick="toggleAddMcpPanel()">+ New Server</button>
+                <h2 class="panel-view-title" data-i18n="mcp.viewTitle">Model Context Protocol Servers</h2>
+                <button class="btn btn-sm send-button" onclick="toggleAddMcpPanel()" data-i18n="mcp.newServer">+ New Server</button>
             </div>
 
             <!-- MCP 新增注册面板 -->
             <div class="add-cron-panel" id="addMcpPanel" style="display: none;">
                 <div class="form-row">
                     <div class="form-group">
-                        <label>Server Unique Name</label>
-                        <input type="text" id="mcpKey" class="form-control mono" placeholder="e.g. vserver_wind_financial_data">
+                        <label data-i18n="mcp.keyName">Server Unique Name</label>
+                        <input type="text" id="mcpKey" class="form-control mono" placeholder="e.g. vserver_wind_financial_data" data-i18n-placeholder="mcp.keyPlaceholder">
                     </div>
                     <div class="form-group">
-                        <label>Description</label>
-                        <input type="text" id="mcpDesc" class="form-control" placeholder="e.g. Wind Financial Data Provider">
+                        <label data-i18n="common.description">Description</label>
+                        <input type="text" id="mcpDesc" class="form-control" placeholder="e.g. Wind Financial Data Provider" data-i18n-placeholder="mcp.descPlaceholder">
                     </div>
                 </div>
                 <div class="form-row">
                     <div class="form-group">
-                        <label>Protocol Architecture Type</label>
+                        <label data-i18n="mcp.protocolArch">Protocol Architecture Type</label>
                         <select id="mcpType" class="form-control" onchange="adaptMcpFormFields()">
                             <option value="streamable-http">streamable_http</option>
                             <option value="sse">sse</option>
@@ -250,27 +250,27 @@
                 </div>
                 <div class="form-row" id="mcpNetworkRow">
                     <div class="form-group" style="flex: 2;">
-                        <label>Connection URL Endpoint</label>
+                        <label data-i18n="mcp.urlEndpoint">Connection URL Endpoint</label>
                         <input type="text" id="mcpUrl" class="form-control mono" placeholder="https://domain/.../mcp">
                     </div>
                     <div class="form-group" style="flex: 1;">
-                        <label>HTTP Headers Context (JSON Format)</label>
+                        <label data-i18n="mcp.headersLabel">HTTP Headers Context (JSON Format)</label>
                         <input type="text" id="mcpHeaders" class="form-control mono" placeholder='{"Authorization": "xx"}'>
                     </div>
                 </div>
                 <div class="form-row" id="mcpLocalRow" style="display: none;">
                     <div class="form-group">
-                        <label>Execute Command</label>
+                        <label data-i18n="mcp.command">Execute Command</label>
                         <input type="text" id="mcpCommand" class="form-control mono" placeholder="python">
                     </div>
                     <div class="form-group">
-                        <label>Arguments (Comma Separated)</label>
+                        <label data-i18n="mcp.args">Arguments (Comma Separated)</label>
                         <input type="text" id="mcpArgs" class="form-control mono" placeholder="-m, mcp_server_package">
                     </div>
                 </div>
                 <div class="form-row" style="justify-content: flex-end; margin-top: 4px; gap: 12px;">
-                    <button class="btn btn-sm btn-secondary" onclick="toggleAddMcpPanel()">Cancel</button>
-                    <button class="btn btn-sm send-button" onclick="submitMcpServer()">Save</button>
+                    <button class="btn btn-sm btn-secondary" onclick="toggleAddMcpPanel()" data-i18n="common.cancel">Cancel</button>
+                    <button class="btn btn-sm send-button" onclick="submitMcpServer()" data-i18n="common.save">Save</button>
                 </div>
             </div>
 
@@ -280,28 +280,28 @@
         <!-- ===== 视图 7: 全局生产环境配置控制台 (CONFIG) ===== -->
         <div class="view-container" id="viewConfig">
             <div class="panel-view-header">
-                <h2 class="panel-view-title">System Runtime Configurations</h2>
-                <button class="btn btn-sm send-button" onclick="toggleAddProviderPanel()">+ New Provider</button>
+                <h2 class="panel-view-title" data-i18n="config.viewTitle">System Runtime Configurations</h2>
+                <button class="btn btn-sm send-button" onclick="toggleAddProviderPanel()" data-i18n="config.newProvider">+ New Provider</button>
             </div>
 
             <div id="configFormContainer" style="display: flex; flex-direction: column; gap: 24px;">
                 <!-- 骨干路由单元：核心模型路由 -->
                 <div class="config-section-card">
                     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
-                        <h3 class="panel-view-title" style="font-size: 14px; margin-bottom: 0;">Active Context Route</h3>
-                        <button class="btn btn-sm send-button" style="height: 32px;" onclick="saveActiveModelRoute()">Save</button>
+                        <h3 class="panel-view-title" style="font-size: 14px; margin-bottom: 0;" data-i18n="config.activeRoute">Active Context Route</h3>
+                        <button class="btn btn-sm send-button" style="height: 32px;" onclick="saveActiveModelRoute()" data-i18n="common.save">Save</button>
                     </div>
                     <div class="form-row">
                         <div class="form-group">
-                            <label>Target Provider (Name)</label>
+                            <label data-i18n="config.targetProvider">Target Provider (Name)</label>
                             <select id="configActiveProvider" class="form-control" onchange="syncModelDropdown()"></select>
                         </div>
                         <div class="form-group">
-                            <label>Active Engine Model</label>
+                            <label data-i18n="config.activeModel">Active Engine Model</label>
                             <select id="configActiveModel" class="form-control"></select>
                         </div>
                         <div class="form-group" style="flex: 0 0 180px;">
-                            <label>Thinking Mode</label>
+                            <label data-i18n="config.thinkingMode">Thinking Mode</label>
                             <select id="configThinking" class="form-control">
                                 <option value="true">ON</option>
                                 <option value="false">OFF</option>
@@ -312,32 +312,32 @@
 
                 <!-- 动态新增 Provider 表单控制卡 -->
                 <div class="add-cron-panel" id="addProviderPanel" style="display: none;">
-                    <h3 class="panel-view-title" style="font-size: 12px; color: var(--charcoal-700); margin-bottom: 4px;">+ New Model Provider</h3>
+                    <h3 class="panel-view-title" style="font-size: 12px; color: var(--charcoal-700); margin-bottom: 4px;" data-i18n="config.newProviderCard">+ New Model Provider</h3>
                     <div class="form-row">
                         <div class="form-group">
-                            <label>Provider Unique Name</label>
-                            <input type="text" id="newProviderName" class="form-control" placeholder="e.g. deepseek">
+                            <label data-i18n="config.providerName">Provider Unique Name</label>
+                            <input type="text" id="newProviderName" class="form-control" placeholder="e.g. deepseek" data-i18n-placeholder="config.providerNamePlaceholder">
                         </div>
                     </div>
                     <div class="form-row">
                         <div class="form-group" style="flex: 2;">
-                            <label>Base URL Endpoint</label>
+                            <label data-i18n="config.baseUrl">Base URL Endpoint</label>
                             <input type="text" id="newProviderUrl" class="form-control mono" placeholder="https://api.example.com/v1">
                         </div>
                         <div class="form-group" style="flex: 1;">
-                            <label>Secret Token (API Key)</label>
+                            <label data-i18n="config.secretToken">Secret Token (API Key)</label>
                             <input type="password" id="newProviderKey" class="form-control mono" placeholder="••••••••••••">
                         </div>
                     </div>
                     <div class="form-row">
                         <div class="form-group">
-                            <label>Engine Clusters (Comma Separated Models)</label>
+                            <label data-i18n="config.engineClusters">Engine Clusters (Comma Separated Models)</label>
                             <input type="text" id="newProviderModels" class="form-control mono" placeholder="model-1, model-2">
                         </div>
                     </div>
                     <div class="form-row" style="justify-content: flex-end; margin-top: 4px; gap: 12px;">
-                        <button class="btn btn-sm btn-secondary" style="height: 36px;" onclick="toggleAddProviderPanel()">Cancel</button>
-                        <button class="btn btn-sm send-button" style="height: 36px;" onclick="submitNewProvider()">Save</button>
+                        <button class="btn btn-sm btn-secondary" style="height: 36px;" onclick="toggleAddProviderPanel()" data-i18n="common.cancel">Cancel</button>
+                        <button class="btn btn-sm send-button" style="height: 36px;" onclick="submitNewProvider()" data-i18n="common.save">Save</button>
                     </div>
                 </div>
 
@@ -349,20 +349,20 @@
         <!-- ===== 输入层组件包裹器 ===== -->
         <div class="input-wrapper" id="globalInputWrapper">
             <div style="display:flex; gap:8px; align-items:center; margin-bottom:12px;">
-                <button class="workspace-btn" id="workspaceBtn" onclick="selectWorkspace()" title="Set Directory Context" style="margin-bottom:0;">
+                <button class="workspace-btn" id="workspaceBtn" onclick="selectWorkspace()" title="Set Directory Context" data-i18n-title="input.cwdTitle" style="margin-bottom:0;">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                         <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path>
                     </svg>
                     <span>CWD:</span>
                     <span class="workspace-path" id="workspaceDisplay">UNSET</span>
                 </button>
-                <select id="agentSelect" class="form-control" title="Select Agent" style="width:auto; height:28px; padding:4px 10px; font-size:11px; font-family:var(--font-mono); color:var(--slate-400); text-transform:uppercase;">
-                    <option value="">NONE</option>
+                <select id="agentSelect" class="form-control" title="Select Agent" data-i18n-title="input.agentTitle" style="width:auto; height:28px; padding:4px 10px; font-size:11px; font-family:var(--font-mono); color:var(--slate-400); text-transform:uppercase;">
+                    <option value="" data-i18n="common.none">NONE</option>
                 </select>
             </div>
             <div class="input-container">
-                <textarea class="message-input" id="messageInput" placeholder="Enter instructions..." maxlength="2000" disabled rows="1"></textarea>
-                <button class="send-button btn" id="sendButton" onclick="sendMessage()" disabled>Execute</button>
+                <textarea class="message-input" id="messageInput" placeholder="Enter instructions..." data-i18n-placeholder="input.placeholder" maxlength="2000" disabled rows="1"></textarea>
+                <button class="send-button btn" id="sendButton" onclick="sendMessage()" disabled data-i18n="input.execute">Execute</button>
             </div>
         </div>
     </div>
@@ -371,28 +371,29 @@
     <div id="dirModalOverlay" class="dir-modal-overlay">
         <div class="dir-modal">
             <div class="dir-modal-header">
-                <h3 class="confirm-title" style="margin-bottom:0">Workspace Context</h3>
+                <h3 class="confirm-title" style="margin-bottom:0" data-i18n="modal.workspaceContext">Workspace Context</h3>
                 <button class="delete-btn" onclick="closeDirModal()" style="opacity:1; color:var(--charcoal-900)">✕</button>
             </div>
             <div style="padding: 12px 24px; border-bottom: 1px solid var(--border-hard); display: flex; gap: 8px; background: var(--bg-surface);">
-                <input type="text" id="manualPathInput" style="flex:1; padding: 8px 12px; border: 1px solid var(--border-hard); background: transparent; font-family: var(--font-mono); font-size: 12px; outline: none;" placeholder="Input path...">
-                <button class="btn send-button" style="height: auto; padding: 8px 16px;" onclick="handleManualJump()">GO</button>
+                <input type="text" id="manualPathInput" style="flex:1; padding: 8px 12px; border: 1px solid var(--border-hard); background: transparent; font-family: var(--font-mono); font-size: 12px; outline: none;" placeholder="Input path..." data-i18n-placeholder="modal.pathPlaceholder">
+                <button class="btn send-button" style="height: auto; padding: 8px 16px;" onclick="handleManualJump()" data-i18n="modal.go">GO</button>
             </div>
             <div style="padding: 6px 24px; font-family: var(--font-mono); font-size: 11px; color: var(--slate-400); background: var(--bg-surface); border-bottom: 1px solid var(--border-hard);" id="currentPathDisplay"></div>
 
             <div class="dir-history-section" id="dirHistorySection" style="display:none;">
-                <div class="dir-history-header">Recent Workdirs</div>
+                <div class="dir-history-header" data-i18n="modal.recentWorkdirs">Recent Workdirs</div>
                 <div class="dir-history-list" id="dirHistoryList"></div>
             </div>
 
             <div id="dirList" class="dir-modal-content"></div>
             <div class="dir-modal-footer">
-                <button class="confirm-btn cancel" onclick="closeDirModal()">Abort</button>
-                <button class="confirm-btn send-button" onclick="confirmDirSelection()">Confirm Path</button>
+                <button class="confirm-btn cancel" onclick="closeDirModal()" data-i18n="common.abort">Abort</button>
+                <button class="confirm-btn send-button" onclick="confirmDirSelection()" data-i18n="modal.confirmPath">Confirm Path</button>
             </div>
         </div>
     </div>
 
+    <script src="js/i18n.js"></script>
     <script src="js/theme_effects.js"></script>
     <script src="js/theme.js"></script>
     <script src="js/core.js"></script>

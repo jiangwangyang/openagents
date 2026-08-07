@@ -66,8 +66,8 @@ function loadConversation(conversationId) {
 
 function confirmDeleteConversation(conversationId, convTitle) {
     showConfirmDialog({
-        title: "PURGE RECORD",
-        text: `Are you sure you want to delete conversation [${convTitle}]? This trace log action is irreversible.`,
+        title: t('stream.purgeTitle'),
+        text: t('stream.purgeText', {name: convTitle}),
         onConfirm: async () => {
             try {
                 await fetch(`/conversation/${conversationId}`, {method: 'DELETE'});
@@ -92,7 +92,7 @@ function startNewChat() {
     messageInput.value = '';
     autoResize();
     enableInput();
-    conversationInfo.textContent = 'NEW TRACE';
+    conversationInfo.textContent = t('header.newTrace');
     usageInfo.textContent = '';
     initDefaultWorkspace();
     loadAgentSelect();
@@ -118,7 +118,7 @@ async function loadAgentSelect() {
     try {
         const response = await fetch('/agent/list');
         const agents = await response.json();
-        select.innerHTML = '<option value="">NONE</option>';
+        select.innerHTML = `<option value="" data-i18n="common.none">${t('common.none')}</option>`;
         agents.forEach(agent => {
             const opt = document.createElement('option');
             opt.value = agent.id;
@@ -171,7 +171,7 @@ async function sendMessage() {
                 body: JSON.stringify(payload)
             });
             if (!response.ok) {
-                alert("START WORK FAILED");
+                alert(t('stream.startFailed'));
                 return;
             }
             currentConversationId = await response.json();
@@ -186,12 +186,12 @@ async function sendMessage() {
                 body: JSON.stringify({task_content: message})
             });
             if (!response.ok) {
-                alert("START WORK FAILED");
+                alert(t('stream.startFailed'));
                 return;
             }
         }
     } catch (e) {
-        alert("START WORK FAILED");
+        alert(t('stream.startFailed'));
         return;
     }
 
@@ -248,7 +248,7 @@ function connectStream(conversationId) {
             const errorDiv = document.createElement('div');
             errorDiv.className = 'user-message';
             errorDiv.style.cssText = 'background: var(--danger-bg); color: var(--danger-color); border: 1px solid var(--danger-color); align-self: center; max-width: 80%;';
-            errorDiv.innerHTML = `\u26a0 ${escapeHtml(data.text || 'Unknown Error')}`;
+            errorDiv.innerHTML = `\u26a0 ${escapeHtml(data.text || t('stream.unknownError'))}`;
             chatContainer.appendChild(errorDiv);
         }
 
@@ -274,7 +274,7 @@ function connectStream(conversationId) {
                 const details = document.createElement('details');
                 details.className = 'think-details';
                 details.open = true;
-                details.innerHTML = `<summary>${FOLD_SVG} Thought Process</summary><div class="content streaming-active"></div>`;
+                details.innerHTML = `<summary>${FOLD_SVG} ${t('stream.thoughtProcess')}</summary><div class="content streaming-active"></div>`;
                 streamWrapper.appendChild(details);
                 streamContentNode = details.querySelector('.content');
             } else if (data.type === 'text') {
@@ -286,15 +286,15 @@ function connectStream(conversationId) {
                 const details = document.createElement('details');
                 details.className = 'tool-details';
                 details.open = true;
-                details.innerHTML = `<summary>${FOLD_SVG} Call: ${escapeHtml(data.name || 'Tool')}</summary><div class="content streaming-active"></div>`;
+                details.innerHTML = `<summary>${FOLD_SVG} ${t('stream.callPrefix')}: ${escapeHtml(data.name || t('stream.tool'))}</summary><div class="content streaming-active"></div>`;
                 streamWrapper.appendChild(details);
                 streamContentNode = details.querySelector('.content');
             } else if (data.type === 'tool_result') {
                 const details = document.createElement('details');
                 details.className = 'tool-details';
                 details.open = false;
-                const status = data.is_error ? 'Error' : 'Result';
-                details.innerHTML = `<summary>${FOLD_SVG} Tool ${status} [${escapeHtml(String(data.id || ''))}]</summary><div class="content streaming-active"></div>`;
+                const status = data.is_error ? t('stream.toolError') : t('stream.toolResult');
+                details.innerHTML = `<summary>${FOLD_SVG} ${t('stream.tool')} ${status} [${escapeHtml(String(data.id || ''))}]</summary><div class="content streaming-active"></div>`;
                 streamWrapper.appendChild(details);
                 streamContentNode = details.querySelector('.content');
             }
@@ -311,9 +311,9 @@ function connectStream(conversationId) {
             usageOutputTokens += data.output_tokens || 0;
             usageCacheTokens += data.cache_read_input_tokens || 0;
             const formatTokens = (count) => count >= 1000 ? (count / 1000).toFixed(1) + 'k' : String(count);
-            let usageText = `↑ ${formatTokens(usageInputTokens)} in · ${formatTokens(usageOutputTokens)} out`;
+            let usageText = `↑ ${formatTokens(usageInputTokens)} ${t('stream.usageIn')} · ${formatTokens(usageOutputTokens)} ${t('stream.usageOut')}`;
             if (usageCacheTokens > 0) {
-                usageText += ` · ${formatTokens(usageCacheTokens)} cache`;
+                usageText += ` · ${formatTokens(usageCacheTokens)} ${t('stream.usageCache')}`;
             }
             usageInfo.textContent = usageText;
         }

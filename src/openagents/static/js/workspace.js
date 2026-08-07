@@ -16,13 +16,13 @@ async function loadDirList(path) {
         pathDisplay.textContent = `> ${data.current_path}`;
         dirListContainer.innerHTML = "";
         if (data.parent_path) {
-            dirListContainer.appendChild(createDirItem(".. (UP LEVEL)", data.parent_path));
+            dirListContainer.appendChild(createDirItem(t('workspace.upLevel'), data.parent_path));
         }
         data.directories.forEach(dir => {
             dirListContainer.appendChild(createDirItem(dir.name, dir.path));
         });
     } catch (e) {
-        dirListContainer.innerHTML = '<div style="padding:20px; color:var(--danger-color)">ERR: CONNECTION FAILED</div>';
+        dirListContainer.innerHTML = `<div style="padding:20px; color:var(--danger-color)">${t('workspace.connFailed')}</div>`;
     }
 }
 
@@ -85,7 +85,7 @@ function renderWorkdirHistory() {
         const removeBtn = document.createElement('button');
         removeBtn.className = 'delete-btn';
         removeBtn.style.opacity = '0.5';
-        removeBtn.title = 'Remove from history';
+        removeBtn.title = t('modal.removeHistory');
         removeBtn.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>';
         removeBtn.onclick = (e) => {
             e.stopPropagation();
@@ -145,7 +145,7 @@ function updateWorkspaceUI(path) {
     // 同步刷新对话页与任务创建面板的工作目录显示（复用同一组件状态）
     ['workspaceDisplay', 'taskWorkspaceDisplay'].forEach(id => {
         const display = document.getElementById(id);
-        display.textContent = path;
+        display.textContent = path || t('input.unset');
         display.title = path;
     });
 }

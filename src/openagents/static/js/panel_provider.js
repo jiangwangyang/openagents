@@ -66,7 +66,7 @@ async function fetchGlobalSettings() {
         renderProvidersFormList();
 
     } catch (e) {
-        providerList.innerHTML = '<div style="padding:20px; color:var(--danger-color)">SETTINGS DESERIALIZATION FAULT</div>';
+        providerList.innerHTML = `<div style="padding:20px; color:var(--danger-color)">${t('config.settingsFault')}</div>`;
     }
 }
 
@@ -81,7 +81,7 @@ function renderProvidersFormList() {
         // 元素 id 使用列表索引生成（供应商名可能包含引号等特殊字符）
         card.id = `provider-card-${index}`;
 
-        const snippet = provider.base_url || 'Endpoint missing';
+        const snippet = provider.base_url || t('config.endpointMissing');
 
         card.innerHTML = `
             <div class="info-card-summary" onclick="toggleCardOpen(this.parentNode)">
@@ -91,7 +91,7 @@ function renderProvidersFormList() {
                     <span class="info-card-snippet">${escapeHtml(snippet)}</span>
                 </div>
                 <div style="display:flex; gap:12px; align-items:center;" onclick="event.stopPropagation();">
-                    <button class="btn btn-sm send-button provider-save-btn" style="height:28px; padding:0 8px; font-size:10px;">Save</button>
+                    <button class="btn btn-sm send-button provider-save-btn" style="height:28px; padding:0 8px; font-size:10px;">${t('common.save')}</button>
                     <button class="delete-btn" style="opacity:1; color:var(--danger-color); font-size:11px; font-family:var(--font-mono); font-weight:700; padding:6px;">
                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
                     </button>
@@ -100,17 +100,17 @@ function renderProvidersFormList() {
             <div class="info-card-details" style="display: none; background: var(--bg-surface); border-top: 1px solid var(--border-hard);">
                 <div class="form-row" style="margin-bottom: 12px;">
                     <div class="form-group" style="flex: 2;">
-                        <label style="font-family: var(--font-display); font-size: 11px; font-weight: 700; text-transform: uppercase; color: var(--charcoal-700);">Base URL Endpoint</label>
+                        <label style="font-family: var(--font-display); font-size: 11px; font-weight: 700; text-transform: uppercase; color: var(--charcoal-700);">${t('config.baseUrl')}</label>
                         <input type="text" id="provider-url-${index}" class="form-control mono" value="${escapeHtml(provider.base_url || '')}">
                     </div>
                     <div class="form-group" style="flex: 1;">
-                        <label style="font-family: var(--font-display); font-size: 11px; font-weight: 700; text-transform: uppercase; color: var(--charcoal-700);">Secret Token (API Key)</label>
+                        <label style="font-family: var(--font-display); font-size: 11px; font-weight: 700; text-transform: uppercase; color: var(--charcoal-700);">${t('config.secretToken')}</label>
                         <input type="password" id="provider-key-${index}" class="form-control mono" value="${escapeHtml(provider.api_key || '')}" placeholder="••••••••••••">
                     </div>
                 </div>
                 <div class="form-row">
                     <div class="form-group">
-                        <label style="font-family: var(--font-display); font-size: 11px; font-weight: 700; text-transform: uppercase; color: var(--charcoal-700);">Engine Clusters (Comma Separated Models)</label>
+                        <label style="font-family: var(--font-display); font-size: 11px; font-weight: 700; text-transform: uppercase; color: var(--charcoal-700);">${t('config.engineClusters')}</label>
                         <input type="text" id="provider-models-${index}" class="form-control mono" value="${escapeHtml(provider.models?.join(', ') || '')}">
                     </div>
                 </div>
@@ -150,7 +150,7 @@ function syncModelDropdown(targetSelectedModel = null) {
 async function submitNewProvider() {
     const name = document.getElementById('newProviderName').value.trim();
     if (!name) {
-        alert("PROVIDER NAME IS REQUIRED.");
+        alert(t('config.nameRequired'));
         return;
     }
 
@@ -180,7 +180,7 @@ async function submitNewProvider() {
             await fetchGlobalSettings();
         }
     } catch (e) {
-        alert("INJECTION FAULT");
+        alert(t('config.injectionFault'));
     }
 }
 
@@ -207,20 +207,20 @@ async function updateSingleProvider(name) {
             body: JSON.stringify(bodyPayload)
         });
         if (response.ok) {
-            alert(`PROVIDER CLUSTER [${name}] SYNCHRONIZED.`);
+            alert(t('config.synced', {name: name}));
             const pResponse = await fetch('/model-provider/list');
             globalProvidersCachedList = await pResponse.json();
             syncModelDropdown(document.getElementById('configActiveModel').value);
         }
     } catch (e) {
-        alert("SYNC CRASHED");
+        alert(t('common.syncCrashed'));
     }
 }
 
 function removeModelProvider(name) {
     showConfirmDialog({
-        title: "PURGE MODEL PROVIDER",
-        text: `Are you sure you want to completely remove infrastructure cluster [${name}]? Layer dependencies pointing here will collapse.`,
+        title: t('config.purgeTitle'),
+        text: t('config.purgeText', {name: name}),
         onConfirm: async () => {
             try {
                 const response = await fetch(`/model-provider/${encodeURIComponent(name)}`, {method: 'DELETE'});
@@ -228,7 +228,7 @@ function removeModelProvider(name) {
                     await fetchGlobalSettings();
                 }
             } catch (e) {
-                alert("PURGE FAILURE");
+                alert(t('common.purgeFailure'));
             }
         }
     });
@@ -239,7 +239,7 @@ async function saveActiveModelRoute() {
     const modelSelect = document.getElementById('configActiveModel');
 
     if (!providerSelect.value || !modelSelect.value) {
-        alert("ROUTING PATH IS INCOMPLETE.");
+        alert(t('config.routingIncomplete'));
         return;
     }
 
@@ -250,7 +250,7 @@ async function saveActiveModelRoute() {
             body: JSON.stringify({name: providerSelect.value})
         });
         if (!response.ok) {
-            alert("PROVIDER ROUTING FAILED");
+            alert(t('config.providerRoutingFailed'));
             return;
         }
         response = await fetch('/model/current', {
@@ -259,7 +259,7 @@ async function saveActiveModelRoute() {
             body: JSON.stringify({model: modelSelect.value})
         });
         if (!response.ok) {
-            alert("MODEL ROUTING FAILED");
+            alert(t('config.modelRoutingFailed'));
             return;
         }
         response = await fetch('/thinking', {
@@ -268,10 +268,10 @@ async function saveActiveModelRoute() {
             body: JSON.stringify({thinking: document.getElementById('configThinking').value === 'true'})
         });
         if (response.ok) {
-            alert("GLOBAL CONTEXT ACTIVE ROUTE MOUNTED.");
+            alert(t('config.routeMounted'));
         }
     } catch (e) {
-        alert("ROUTING COMMIT FAULT");
+        alert(t('config.routingCommitFault'));
     }
 }
 

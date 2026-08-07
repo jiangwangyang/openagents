@@ -12,7 +12,7 @@ async function fetchCronTasks() {
         cronListContainer.innerHTML = '';
 
         if (tasks.length === 0) {
-            cronListContainer.innerHTML = '<div style="padding:30px; text-align:center; border:1px dashed var(--border-hard); color:var(--slate-400)">NO SCHEDULED CRON PROCESSES FOUND</div>';
+            cronListContainer.innerHTML = `<div style="padding:30px; text-align:center; border:1px dashed var(--border-hard); color:var(--slate-400)">${t('cron.empty')}</div>`;
             return;
         }
 
@@ -23,7 +23,7 @@ async function fetchCronTasks() {
                 <div class="info-card-summary" onclick="toggleCardOpen(this.parentNode)">
                     <div class="info-card-main">
                         ${ARROW_SVG}
-                        <span class="info-card-name">${escapeHtml(task.name || 'Unnamed Task')}</span>
+                        <span class="info-card-name">${escapeHtml(task.name || t('cron.unnamed'))}</span>
                         <span class="info-card-snippet">${escapeHtml(task.content || '')}</span>
                     </div>
                     <button class="delete-btn" style="opacity:1;">
@@ -32,14 +32,14 @@ async function fetchCronTasks() {
                 </div>
                 <div class="info-card-details" style="display: none;">
                     <div class="details-grid">
-                        <div class="details-label">Working Dir</div>
-                        <div class="details-value">${escapeHtml(task.work_dir || 'Inherited Environment')}</div>
-                        <div class="details-label">Next Fire</div>
-                        <div class="details-value" style="font-family:var(--font-mono); font-size:12px; color:var(--charcoal-900)">${escapeHtml(task.next_fire_time || 'Suspended')}</div>
-                        <div class="details-label">Trigger Spec</div>
+                        <div class="details-label">${t('cron.workingDir')}</div>
+                        <div class="details-value">${escapeHtml(task.work_dir || t('common.inheritedEnv'))}</div>
+                        <div class="details-label">${t('cron.nextFire')}</div>
+                        <div class="details-value" style="font-family:var(--font-mono); font-size:12px; color:var(--charcoal-900)">${escapeHtml(task.next_fire_time || t('cron.suspended'))}</div>
+                        <div class="details-label">${t('cron.triggerSpec')}</div>
                         <div class="details-value"><code>${escapeHtml(task.trigger || '* * * * *')}</code></div>
                         <div class="details-block-container">
-                            <div class="details-label" style="margin-bottom: 6px;">Execution Content</div>
+                            <div class="details-label" style="margin-bottom: 6px;">${t('cron.execContent')}</div>
                             <div class="reply-content">${formatMarkdown(task.content || '')}</div>
                         </div>
                     </div>
@@ -53,7 +53,7 @@ async function fetchCronTasks() {
             cronListContainer.appendChild(card);
         });
     } catch (e) {
-        cronListContainer.innerHTML = '<div style="padding:20px; color:var(--danger-color)">FETCH FAILED</div>';
+        cronListContainer.innerHTML = `<div style="padding:20px; color:var(--danger-color)">${t('common.fetchFailed')}</div>`;
     }
 }
 
@@ -67,7 +67,7 @@ async function submitCronTask() {
     const work_dir = document.getElementById('cronWorkDir').value.trim();
 
     if (!name || !content || !work_dir) {
-        alert("REQUIRED FIELDS MISSING.");
+        alert(t('common.requiredMissing'));
         return;
     }
 
@@ -92,14 +92,14 @@ async function submitCronTask() {
             await fetchCronTasks();
         }
     } catch (e) {
-        alert("CREATION FAULT");
+        alert(t('common.creationFault'));
     }
 }
 
 function removeCronTask(taskId, taskName) {
     showConfirmDialog({
-        title: "PURGE CRON PIPELINE",
-        text: `Are you sure you want to destroy scheduled process [${taskName}]? This pipeline sequence will be wiped out from kernel queue.`,
+        title: t('cron.purgeTitle'),
+        text: t('cron.purgeText', {name: taskName}),
         onConfirm: async () => {
             try {
                 const response = await fetch(`/schedule/${taskId}`, {method: 'DELETE'});
@@ -107,7 +107,7 @@ function removeCronTask(taskId, taskName) {
                     await fetchCronTasks();
                 }
             } catch (e) {
-                alert("PURGE FAILED");
+                alert(t('cron.purgeFailed'));
             }
         }
     });

@@ -15,7 +15,7 @@ function toggleAddTaskPanel() {
 function renderAgentCheckList(container, checkedIds) {
     container.innerHTML = '';
     if (globalAgentsCachedList.length === 0) {
-        container.innerHTML = '<div style="font-size:12px; color:var(--slate-400); font-family:var(--font-mono);">NO REGISTERED AGENTS</div>';
+        container.innerHTML = `<div style="font-size:12px; color:var(--slate-400); font-family:var(--font-mono);">${t('task.noAgents')}</div>`;
         return;
     }
     globalAgentsCachedList.forEach(agent => {
@@ -42,7 +42,7 @@ async function fetchTaskList() {
         renderAgentCheckList(document.getElementById('addTaskAgentList'), []);
 
         if (tasks.length === 0) {
-            taskListContainer.innerHTML = '<div style="padding:30px; text-align:center; border:1px dashed var(--border-hard); color:var(--slate-400)">NO TASK PIPELINES FOUND</div>';
+            taskListContainer.innerHTML = `<div style="padding:30px; text-align:center; border:1px dashed var(--border-hard); color:var(--slate-400)">${t('task.empty')}</div>`;
             return;
         }
 
@@ -70,25 +70,25 @@ async function fetchTaskList() {
                 </div>
                 <div class="info-card-details" style="display: none;">
                     <div class="details-grid">
-                        <div class="details-label">Task Title</div>
+                        <div class="details-label">${t('task.title')}</div>
                         <div class="details-value">${escapeHtml(task.title)}</div>
-                        <div class="details-label">Task Content</div>
+                        <div class="details-label">${t('task.content')}</div>
                         <div class="details-value" style="white-space:pre-wrap;">${escapeHtml(task.content)}</div>
-                        <div class="details-label">Working Directory</div>
-                        <div class="details-value">${escapeHtml(task.work_dir || 'Inherited Environment')}</div>
-                        <div class="details-label">Candidate Agents</div>
-                        <div class="details-value">${escapeHtml(agentNames) || 'NONE'}</div>
-                        <div class="details-label">Launch Pipeline</div>
+                        <div class="details-label">${t('task.workDir')}</div>
+                        <div class="details-value">${escapeHtml(task.work_dir || t('common.inheritedEnv'))}</div>
+                        <div class="details-label">${t('task.candidateAgents')}</div>
+                        <div class="details-value">${escapeHtml(agentNames) || t('common.none')}</div>
+                        <div class="details-label">${t('task.launch')}</div>
                         <div class="details-value">
                             <div style="display:flex; gap:8px; flex-wrap:wrap;">
                                 <select id="task-start-agent-${task.id}" class="form-control" style="flex:1; min-width:150px;"></select>
-                                <button class="btn btn-sm send-button" onclick="startTask(${task.id})">Start</button>
+                                <button class="btn btn-sm send-button" onclick="startTask(${task.id})">${t('common.start')}</button>
                             </div>
                         </div>
                         <div class="details-block-container">
                             <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 6px;">
-                                <div class="details-label" style="margin-bottom: 0;">Stage Progress</div>
-                                <button class="btn btn-sm btn-secondary" style="height:24px; padding:0 8px; font-size:10px;" onclick="loadTaskDetail(${task.id})">Refresh</button>
+                                <div class="details-label" style="margin-bottom: 0;">${t('task.stageProgress')}</div>
+                                <button class="btn btn-sm btn-secondary" style="height:24px; padding:0 8px; font-size:10px;" onclick="loadTaskDetail(${task.id})">${t('common.refresh')}</button>
                             </div>
                             <div class="task-stage-list" id="task-stages-${task.id}"></div>
                         </div>
@@ -111,7 +111,7 @@ async function fetchTaskList() {
             });
         });
     } catch (e) {
-        taskListContainer.innerHTML = '<div style="padding:20px; color:var(--danger-color)">FETCH FAILED</div>';
+        taskListContainer.innerHTML = `<div style="padding:20px; color:var(--danger-color)">${t('common.fetchFailed')}</div>`;
     }
 }
 
@@ -130,19 +130,19 @@ async function loadTaskDetail(taskId) {
     try {
         const response = await fetch(`/task/${taskId}`);
         if (!response.ok) {
-            stageList.innerHTML = '<div style="font-family:var(--font-mono); font-size:12px; color:var(--danger-color)">FETCH FAILED</div>';
+            stageList.innerHTML = `<div style="font-family:var(--font-mono); font-size:12px; color:var(--danger-color)">${t('common.fetchFailed')}</div>`;
             return;
         }
         const task = await response.json();
         stageList.innerHTML = '';
         if (!task.conversations || task.conversations.length === 0) {
-            stageList.innerHTML = '<div style="font-size:12px; color:var(--slate-400); font-style:italic;">PIPELINE NOT STARTED. ZERO STAGES.</div>';
+            stageList.innerHTML = `<div style="font-size:12px; color:var(--slate-400); font-style:italic;">${t('task.notStarted')}</div>`;
             return;
         }
         task.conversations.forEach(conversation => {
             // agent 对话且无消息说明正在执行中，提示点击查看实时流式内容；用户对话由用户自己处理，不在执行
             const isRunning = conversation.agent_id != null && (!conversation.messages || conversation.messages.length === 0);
-            const snippet = isRunning ? '\u26a1 GENERATING... CLICK TO VIEW LIVE STREAM' : getLastMessageText(conversation.messages);
+            const snippet = isRunning ? t('task.generating') : getLastMessageText(conversation.messages);
             const item = document.createElement('div');
             item.className = 'task-stage-item';
             item.innerHTML = `
@@ -165,13 +165,13 @@ async function loadTaskDetail(taskId) {
             const reviewArea = document.createElement('div');
             reviewArea.style.cssText = 'display:flex; gap:8px; margin-top:8px; align-items:flex-start;';
             reviewArea.innerHTML = `
-                <textarea id="task-review-input-${taskId}" class="form-control" rows="2" style="flex:1; resize:vertical; font-size:11px;" placeholder="Enter review feedback..."></textarea>
-                <button class="btn btn-sm send-button" onclick="submitTaskReview(${taskId}, ${lastConversation.id})">Review</button>
+                <textarea id="task-review-input-${taskId}" class="form-control" rows="2" style="flex:1; resize:vertical; font-size:11px;" placeholder="${t('task.reviewPlaceholder')}"></textarea>
+                <button class="btn btn-sm send-button" onclick="submitTaskReview(${taskId}, ${lastConversation.id})">${t('common.review')}</button>
             `;
             stageList.appendChild(reviewArea);
         }
     } catch (e) {
-        stageList.innerHTML = '<div style="font-family:var(--font-mono); font-size:12px; color:var(--danger-color)">FETCH FAILED</div>';
+        stageList.innerHTML = `<div style="font-family:var(--font-mono); font-size:12px; color:var(--danger-color)">${t('common.fetchFailed')}</div>`;
     }
 }
 
@@ -180,7 +180,7 @@ async function submitTaskReview(taskId, conversationId) {
     const input = document.getElementById(`task-review-input-${taskId}`);
     const content = input.value.trim();
     if (!content) {
-        alert("REVIEW FEEDBACK IS REQUIRED.");
+        alert(t('task.reviewRequired'));
         return;
     }
     try {
@@ -192,17 +192,17 @@ async function submitTaskReview(taskId, conversationId) {
         if (response.ok) {
             await loadTaskDetail(taskId);
         } else {
-            alert("REVIEW FAULT");
+            alert(t('task.reviewFault'));
         }
     } catch (e) {
-        alert("REVIEW FAULT");
+        alert(t('task.reviewFault'));
     }
 }
 
 // 取对话最后一条消息的展示文本：content 为数组时取最后一个 block 的 text
 function getLastMessageText(messages) {
     if (!messages || messages.length === 0) {
-        return 'NO MESSAGES';
+        return t('task.noMessages');
     }
     const content = messages[messages.length - 1].content;
     if (typeof content === 'string') {
@@ -220,7 +220,7 @@ async function submitTask() {
     const workDir = currentWorkdir;
     const agentIds = getCheckedAgentIds(document.getElementById('addTaskAgentList'));
     if (!title || !content || !workDir) {
-        alert("REQUIRED FIELDS MISSING.");
+        alert(t('common.requiredMissing'));
         return;
     }
 
@@ -237,14 +237,14 @@ async function submitTask() {
             await fetchTaskList();
         }
     } catch (e) {
-        alert("CREATION FAULT");
+        alert(t('common.creationFault'));
     }
 }
 
 function removeTask(taskId, taskTitle) {
     showConfirmDialog({
-        title: "PURGE TASK PIPELINE",
-        text: `Are you sure you want to destroy task pipeline [${taskTitle}]? All stage conversations attached will be wiped out instantly.`,
+        title: t('task.purgeTitle'),
+        text: t('task.purgeText', {name: taskTitle}),
         onConfirm: async () => {
             try {
                 const response = await fetch(`/task/${taskId}`, {method: 'DELETE'});
@@ -252,7 +252,7 @@ function removeTask(taskId, taskTitle) {
                     await fetchTaskList();
                 }
             } catch (e) {
-                alert("PURGE FAILURE");
+                alert(t('common.purgeFailure'));
             }
         }
     });
@@ -261,7 +261,7 @@ function removeTask(taskId, taskTitle) {
 async function startTask(taskId) {
     const agentId = document.getElementById(`task-start-agent-${taskId}`).value;
     if (!agentId) {
-        alert("AGENT IS REQUIRED.");
+        alert(t('task.agentRequired'));
         return;
     }
 
@@ -272,15 +272,15 @@ async function startTask(taskId) {
             body: JSON.stringify({agent_id: parseInt(agentId)})
         });
         if (response.ok) {
-            alert("TASK PIPELINE LAUNCHED.");
+            alert(t('task.launched'));
             await loadTaskDetail(taskId);
         } else if (response.status === 409) {
-            alert("TASK ALREADY RUNNING");
+            alert(t('task.alreadyRunning'));
         } else {
-            alert("START FAULT");
+            alert(t('task.startFault'));
         }
     } catch (e) {
-        alert("START FAULT");
+        alert(t('task.startFault'));
     }
 }
 

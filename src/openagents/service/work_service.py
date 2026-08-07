@@ -96,7 +96,7 @@ async def work(conversation_id: int, task_content: str | None) -> None:
         thinking = {"type": "enabled", "display": "summarized"} if await model_provider_repository.get_thinking() else {"type": "disabled"}
         system_prompt = str(conversation.system_prompt)
         tools = tool_service.list_tools()
-        messages = [{"id": msg.id, "role": msg.role, "content": msg.content, "time": msg.time} for msg in conversation.messages]
+        messages = [{"role": msg.role, "content": msg.content} for msg in conversation.messages]
         messages += [{"role": "user", "content": task_content, "time": datetime.now()}]
 
         # 执行

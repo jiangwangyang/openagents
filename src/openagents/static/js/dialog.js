@@ -134,6 +134,13 @@ async function loadAgentSelect() {
             opt.textContent = agent.name;
             select.appendChild(opt);
         });
+        // 恢复上次选择的智能体（若仍存在）
+        const lastAgentId = getLastAgentId();
+        if (lastAgentId && agents.some(a => String(a.id) === String(lastAgentId))) {
+            select.value = lastAgentId;
+        }
+        // 触发选择逻辑：填入对应模型配置或解禁手动模型
+        onAgentSelectChange();
     } catch (e) {
         // 静默处理错误
     }
@@ -142,6 +149,8 @@ async function loadAgentSelect() {
 // 选择智能体后填入其模型配置并禁止修改，取消选择（NONE）后解除禁用
 async function onAgentSelectChange() {
     const agentId = document.getElementById('agentSelect').value;
+    // 记录智能体选择，供下次新对话自动填入
+    saveLastAgentId(agentId);
     const providerSelect = document.getElementById('providerSelect');
     const modelInput = document.getElementById('modelSelect');
     const thinkingSelect = document.getElementById('thinkingSelect');
@@ -173,6 +182,8 @@ const MODEL_HISTORY_KEY = 'openagents_model_history';
 const MODEL_HISTORY_LIMIT = 20;
 // 上次模型配置记忆（localStorage）
 const LAST_MODEL_CONFIG_KEY = 'openagents_last_model_config';
+// 上次智能体选择记忆（localStorage）
+const LAST_AGENT_KEY = 'openagents_last_agent_id';
 
 function getModelHistory() {
     try {
@@ -243,6 +254,28 @@ function getLastModelConfig() {
     }
 }
 
+// 读取上次智能体选择
+function getLastAgentId() {
+    try {
+        return localStorage.getItem(LAST_AGENT_KEY) || '';
+    } catch (e) {
+        return '';
+    }
+}
+
+// 保存智能体选择到 localStorage
+function saveLastAgentId(agentId) {
+    try {
+        if (agentId) {
+            localStorage.setItem(LAST_AGENT_KEY, String(agentId));
+        } else {
+            localStorage.removeItem(LAST_AGENT_KEY);
+        }
+    } catch (e) {
+        // 静默处理错误
+    }
+}
+
 // 保存当前模型配置到 localStorage
 function saveLastModelConfig() {
     const providerId = document.getElementById('providerSelect').value;
@@ -257,6 +290,11 @@ function saveLastModelConfig() {
 function restoreLastModelConfig() {
     const config = getLastModelConfig();
     if (!config) {
+        return;
+    }
+    // 已选择智能体时由其配置覆盖，不恢复手动模型配置
+    const agentSelect = document.getElementById('agentSelect');
+    if (agentSelect && agentSelect.value) {
         return;
     }
     const providerSelect = document.getElementById('providerSelect');

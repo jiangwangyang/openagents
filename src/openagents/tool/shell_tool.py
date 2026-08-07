@@ -5,21 +5,32 @@ import sys
 
 import anyio
 
-POWERSHELL_SETTING = """# UTF-8 encoding setting
-[Console]::OutputEncoding = [System.Text.Encoding]::UTF8
-$OutputEncoding = [System.Text.Encoding]::UTF8
+POWERSHELL_UTF8_SETTING = """# UTF-8 encoding setting
+[Console]::OutputEncoding = [System.Text.UTF8Encoding]::new()
+$OutputEncoding = [System.Text.UTF8Encoding]::new()
+
+# Basic file operation commands UTF-8 encoding
+$PSDefaultParameterValues['Out-File:Encoding'] = 'utf8'
+$PSDefaultParameterValues['Set-Content:Encoding'] = 'utf8'
+$PSDefaultParameterValues['Add-Content:Encoding'] = 'utf8'
 """
 
 
 async def setup_powershell_utf8():
     # Windows才配置
-    if sys.platform.startswith("win"):
-        # 配置 Windows PowerShell 5.1 输出编码
-        home_dir = await anyio.Path.home()
-        profile_path = home_dir / "Documents" / "WindowsPowerShell" / "Microsoft.PowerShell_profile.ps1"
-        await profile_path.parent.mkdir(parents=True, exist_ok=True)
-        await profile_path.write_text(POWERSHELL_SETTING, encoding="utf-8")
-        logging.info("PowerShell default encoding configured")
+    if not sys.platform.startswith("win"):
+        return
+    # 配置 Windows PowerShell 5.1 输出编码
+    home_dir = await anyio.Path.home()
+    profile_path = home_dir / "Documents" / "WindowsPowerShell" / "Microsoft.PowerShell_profile.ps1"
+    await profile_path.parent.mkdir(parents=True, exist_ok=True)
+    await profile_path.write_text(POWERSHELL_UTF8_SETTING, encoding="utf-8")
+    # 配置 Windows PowerShell 7 输出编码
+    profile_path = home_dir / "Documents" / "PowerShell" / "Microsoft.PowerShell_profile.ps1"
+    await profile_path.parent.mkdir(parents=True, exist_ok=True)
+    await profile_path.write_text(POWERSHELL_UTF8_SETTING, encoding="utf-8")
+    # 输出日志
+    logging.info("PowerShell default encoding configured")
 
 
 async def execute(cmd_and_args: list[str], work_dir: str) -> tuple[str, bool]:

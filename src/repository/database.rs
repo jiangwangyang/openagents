@@ -1,0 +1,136 @@
+// 连接池、建表
+use sqlx::sqlite::{SqliteConnectOptions, SqlitePoolOptions};
+use sqlx::SqlitePool;
+use std::str::FromStr;
+
+use crate::config;
+
+// 创建数据库连接池并初始化
+pub async fn init_db() -> anyhow::Result<SqlitePool> {
+    // 确保数据目录存在
+    let data_dir = config::data_dir();
+    std::fs::create_dir_all(&data_dir)?;
+
+    let db_file = config::database_file();
+    let db_url = format!("sqlite:{}", db_file.display());
+
+    let options = SqliteConnectOptions::from_str(&db_url)?
+        .create_if_missing(true)
+        .pragma("foreign_keys", "ON");
+
+    let pool = SqlitePoolOptions::new()
+        .max_connections(1)
+        .connect_with(options)
+        .await?;
+
+    // 建表
+    create_tables(&pool).await?;
+
+    Ok(pool)
+}
+
+// 创建所有表
+async fn create_tables(pool: &SqlitePool) -> anyhow::Result<()> {
+    sqlx::query(
+        "CREATE TABLE IF NOT EXISTS t_model_provider (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            name TEXT NOT NULL UNIQUE,
+            protocol_type TEXT NOT NULL,
+            base_url TEXT NOT NULL,
+            api_key TEXT NOT NULL,
+            create_time TEXT NOT NULL,
+            update_time TEXT NOT NULL
+        )",
+    )
+        .execute(pool)
+        .await?;
+
+    sqlx::query(
+        "CREATE TABLE IF NOT EXISTS t_agent (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            name TEXT NOT NULL,
+            description TEXT NOT NULL,
+            prompt TEXT NOT NULL,
+            model_provider_id INTEGER NOT NULL REFERENCES t_model_provider(id) ON DELETE RESTRICT,
+            model TEXT NOT NULL,
+            thinking INTEGER NOT NULL,
+            create_time TEXT NOT NULL,
+            update_time TEXT NOT NULL
+        )",
+    )
+        .execute(pool)
+        .await?;
+
+    sqlx::query(
+        "CREATE TABLE IF NOT EXISTS t_task (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            title TEXT NOT NULL,
+            content TEXT NOT NULL,
+            agent_ids TEXT NOT NULL,
+            work_dir TEXT NOT NULL,
+            create_time TEXT NOT NULL,
+            update_time TEXT NOT NULL
+        )",
+    )
+        .execute(pool)
+        .await?;
+
+    sqlx::query(
+        "CREATE TABLE IF NOT EXISTS t_conversation (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            task_id INTEGER REFERENCES t_task(id) ON DELETE CASCADE,
+            agent_id INTEGER REFERENCES t_agent(id) ON DELETE SET NULL,
+            title TEXT NOT NULL,
+            work_dir TEXT NOT NULL,
+            system_prompt TEXT NOT NULL,
+            create_time TEXT NOT NULL,
+            update_time TEXT NOT NULL
+        )",
+    )
+        .execute(pool)
+        .await?;
+
+    sqlx::query(
+        "CREATE TABLE IF NOT EXISTS t_message (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            conversation_id INTEGER NOT NULL REFERENCES t_conversation(id) ON DELETE CASCADE,
+            role TEXT NOT NULL,
+            content TEXT NOT NULL,
+            stop_reason TEXT NOT NULL,
+            cache_read_input_tokens INTEGER NOT NULL,
+            input_tokens INTEGER NOT NULL,
+            output_tokens INTEGER NOT NULL,
+            time TEXT NOT NULL
+        )",
+    )
+        .execute(pool)
+        .await?;
+
+    sqlx::query(
+        "CREATE TABLE IF NOT EXISTS t_mcp_server (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            name TEXT NOT NULL UNIQUE,
+            description TEXT NOT NULL,
+            protocol_type TEXT NOT NULL,
+            url TEXT,
+            headers TEXT,
+            command TEXT,
+            args TEXT,
+            create_time TEXT NOT NULL,
+            update_time TEXT NOT NULL
+        )",
+    )
+        .execute(pool)
+        .await?;
+
+    // 创建索引
+    sqlx::query("CREATE INDEX IF NOT EXISTS idx_message_conversation ON t_message(conversation_id)")
+        .execute(pool)
+        .await?;
+
+    sqlx::query("CREATE INDEX IF NOT EXISTS idx_conversation_task ON t_conversation(task_id)")
+        .execute(pool)
+        .await?;
+
+    Ok(())
+}

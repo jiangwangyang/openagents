@@ -61,34 +61,26 @@ pub struct CreateWorkRequest {
 // POST /conversation/start 创建对话并启动 work
 pub async fn create_conversation_work(State(state): State<AppState>, Json(req): Json<CreateWorkRequest>) -> Result<Json<i64>, AppError> {
     let mut system_prompt = String::new();
-    let mut model_provider_id = req.model_provider_id;
-    let mut model = req.model;
-    let mut thinking = req.thinking;
+    let model_provider_id;
+    let model;
+    let thinking;
 
     if let Some(agent_id) = req.agent_id {
-        // 指定 agent 时使用其 prompt 作为 system_prompt
+        // 指定 agent 时使用其 prompt 作为 system_prompt，模型配置直接使用 agent 的配置，忽略用户传入的参数
         let agent = agent_repository::get_agent(&state.db, agent_id).await?;
         let agent = match agent {
             Some(a) => a,
             None => return Err(AppError::NotFound("Agent not found".to_string())),
         };
         system_prompt = agent.prompt.clone();
-
-        // 模型配置必须全部为 None 或全部与 agent 配置一致，否则拒绝请求
-        let any_user_config = model_provider_id.is_some() || model.is_some() || thinking.is_some();
-        if any_user_config {
-            let user_model_provider_id = model_provider_id;
-            let user_model = model.as_deref().unwrap_or("");
-            let user_thinking = thinking.unwrap_or(false);
-            if user_model_provider_id != Some(agent.model_provider_id) || user_model != agent.model || user_thinking != agent.thinking {
-                return Err(AppError::BadRequest("Model config must be all None or all consistent with agent config".to_string()));
-            }
-        }
-        // 使用 agent 的模型配置，忽略用户传入的参数
         model_provider_id = Some(agent.model_provider_id);
         model = Some(agent.model.clone());
         thinking = Some(agent.thinking);
     } else {
+        // 未指定 agent 时使用用户传入的模型配置
+        model_provider_id = req.model_provider_id;
+        model = req.model;
+        thinking = req.thinking;
         // 未指定 agent 时模型配置必填
         if model_provider_id.is_none() || model.is_none() || thinking.is_none() {
             return Err(AppError::BadRequest("Model config is required when agent_id is not provided".to_string()));

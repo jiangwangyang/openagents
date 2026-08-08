@@ -46,7 +46,7 @@ async fn main() -> anyhow::Result<()> {
     // 组装应用状态
     let state = AppState {
         db,
-        works: Arc::new(DashMap::new()),
+        conversations: Arc::new(DashMap::new()),
     };
 
     // 组装路由

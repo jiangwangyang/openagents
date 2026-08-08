@@ -11,7 +11,6 @@ pub mod mcp_server_api;
 pub mod model_provider_api;
 pub mod skill_api;
 pub mod task_api;
-pub mod work_api;
 
 // 组装全部路由
 pub fn create_router(state: AppState) -> Router {
@@ -30,6 +29,9 @@ pub fn create_router(state: AppState) -> Router {
         .route("/conversation/list", get(conversation_api::get_conversations))
         .route("/conversation/{conversation_id}", delete(conversation_api::delete_conversation))
         .route("/conversation/{conversation_id}/message", post(conversation_api::add_conversation_message))
+        .route("/conversation/start", post(conversation_api::create_conversation_work))
+        .route("/conversation/{conversation_id}/start", post(conversation_api::start_conversation_work))
+        .route("/conversation/{conversation_id}/stream", get(conversation_api::stream_conversation_work))
         // 模型提供商 CRUD
         .route("/model-provider/list", get(model_provider_api::list_model_providers))
         .route("/model-provider/{provider_id}", get(model_provider_api::get_model_provider))
@@ -53,9 +55,5 @@ pub fn create_router(state: AppState) -> Router {
         .route("/task", post(task_api::add_task))
         .route("/task/{task_id}", delete(task_api::delete_task))
         .route("/task/{task_id}/start", post(task_api::start_task))
-        // Work
-        .route("/work/start", post(work_api::create_work))
-        .route("/work/{conversation_id}/start", post(work_api::start_work))
-        .route("/work/{conversation_id}/stream", get(work_api::stream_work))
         .with_state(state)
 }

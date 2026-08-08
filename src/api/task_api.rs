@@ -99,7 +99,7 @@ pub async fn start_task(State(state): State<AppState>, Path(task_id): Path<i64>,
     if agent.is_none() {
         return Err(AppError::NotFound("Agent not found".to_string()));
     }
-    if !task_service::start_task(task_id, req.agent_id, &state.db, &state.works) {
+    if !task_service::start_task(task_id, req.agent_id, &state.db, &state.conversations) {
         return Err(AppError::Conflict("Task already running".to_string()));
     }
     Ok(())

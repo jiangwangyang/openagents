@@ -8,79 +8,79 @@ use tokio::sync::RwLock;
 use crate::anthropic::client::AnthropicClient;
 use crate::anthropic::types::{ContentBlock, ContentBlockDelta, CreateMessageRequest, MessageStreamEvent, RequestMessage, ThinkingConfig};
 use crate::repository::{conversation_repository, model_provider_repository};
-use crate::state::WorkState;
+use crate::state::ConversationState;
 use crate::tool::{self, ToolContext};
 
-// 启动 work,同一 conversation 不允许同时运行多个
-pub async fn start_work(
+// 启动对话,同一 conversation 不允许同时运行多个
+pub async fn start_conversation(
     conversation_id: i64,
     task_content: String,
     model_provider_id: i64,
     model: String,
     thinking: bool,
-    works: &Arc<DashMap<i64, Arc<RwLock<WorkState>>>>,
+    conversations: &Arc<DashMap<i64, Arc<RwLock<ConversationState>>>>,
     db: &SqlitePool,
 ) -> bool {
     // 防重入
-    if let Some(state) = works.get(&conversation_id) {
+    if let Some(state) = conversations.get(&conversation_id) {
         if !state.read().await.done {
             return false;
         }
     }
     let (tx, _) = tokio::sync::watch::channel(0u64);
-    let state = Arc::new(RwLock::new(WorkState {
+    let state = Arc::new(RwLock::new(ConversationState {
         chunks: Vec::new(),
         done: false,
         notify: tx,
     }));
-    works.insert(conversation_id, state.clone());
-    let works = works.clone();
+    conversations.insert(conversation_id, state.clone());
+    let conversations = conversations.clone();
     let db = db.clone();
-    tokio::spawn(work(conversation_id, task_content, model_provider_id, model, thinking, works, db));
+    tokio::spawn(run_conversation(conversation_id, task_content, model_provider_id, model, thinking, conversations, db));
     true
 }
 
 // 启动历史回放查询,不执行模型调用
-pub async fn start_query(
+pub async fn start_conversation_query(
     conversation_id: i64,
-    works: &Arc<DashMap<i64, Arc<RwLock<WorkState>>>>,
+    conversations: &Arc<DashMap<i64, Arc<RwLock<ConversationState>>>>,
     db: &SqlitePool,
 ) -> bool {
-    if let Some(state) = works.get(&conversation_id) {
+    if let Some(state) = conversations.get(&conversation_id) {
         if !state.read().await.done {
             return false;
         }
     }
     let (tx, _) = tokio::sync::watch::channel(0u64);
-    let state = Arc::new(RwLock::new(WorkState {
+    let state = Arc::new(RwLock::new(ConversationState {
         chunks: Vec::new(),
         done: false,
         notify: tx,
     }));
-    works.insert(conversation_id, state.clone());
-    let works = works.clone();
+    conversations.insert(conversation_id, state.clone());
+    let conversations = conversations.clone();
     let db = db.clone();
-    tokio::spawn(work(conversation_id, String::new(), 0, String::new(), false, works, db));
+    tokio::spawn(run_conversation(conversation_id, String::new(), 0, String::new(), false, conversations, db));
     true
 }
 
-// 查询 work 状态
-pub fn get_work_state(
+// 查询对话状态
+pub fn get_conversation_state(
     conversation_id: i64,
-    works: &Arc<DashMap<i64, Arc<RwLock<WorkState>>>>,
-) -> Option<Arc<RwLock<WorkState>>> {
-    works.get(&conversation_id).map(|r| r.clone())
+    conversations: &Arc<DashMap<i64, Arc<RwLock<ConversationState>>>>,
+) -> Option<Arc<RwLock<ConversationState>>> {
+    conversations.get(&conversation_id).map(|r| r.clone())
 }
 
 // 发布 SSE chunk
-pub async fn publish(
+pub async fn publish_chunk(
     conversation_id: i64,
     msg_type: &str,
     text: &str,
     kwargs: Value,
-    works: &Arc<DashMap<i64, Arc<RwLock<WorkState>>>>,
+    conversations: &Arc<DashMap<i64, Arc<RwLock<ConversationState>>>>,
 ) {
-    if let Some(state) = works.get(&conversation_id) {
+    if let Some(state) = conversations.get(&conversation_id) {
         let mut s = state.write().await;
         let mut chunk = json!({"type": msg_type, "text": text});
         if let Value::Object(map) = kwargs {
@@ -93,9 +93,9 @@ pub async fn publish(
     }
 }
 
-// 标记 work 完成
-pub async fn finish(conversation_id: i64, works: &Arc<DashMap<i64, Arc<RwLock<WorkState>>>>) {
-    if let Some(state) = works.get(&conversation_id) {
+// 标记对话完成
+pub async fn finish_conversation(conversation_id: i64, conversations: &Arc<DashMap<i64, Arc<RwLock<ConversationState>>>>) {
+    if let Some(state) = conversations.get(&conversation_id) {
         let mut s = state.write().await;
         s.done = true;
         let _ = s.notify.send(s.chunks.len() as u64);
@@ -103,35 +103,35 @@ pub async fn finish(conversation_id: i64, works: &Arc<DashMap<i64, Arc<RwLock<Wo
 }
 
 // 后台 agent loop
-async fn work(
+async fn run_conversation(
     conversation_id: i64,
     task_content: String,
     model_provider_id: i64,
     model: String,
     thinking: bool,
-    works: Arc<DashMap<i64, Arc<RwLock<WorkState>>>>,
+    conversations: Arc<DashMap<i64, Arc<RwLock<ConversationState>>>>,
     db: SqlitePool,
 ) {
-    let result = do_work(conversation_id, &task_content, model_provider_id, &model, thinking, &works, &db).await;
+    let result = do_run_conversation(conversation_id, &task_content, model_provider_id, &model, thinking, &conversations, &db).await;
     if let Err(e) = result {
-        publish(conversation_id, "error", &format!("Work execution failed: {}", e), json!({}), &works).await;
-        tracing::error!("Work execution failed: {}", e);
+        publish_chunk(conversation_id, "error", &format!("Conversation execution failed: {}", e), json!({}), &conversations).await;
+        tracing::error!("Conversation execution failed: {}", e);
     }
-    finish(conversation_id, &works).await;
+    finish_conversation(conversation_id, &conversations).await;
     // 执行任务存储的 chunk 太碎需要清理,查询任务状态可以保留
     if !task_content.is_empty() {
-        works.remove(&conversation_id);
+        conversations.remove(&conversation_id);
     }
 }
 
-// 实际 work 逻辑
-async fn do_work(
+// 实际对话逻辑
+async fn do_run_conversation(
     conversation_id: i64,
     task_content: &str,
     model_provider_id: i64,
     model: &str,
     thinking: bool,
-    works: &Arc<DashMap<i64, Arc<RwLock<WorkState>>>>,
+    conversations: &Arc<DashMap<i64, Arc<RwLock<ConversationState>>>>,
     db: &SqlitePool,
 ) -> anyhow::Result<()> {
     // 查询历史消息
@@ -142,29 +142,29 @@ async fn do_work(
     // 发布历史消息
     for msg in &conversation.messages {
         if let Value::String(s) = &msg.content {
-            publish(conversation_id, "user", s, json!({}), works).await;
+            publish_chunk(conversation_id, "user", s, json!({}), conversations).await;
         } else if let Value::Array(blocks) = &msg.content {
             for block in blocks {
                 match block["type"].as_str() {
                     Some("thinking") => {
-                        publish(conversation_id, "thinking", block["thinking"].as_str().unwrap_or(""), json!({}), works).await;
+                        publish_chunk(conversation_id, "thinking", block["thinking"].as_str().unwrap_or(""), json!({}), conversations).await;
                     }
                     Some("text") => {
-                        publish(conversation_id, "text", block["text"].as_str().unwrap_or(""), json!({}), works).await;
+                        publish_chunk(conversation_id, "text", block["text"].as_str().unwrap_or(""), json!({}), conversations).await;
                     }
                     Some("tool_use") => {
                         let input_str = serde_json::to_string(&block["input"]).unwrap_or_default();
-                        publish(conversation_id, "tool_use", &input_str, json!({"_id": block["id"], "name": block["name"]}), works).await;
+                        publish_chunk(conversation_id, "tool_use", &input_str, json!({"_id": block["id"], "name": block["name"]}), conversations).await;
                     }
                     Some("tool_result") => {
-                        publish(conversation_id, "tool_result", block["content"].as_str().unwrap_or(""), json!({"_id": block["tool_use_id"], "is_error": block["is_error"]}), works).await;
+                        publish_chunk(conversation_id, "tool_result", block["content"].as_str().unwrap_or(""), json!({"_id": block["tool_use_id"], "is_error": block["is_error"]}), conversations).await;
                     }
                     _ => {}
                 }
             }
         }
         // 发布使用量消息
-        publish(
+        publish_chunk(
             conversation_id,
             "usage",
             "",
@@ -173,12 +173,12 @@ async fn do_work(
                 "input_tokens": msg.input_tokens,
                 "output_tokens": msg.output_tokens,
             }),
-            works,
+            conversations,
         )
         .await;
     }
     if !task_content.is_empty() {
-        publish(conversation_id, "user", task_content, json!({}), works).await;
+        publish_chunk(conversation_id, "user", task_content, json!({}), conversations).await;
     }
 
     // 没有任务直接结束
@@ -254,15 +254,15 @@ async fn do_work(
                     if let Some(ref mut msg) = assistant_msg {
                         let block_json = match &content_block {
                             ContentBlock::Thinking { thinking, signature } => {
-                                publish(conversation_id, "thinking", "", json!({}), works).await;
+                                publish_chunk(conversation_id, "thinking", "", json!({}), conversations).await;
                                 json!({"type": "thinking", "thinking": thinking, "signature": signature})
                             }
                             ContentBlock::Text { text } => {
-                                publish(conversation_id, "text", "", json!({}), works).await;
+                                publish_chunk(conversation_id, "text", "", json!({}), conversations).await;
                                 json!({"type": "text", "text": text})
                             }
                             ContentBlock::ToolUse { id, name, input } => {
-                                publish(conversation_id, "tool_use", "", json!({"_id": id, "name": name}), works).await;
+                                publish_chunk(conversation_id, "tool_use", "", json!({"_id": id, "name": name}), conversations).await;
                                 json!({"type": "tool_use", "id": id, "name": name, "input": input})
                             }
                             ContentBlock::RedactedThinking { data } => {
@@ -279,18 +279,18 @@ async fn do_work(
                             match delta {
                                 ContentBlockDelta::ThinkingDelta { thinking } => {
                                     last["thinking"] = json!(last["thinking"].as_str().unwrap_or("").to_string() + &thinking);
-                                    publish(conversation_id, "delta", &thinking, json!({}), works).await;
+                                    publish_chunk(conversation_id, "delta", &thinking, json!({}), conversations).await;
                                 }
                                 ContentBlockDelta::SignatureDelta { signature } => {
                                     last["signature"] = json!(last["signature"].as_str().unwrap_or("").to_string() + &signature);
                                 }
                                 ContentBlockDelta::TextDelta { text } => {
                                     last["text"] = json!(last["text"].as_str().unwrap_or("").to_string() + &text);
-                                    publish(conversation_id, "delta", &text, json!({}), works).await;
+                                    publish_chunk(conversation_id, "delta", &text, json!({}), conversations).await;
                                 }
                                 ContentBlockDelta::InputJsonDelta { partial_json } => {
                                     input_json.push_str(&partial_json);
-                                    publish(conversation_id, "delta", &partial_json, json!({}), works).await;
+                                    publish_chunk(conversation_id, "delta", &partial_json, json!({}), conversations).await;
                                 }
                             }
                         }
@@ -314,7 +314,7 @@ async fn do_work(
                     if let Some(ref mut msg) = assistant_msg {
                         msg["stop_reason"] = json!(delta.stop_reason);
                         msg["usage"]["output_tokens"] = json!(usage.output_tokens);
-                        publish(
+                        publish_chunk(
                             conversation_id,
                             "usage",
                             "",
@@ -323,7 +323,7 @@ async fn do_work(
                                 "input_tokens": usage.input_tokens,
                                 "output_tokens": usage.output_tokens,
                             }),
-                            works,
+                            conversations,
                         )
                         .await;
                     }
@@ -383,7 +383,7 @@ async fn do_work(
                 "content": tool_content,
                 "is_error": is_error,
             }));
-            publish(conversation_id, "tool_result", &tool_content, json!({"_id": tool_use_id, "is_error": is_error}), works).await;
+            publish_chunk(conversation_id, "tool_result", &tool_content, json!({"_id": tool_use_id, "is_error": is_error}), conversations).await;
         }
         let tool_result_time = chrono::Local::now().to_rfc3339();
         messages.push(json!({

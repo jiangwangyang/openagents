@@ -68,7 +68,7 @@ async function loadConversation(conversationId) {
     const items = conversationList.querySelectorAll('.conversation-item');
     items.forEach(item => item.classList.toggle('active', String(item.dataset.id) === String(conversationId)));
 
-    // 通过 work 流式接口回放历史消息并实时跟随
+    // 通过对话流式接口回放历史消息并实时跟随
     connectStream(conversationId);
 }
 
@@ -376,7 +376,7 @@ async function sendMessage() {
     // 保存当前模型配置供下次新对话自动填入
     saveLastModelConfig();
 
-    // 启动 work：新会话先创建，已有会话直接启动
+    // 启动对话：新会话先创建，已有会话直接启动
     try {
         if (!currentConversationId) {
             // 新会话可指定智能体，未选择（空值）则不携带 agent_id
@@ -385,7 +385,7 @@ async function sendMessage() {
             if (agentId) {
                 payload.agent_id = parseInt(agentId);
             }
-            const response = await fetch('/work/start', {
+            const response = await fetch('/conversation/start', {
                 method: 'POST',
                 headers: {'Content-Type': 'application/json'},
                 body: JSON.stringify(payload)
@@ -400,7 +400,7 @@ async function sendMessage() {
             setContextLocked(true);
             await loadConversationList();
         } else {
-            const response = await fetch(`/work/${currentConversationId}/start`, {
+            const response = await fetch(`/conversation/${currentConversationId}/start`, {
                 method: 'POST',
                 headers: {'Content-Type': 'application/json'},
                 body: JSON.stringify({task_content: message, ...modelConfig})
@@ -436,7 +436,7 @@ function finalizeStreamBlock() {
     }
 }
 
-// 连接 work 流式接口：先回放历史 chunks，再实时跟随新数据
+// 连接对话流式接口：先回放历史 chunks，再实时跟随新数据
 function connectStream(conversationId) {
     // 关闭旧连接，重置流式渲染状态
     if (currentEventSource) {
@@ -454,7 +454,7 @@ function connectStream(conversationId) {
     usageInfo.textContent = '';
     setTyping(true);
 
-    const source = new EventSource(`/work/${conversationId}/stream`);
+    const source = new EventSource(`/conversation/${conversationId}/stream`);
     currentEventSource = source;
 
     source.onmessage = (event) => {

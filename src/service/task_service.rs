@@ -7,8 +7,8 @@ use tokio::sync::RwLock;
 use tokio::task::JoinHandle;
 
 use crate::repository::{agent_repository, conversation_repository, task_repository};
-use crate::service::work_service;
-use crate::state::WorkState;
+use crate::service::conversation_service;
+use crate::state::ConversationState;
 
 // 每个 task 的执行循环后台任务句柄
 static TASK_LOOPS: std::sync::LazyLock<Arc<DashMap<i64, JoinHandle<()>>>> =
@@ -19,7 +19,7 @@ pub fn start_task(
     task_id: i64,
     agent_id: i64,
     db: &SqlitePool,
-    works: &Arc<DashMap<i64, Arc<RwLock<WorkState>>>>,
+    conversations: &Arc<DashMap<i64, Arc<RwLock<ConversationState>>>>,
 ) -> bool {
     // 防重入
     if let Some(handle) = TASK_LOOPS.get(&task_id) {
@@ -28,8 +28,8 @@ pub fn start_task(
         }
     }
     let db = db.clone();
-    let works = works.clone();
-    let handle = tokio::spawn(run_task(task_id, agent_id, db, works));
+    let conversations = conversations.clone();
+    let handle = tokio::spawn(run_task(task_id, agent_id, db, conversations));
     TASK_LOOPS.insert(task_id, handle);
     true
 }
@@ -39,9 +39,9 @@ async fn run_task(
     task_id: i64,
     agent_id: i64,
     db: SqlitePool,
-    works: Arc<DashMap<i64, Arc<RwLock<WorkState>>>>,
+    conversations: Arc<DashMap<i64, Arc<RwLock<ConversationState>>>>,
 ) {
-    let result = do_run_task(task_id, agent_id, &db, &works).await;
+    let result = do_run_task(task_id, agent_id, &db, &conversations).await;
     if let Err(e) = result {
         tracing::error!("Task execution failed: {}", e);
     }
@@ -53,7 +53,7 @@ async fn do_run_task(
     task_id: i64,
     agent_id: i64,
     db: &SqlitePool,
-    works: &Arc<DashMap<i64, Arc<RwLock<WorkState>>>>,
+    conversations: &Arc<DashMap<i64, Arc<RwLock<ConversationState>>>>,
 ) -> anyhow::Result<()> {
     // 为第一个执行的 agent 创建阶段对话
     let task = task_repository::get_task(db, task_id).await?;
@@ -132,12 +132,12 @@ async fn do_run_task(
             anyhow::bail!("model not configured");
         }
 
-        // 触发 work 执行并等待完成
-        if !work_service::start_work(conversation.id, task_content, provider.id, agent.model.clone(), agent.thinking, works, db).await {
+        // 触发对话执行并等待完成
+        if !conversation_service::start_conversation(conversation.id, task_content, provider.id, agent.model.clone(), agent.thinking, conversations, db).await {
             return Ok(());
         }
-        // 等待 work 完成
-        if let Some(state) = work_service::get_work_state(conversation.id, works) {
+        // 等待对话完成
+        if let Some(state) = conversation_service::get_conversation_state(conversation.id, conversations) {
             loop {
                 {
                     let s = state.read().await;

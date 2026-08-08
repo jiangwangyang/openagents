@@ -1,8 +1,8 @@
-// 多 Agent 执行循环
-use std::sync::Arc;
 use dashmap::DashMap;
 use serde_json::json;
 use sqlx::SqlitePool;
+// 多 Agent 执行循环
+use std::sync::Arc;
 use tokio::sync::RwLock;
 use tokio::task::JoinHandle;
 
@@ -70,7 +70,7 @@ async fn do_run_task(
         Some(task_id),
         Some(agent_id),
     )
-    .await?;
+        .await?;
 
     loop {
         // 每轮重新查询任务,取最新一条对话
@@ -80,6 +80,20 @@ async fn do_run_task(
             _ => return Ok(()),
         };
         let conversation = task.conversations.last().unwrap();
+
+        // 最新的 agent 对话有消息(说明对话没有交接，则默认交接给用户),即创建一个无 agent 的用户对话并结束循环
+        if !conversation.messages.is_empty() && conversation.agent_id.is_some() {
+            conversation_repository::add_conversation(
+                db,
+                &format!("{}-User", task.title),
+                &task.work_dir,
+                "",
+                Some(task_id),
+                None,
+            )
+                .await?;
+            return Ok(());
+        }
 
         // 最新对话无 agent(用户审核阶段),结束循环
         if conversation.agent_id.is_none() {

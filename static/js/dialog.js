@@ -41,19 +41,57 @@ async function loadConversationList() {
     }
 }
 
-// 加载指定对话：切换当前会话并从对话列表接口获取工作目录
+// 加载指定对话：切换当前会话并从对话详情接口同步工作目录与模型路由配置
 async function loadConversation(conversationId) {
     currentConversationId = conversationId;
     // 对话已创建，锁定工作目录与智能体选择
     setContextLocked(true);
-    // 从对话列表接口查找当前对话的工作目录
+    // 从对话详情接口获取工作目录与配置（智能体/模型提供方/模型/是否思考）
     try {
-        const listResponse = await fetch('/conversation/list');
-        if (listResponse.ok) {
-            const conversations = await listResponse.json();
-            const target = conversations.find(c => String(c.id) === String(conversationId));
-            if (target) {
-                updateWorkspaceUI(target.work_dir);
+        const response = await fetch(`/conversation/${conversationId}`);
+        if (response.ok) {
+            const conversation = await response.json();
+            updateWorkspaceUI(conversation.work_dir);
+            const agentSelect = document.getElementById('agentSelect');
+            const providerSelect = document.getElementById('providerSelect');
+            const modelInput = document.getElementById('modelSelect');
+            const thinkingSelect = document.getElementById('thinkingSelect');
+            const agent = conversation.agent;
+            if (agent && agent.id != null) {
+                // 智能体下拉若不存在该选项则补齐
+                if (!agentSelect.querySelector(`option[value="${agent.id}"]`)) {
+                    const opt = document.createElement('option');
+                    opt.value = agent.id;
+                    opt.textContent = agent.name || String(agent.id);
+                    agentSelect.appendChild(opt);
+                }
+                agentSelect.value = String(agent.id);
+                // 模型提供方下拉若不存在该选项则补齐
+                if (agent.model_provider_id != null && !providerSelect.querySelector(`option[value="${agent.model_provider_id}"]`)) {
+                    const opt = document.createElement('option');
+                    opt.value = agent.model_provider_id;
+                    opt.textContent = (agent.model_provider && agent.model_provider.name) || String(agent.model_provider_id);
+                    providerSelect.appendChild(opt);
+                }
+                if (agent.model_provider_id != null) {
+                    providerSelect.value = String(agent.model_provider_id);
+                }
+                if (agent.model) {
+                    modelInput.value = agent.model;
+                }
+                if (agent.thinking != null) {
+                    thinkingSelect.value = String(agent.thinking);
+                }
+                // 智能体执行对话的模型配置固定，锁定不可修改
+                providerSelect.disabled = true;
+                modelInput.disabled = true;
+                thinkingSelect.disabled = true;
+            } else {
+                // 用户对话：清空智能体选择并解锁模型路由控件
+                agentSelect.value = '';
+                providerSelect.disabled = false;
+                modelInput.disabled = false;
+                thinkingSelect.disabled = false;
             }
         }
     } catch (e) {

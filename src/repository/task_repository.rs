@@ -59,7 +59,7 @@ pub async fn get_task(pool: &SqlitePool, task_id: i64) -> Result<Option<TaskWith
                 match agent_row {
                     Some(a) => {
                         let provider = sqlx::query_as::<_, ModelProviderEntity>(
-                            "SELECT id, name, type as provider_type, base_url, api_key, create_time, update_time FROM t_model_provider WHERE id = ?",
+                            "SELECT id, name, protocol_type, base_url, api_key, create_time, update_time FROM t_model_provider WHERE id = ?",
                         )
                         .bind(a.model_provider_id)
                         .fetch_optional(pool)

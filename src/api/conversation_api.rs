@@ -3,6 +3,7 @@ use axum::extract::{Path, State};
 use axum::response::sse::{Event, Sse};
 use axum::Json;
 use serde::Deserialize;
+use serde_json::json;
 use std::convert::Infallible;
 use std::sync::Arc;
 use tokio::sync::RwLock;
@@ -18,6 +19,57 @@ pub async fn get_conversations(State(state): State<AppState>) -> Result<Json<Vec
     let conversations = conversation_repository::get_conversations(&state.db).await?;
     let filtered: Vec<_> = conversations.into_iter().filter(|c| c.task_id.is_none()).collect();
     Ok(Json(filtered))
+}
+
+// 查询对话详情接口：返回对话基本字段、消息列表及执行 Agent 配置（含模型提供方），对话不存在返回 404
+pub async fn get_conversation(State(state): State<AppState>, Path(conversation_id): Path<i64>) -> Result<Json<serde_json::Value>, AppError> {
+    let conversation = conversation_repository::get_conversation(&state.db, conversation_id).await?;
+    let conversation = match conversation {
+        Some(c) => c,
+        None => return Err(AppError::NotFound("Conversation not found".to_string())),
+    };
+    // 关联 Agent（含模型提供方）：用于对话页同步工作目录/智能体/模型提供方/模型/是否思考配置
+    let agent = match conversation.agent_id {
+        Some(agent_id) => agent_repository::get_agent(&state.db, agent_id).await?,
+        None => None,
+    };
+    let messages: Vec<serde_json::Value> = conversation.messages.iter().map(|msg| {
+        json!({
+            "id": msg.id,
+            "role": msg.role,
+            "content": msg.content,
+            "stop_reason": msg.stop_reason,
+            "cache_read_input_tokens": msg.cache_read_input_tokens,
+            "input_tokens": msg.input_tokens,
+            "output_tokens": msg.output_tokens,
+            "time": msg.time,
+        })
+    }).collect();
+    let agent_json = agent.as_ref().map(|a| {
+        json!({
+            "id": a.id,
+            "name": a.name,
+            "model_provider_id": a.model_provider_id,
+            "model": a.model,
+            "thinking": a.thinking,
+            "model_provider": a.model_provider.as_ref().map(|p| json!({
+                "id": p.id,
+                "name": p.name,
+            })),
+        })
+    });
+    Ok(Json(json!({
+        "id": conversation.id,
+        "task_id": conversation.task_id,
+        "agent_id": conversation.agent_id,
+        "title": conversation.title,
+        "work_dir": conversation.work_dir,
+        "system_prompt": conversation.system_prompt,
+        "create_time": conversation.create_time,
+        "update_time": conversation.update_time,
+        "messages": messages,
+        "agent": agent_json,
+    })))
 }
 
 // 删除对话接口，消息由数据库外键 ON DELETE CASCADE 级联删除，对话不存在时返回 404

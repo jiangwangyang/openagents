@@ -44,7 +44,19 @@ let programScroll = false;
 // SVG 图标核心资产定义
 const FOLD_SVG = `<svg viewBox="0 0 24 24" class="fold-icon" width="14" height="14" stroke="currentColor" stroke-width="2.5" fill="none" stroke-linecap="square" stroke-linejoin="miter"><polyline points="6 9 12 15 18 9"></polyline></svg>`;
 const ARROW_SVG = `<svg viewBox="0 0 24 24" class="info-card-arrow" width="14" height="14" stroke="currentColor" stroke-width="2.5" fill="none"><polyline points="9 18 15 12 9 6"></polyline></svg>`;
+const DELETE_SVG = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>`;
 const SKELETON_HTML = '<div class="skeleton-loader"><span></span><span></span><span></span></div>';
+
+// 视图路由配置表：key 为视图名，load 为对应面板的数据加载函数名（调用时按名解析，避免加载顺序依赖）
+const VIEW_CONFIG = {
+    dialog: {nav: 'navDialogBtn', view: 'viewDialog', infoKey: null, load: null},
+    task: {nav: 'navTaskBtn', view: 'viewTask', infoKey: 'header.coreTask', load: 'fetchTaskList'},
+    cron: {nav: 'navCronBtn', view: 'viewCron', infoKey: 'header.coreCron', load: 'fetchCronTasks'},
+    agent: {nav: 'navAgentBtn', view: 'viewAgent', infoKey: 'header.coreAgent', load: 'fetchAgentRegistry'},
+    skill: {nav: 'navSkillBtn', view: 'viewSkill', infoKey: 'header.coreSkill', load: 'fetchSkillData'},
+    mcp: {nav: 'navMcpBtn', view: 'viewMcp', infoKey: 'header.coreMcp', load: 'fetchMcpRegistry'},
+    config: {nav: 'navConfigBtn', view: 'viewConfig', infoKey: 'header.coreConfig', load: 'fetchGlobalSettings'}
+};
 
 // ==========================================
 // 2. 生命周期与核心监听初始化
@@ -106,13 +118,14 @@ document.addEventListener('DOMContentLoaded', () => {
 // ==========================================
 // 3. 通用公共核心排版与基础工具引擎
 // ==========================================
+// textContent 转义仅覆盖 & < >，需额外转义引号以兼容 value="..." 等属性插值场景
 function escapeHtml(text) {
     if (!text) {
         return '';
     }
     const div = document.createElement('div');
     div.textContent = text;
-    return div.innerHTML;
+    return div.innerHTML.replaceAll('"', '&quot;').replaceAll("'", '&#39;');
 }
 
 function formatMarkdown(text) {
@@ -121,9 +134,13 @@ function formatMarkdown(text) {
     return escapeHtml(decoded).replaceAll("\n", "<br>");
 }
 
-function getCurrentTime() {
-    const now = new Date();
-    return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')} ${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}:${String(now.getSeconds()).padStart(2, '0')}`;
+// 各面板列表通用空态/错误态排版，textKey 为 i18n 文案 key
+function emptyListHtml(textKey) {
+    return `<div style="padding:30px; text-align:center; border:1px dashed var(--border-hard); color:var(--slate-400)">${t(textKey)}</div>`;
+}
+
+function errorListHtml(textKey) {
+    return `<div style="padding:20px; color:var(--danger-color)">${t(textKey)}</div>`;
 }
 
 function scrollToBottom() {
@@ -199,47 +216,22 @@ function closeConfirmDialog() {
 // 4. 核心骨干控制：视图路由导航引擎
 // ==========================================
 function switchView(viewName) {
+    const cfg = VIEW_CONFIG[viewName];
+    if (!cfg) {
+        return;
+    }
     document.querySelectorAll('.header-nav-btn').forEach(btn => btn.classList.remove('active'));
     document.querySelectorAll('.view-container').forEach(view => view.classList.remove('active'));
+    document.getElementById(cfg.nav).classList.add('active');
+    document.getElementById(cfg.view).classList.add('active');
 
     if (viewName === 'dialog') {
-        document.getElementById('navDialogBtn').classList.add('active');
-        document.getElementById('viewDialog').classList.add('active');
         globalInputWrapper.style.display = 'block';
         conversationInfo.textContent = currentConversationId ? `ID: ${currentConversationId}` : t('header.newTrace');
     } else {
         globalInputWrapper.style.display = 'none';
-        if (viewName === 'task') {
-            document.getElementById('navTaskBtn').classList.add('active');
-            document.getElementById('viewTask').classList.add('active');
-            conversationInfo.textContent = t('header.coreTask');
-            fetchTaskList();
-        } else if (viewName === 'cron') {
-            document.getElementById('navCronBtn').classList.add('active');
-            document.getElementById('viewCron').classList.add('active');
-            conversationInfo.textContent = t('header.coreCron');
-            fetchCronTasks();
-        } else if (viewName === 'agent') {
-            document.getElementById('navAgentBtn').classList.add('active');
-            document.getElementById('viewAgent').classList.add('active');
-            conversationInfo.textContent = t('header.coreAgent');
-            fetchAgentRegistry();
-        } else if (viewName === 'skill') {
-            document.getElementById('navSkillBtn').classList.add('active');
-            document.getElementById('viewSkill').classList.add('active');
-            conversationInfo.textContent = t('header.coreSkill');
-            fetchSkillData();
-        } else if (viewName === 'mcp') {
-            document.getElementById('navMcpBtn').classList.add('active');
-            document.getElementById('viewMcp').classList.add('active');
-            conversationInfo.textContent = t('header.coreMcp');
-            fetchMcpRegistry();
-        } else if (viewName === 'config') {
-            document.getElementById('navConfigBtn').classList.add('active');
-            document.getElementById('viewConfig').classList.add('active');
-            conversationInfo.textContent = t('header.coreConfig');
-            fetchGlobalSettings();
-        }
+        conversationInfo.textContent = t(cfg.infoKey);
+        window[cfg.load]();
     }
 }
 

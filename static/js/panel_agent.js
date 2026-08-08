@@ -41,7 +41,7 @@ async function fetchAgentRegistry() {
         agentListContainer.innerHTML = '';
 
         if (agents.length === 0) {
-            agentListContainer.innerHTML = `<div style="padding:30px; text-align:center; border:1px dashed var(--border-hard); color:var(--slate-400)">${t('agent.empty')}</div>`;
+            agentListContainer.innerHTML = emptyListHtml('agent.empty');
             return;
         }
 
@@ -59,9 +59,7 @@ async function fetchAgentRegistry() {
                     </div>
                     <div style="display:flex; gap:8px; align-items:center;" onclick="event.stopPropagation();">
                         <button class="btn btn-sm send-button" style="height:28px; padding:0 8px; font-size:10px;" onclick="updateSingleAgent(${agent.id})">${t('common.save')}</button>
-                        <button class="delete-btn" style="opacity:1; padding:6px;">
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
-                        </button>
+                        <button class="delete-btn" style="opacity:1; padding:6px;">${DELETE_SVG}</button>
                     </div>
                 </div>
                 <div class="info-card-details" style="display: none;">
@@ -107,7 +105,7 @@ async function fetchAgentRegistry() {
             loadAgentProviderOptions(`agent-provider-${agent.id}`, agent.model_provider_id);
         });
     } catch (e) {
-        agentListContainer.innerHTML = `<div style="padding:20px; color:var(--danger-color)">${t('agent.rosterCrashed')}</div>`;
+        agentListContainer.innerHTML = errorListHtml('agent.rosterCrashed');
     }
 }
 

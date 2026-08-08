@@ -11,7 +11,7 @@ async function fetchSkillData() {
         skillListContainer.innerHTML = '';
 
         if (skills.length === 0) {
-            skillListContainer.innerHTML = `<div style="padding:30px; text-align:center; border:1px dashed var(--border-hard); color:var(--slate-400)">${t('skill.empty')}</div>`;
+            skillListContainer.innerHTML = emptyListHtml('skill.empty');
             return;
         }
 
@@ -42,7 +42,7 @@ async function fetchSkillData() {
             skillListContainer.appendChild(card);
         });
     } catch (e) {
-        skillListContainer.innerHTML = `<div style="padding:20px; color:var(--danger-color)">${t('common.fetchFailed')}</div>`;
+        skillListContainer.innerHTML = errorListHtml('common.fetchFailed');
     }
 }
 

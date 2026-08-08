@@ -39,7 +39,7 @@ async function fetchTaskList() {
         renderAgentCheckList(document.getElementById('addTaskAgentList'), agents, []);
 
         if (tasks.length === 0) {
-            taskListContainer.innerHTML = `<div style="padding:30px; text-align:center; border:1px dashed var(--border-hard); color:var(--slate-400)">${t('task.empty')}</div>`;
+            taskListContainer.innerHTML = emptyListHtml('task.empty');
             return;
         }
 
@@ -62,9 +62,7 @@ async function fetchTaskList() {
                     <div style="display:flex; gap:8px; align-items:center;" onclick="event.stopPropagation();">
                         <select id="task-start-agent-${task.id}" class="form-control" style="width:140px; height:28px; font-size:11px; padding:0 6px;"></select>
                         <button class="btn btn-sm send-button" style="height:28px; white-space:nowrap;" onclick="startTask(${task.id})">${t('common.start')}</button>
-                        <button class="delete-btn" style="opacity:1; padding:6px;">
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
-                        </button>
+                        <button class="delete-btn" style="opacity:1; padding:6px;">${DELETE_SVG}</button>
                     </div>
                 </div>
                 <div class="info-card-details" style="display: none;">
@@ -103,7 +101,7 @@ async function fetchTaskList() {
             });
         });
     } catch (e) {
-        taskListContainer.innerHTML = `<div style="padding:20px; color:var(--danger-color)">${t('common.fetchFailed')}</div>`;
+        taskListContainer.innerHTML = errorListHtml('common.fetchFailed');
     }
 }
 

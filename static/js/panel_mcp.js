@@ -33,7 +33,7 @@ async function fetchMcpRegistry() {
         mcpListContainer.innerHTML = '';
 
         if (servers.length === 0) {
-            mcpListContainer.innerHTML = `<div style="padding:30px; text-align:center; border:1px dashed var(--border-hard); color:var(--slate-400)">${t('mcp.empty')}</div>`;
+            mcpListContainer.innerHTML = emptyListHtml('mcp.empty');
             return;
         }
 
@@ -57,9 +57,7 @@ async function fetchMcpRegistry() {
                     <div style="display:flex; gap:8px; align-items:center;" onclick="event.stopPropagation();">
                         <button class="btn btn-sm send-button mcp-save-btn" style="height:28px; padding:0 8px; font-size:10px;">${t('common.save')}</button>
                         <button class="btn btn-sm send-button mcp-test-btn" style="height:28px;">${t('mcp.testProbe')}</button>
-                        <button class="delete-btn" style="opacity:1; padding:6px;">
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
-                        </button>
+                        <button class="delete-btn" style="opacity:1; padding:6px;">${DELETE_SVG}</button>
                     </div>
                 </div>
                 <div class="info-card-details" style="display: none;">
@@ -122,7 +120,7 @@ async function fetchMcpRegistry() {
             mcpListContainer.appendChild(card);
         });
     } catch (e) {
-        mcpListContainer.innerHTML = `<div style="padding:20px; color:var(--danger-color)">${t('mcp.topologyCrashed')}</div>`;
+        mcpListContainer.innerHTML = errorListHtml('mcp.topologyCrashed');
     }
 }
 

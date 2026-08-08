@@ -3,6 +3,8 @@
 // ==========================================
 const cronListContainer = document.getElementById('cronListContainer');
 const addCronPanel = document.getElementById('addCronPanel');
+// 最近一次拉取的定时任务列表缓存，供保存时按 id 读取 enabled 等未编辑字段
+let cronTasksCache = [];
 
 async function loadCronAgentOptions() {
     try {
@@ -21,28 +23,20 @@ async function loadCronAgentOptions() {
 
 // 打开目录选择弹窗，选中后写入 cron 面板的目录显示
 function selectCronWorkspace() {
-    dirConfirmCallback = (path) => {
+    openDirModal((path) => {
         const display = document.getElementById('cronWorkspaceDisplay');
         display.textContent = path || t('input.unset');
         display.title = path;
-    };
-    document.getElementById('dirModalOverlay').style.display = 'block';
-    renderWorkdirHistory();
-    const currentPath = document.getElementById('cronWorkspaceDisplay').title || '';
-    loadDirList(currentPath);
+    }, document.getElementById('cronWorkspaceDisplay').title || '');
 }
 
 // 打开目录选择弹窗，选中后写入指定 cron 卡片的工作目录显示
 function selectCronCardWorkspace(taskId) {
-    dirConfirmCallback = (path) => {
+    openDirModal((path) => {
         const display = document.getElementById(`cron-workdir-display-${taskId}`);
         display.textContent = path || t('input.unset');
         display.title = path;
-    };
-    document.getElementById('dirModalOverlay').style.display = 'block';
-    renderWorkdirHistory();
-    const currentPath = document.getElementById(`cron-workdir-display-${taskId}`).title || '';
-    loadDirList(currentPath);
+    }, document.getElementById(`cron-workdir-display-${taskId}`).title || '');
 }
 
 // 解析后端 6 段 cron 表达式到各个字段
@@ -79,10 +73,11 @@ async function fetchCronTasks() {
         const [taskResponse, agentResponse] = await Promise.all([fetch('/schedule/list'), fetch('/agent/list')]);
         const tasks = await taskResponse.json();
         const agents = await agentResponse.json();
+        cronTasksCache = tasks;
         cronListContainer.innerHTML = '';
 
         if (tasks.length === 0) {
-            cronListContainer.innerHTML = `<div style="padding:30px; text-align:center; border:1px dashed var(--border-hard); color:var(--slate-400)">${t('cron.empty')}</div>`;
+            cronListContainer.innerHTML = emptyListHtml('cron.empty');
             return;
         }
 
@@ -104,9 +99,7 @@ async function fetchCronTasks() {
                     <div style="display:flex; gap:4px; align-items:center;" onclick="event.stopPropagation();">
                         <button class="btn btn-sm btn-secondary cron-toggle-btn" style="height:28px; padding:0 8px; font-size:10px;">${task.enabled ? t('cron.disable') : t('cron.enable')}</button>
                         <button class="btn btn-sm send-button cron-save-btn" style="height:28px; padding:0 8px; font-size:10px;">${t('common.save')}</button>
-                        <button class="delete-btn" style="opacity:1; padding:6px;">
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
-                        </button>
+                        <button class="delete-btn" style="opacity:1; padding:6px;">${DELETE_SVG}</button>
                     </div>
                 </div>
                 <div class="info-card-details" style="display: none;">
@@ -162,7 +155,7 @@ async function fetchCronTasks() {
             loadCronCardAgentOptions(`cron-agent-${task.id}`, task.agent_id, agents);
         });
     } catch (e) {
-        cronListContainer.innerHTML = `<div style="padding:20px; color:var(--danger-color)">${t('common.fetchFailed')}</div>`;
+        cronListContainer.innerHTML = errorListHtml('common.fetchFailed');
     }
 }
 
@@ -230,14 +223,9 @@ async function updateSingleCron(taskId) {
         alert(t('common.requiredMissing'));
         return;
     }
-    // 从列表中获取当前 enabled 状态
-    let enabled = true;
-    try {
-        const listResponse = await fetch('/schedule/list');
-        const tasks = await listResponse.json();
-        const existing = tasks.find(taskItem => taskItem.id === taskId);
-        enabled = existing ? existing.enabled : true;
-    } catch (e) {}
+    // 从缓存列表中获取当前 enabled 状态（该字段不在编辑表单内）
+    const existing = cronTasksCache.find(taskItem => taskItem.id === taskId);
+    const enabled = existing ? existing.enabled : true;
 
     const payload = {
         name, content, work_dir,

@@ -16,7 +16,7 @@ async function fetchGlobalSettings() {
         const providers = await pResponse.json();
         renderProvidersFormList(providers);
     } catch (e) {
-        providerList.innerHTML = `<div style="padding:20px; color:var(--danger-color)">${t('config.settingsFault')}</div>`;
+        providerList.innerHTML = errorListHtml('config.settingsFault');
     }
 }
 
@@ -41,9 +41,7 @@ function renderProvidersFormList(providers) {
                 </div>
                 <div style="display:flex; gap:12px; align-items:center;" onclick="event.stopPropagation();">
                     <button class="btn btn-sm send-button provider-save-btn" style="height:28px; padding:0 8px; font-size:10px;">${t('common.save')}</button>
-                    <button class="delete-btn" style="opacity:1; color:var(--danger-color); font-size:11px; font-family:var(--font-mono); font-weight:700; padding:6px;">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
-                    </button>
+                    <button class="delete-btn" style="opacity:1; color:var(--danger-color); font-size:11px; font-family:var(--font-mono); font-weight:700; padding:6px;">${DELETE_SVG}</button>
                 </div>
             </div>
             <div class="info-card-details" style="display: none; background: var(--bg-surface); border-top: 1px solid var(--border-hard);">

@@ -20,7 +20,7 @@ const I18N = {
         config: {viewTitle: 'System Runtime Configurations', newProvider: '+ New Provider', newProviderCard: '+ New Model Provider', providerName: 'Provider Unique Name', providerNamePlaceholder: 'e.g. deepseek', protocolType: 'Protocol Type', baseUrl: 'Base URL Endpoint', secretToken: 'Secret Token (API Key)', settingsFault: 'SETTINGS DESERIALIZATION FAULT', endpointMissing: 'Endpoint missing', nameRequired: 'PROVIDER NAME IS REQUIRED.', injectionFault: 'INJECTION FAULT', synced: 'PROVIDER CLUSTER [{name}] SYNCHRONIZED.', purgeTitle: 'PURGE MODEL PROVIDER', purgeText: 'Are you sure you want to completely remove infrastructure cluster [{name}]? Layer dependencies pointing here will collapse.'},
         input: {cwdTitle: 'Set Directory Context', unset: 'UNSET', agentTitle: 'Select Agent', providerTitle: 'Select Provider', modelTitle: 'Select Model', thinkingTitle: 'Thinking Mode', placeholder: 'Enter instructions...', execute: 'Execute'},
         modal: {workspaceContext: 'Workspace Context', pathPlaceholder: 'Input path...', go: 'GO', recentWorkdirs: 'Recent Workdirs', confirmPath: 'Confirm Path', removeHistory: 'Remove from history'},
-        stream: {purgeTitle: 'PURGE RECORD', purgeText: 'Are you sure you want to delete conversation [{name}]? This trace log action is irreversible.', startFailed: 'START WORK FAILED', unknownError: 'Unknown Error', thoughtProcess: 'Thought Process', callPrefix: 'Call', tool: 'Tool', toolError: 'Error', toolResult: 'Result', usageIn: 'in', usageOut: 'out', usageCache: 'cache'},
+        stream: {purgeTitle: 'PURGE RECORD', purgeText: 'Are you sure you want to delete conversation [{name}]? This trace log action is irreversible.', startFailed: 'START WORK FAILED', unknownError: 'Unknown Error', thoughtProcess: 'Thought Process', callPrefix: 'Call', tool: 'Tool', toolError: 'Error', toolResult: 'Result', usageIn: 'in', usageOut: 'out', usageCache: 'cache', usageTotal: 'total'},
         workspace: {upLevel: '.. (UP LEVEL)', connFailed: 'ERR: CONNECTION FAILED'}
     },
     zh: {
@@ -38,7 +38,7 @@ const I18N = {
         config: {viewTitle: '系统运行配置', newProvider: '+ 新建供应商', newProviderCard: '+ 新建模型供应商', providerName: '供应商唯一名称', providerNamePlaceholder: '例如：deepseek', protocolType: '协议类型', baseUrl: '基础地址', secretToken: '密钥（API Key）', settingsFault: '配置解析失败', endpointMissing: '缺少端点地址', nameRequired: '供应商名称为必填项。', injectionFault: '注入失败', synced: '供应商集群 [{name}] 已同步。', purgeTitle: '删除模型供应商', purgeText: '确定要移除基础设施集群 [{name}] 吗？指向它的依赖层将失效。'},
         input: {cwdTitle: '设置目录上下文', unset: '未设置', agentTitle: '选择智能体', providerTitle: '选择供应商', modelTitle: '选择模型', thinkingTitle: '思考模式', placeholder: '输入指令...', execute: '执行'},
         modal: {workspaceContext: '工作目录上下文', pathPlaceholder: '输入路径...', go: '跳转', recentWorkdirs: '最近工作目录', confirmPath: '确认路径', removeHistory: '从历史中移除'},
-        stream: {purgeTitle: '删除会话', purgeText: '确定要删除会话 [{name}] 吗？该记录操作不可恢复。', startFailed: '任务启动失败', unknownError: '未知错误', thoughtProcess: '思考过程', callPrefix: '调用', tool: '工具', toolError: '错误', toolResult: '结果', usageIn: '输入', usageOut: '输出', usageCache: '缓存'},
+        stream: {purgeTitle: '删除会话', purgeText: '确定要删除会话 [{name}] 吗？该记录操作不可恢复。', startFailed: '任务启动失败', unknownError: '未知错误', thoughtProcess: '思考过程', callPrefix: '调用', tool: '工具', toolError: '错误', toolResult: '结果', usageIn: '输入', usageOut: '输出', usageCache: '缓存', usageTotal: '总量'},
         workspace: {upLevel: '..（上一级）', connFailed: '错误：连接失败'}
     }
 };

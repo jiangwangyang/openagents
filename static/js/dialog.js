@@ -487,6 +487,7 @@ function connectStream(conversationId) {
     usageInputTokens = 0;
     usageOutputTokens = 0;
     usageCacheTokens = 0;
+    usageTotalTokens = 0;
     usageInfo.textContent = '';
     setTyping(true);
 
@@ -566,11 +567,14 @@ function connectStream(conversationId) {
             usageInputTokens += data.input_tokens || 0;
             usageOutputTokens += data.output_tokens || 0;
             usageCacheTokens += data.cache_read_input_tokens || 0;
+            // 取当次发送的三项用量之和，表示当前对话的总 token 量
+            usageTotalTokens = (data.input_tokens || 0) + (data.output_tokens || 0) + (data.cache_read_input_tokens || 0);
             const formatTokens = (count) => count >= 1000 ? (count / 1000).toFixed(1) + 'k' : String(count);
             let usageText = `↑ ${formatTokens(usageInputTokens)} ${t('stream.usageIn')} · ${formatTokens(usageOutputTokens)} ${t('stream.usageOut')}`;
             if (usageCacheTokens > 0) {
                 usageText += ` · ${formatTokens(usageCacheTokens)} ${t('stream.usageCache')}`;
             }
+            usageText += ` · Σ ${formatTokens(usageTotalTokens)} ${t('stream.usageTotal')}`;
             usageInfo.textContent = usageText;
         }
 

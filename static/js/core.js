@@ -35,6 +35,8 @@ let streamChunkCount = 0;
 let usageInputTokens = 0;
 let usageOutputTokens = 0;
 let usageCacheTokens = 0;
+// 最后一次 usage 事件三项之和，表示当前对话的总 token 量
+let usageTotalTokens = 0;
 
 // 运行时会话滚动控制变量
 let isAtBottom = true;

@@ -26,3 +26,6 @@ rmcp = { version = "3", features = ["client", "transport-child-process", "transp
 http = "1"
 wry = "0.56"
 tao = "0.36"
+tokio-cron-scheduler = "0.15.1"
+uuid = { version = "1.24.0", features = ["v4"] }
+cron = "0.17.0"

@@ -6,3 +6,4 @@ pub mod entity;
 pub mod mcp_server_repository;
 pub mod model_provider_repository;
 pub mod task_repository;
+pub mod schedule_repository;

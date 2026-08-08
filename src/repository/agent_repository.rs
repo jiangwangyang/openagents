@@ -14,7 +14,7 @@ pub async fn list_agents(pool: &SqlitePool) -> Result<Vec<AgentWithProvider>, sq
     let mut result = Vec::with_capacity(agents.len());
     for agent in agents {
         let provider = sqlx::query_as::<_, ModelProviderEntity>(
-            "SELECT id, name, type as provider_type, base_url, api_key, create_time, update_time FROM t_model_provider WHERE id = ?",
+            "SELECT id, name, protocol_type, base_url, api_key, create_time, update_time FROM t_model_provider WHERE id = ?",
         )
         .bind(agent.model_provider_id)
         .fetch_optional(pool)
@@ -47,7 +47,7 @@ pub async fn get_agent(pool: &SqlitePool, agent_id: i64) -> Result<Option<AgentW
     match agent {
         Some(agent) => {
             let provider = sqlx::query_as::<_, ModelProviderEntity>(
-                "SELECT id, name, type as provider_type, base_url, api_key, create_time, update_time FROM t_model_provider WHERE id = ?",
+                "SELECT id, name, protocol_type, base_url, api_key, create_time, update_time FROM t_model_provider WHERE id = ?",
             )
             .bind(agent.model_provider_id)
             .fetch_optional(pool)

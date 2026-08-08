@@ -9,6 +9,7 @@ pub mod app_api;
 pub mod conversation_api;
 pub mod mcp_server_api;
 pub mod model_provider_api;
+pub mod schedule_api;
 pub mod skill_api;
 pub mod task_api;
 
@@ -49,6 +50,12 @@ pub fn create_router(state: AppState) -> Router {
         .route("/mcp-server/{_type}/test", post(mcp_server_api::test_mcp_server))
         // 技能列表
         .route("/skill/list", get(skill_api::list_skills))
+        // 定时任务 CRUD
+        .route("/schedule/list", get(schedule_api::list_schedules))
+        .route("/schedule/{schedule_id}", get(schedule_api::get_schedule))
+        .route("/schedule", post(schedule_api::add_schedule))
+        .route("/schedule/{schedule_id}", put(schedule_api::update_schedule))
+        .route("/schedule/{schedule_id}", delete(schedule_api::delete_schedule))
         // 任务 CRUD
         .route("/task/list", get(task_api::list_tasks))
         .route("/task/{task_id}", get(task_api::get_task))

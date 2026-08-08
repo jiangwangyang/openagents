@@ -112,10 +112,14 @@ async fn run_server(port_tx: Option<Sender<u16>>) -> anyhow::Result<()> {
     // 初始化 MCP 客户端
     tool::mcp_tool::init_mcp_clients(&db).await;
 
+    // 初始化定时任务调度器
+    let conversations = Arc::new(DashMap::new());
+    service::schedule_service::init_scheduler(&db, &conversations).await?;
+
     // 组装应用状态
     let state = AppState {
         db,
-        conversations: Arc::new(DashMap::new()),
+        conversations,
     };
 
     // 组装路由

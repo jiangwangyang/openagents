@@ -4,6 +4,21 @@
 const cronListContainer = document.getElementById('cronListContainer');
 const addCronPanel = document.getElementById('addCronPanel');
 
+async function loadCronAgentOptions() {
+    try {
+        const response = await fetch('/agent/list');
+        const agents = await response.json();
+        const select = document.getElementById('cronAgentId');
+        select.innerHTML = '';
+        agents.forEach(agent => {
+            const option = document.createElement('option');
+            option.value = agent.id;
+            option.textContent = agent.name;
+            select.appendChild(option);
+        });
+    } catch (e) {}
+}
+
 async function fetchCronTasks() {
     cronListContainer.innerHTML = SKELETON_HTML;
     try {
@@ -59,6 +74,9 @@ async function fetchCronTasks() {
 
 function toggleAddCronPanel() {
     addCronPanel.style.display = addCronPanel.style.display === 'none' ? 'flex' : 'none';
+    if (addCronPanel.style.display === 'flex') {
+        loadCronAgentOptions();
+    }
 }
 
 async function submitCronTask() {
@@ -66,11 +84,11 @@ async function submitCronTask() {
     const content = document.getElementById('cronContent').value.trim();
     const work_dir = document.getElementById('cronWorkDir').value.trim();
 
-    if (!name || !content || !work_dir) {
+    const agentIdVal = document.getElementById('cronAgentId').value;
+    if (!name || !content || !work_dir || !agentIdVal) {
         alert(t('common.requiredMissing'));
         return;
     }
-
     const payload = {
         name, content, work_dir,
         minute: document.getElementById('cronMin').value,
@@ -78,7 +96,8 @@ async function submitCronTask() {
         day: document.getElementById('cronDay').value,
         month: document.getElementById('cronMonth').value,
         day_of_week: document.getElementById('cronWeek').value,
-        second: '0'
+        second: '0',
+        agent_id: parseInt(agentIdVal)
     };
 
     try {

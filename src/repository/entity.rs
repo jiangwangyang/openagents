@@ -123,6 +123,20 @@ pub struct ConversationWithMessagesAndAgent {
     pub agent: Option<AgentWithProvider>,
 }
 
+// 定时任务
+#[derive(Debug, Clone, FromRow, serde::Serialize)]
+pub struct ScheduleEntity {
+    pub id: i64,
+    pub name: String,
+    pub content: String,
+    pub work_dir: String,
+    pub cron_expr: String,
+    pub agent_id: i64,
+    pub enabled: bool,
+    pub create_time: String,
+    pub update_time: String,
+}
+
 // MCP 服务
 #[derive(Debug, Clone, FromRow, serde::Serialize)]
 pub struct McpServerEntity {

@@ -56,8 +56,8 @@
             <div class="header-left">
                 <button class="header-nav-btn active" id="navDialogBtn" onclick="switchView('dialog')" data-i18n="nav.dialog">DIALOG</button>
                 <button class="header-nav-btn" id="navTaskBtn" onclick="switchView('task')" data-i18n="nav.task">TASK</button>
-                <button class="header-nav-btn" id="navAgentBtn" onclick="switchView('agent')" data-i18n="nav.agent">AGENT</button>
                 <button class="header-nav-btn" id="navCronBtn" onclick="switchView('cron')" data-i18n="nav.cron">CRON</button>
+                <button class="header-nav-btn" id="navAgentBtn" onclick="switchView('agent')" data-i18n="nav.agent">AGENT</button>
                 <button class="header-nav-btn" id="navSkillBtn" onclick="switchView('skill')" data-i18n="nav.skill">SKILL</button>
                 <button class="header-nav-btn" id="navMcpBtn" onclick="switchView('mcp')" data-i18n="nav.mcp">MCP</button>
                 <button class="header-nav-btn" id="navConfigBtn" onclick="switchView('config')" data-i18n="nav.config">CONFIG</button>
@@ -136,7 +136,57 @@
             <div class="info-card-list" id="taskListContainer"></div>
         </div>
 
-        <!-- ===== 视图 3: Agent 管理 (AGENT) ===== -->
+        <!-- ===== 视图 3: 定时任务管理 (CRON) ===== -->
+        <div class="view-container" id="viewCron">
+            <div class="panel-view-header">
+                <h2 class="panel-view-title" data-i18n="cron.viewTitle">Scheduled Cron Processes</h2>
+                <button class="btn btn-sm send-button" onclick="toggleAddCronPanel()" data-i18n="cron.newCron">+ New Cron</button>
+            </div>
+
+            <div class="add-cron-panel" id="addCronPanel" style="display: none;">
+                <div class="form-row">
+                    <div class="form-group">
+                        <label data-i18n="cron.name">Task Name</label>
+                        <input type="text" id="cronName" class="form-control" placeholder="e.g. Daily Market Scraper" data-i18n-placeholder="cron.namePlaceholder">
+                    </div>
+                    <div class="form-group">
+                        <label data-i18n="task.workDir">Working Directory</label>
+                        <button class="workspace-btn" id="cronWorkspaceBtn" onclick="selectCronWorkspace()" style="margin-bottom:0;" title="Set Directory Context" data-i18n-title="input.cwdTitle">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path>
+                            </svg>
+                            <span>CWD:</span>
+                            <span class="workspace-path" id="cronWorkspaceDisplay">UNSET</span>
+                        </button>
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label data-i18n="cron.agent">Agent</label>
+                        <select id="cronAgentId" class="form-control"></select>
+                    </div>
+                    <div class="form-group"><label data-i18n="cron.minute">Min</label><input type="text" id="cronMin" class="form-control mono" value="0"></div>
+                    <div class="form-group"><label data-i18n="cron.hour">Hour</label><input type="text" id="cronHour" class="form-control mono" value="9"></div>
+                    <div class="form-group"><label data-i18n="cron.day">Day</label><input type="text" id="cronDay" class="form-control mono" value="*"></div>
+                    <div class="form-group"><label data-i18n="cron.month">Month</label><input type="text" id="cronMonth" class="form-control mono" value="*"></div>
+                    <div class="form-group"><label data-i18n="cron.week">Week</label><input type="text" id="cronWeek" class="form-control mono" value="*"></div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label data-i18n="cron.contentLabel">Execution Content / Script Context</label>
+                        <textarea id="cronContent" class="form-control mono" rows="5" style="resize: vertical; min-height: 100px;" placeholder="# Enter detailed script steps..." data-i18n-placeholder="cron.contentPlaceholder"></textarea>
+                    </div>
+                </div>
+                <div class="form-row" style="justify-content: flex-end; margin-top: 4px; gap: 12px;">
+                    <button class="btn btn-sm btn-secondary" onclick="toggleAddCronPanel()" data-i18n="common.cancel">Cancel</button>
+                    <button class="btn btn-sm send-button" id="cronSubmitBtn" onclick="submitCronTask()" data-i18n="common.save">Save</button>
+                </div>
+            </div>
+
+            <div class="info-card-list" id="cronListContainer"></div>
+        </div>
+
+        <!-- ===== 视图 4: Agent 管理 (AGENT) ===== -->
         <div class="view-container" id="viewAgent">
             <div class="panel-view-header">
                 <h2 class="panel-view-title" data-i18n="agent.viewTitle">Registered Agent Roster</h2>
@@ -185,56 +235,6 @@
             </div>
 
             <div class="info-card-list" id="agentListContainer"></div>
-        </div>
-
-        <!-- ===== 视图 4: 定时任务管理 (CRON) ===== -->
-        <div class="view-container" id="viewCron">
-            <div class="panel-view-header">
-                <h2 class="panel-view-title" data-i18n="cron.viewTitle">Scheduled Cron Processes</h2>
-                <button class="btn btn-sm send-button" onclick="toggleAddCronPanel()" data-i18n="cron.newCron">+ New Cron</button>
-            </div>
-
-            <div class="add-cron-panel" id="addCronPanel" style="display: none;">
-                <div class="form-row">
-                    <div class="form-group">
-                        <label data-i18n="cron.name">Task Name</label>
-                        <input type="text" id="cronName" class="form-control" placeholder="e.g. Daily Market Scraper" data-i18n-placeholder="cron.namePlaceholder">
-                    </div>
-                    <div class="form-group">
-                        <label data-i18n="task.workDir">Working Directory</label>
-                        <button class="workspace-btn" id="cronWorkspaceBtn" onclick="selectCronWorkspace()" style="margin-bottom:0;" title="Set Directory Context" data-i18n-title="input.cwdTitle">
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path>
-                            </svg>
-                            <span>CWD:</span>
-                            <span class="workspace-path" id="cronWorkspaceDisplay">UNSET</span>
-                        </button>
-                    </div>
-                </div>
-                <div class="form-row">
-                    <div class="form-group">
-                        <label data-i18n="cron.agent">Agent</label>
-                        <select id="cronAgentId" class="form-control"></select>
-                    </div>
-                    <div class="form-group"><label data-i18n="cron.minute">Min</label><input type="text" id="cronMin" class="form-control mono" value="0"></div>
-                    <div class="form-group"><label data-i18n="cron.hour">Hour</label><input type="text" id="cronHour" class="form-control mono" value="9"></div>
-                    <div class="form-group"><label data-i18n="cron.day">Day</label><input type="text" id="cronDay" class="form-control mono" value="*"></div>
-                    <div class="form-group"><label data-i18n="cron.month">Month</label><input type="text" id="cronMonth" class="form-control mono" value="*"></div>
-                    <div class="form-group"><label data-i18n="cron.week">Week</label><input type="text" id="cronWeek" class="form-control mono" value="*"></div>
-                </div>
-                <div class="form-row">
-                    <div class="form-group">
-                        <label data-i18n="cron.contentLabel">Execution Content / Script Context</label>
-                        <textarea id="cronContent" class="form-control mono" rows="5" style="resize: vertical; min-height: 100px;" placeholder="# Enter detailed script steps..." data-i18n-placeholder="cron.contentPlaceholder"></textarea>
-                    </div>
-                </div>
-                <div class="form-row" style="justify-content: flex-end; margin-top: 4px; gap: 12px;">
-                    <button class="btn btn-sm btn-secondary" onclick="toggleAddCronPanel()" data-i18n="common.cancel">Cancel</button>
-                    <button class="btn btn-sm send-button" id="cronSubmitBtn" onclick="submitCronTask()" data-i18n="common.save">Save</button>
-                </div>
-            </div>
-
-            <div class="info-card-list" id="cronListContainer"></div>
         </div>
 
         <!-- ===== 视图 5: 系统核心技能 (SKILL) ===== -->
@@ -415,8 +415,8 @@
     <script src="js/dialog.js"></script>
     <script src="js/workspace.js"></script>
     <script src="js/panel_task.js"></script>
-    <script src="js/panel_agent.js"></script>
     <script src="js/panel_cron.js"></script>
+    <script src="js/panel_agent.js"></script>
     <script src="js/panel_skill.js"></script>
     <script src="js/panel_mcp.js"></script>
     <script src="js/panel_provider.js"></script>

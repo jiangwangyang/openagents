@@ -8,7 +8,7 @@ const I18N = {
     en: {
         lang: {toggleTitle: 'Switch Language'},
         sidebar: {newDialog: '+ New Dialog', history: 'History Logs'},
-        nav: {dialog: 'DIALOG', task: 'TASK', agent: 'AGENT', cron: 'CRON', skill: 'SKILL', mcp: 'MCP', config: 'CONFIG'},
+        nav: {dialog: 'DIALOG', task: 'TASK', cron: 'CRON', agent: 'AGENT', skill: 'SKILL', mcp: 'MCP', config: 'CONFIG'},
         header: {newTrace: 'NEW TRACE', switchTheme: 'Switch Theme', coreTask: 'CORE::TASK_PIPELINE', coreCron: 'CORE::SCHEDULE', coreSkill: 'CORE::SKILLS', coreMcp: 'CORE::MCP_ECOSYSTEM', coreAgent: 'CORE::AGENT_ROSTER', coreConfig: 'CORE::CONFIG_CONSOLE'},
         empty: {title: 'Initialize Process', text: 'Start a new conversation or select an existing trace from the sidebar to continue.', hint: 'Press Enter to execute / Shift+Enter for newline'},
         common: {save: 'Save', cancel: 'Cancel', abort: 'Abort', purge: 'Purge', refresh: 'Refresh', start: 'Start', review: 'Review', edit: 'Edit', fetchFailed: 'FETCH FAILED', requiredMissing: 'REQUIRED FIELDS MISSING.', creationFault: 'CREATION FAULT', purgeFailure: 'PURGE FAILURE', syncCrashed: 'SYNC CRASHED', none: 'NONE', inheritedEnv: 'Inherited Environment', description: 'Description'},
@@ -26,7 +26,7 @@ const I18N = {
     zh: {
         lang: {toggleTitle: '切换语言'},
         sidebar: {newDialog: '+ 新建会话', history: '历史会话'},
-        nav: {dialog: '会话', task: '任务', agent: '智能体', cron: '定时', skill: '技能', mcp: 'MCP', config: '配置'},
+        nav: {dialog: '会话', task: '任务', cron: '定时', agent: '智能体', skill: '技能', mcp: 'MCP', config: '配置'},
         header: {newTrace: '新会话', switchTheme: '切换主题', coreTask: '核心：任务流水线', coreCron: '核心：定时排程', coreSkill: '核心：技能清单', coreMcp: '核心：MCP 生态', coreAgent: '核心：智能体名册', coreConfig: '核心：配置控制台'},
         empty: {title: '初始化会话', text: '开始一个新会话，或从侧边栏选择已有会话继续。', hint: '按 Enter 发送 / Shift+Enter 换行'},
         common: {save: '保存', cancel: '取消', abort: '中止', purge: '删除', refresh: '刷新', start: '启动', review: '审核', edit: '编辑', fetchFailed: '加载失败', requiredMissing: '必填字段缺失。', creationFault: '创建失败', purgeFailure: '删除失败', syncCrashed: '同步失败', none: '无', inheritedEnv: '继承环境', description: '描述'},

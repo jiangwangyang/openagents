@@ -219,6 +219,11 @@ function switchView(viewName) {
             document.getElementById('viewCron').classList.add('active');
             conversationInfo.textContent = t('header.coreCron');
             fetchCronTasks();
+        } else if (viewName === 'agent') {
+            document.getElementById('navAgentBtn').classList.add('active');
+            document.getElementById('viewAgent').classList.add('active');
+            conversationInfo.textContent = t('header.coreAgent');
+            fetchAgentRegistry();
         } else if (viewName === 'skill') {
             document.getElementById('navSkillBtn').classList.add('active');
             document.getElementById('viewSkill').classList.add('active');
@@ -229,11 +234,6 @@ function switchView(viewName) {
             document.getElementById('viewMcp').classList.add('active');
             conversationInfo.textContent = t('header.coreMcp');
             fetchMcpRegistry();
-        } else if (viewName === 'agent') {
-            document.getElementById('navAgentBtn').classList.add('active');
-            document.getElementById('viewAgent').classList.add('active');
-            conversationInfo.textContent = t('header.coreAgent');
-            fetchAgentRegistry();
         } else if (viewName === 'config') {
             document.getElementById('navConfigBtn').classList.add('active');
             document.getElementById('viewConfig').classList.add('active');

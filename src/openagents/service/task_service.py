@@ -20,7 +20,7 @@ def start_task(task_id: int, agent_id: int) -> bool:
 
 
 # 后台执行循环：先为首个 agent 创建阶段对话，之后每轮取任务最新对话，有 agent 则交给其执行，无 agent（用户审核对话）或对话已执行过则结束
-# agent 指派下一个 agent 即创建一条 agent_id 为新 agent 的对话（dispatch 工具后续实现），下一轮循环自动接续
+# agent 通过 task handover 工具指派下一个执行者，创建一条 agent_id 为新 agent 的对话，下一轮循环自动接续
 async def run_task(task_id: int, agent_id: int) -> None:
     try:
         # 进入循环前，为第一个执行的 agent 创建阶段对话（task_id 与 agent_id 均不为空）

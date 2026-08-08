@@ -35,7 +35,7 @@ def start_work(conversation_id: int, task_content: str, model_provider_id: int, 
     return True
 
 
-# 启动历史回放查询，不执行模型调用（task_content=None 时 work 在模型调用前结束，模型参数不会被使用）
+# 启动历史回放查询，不执行模型调用（task_content="" 时 work 在模型调用前结束，模型参数不会被使用）
 def start_query(conversation_id: int) -> bool:
     # 同一 conversation 不允许同时运行多个 work 任务
     work_state = _work_state_dict.get(conversation_id)

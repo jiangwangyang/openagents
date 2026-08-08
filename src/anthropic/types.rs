@@ -38,6 +38,7 @@ pub enum ThinkingConfig {
 // ========== 响应消息 ==========
 
 // 完整消息(message_start 事件中的 message)
+#[allow(dead_code)]
 #[derive(Debug, Clone, Deserialize)]
 pub struct Message {
     pub id: String,
@@ -70,6 +71,7 @@ pub enum ContentBlock {
 }
 
 // Token 使用量(message_start 中的 usage)
+#[allow(dead_code)]
 #[derive(Debug, Clone, Deserialize)]
 pub struct Usage {
     pub input_tokens: u64,
@@ -79,6 +81,7 @@ pub struct Usage {
 }
 
 // message_delta 中的 usage
+#[allow(dead_code)]
 #[derive(Debug, Clone, Deserialize)]
 pub struct MessageDeltaUsage {
     pub output_tokens: u64,
@@ -90,6 +93,7 @@ pub struct MessageDeltaUsage {
 // ========== 流事件 ==========
 
 // 流式事件(对应 Python RawMessageStreamEvent)
+#[allow(dead_code)]
 #[derive(Debug, Clone, Deserialize)]
 #[serde(tag = "type")]
 pub enum MessageStreamEvent {
@@ -111,6 +115,7 @@ pub enum MessageStreamEvent {
 }
 
 // message_delta 事件中的 delta
+#[allow(dead_code)]
 #[derive(Debug, Clone, Deserialize)]
 pub struct MessageDelta {
     pub stop_reason: Option<String>,

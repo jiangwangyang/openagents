@@ -3,7 +3,7 @@ use std::collections::HashMap;
 
 use dashmap::DashMap;
 use rmcp::model::{CallToolRequestParams, ClientCapabilities, ClientInfo, Implementation, Tool};
-use rmcp::service::{Peer, RoleClient};
+use rmcp::service::{Peer, RoleClient, RunningService};
 use rmcp::transport::{ConfigureCommandExt, StreamableHttpClientTransport, TokioChildProcess};
 use rmcp::ServiceExt;
 use serde_json::Value;
@@ -24,6 +24,73 @@ pub static MCP_DICT: std::sync::LazyLock<DashMap<String, McpServerInfo>> = std::
 // 存储 RunningService 的句柄，用于保持连接
 static MCP_HANDLES: std::sync::LazyLock<DashMap<String, tokio::task::JoinHandle<()>>> = std::sync::LazyLock::new(DashMap::new);
 
+// 连接 MCP 服务并获取工具列表，返回 peer、工具表与保持连接的服务句柄
+pub async fn connect_mcp_server(
+    protocol_type: &str,
+    url: Option<&str>,
+    headers: Option<&Value>,
+    command: Option<&str>,
+    args: Option<&Value>,
+) -> Result<(Peer<RoleClient>, HashMap<String, Tool>, RunningService<RoleClient, ClientInfo>), String> {
+    // 创建客户端信息
+    let client_info = ClientInfo::new(ClientCapabilities::default(), Implementation::new("openagents", env!("CARGO_PKG_VERSION")));
+
+    // 按协议类型创建 transport
+    let service = match protocol_type {
+        "stdio" => {
+            let command = command.ok_or_else(|| "missing command".to_string())?;
+            let args: Vec<String> = match args {
+                Some(Value::Array(arr)) => arr.iter().filter_map(|v| v.as_str().map(|s| s.to_string())).collect(),
+                _ => Vec::new(),
+            };
+            let mut cmd = tokio::process::Command::new(command);
+            for arg in &args {
+                cmd.arg(arg);
+            }
+            let transport = TokioChildProcess::new(cmd.configure(|_c| {}))
+                .map_err(|e| format!("failed to create stdio transport: {}", e))?;
+            client_info
+                .serve(transport)
+                .await
+                .map_err(|e| format!("failed to connect: {}", e))?
+        }
+        "streamable_http" => {
+            let url = url.ok_or_else(|| "missing url".to_string())?;
+            let mut config = rmcp::transport::streamable_http_client::StreamableHttpClientTransportConfig::with_uri(url);
+            if let Some(Value::Object(headers_map)) = headers {
+                let mut custom_headers = HashMap::new();
+                for (k, v) in headers_map {
+                    if let Some(val_str) = v.as_str() {
+                        if let (Ok(header_name), Ok(header_value)) = (
+                            k.parse::<http::HeaderName>(),
+                            val_str.parse::<http::HeaderValue>(),
+                        ) {
+                            custom_headers.insert(header_name, header_value);
+                        }
+                    }
+                }
+                config = config.custom_headers(custom_headers);
+            }
+            let transport = StreamableHttpClientTransport::from_config(config);
+            client_info
+                .serve(transport)
+                .await
+                .map_err(|e| format!("failed to connect: {}", e))?
+        }
+        _ => return Err(format!("unsupported protocol type: {}", protocol_type)),
+    };
+
+    // 获取工具列表
+    let peer = service.peer().clone();
+    let tools = peer
+        .list_all_tools()
+        .await
+        .map_err(|e| format!("failed to list tools: {}", e))?;
+    let tool_dict: HashMap<String, Tool> = tools.into_iter().map(|t| (t.name.to_string(), t)).collect();
+
+    Ok((peer, tool_dict, service))
+}
+
 // 初始化所有 MCP 客户端
 pub async fn init_mcp_clients(db: &SqlitePool) {
     let servers = match mcp_server_repository::list_mcp_servers(db).await {
@@ -37,114 +104,28 @@ pub async fn init_mcp_clients(db: &SqlitePool) {
     for server in servers {
         let name = server.name.clone();
         let description = server.description.clone();
-        let protocol_type = server.protocol_type.clone();
 
-        match protocol_type.as_str() {
-            "stdio" => {
-                let command = match &server.command {
-                    Some(c) => c.clone(),
-                    None => {
-                        tracing::error!("MCP server {} missing command", name);
-                        continue;
-                    }
-                };
-                let args: Vec<String> = match &server.args {
-                    Some(Value::Array(arr)) => arr.iter().filter_map(|v| v.as_str().map(|s| s.to_string())).collect(),
-                    _ => Vec::new(),
-                };
-
-                let mut cmd = tokio::process::Command::new(&command);
-                for arg in &args {
-                    cmd.arg(arg);
-                }
-
-                match TokioChildProcess::new(cmd.configure(|_c| {})) {
-                    Ok(transport) => {
-                        let client_info = ClientInfo::new(ClientCapabilities::default(), Implementation::new("openagents", env!("CARGO_PKG_VERSION")));
-                        match client_info.serve(transport).await {
-                            Ok(service) => {
-                                let peer = service.peer().clone();
-                                match peer.list_all_tools().await {
-                                    Ok(tools) => {
-                                        let tool_dict: HashMap<String, Tool> = tools.into_iter().map(|t| (t.name.to_string(), t)).collect();
-                                        let count = tool_dict.len();
-                                        MCP_DICT.insert(name.clone(), McpServerInfo { description, peer, tool_dict });
-                                        tracing::info!("MCP client {} started, having {} tools", name, count);
-                                        // 保持 service 运行
-                                        let handle = tokio::spawn(async move {
-                                            let _ = service.waiting().await;
-                                        });
-                                        MCP_HANDLES.insert(name, handle);
-                                    }
-                                    Err(e) => {
-                                        tracing::error!("Failed to list tools for MCP server {}: {}", name, e);
-                                    }
-                                }
-                            }
-                            Err(e) => {
-                                tracing::error!("Failed to connect MCP server {}: {}", name, e);
-                            }
-                        }
-                    }
-                    Err(e) => {
-                        tracing::error!("Failed to create stdio transport for MCP server {}: {}", name, e);
-                    }
-                }
+        match connect_mcp_server(
+            &server.protocol_type,
+            server.url.as_deref(),
+            server.headers.as_ref(),
+            server.command.as_deref(),
+            server.args.as_ref(),
+        )
+        .await
+        {
+            Ok((peer, tool_dict, service)) => {
+                let count = tool_dict.len();
+                MCP_DICT.insert(name.clone(), McpServerInfo { description, peer, tool_dict });
+                tracing::info!("MCP client {} started, having {} tools", name, count);
+                // 保持 service 运行
+                let handle = tokio::spawn(async move {
+                    let _ = service.waiting().await;
+                });
+                MCP_HANDLES.insert(name, handle);
             }
-            "streamable_http" => {
-                let url = match &server.url {
-                    Some(u) => u.clone(),
-                    None => {
-                        tracing::error!("MCP server {} missing url", name);
-                        continue;
-                    }
-                };
-
-                let mut config = rmcp::transport::streamable_http_client::StreamableHttpClientTransportConfig::with_uri(url.as_str());
-                if let Some(Value::Object(headers_map)) = &server.headers {
-                    let mut custom_headers = HashMap::new();
-                    for (k, v) in headers_map {
-                        if let Some(val_str) = v.as_str() {
-                            if let (Ok(header_name), Ok(header_value)) = (
-                                k.parse::<http::HeaderName>(),
-                                val_str.parse::<http::HeaderValue>(),
-                            ) {
-                                custom_headers.insert(header_name, header_value);
-                            }
-                        }
-                    }
-                    config = config.custom_headers(custom_headers);
-                }
-
-                let transport = StreamableHttpClientTransport::from_config(config);
-                let client_info = ClientInfo::new(ClientCapabilities::default(), Implementation::new("openagents", env!("CARGO_PKG_VERSION")));
-                match client_info.serve(transport).await {
-                    Ok(service) => {
-                        let peer = service.peer().clone();
-                        match peer.list_all_tools().await {
-                            Ok(tools) => {
-                                let tool_dict: HashMap<String, Tool> = tools.into_iter().map(|t| (t.name.to_string(), t)).collect();
-                                let count = tool_dict.len();
-                                MCP_DICT.insert(name.clone(), McpServerInfo { description, peer, tool_dict });
-                                tracing::info!("MCP client {} started, having {} tools", name, count);
-                                // 保持 service 运行
-                                let handle = tokio::spawn(async move {
-                                    let _ = service.waiting().await;
-                                });
-                                MCP_HANDLES.insert(name, handle);
-                            }
-                            Err(e) => {
-                                tracing::error!("Failed to list tools for MCP server {}: {}", name, e);
-                            }
-                        }
-                    }
-                    Err(e) => {
-                        tracing::error!("Failed to connect MCP server {}: {}", name, e);
-                    }
-                }
-            }
-            _ => {
-                tracing::warn!("Unsupported MCP protocol type: {}", protocol_type);
+            Err(e) => {
+                tracing::error!("Failed to start MCP client {}: {}", name, e);
             }
         }
     }

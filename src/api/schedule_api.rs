@@ -50,9 +50,9 @@ pub async fn get_schedule(State(state): State<AppState>, Path(schedule_id): Path
     })))
 }
 
-// 新增定时任务请求体
+// 定时任务新增/更新请求体（新增时 enabled 字段忽略，默认启用）
 #[derive(Debug, Deserialize)]
-pub struct AddScheduleRequest {
+pub struct ScheduleRequest {
     pub name: String,
     pub content: String,
     pub work_dir: String,
@@ -63,33 +63,23 @@ pub struct AddScheduleRequest {
     pub day_of_week: String,
     pub second: String,
     pub agent_id: i64,
+    #[serde(default = "default_true")]
+    pub enabled: bool,
+}
+
+fn default_true() -> bool {
+    true
 }
 
 // 新增定时任务接口，返回自增 id
-pub async fn add_schedule(State(state): State<AppState>, Json(req): Json<AddScheduleRequest>) -> Result<Json<i64>, AppError> {
+pub async fn add_schedule(State(state): State<AppState>, Json(req): Json<ScheduleRequest>) -> Result<Json<i64>, AppError> {
     let cron_expr = format!("{} {} {} {} {} {}", req.second, req.minute, req.hour, req.day, req.month, req.day_of_week);
     let id = schedule_service::add_schedule(&state.db, &state.conversations, &req.name, &req.content, &req.work_dir, &cron_expr, req.agent_id).await?;
     Ok(Json(id))
 }
 
-// 更新定时任务请求体
-#[derive(Debug, Deserialize)]
-pub struct UpdateScheduleRequest {
-    pub name: String,
-    pub content: String,
-    pub work_dir: String,
-    pub minute: String,
-    pub hour: String,
-    pub day: String,
-    pub month: String,
-    pub day_of_week: String,
-    pub second: String,
-    pub agent_id: i64,
-    pub enabled: bool,
-}
-
 // 按 id 更新定时任务，不存在返回 404
-pub async fn update_schedule(State(state): State<AppState>, Path(schedule_id): Path<i64>, Json(req): Json<UpdateScheduleRequest>) -> Result<(), AppError> {
+pub async fn update_schedule(State(state): State<AppState>, Path(schedule_id): Path<i64>, Json(req): Json<ScheduleRequest>) -> Result<(), AppError> {
     let cron_expr = format!("{} {} {} {} {} {}", req.second, req.minute, req.hour, req.day, req.month, req.day_of_week);
     let updated = schedule_service::update_schedule(&state.db, &state.conversations, schedule_id, &req.name, &req.content, &req.work_dir, &cron_expr, req.agent_id, req.enabled).await?;
     if !updated {

@@ -3,6 +3,7 @@ use serde::Serialize;
 use std::path::PathBuf;
 
 use super::ToolResult;
+use crate::config;
 
 // Skill 数据结构
 #[derive(Debug, Clone, Serialize)]
@@ -18,9 +19,7 @@ static SKILLS: std::sync::RwLock<Vec<SkillInfo>> = std::sync::RwLock::new(Vec::n
 
 // Skill 读取目录
 fn skills_dir_list() -> Vec<PathBuf> {
-    let home = std::env::var("HOME")
-        .or_else(|_| std::env::var("USERPROFILE"))
-        .unwrap_or_else(|_| ".".to_string());
+    let home = config::home_dir();
     vec![
         PathBuf::from(&home).join(".openagents").join("skills"),
         PathBuf::from(&home).join(".agents").join("skills"),

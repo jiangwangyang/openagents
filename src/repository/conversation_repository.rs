@@ -1,12 +1,15 @@
 // 对话 CRUD
 use sqlx::SqlitePool;
 
-use super::entity::{ConversationEntity, ConversationWithMessages, MessageEntity};
+use super::entity::{
+    ConversationEntity, ConversationHistorySummary, ConversationWithMessages,
+    LatestConversationState, MessageEntity,
+};
 
-// 查询全部对话，按更新时间倒序
+// 查询全部独立对话(不含任务中的阶段对话)，按更新时间倒序
 pub async fn get_conversations(pool: &SqlitePool) -> Result<Vec<ConversationEntity>, sqlx::Error> {
     sqlx::query_as::<_, ConversationEntity>(
-        "SELECT id, task_id, agent_id, title, work_dir, system_prompt, create_time, update_time FROM t_conversation ORDER BY update_time DESC",
+        "SELECT id, task_id, agent_id, title, work_dir, system_prompt, create_time, update_time FROM t_conversation WHERE task_id IS NULL ORDER BY update_time DESC",
     )
     .fetch_all(pool)
     .await
@@ -30,14 +33,7 @@ pub async fn get_conversation(pool: &SqlitePool, conversation_id: i64) -> Result
             .fetch_all(pool)
             .await?;
             Ok(Some(ConversationWithMessages {
-                id: c.id,
-                task_id: c.task_id,
-                agent_id: c.agent_id,
-                title: c.title,
-                work_dir: c.work_dir,
-                system_prompt: c.system_prompt,
-                create_time: c.create_time,
-                update_time: c.update_time,
+                conversation: c,
                 messages,
             }))
         }
@@ -89,6 +85,26 @@ pub async fn add_conversation_messages(pool: &SqlitePool, conversation_id: i64, 
         .await?;
     tx.commit().await?;
     Ok(())
+}
+
+// 查询任务最新一条阶段对话的状态(id、执行 Agent、是否有消息)
+pub async fn get_latest_task_conversation_state(pool: &SqlitePool, task_id: i64) -> Result<Option<LatestConversationState>, sqlx::Error> {
+    sqlx::query_as::<_, LatestConversationState>(
+        "SELECT c.id, c.agent_id, EXISTS(SELECT 1 FROM t_message m WHERE m.conversation_id = c.id) AS has_messages FROM t_conversation c WHERE c.task_id = ? ORDER BY c.id DESC LIMIT 1",
+    )
+    .bind(task_id)
+    .fetch_optional(pool)
+    .await
+}
+
+// 查询任务各阶段对话的历史摘要(执行 Agent 名称与最后一条消息内容)，按对话 id 升序
+pub async fn list_task_conversation_history(pool: &SqlitePool, task_id: i64) -> Result<Vec<ConversationHistorySummary>, sqlx::Error> {
+    sqlx::query_as::<_, ConversationHistorySummary>(
+        "SELECT a.name AS agent_name, m.content AS last_content FROM t_conversation c LEFT JOIN t_agent a ON a.id = c.agent_id LEFT JOIN t_message m ON m.id = (SELECT MAX(id) FROM t_message WHERE conversation_id = c.id) WHERE c.task_id = ? ORDER BY c.id",
+    )
+    .bind(task_id)
+    .fetch_all(pool)
+    .await
 }
 
 // 删除对话，消息由数据库外键 ON DELETE CASCADE 级联删除

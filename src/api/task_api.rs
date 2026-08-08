@@ -25,6 +25,7 @@ pub async fn get_task(State(state): State<AppState>, Path(task_id): Path<i64>) -
     };
 
     let conversations: Vec<serde_json::Value> = task.conversations.iter().map(|conv| {
+        let c = &conv.conversation;
         let messages: Vec<serde_json::Value> = conv.messages.iter().map(|msg| {
             json!({
                 "id": msg.id,
@@ -34,25 +35,26 @@ pub async fn get_task(State(state): State<AppState>, Path(task_id): Path<i64>) -
             })
         }).collect();
         json!({
-            "id": conv.id,
-            "task_id": conv.task_id,
-            "agent_id": conv.agent_id,
-            "title": conv.title,
-            "work_dir": conv.work_dir,
-            "create_time": conv.create_time,
-            "update_time": conv.update_time,
+            "id": c.id,
+            "task_id": c.task_id,
+            "agent_id": c.agent_id,
+            "title": c.title,
+            "work_dir": c.work_dir,
+            "create_time": c.create_time,
+            "update_time": c.update_time,
             "messages": messages,
         })
     }).collect();
 
+    let t = &task.task;
     Ok(Json(json!({
-        "id": task.id,
-        "title": task.title,
-        "content": task.content,
-        "agent_ids": task.agent_ids,
-        "work_dir": task.work_dir,
-        "create_time": task.create_time,
-        "update_time": task.update_time,
+        "id": t.id,
+        "title": t.title,
+        "content": t.content,
+        "agent_ids": t.agent_ids,
+        "work_dir": t.work_dir,
+        "create_time": t.create_time,
+        "update_time": t.update_time,
         "conversations": conversations,
     })))
 }

@@ -1,7 +1,7 @@
-use dashmap::DashMap;
-use serde_json::json;
-use sqlx::SqlitePool;
 // 多 Agent 执行循环
+use dashmap::DashMap;
+use serde_json::{json, Value};
+use sqlx::SqlitePool;
 use std::sync::Arc;
 use tokio::sync::RwLock;
 use tokio::task::JoinHandle;
@@ -56,7 +56,7 @@ async fn do_run_task(
     conversations: &Arc<DashMap<i64, Arc<RwLock<ConversationState>>>>,
 ) -> anyhow::Result<()> {
     // 为第一个执行的 agent 创建阶段对话
-    let task = task_repository::get_task(db, task_id).await?;
+    let task = task_repository::get_task_entity(db, task_id).await?;
     let agent = agent_repository::get_agent(db, agent_id).await?;
     let (task, agent) = match (task, agent) {
         (Some(t), Some(a)) => (t, a),
@@ -64,25 +64,29 @@ async fn do_run_task(
     };
     conversation_repository::add_conversation(
         db,
-        &format!("{}-{}", task.title, agent.name),
+        &format!("{}-{}", task.title, agent.agent.name),
         &task.work_dir,
-        &agent.prompt,
+        &agent.agent.prompt,
         Some(task_id),
         Some(agent_id),
     )
         .await?;
 
     loop {
-        // 每轮重新查询任务,取最新一条对话
-        let task = task_repository::get_task(db, task_id).await?;
+        // 每轮重新查询任务基本字段与最新阶段对话状态
+        let task = task_repository::get_task_entity(db, task_id).await?;
         let task = match task {
-            Some(t) if !t.conversations.is_empty() => t,
-            _ => return Ok(()),
+            Some(t) => t,
+            None => return Ok(()),
         };
-        let conversation = task.conversations.last().unwrap();
+        let latest = conversation_repository::get_latest_task_conversation_state(db, task_id).await?;
+        let latest = match latest {
+            Some(l) => l,
+            None => return Ok(()),
+        };
 
         // 最新的 agent 对话有消息(说明对话没有交接，则默认交接给用户),即创建一个无 agent 的用户对话并结束循环
-        if !conversation.messages.is_empty() && conversation.agent_id.is_some() {
+        if latest.has_messages && latest.agent_id.is_some() {
             conversation_repository::add_conversation(
                 db,
                 &format!("{}-User", task.title),
@@ -96,8 +100,19 @@ async fn do_run_task(
         }
 
         // 最新对话无 agent(用户审核阶段),结束循环
-        if conversation.agent_id.is_none() {
-            return Ok(());
+        let latest_agent_id = match latest.agent_id {
+            Some(id) => id,
+            None => return Ok(()),
+        };
+
+        // 模型配置从当前对话的 Agent 读取
+        let agent = agent_repository::get_agent(db, latest_agent_id)
+            .await?
+            .ok_or_else(|| anyhow::anyhow!("agent not found"))?;
+        let provider = agent.model_provider.as_ref()
+            .ok_or_else(|| anyhow::anyhow!("model provider not configured"))?;
+        if agent.agent.model.is_empty() {
+            anyhow::bail!("model not configured");
         }
 
         // 拼接各阶段对话的最后一条消息
@@ -112,18 +127,20 @@ async fn do_run_task(
         let task_agent_ids: Vec<i64> = task.agent_ids.as_array()
             .map(|arr| arr.iter().filter_map(|v| v.as_i64()).collect())
             .unwrap_or_default();
-        let team_agents: Vec<_> = all_agents.iter().filter(|a| task_agent_ids.contains(&a.id)).collect();
-        let team_json: Vec<Value> = team_agents.iter().map(|a| json!({"id": a.id, "name": a.name, "description": a.description})).collect();
+        let team_agents: Vec<_> = all_agents.iter().filter(|a| task_agent_ids.contains(&a.agent.id)).collect();
+        let team_json: Vec<Value> = team_agents.iter().map(|a| json!({"id": a.agent.id, "name": a.agent.name, "description": a.agent.description})).collect();
         task_content_list.push(format!("# Team\n{}", serde_json::to_string(&team_json)?));
 
         task_content_list.push("# History".to_string());
-        for history_conversation in &task.conversations {
-            if history_conversation.messages.is_empty() {
-                continue;
-            }
-            let name = history_conversation.agent.as_ref().map(|a| a.name.as_str()).unwrap_or("User");
-            let last_msg = history_conversation.messages.last().unwrap();
-            let text = match &last_msg.content {
+        let history = conversation_repository::list_task_conversation_history(db, task_id).await?;
+        for item in &history {
+            // 无消息的阶段对话不参与历史
+            let last_content = match &item.last_content {
+                Some(c) => c,
+                None => continue,
+            };
+            let name = item.agent_name.as_deref().unwrap_or("User");
+            let text = match last_content {
                 Value::String(s) => s.clone(),
                 Value::Array(arr) => {
                     arr.last()
@@ -137,21 +154,12 @@ async fn do_run_task(
         }
         let task_content = task_content_list.join("\n\n");
 
-        // 模型配置从当前对话的 Agent 读取
-        let agent = conversation.agent.as_ref()
-            .ok_or_else(|| anyhow::anyhow!("agent not found"))?;
-        let provider = agent.model_provider.as_ref()
-            .ok_or_else(|| anyhow::anyhow!("model provider not configured"))?;
-        if agent.model.is_empty() {
-            anyhow::bail!("model not configured");
-        }
-
         // 触发对话执行并等待完成
-        if !conversation_service::start_conversation(conversation.id, task_content, provider.id, agent.model.clone(), agent.thinking, conversations, db).await {
+        if !conversation_service::start_conversation(latest.id, task_content, provider.id, agent.agent.model.clone(), agent.agent.thinking, conversations, db).await {
             return Ok(());
         }
         // 等待对话完成
-        if let Some(state) = conversation_service::get_conversation_state(conversation.id, conversations) {
+        if let Some(state) = conversation_service::get_conversation_state(latest.id, conversations) {
             loop {
                 {
                     let s = state.read().await;
@@ -164,5 +172,3 @@ async fn do_run_task(
         }
     }
 }
-
-use serde_json::Value;

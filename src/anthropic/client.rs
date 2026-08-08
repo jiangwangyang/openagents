@@ -16,6 +16,9 @@ pub struct AnthropicClient {
 // 流式响应类型
 pub type EventStream = Pin<Box<dyn Stream<Item = Result<MessageStreamEvent, AnthropicError>> + Send>>;
 
+// 共享 HTTP 客户端(内部为 Arc，克隆仅复制引用，全应用复用同一连接池)
+static HTTP_CLIENT: std::sync::LazyLock<Client> = std::sync::LazyLock::new(Client::new);
+
 // Anthropic 客户端错误
 #[derive(Debug, thiserror::Error)]
 pub enum AnthropicError {
@@ -35,7 +38,7 @@ impl AnthropicClient {
         Self {
             base_url: base_url.trim_end_matches('/').to_string(),
             api_key: api_key.to_string(),
-            http: Client::new(),
+            http: HTTP_CLIENT.clone(),
         }
     }
 

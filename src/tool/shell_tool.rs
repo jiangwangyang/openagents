@@ -20,10 +20,7 @@ pub async fn setup_powershell_utf8() {
         return;
     }
 
-    let home_dir = match std::env::var("USERPROFILE") {
-        Ok(dir) => dir,
-        Err(_) => return,
-    };
+    let home_dir = crate::config::home_dir();
 
     // 配置 Windows PowerShell 5.1 输出编码
     let profile_path = std::path::Path::new(&home_dir)

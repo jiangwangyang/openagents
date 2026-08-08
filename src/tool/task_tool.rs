@@ -28,11 +28,11 @@ pub async fn execute(cmd_and_args: &[String], task_id: Option<i64>, db: &SqliteP
     }
 
     // 新对话的 work_dir 取任务的工作目录
-    let work_dir = &task.work_dir;
+    let work_dir = &task.task.work_dir;
 
     // 移交给用户: 创建 agent_id 为 None 的用户审核对话
     if cmd_and_args[2] == "user" {
-        let title = format!("{}-User", task.title);
+        let title = format!("{}-User", task.task.title);
         match conversation_repository::add_conversation(db, &title, work_dir, "", Some(task_id), None).await {
             Ok(_) => ("Task handed over to the user, please summarize the current progress".to_string(), false),
             Err(e) => (format!("Failed to create conversation: {}", e), true),
@@ -51,7 +51,7 @@ pub async fn execute(cmd_and_args: &[String], task_id: Option<i64>, db: &SqliteP
         };
 
         // 检查 agent 是否在任务团队中
-        let agent_ids: Vec<i64> = match task.agent_ids.as_array() {
+        let agent_ids: Vec<i64> = match task.task.agent_ids.as_array() {
             Some(arr) => arr.iter().filter_map(|v| v.as_i64()).collect(),
             None => Vec::new(),
         };
@@ -60,9 +60,9 @@ pub async fn execute(cmd_and_args: &[String], task_id: Option<i64>, db: &SqliteP
             return (format!("Agent not found in task team: {}", agent_id), true);
         }
 
-        let title = format!("{}-{}", task.title, agent.name);
-        match conversation_repository::add_conversation(db, &title, work_dir, &agent.prompt, Some(task_id), Some(agent_id)).await {
-            Ok(_) => (format!("Task handed over to agent {}, please summarize the current progress", agent.name), false),
+        let title = format!("{}-{}", task.task.title, agent.agent.name);
+        match conversation_repository::add_conversation(db, &title, work_dir, &agent.agent.prompt, Some(task_id), Some(agent_id)).await {
+            Ok(_) => (format!("Task handed over to agent {}, please summarize the current progress", agent.agent.name), false),
             Err(e) => (format!("Failed to create conversation: {}", e), true),
         }
     }

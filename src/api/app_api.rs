@@ -6,6 +6,7 @@ use rust_embed::Embed;
 use serde::Deserialize;
 use serde_json::json;
 
+use crate::config;
 use crate::error::AppError;
 
 // 嵌入静态资源
@@ -58,7 +59,7 @@ pub struct DirListQuery {
 // GET /dir/list 列出指定路径下的子目录
 pub async fn list_directory(Query(query): Query<DirListQuery>) -> Result<impl IntoResponse, AppError> {
     let path = if query.path.is_empty() {
-        std::path::PathBuf::from("/tmp")
+        std::path::PathBuf::from(config::home_dir())
     } else {
         std::path::PathBuf::from(&query.path)
     };

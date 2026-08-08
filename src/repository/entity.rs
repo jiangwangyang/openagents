@@ -30,15 +30,8 @@ pub struct AgentEntity {
 // Agent 查询结果(含关联的 ModelProvider)
 #[derive(Debug, Clone, serde::Serialize)]
 pub struct AgentWithProvider {
-    pub id: i64,
-    pub name: String,
-    pub description: String,
-    pub prompt: String,
-    pub model_provider_id: i64,
-    pub model: String,
-    pub thinking: bool,
-    pub create_time: String,
-    pub update_time: String,
+    #[serde(flatten)]
+    pub agent: AgentEntity,
     pub model_provider: Option<ModelProviderEntity>,
 }
 
@@ -84,43 +77,41 @@ pub struct MessageEntity {
 // 对话查询结果(含消息列表)
 #[derive(Debug, Clone, serde::Serialize)]
 pub struct ConversationWithMessages {
-    pub id: i64,
-    pub task_id: Option<i64>,
-    pub agent_id: Option<i64>,
-    pub title: String,
-    pub work_dir: String,
-    pub system_prompt: String,
-    pub create_time: String,
-    pub update_time: String,
+    #[serde(flatten)]
+    pub conversation: ConversationEntity,
     pub messages: Vec<MessageEntity>,
-}
-
-// 任务查询结果(含阶段对话)
-#[derive(Debug, Clone, serde::Serialize)]
-pub struct TaskWithConversations {
-    pub id: i64,
-    pub title: String,
-    pub content: String,
-    pub agent_ids: serde_json::Value,
-    pub work_dir: String,
-    pub create_time: String,
-    pub update_time: String,
-    pub conversations: Vec<ConversationWithMessagesAndAgent>,
 }
 
 // 阶段对话(含消息与执行 Agent)
 #[derive(Debug, Clone, serde::Serialize)]
 pub struct ConversationWithMessagesAndAgent {
-    pub id: i64,
-    pub task_id: Option<i64>,
-    pub agent_id: Option<i64>,
-    pub title: String,
-    pub work_dir: String,
-    pub system_prompt: String,
-    pub create_time: String,
-    pub update_time: String,
+    #[serde(flatten)]
+    pub conversation: ConversationEntity,
     pub messages: Vec<MessageEntity>,
     pub agent: Option<AgentWithProvider>,
+}
+
+// 任务查询结果(含阶段对话)
+#[derive(Debug, Clone, serde::Serialize)]
+pub struct TaskWithConversations {
+    #[serde(flatten)]
+    pub task: TaskEntity,
+    pub conversations: Vec<ConversationWithMessagesAndAgent>,
+}
+
+// 任务循环查询结果: 最新阶段对话状态
+#[derive(Debug, Clone, FromRow)]
+pub struct LatestConversationState {
+    pub id: i64,
+    pub agent_id: Option<i64>,
+    pub has_messages: bool,
+}
+
+// 任务循环查询结果: 阶段对话历史摘要(执行 Agent 名称 + 最后一条消息内容)
+#[derive(Debug, Clone, FromRow)]
+pub struct ConversationHistorySummary {
+    pub agent_name: Option<String>,
+    pub last_content: Option<serde_json::Value>,
 }
 
 // 定时任务

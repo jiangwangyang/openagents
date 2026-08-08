@@ -90,7 +90,7 @@ async fn execute_schedule(schedule_id: i64, db: &SqlitePool, conversations: &Arc
         db,
         &format!("[定时] {}", schedule.name),
         &schedule.work_dir,
-        &agent.prompt,
+        &agent.agent.prompt,
         None,
         Some(schedule.agent_id),
     )
@@ -101,8 +101,8 @@ async fn execute_schedule(schedule_id: i64, db: &SqlitePool, conversations: &Arc
         conversation_id,
         schedule.content.clone(),
         provider.id,
-        agent.model.clone(),
-        agent.thinking,
+        agent.agent.model.clone(),
+        agent.agent.thinking,
         conversations,
         db,
     )

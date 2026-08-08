@@ -1,6 +1,7 @@
 // agent loop + 流式状态发布
 use std::sync::Arc;
 use dashmap::DashMap;
+use futures_util::StreamExt;
 use serde_json::{json, Value};
 use sqlx::SqlitePool;
 use tokio::sync::RwLock;
@@ -187,15 +188,17 @@ async fn do_run_conversation(
     }
 
     // 模型调用数据
-    let provider = model_provider_repository::get_model_provider(db, model_provider_id).await?;
-    let base_url = provider.as_ref().map(|p| p.base_url.as_str()).unwrap_or("");
-    let api_key = provider.as_ref().map(|p| p.api_key.as_str()).unwrap_or("");
+    let provider = model_provider_repository::get_model_provider(db, model_provider_id)
+        .await?
+        .ok_or_else(|| anyhow::anyhow!("model provider not found"))?;
+    let base_url = provider.base_url.as_str();
+    let api_key = provider.api_key.as_str();
     let thinking_config = if thinking {
         ThinkingConfig::Enabled { display: "summarized".to_string() }
     } else {
         ThinkingConfig::Disabled
     };
-    let system_prompt = conversation.system_prompt.clone();
+    let system_prompt = conversation.conversation.system_prompt.clone();
     let tools = tool::list_tools();
     let tools_json: Vec<Value> = tools.iter().map(|t| serde_json::to_value(t).unwrap_or_default()).collect();
 
@@ -229,7 +232,6 @@ async fn do_run_conversation(
         let mut assistant_msg: Option<Value> = None;
         let mut input_json = String::new();
 
-        use futures_util::StreamExt;
         while let Some(event_result) = stream.next().await {
             let event = event_result.map_err(|e| anyhow::anyhow!("stream error: {}", e))?;
             match event {
@@ -269,13 +271,15 @@ async fn do_run_conversation(
                                 json!({"type": "redacted_thinking", "data": data})
                             }
                         };
-                        msg["content"].as_array_mut().unwrap().push(block_json);
+                        if let Some(content) = msg["content"].as_array_mut() {
+                            content.push(block_json);
+                        }
                     }
                 }
                 MessageStreamEvent::ContentBlockDelta { delta, .. } => {
                     if let Some(ref mut msg) = assistant_msg {
-                        let content = msg["content"].as_array_mut().unwrap();
-                        if let Some(last) = content.last_mut() {
+                        let content = msg["content"].as_array_mut();
+                        if let Some(last) = content.and_then(|c| c.last_mut()) {
                             match delta {
                                 ContentBlockDelta::ThinkingDelta { thinking } => {
                                     last["thinking"] = json!(last["thinking"].as_str().unwrap_or("").to_string() + &thinking);
@@ -298,8 +302,8 @@ async fn do_run_conversation(
                 }
                 MessageStreamEvent::ContentBlockStop { .. } => {
                     if let Some(ref mut msg) = assistant_msg {
-                        let content = msg["content"].as_array_mut().unwrap();
-                        if let Some(last) = content.last_mut() {
+                        let content = msg["content"].as_array_mut();
+                        if let Some(last) = content.and_then(|c| c.last_mut()) {
                             if last["type"].as_str() == Some("tool_use") {
                                 match serde_json::from_str::<Value>(&input_json) {
                                     Ok(parsed) => last["input"] = parsed,
@@ -373,8 +377,8 @@ async fn do_run_conversation(
             let tool_use_id = tool_use["id"].as_str().unwrap_or("");
             let ctx = ToolContext {
                 db: db.clone(),
-                work_dir: conversation.work_dir.clone(),
-                task_id: conversation.task_id,
+                work_dir: conversation.conversation.work_dir.clone(),
+                task_id: conversation.conversation.task_id,
             };
             let (tool_content, is_error) = tool::execute_tool(tool_name, tool_input, &ctx).await;
             tool_result_content.push(json!({

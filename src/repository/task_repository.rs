@@ -1,9 +1,10 @@
 // 任务 CRUD
 use sqlx::SqlitePool;
 
+use super::agent_repository;
 use super::entity::{
-    AgentEntity, AgentWithProvider, ConversationEntity, ConversationWithMessagesAndAgent,
-    MessageEntity, ModelProviderEntity, TaskEntity, TaskWithConversations,
+    ConversationEntity, ConversationWithMessagesAndAgent, MessageEntity, TaskEntity,
+    TaskWithConversations,
 };
 
 // 查询全部任务，按 id 升序
@@ -12,6 +13,16 @@ pub async fn list_tasks(pool: &SqlitePool) -> Result<Vec<TaskEntity>, sqlx::Erro
         "SELECT id, title, content, agent_ids, work_dir, create_time, update_time FROM t_task ORDER BY id",
     )
     .fetch_all(pool)
+    .await
+}
+
+// 按 id 查询任务基本字段
+pub async fn get_task_entity(pool: &SqlitePool, task_id: i64) -> Result<Option<TaskEntity>, sqlx::Error> {
+    sqlx::query_as::<_, TaskEntity>(
+        "SELECT id, title, content, agent_ids, work_dir, create_time, update_time FROM t_task WHERE id = ?",
+    )
+    .bind(task_id)
+    .fetch_optional(pool)
     .await
 }
 
@@ -49,62 +60,19 @@ pub async fn get_task(pool: &SqlitePool, task_id: i64) -> Result<Option<TaskWith
 
         // 查询关联的 Agent(含 ModelProvider)
         let agent = match conv.agent_id {
-            Some(aid) => {
-                let agent_row = sqlx::query_as::<_, AgentEntity>(
-                    "SELECT id, name, description, prompt, model_provider_id, model, thinking, create_time, update_time FROM t_agent WHERE id = ?",
-                )
-                .bind(aid)
-                .fetch_optional(pool)
-                .await?;
-                match agent_row {
-                    Some(a) => {
-                        let provider = sqlx::query_as::<_, ModelProviderEntity>(
-                            "SELECT id, name, protocol_type, base_url, api_key, create_time, update_time FROM t_model_provider WHERE id = ?",
-                        )
-                        .bind(a.model_provider_id)
-                        .fetch_optional(pool)
-                        .await?;
-                        Some(AgentWithProvider {
-                            id: a.id,
-                            name: a.name,
-                            description: a.description,
-                            prompt: a.prompt,
-                            model_provider_id: a.model_provider_id,
-                            model: a.model,
-                            thinking: a.thinking,
-                            create_time: a.create_time,
-                            update_time: a.update_time,
-                            model_provider: provider,
-                        })
-                    }
-                    None => None,
-                }
-            }
+            Some(aid) => agent_repository::get_agent(pool, aid).await?,
             None => None,
         };
 
         conv_results.push(ConversationWithMessagesAndAgent {
-            id: conv.id,
-            task_id: conv.task_id,
-            agent_id: conv.agent_id,
-            title: conv.title,
-            work_dir: conv.work_dir,
-            system_prompt: conv.system_prompt,
-            create_time: conv.create_time,
-            update_time: conv.update_time,
+            conversation: conv,
             messages,
             agent,
         });
     }
 
     Ok(Some(TaskWithConversations {
-        id: task.id,
-        title: task.title,
-        content: task.content,
-        agent_ids: task.agent_ids,
-        work_dir: task.work_dir,
-        create_time: task.create_time,
-        update_time: task.update_time,
+        task,
         conversations: conv_results,
     }))
 }

@@ -3,36 +3,40 @@ use sqlx::SqlitePool;
 
 use super::entity::{AgentEntity, AgentWithProvider, ModelProviderEntity};
 
-// 查询全部 Agent，按 id 升序，关联查询模型提供商
+// 按 id 查询模型提供商
+async fn fetch_provider(pool: &SqlitePool, model_provider_id: i64) -> Result<Option<ModelProviderEntity>, sqlx::Error> {
+    sqlx::query_as::<_, ModelProviderEntity>(
+        "SELECT id, name, protocol_type, base_url, api_key, create_time, update_time FROM t_model_provider WHERE id = ?",
+    )
+    .bind(model_provider_id)
+    .fetch_optional(pool)
+    .await
+}
+
+// 查询全部 Agent，按 id 升序，关联查询模型提供商(两次查询 + 内存关联，避免 N+1)
 pub async fn list_agents(pool: &SqlitePool) -> Result<Vec<AgentWithProvider>, sqlx::Error> {
     let agents = sqlx::query_as::<_, AgentEntity>(
         "SELECT id, name, description, prompt, model_provider_id, model, thinking, create_time, update_time FROM t_agent ORDER BY id",
     )
     .fetch_all(pool)
     .await?;
+    let providers = sqlx::query_as::<_, ModelProviderEntity>(
+        "SELECT id, name, protocol_type, base_url, api_key, create_time, update_time FROM t_model_provider",
+    )
+    .fetch_all(pool)
+    .await?;
+    let provider_map: std::collections::HashMap<i64, ModelProviderEntity> = providers.into_iter().map(|p| (p.id, p)).collect();
 
-    let mut result = Vec::with_capacity(agents.len());
-    for agent in agents {
-        let provider = sqlx::query_as::<_, ModelProviderEntity>(
-            "SELECT id, name, protocol_type, base_url, api_key, create_time, update_time FROM t_model_provider WHERE id = ?",
-        )
-        .bind(agent.model_provider_id)
-        .fetch_optional(pool)
-        .await?;
-        result.push(AgentWithProvider {
-            id: agent.id,
-            name: agent.name,
-            description: agent.description,
-            prompt: agent.prompt,
-            model_provider_id: agent.model_provider_id,
-            model: agent.model,
-            thinking: agent.thinking,
-            create_time: agent.create_time,
-            update_time: agent.update_time,
-            model_provider: provider,
-        });
-    }
-    Ok(result)
+    Ok(agents
+        .into_iter()
+        .map(|agent| {
+            let provider = provider_map.get(&agent.model_provider_id).cloned();
+            AgentWithProvider {
+                agent,
+                model_provider: provider,
+            }
+        })
+        .collect())
 }
 
 // 按 id 查询 Agent，关联查询模型提供商
@@ -46,22 +50,9 @@ pub async fn get_agent(pool: &SqlitePool, agent_id: i64) -> Result<Option<AgentW
 
     match agent {
         Some(agent) => {
-            let provider = sqlx::query_as::<_, ModelProviderEntity>(
-                "SELECT id, name, protocol_type, base_url, api_key, create_time, update_time FROM t_model_provider WHERE id = ?",
-            )
-            .bind(agent.model_provider_id)
-            .fetch_optional(pool)
-            .await?;
+            let provider = fetch_provider(pool, agent.model_provider_id).await?;
             Ok(Some(AgentWithProvider {
-                id: agent.id,
-                name: agent.name,
-                description: agent.description,
-                prompt: agent.prompt,
-                model_provider_id: agent.model_provider_id,
-                model: agent.model,
-                thinking: agent.thinking,
-                create_time: agent.create_time,
-                update_time: agent.update_time,
+                agent,
                 model_provider: provider,
             }))
         }

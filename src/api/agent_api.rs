@@ -23,9 +23,9 @@ pub async fn get_agent(State(state): State<AppState>, Path(agent_id): Path<i64>)
     }
 }
 
-// 新增 Agent 请求体
+// Agent 新增/更新请求体
 #[derive(Debug, Deserialize)]
-pub struct AddAgentRequest {
+pub struct AgentRequest {
     pub name: String,
     pub description: String,
     pub prompt: String,
@@ -41,26 +41,13 @@ fn default_true() -> bool {
 }
 
 // 新增 Agent，返回自增 id
-pub async fn add_agent(State(state): State<AppState>, Json(req): Json<AddAgentRequest>) -> Result<Json<i64>, AppError> {
+pub async fn add_agent(State(state): State<AppState>, Json(req): Json<AgentRequest>) -> Result<Json<i64>, AppError> {
     let id = agent_repository::add_agent(&state.db, &req.name, &req.description, &req.prompt, req.model_provider_id, &req.model, req.thinking).await?;
     Ok(Json(id))
 }
 
-// 更新 Agent 请求体
-#[derive(Debug, Deserialize)]
-pub struct UpdateAgentRequest {
-    pub name: String,
-    pub description: String,
-    pub prompt: String,
-    pub model_provider_id: i64,
-    #[serde(default)]
-    pub model: String,
-    #[serde(default = "default_true")]
-    pub thinking: bool,
-}
-
 // 按 id 更新 Agent，不存在返回 404
-pub async fn update_agent(State(state): State<AppState>, Path(agent_id): Path<i64>, Json(req): Json<UpdateAgentRequest>) -> Result<(), AppError> {
+pub async fn update_agent(State(state): State<AppState>, Path(agent_id): Path<i64>, Json(req): Json<AgentRequest>) -> Result<(), AppError> {
     let updated = agent_repository::update_agent(&state.db, agent_id, &req.name, &req.description, &req.prompt, req.model_provider_id, &req.model, req.thinking).await?;
     if !updated {
         return Err(AppError::NotFound("Agent not found".to_string()));

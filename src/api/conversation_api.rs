@@ -8,6 +8,7 @@ use std::convert::Infallible;
 use std::sync::Arc;
 use tokio::sync::RwLock;
 
+use crate::config;
 use crate::error::AppError;
 use crate::repository::{agent_repository, conversation_repository};
 use crate::repository::entity::ConversationEntity;
@@ -17,8 +18,7 @@ use crate::state::{AppState, ConversationState};
 // 对话列表接口，按更新时间倒序返回独立对话（不含任务中的阶段对话）
 pub async fn get_conversations(State(state): State<AppState>) -> Result<Json<Vec<ConversationEntity>>, AppError> {
     let conversations = conversation_repository::get_conversations(&state.db).await?;
-    let filtered: Vec<_> = conversations.into_iter().filter(|c| c.task_id.is_none()).collect();
-    Ok(Json(filtered))
+    Ok(Json(conversations))
 }
 
 // 查询对话详情接口：返回对话基本字段、消息列表及执行 Agent 配置（含模型提供方），对话不存在返回 404
@@ -29,10 +29,24 @@ pub async fn get_conversation(State(state): State<AppState>, Path(conversation_i
         None => return Err(AppError::NotFound("Conversation not found".to_string())),
     };
     // 关联 Agent（含模型提供方）：用于对话页同步工作目录/智能体/模型提供方/模型/是否思考配置
-    let agent = match conversation.agent_id {
+    let agent = match conversation.conversation.agent_id {
         Some(agent_id) => agent_repository::get_agent(&state.db, agent_id).await?,
         None => None,
     };
+    let agent_json = agent.as_ref().map(|a| {
+        json!({
+            "id": a.agent.id,
+            "name": a.agent.name,
+            "model_provider_id": a.agent.model_provider_id,
+            "model": a.agent.model,
+            "thinking": a.agent.thinking,
+            "model_provider": a.model_provider.as_ref().map(|p| json!({
+                "id": p.id,
+                "name": p.name,
+            })),
+        })
+    });
+    // 对话基本字段由实体序列化展开，messages 与原接口保持一致(不含 conversation_id)，追加 agent 字段
     let messages: Vec<serde_json::Value> = conversation.messages.iter().map(|msg| {
         json!({
             "id": msg.id,
@@ -45,31 +59,10 @@ pub async fn get_conversation(State(state): State<AppState>, Path(conversation_i
             "time": msg.time,
         })
     }).collect();
-    let agent_json = agent.as_ref().map(|a| {
-        json!({
-            "id": a.id,
-            "name": a.name,
-            "model_provider_id": a.model_provider_id,
-            "model": a.model,
-            "thinking": a.thinking,
-            "model_provider": a.model_provider.as_ref().map(|p| json!({
-                "id": p.id,
-                "name": p.name,
-            })),
-        })
-    });
-    Ok(Json(json!({
-        "id": conversation.id,
-        "task_id": conversation.task_id,
-        "agent_id": conversation.agent_id,
-        "title": conversation.title,
-        "work_dir": conversation.work_dir,
-        "system_prompt": conversation.system_prompt,
-        "create_time": conversation.create_time,
-        "update_time": conversation.update_time,
-        "messages": messages,
-        "agent": agent_json,
-    })))
+    let mut result = serde_json::to_value(&conversation.conversation).map_err(|e| AppError::Internal(e.into()))?;
+    result["messages"] = json!(messages);
+    result["agent"] = agent_json.unwrap_or(serde_json::Value::Null);
+    Ok(Json(result))
 }
 
 // 删除对话接口，消息由数据库外键 ON DELETE CASCADE 级联删除，对话不存在时返回 404
@@ -124,21 +117,22 @@ pub async fn create_conversation_work(State(state): State<AppState>, Json(req): 
             Some(a) => a,
             None => return Err(AppError::NotFound("Agent not found".to_string())),
         };
-        system_prompt = agent.prompt.clone();
-        model_provider_id = Some(agent.model_provider_id);
-        model = Some(agent.model.clone());
-        thinking = Some(agent.thinking);
+        system_prompt = agent.agent.prompt.clone();
+        model_provider_id = agent.agent.model_provider_id;
+        model = agent.agent.model.clone();
+        thinking = agent.agent.thinking;
     } else {
-        // 未指定 agent 时使用用户传入的模型配置
-        model_provider_id = req.model_provider_id;
-        model = req.model;
-        thinking = req.thinking;
-        // 未指定 agent 时模型配置必填
-        if model_provider_id.is_none() || model.is_none() || thinking.is_none() {
-            return Err(AppError::BadRequest("Model config is required when agent_id is not provided".to_string()));
+        // 未指定 agent 时使用用户传入的模型配置，模型配置必填
+        match (req.model_provider_id, req.model, req.thinking) {
+            (Some(p), Some(m), Some(t)) => {
+                model_provider_id = p;
+                model = m;
+                thinking = t;
+            }
+            _ => return Err(AppError::BadRequest("Model config is required when agent_id is not provided".to_string())),
         }
         // 读取 AGENTS.md，按优先级取第一个存在的文件
-        let home = std::env::var("HOME").or_else(|_| std::env::var("USERPROFILE")).unwrap_or_else(|_| ".".to_string());
+        let home = config::home_dir();
         let agents_files = [
             std::path::PathBuf::from(&req.work_dir).join("AGENTS.md"),
             std::path::PathBuf::from(&home).join(".openagents").join("AGENTS.md"),
@@ -156,7 +150,7 @@ pub async fn create_conversation_work(State(state): State<AppState>, Json(req): 
 
     // 先创建对话，再根据对话ID开始任务
     let conversation_id = conversation_repository::add_conversation(&state.db, &req.task_content, &req.work_dir, &system_prompt, None, req.agent_id).await?;
-    if !conversation_service::start_conversation(conversation_id, req.task_content.clone(), model_provider_id.unwrap(), model.unwrap(), thinking.unwrap(), &state.conversations, &state.db).await {
+    if !conversation_service::start_conversation(conversation_id, req.task_content.clone(), model_provider_id, model, thinking, &state.conversations, &state.db).await {
         // 启动失败时清理刚创建的对话，避免产生孤儿数据
         let _ = conversation_repository::delete_conversation(&state.db, conversation_id).await;
         return Err(AppError::Conflict("Work already running".to_string()));
@@ -234,7 +228,10 @@ fn create_sse_stream(conversation_state: Arc<RwLock<ConversationState>>) -> impl
             }
 
             // 异步等待新数据通知
-            let receiver = rx.as_mut().unwrap();
+            let receiver = match rx.as_mut() {
+                Some(r) => r,
+                None => return None,
+            };
             if receiver.changed().await.is_err() {
                 return None;
             }

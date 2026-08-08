@@ -10,8 +10,19 @@ function toggleAddMcpPanel() {
 
 function adaptMcpFormFields() {
     const type = document.getElementById('mcpType').value;
-    document.getElementById('mcpNetworkRow').style.display = (type === 'stdio') ? 'none' : 'flex';
-    document.getElementById('mcpLocalRow').style.display = (type === 'stdio') ? 'flex' : 'none';
+    const isStdio = type === 'stdio';
+    document.getElementById('mcpNetworkRow').style.display = isStdio ? 'none' : 'flex';
+    document.getElementById('mcpNetworkRowHeaders').style.display = isStdio ? 'none' : 'flex';
+    document.getElementById('mcpLocalRow').style.display = isStdio ? 'flex' : 'none';
+    document.getElementById('mcpLocalRowArgs').style.display = isStdio ? 'flex' : 'none';
+}
+
+// 切换 MCP 修改卡片内 stdio / 网络 字段区域显示（协议类型下拉联动）
+function adaptMcpCardFields(index) {
+    const type = document.getElementById(`mcp-type-${index}`).value;
+    const isStdio = type === 'stdio';
+    document.getElementById(`mcp-network-zone-${index}`).style.display = isStdio ? 'none' : 'flex';
+    document.getElementById(`mcp-local-zone-${index}`).style.display = isStdio ? 'flex' : 'none';
 }
 
 async function fetchMcpRegistry() {
@@ -52,40 +63,55 @@ async function fetchMcpRegistry() {
                     </div>
                 </div>
                 <div class="info-card-details" style="display: none;">
-                    <input type="hidden" id="mcp-type-${index}" value="${escapeHtml(server.protocol_type)}">
-                    <div class="details-grid">
-                        <div class="details-label">${t('mcp.protocolType')}</div>
-                        <div class="details-value"><code style="background:var(--inline-code-bg); padding:2px 6px; border-radius:2px;">${escapeHtml(server.protocol_type)}</code></div>
-
-                        <div class="details-label">${t('common.description')}</div>
-                        <div class="details-value">
+                    <div class="form-row">
+                        <div class="form-group" style="flex: 1;">
+                            <label>${t('mcp.keyName')}</label>
+                            <input type="text" id="mcp-name-${index}" class="form-control mono" value="${escapeHtml(server.name || '')}">
+                        </div>
+                        <div class="form-group" style="flex: 1;">
+                            <label>${t('common.description')}</label>
                             <input type="text" id="mcp-desc-${index}" class="form-control" value="${escapeHtml(server.description || '')}">
                         </div>
-
-                        ${!isStdio ? `
-                            <div class="details-label">${t('mcp.targetUrl')}</div>
-                            <div class="details-value">
+                        <div class="form-group" style="flex: 1;">
+                            <label>${t('mcp.protocolType')}</label>
+                            <select id="mcp-type-${index}" class="form-control" onchange="adaptMcpCardFields(${index})">
+                                <option value="streamable-http" ${server.protocol_type !== 'stdio' ? 'selected' : ''}>streamable_http</option>
+                                <option value="stdio" ${server.protocol_type === 'stdio' ? 'selected' : ''}>stdio</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div id="mcp-network-zone-${index}" style="display:${isStdio ? 'none' : 'flex'}; flex-direction:column; gap:12px;">
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label>${t('mcp.targetUrl')}</label>
                                 <input type="text" id="mcp-url-${index}" class="form-control mono" value="${escapeHtml(server.url || '')}">
                             </div>
-                            <div class="details-label">${t('mcp.httpHeaders')}</div>
-                            <div class="details-value">
+                        </div>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label>${t('mcp.httpHeaders')}</label>
                                 <textarea id="mcp-headers-${index}" class="form-control mono" rows="3" style="resize: vertical; font-size:11px;">${escapeHtml(JSON.stringify(server.headers || {}, null, 2))}</textarea>
                             </div>
-                        ` : `
-                            <div class="details-label">${t('mcp.cmdExec')}</div>
-                            <div class="details-value">
+                        </div>
+                    </div>
+                    <div id="mcp-local-zone-${index}" style="display:${isStdio ? 'flex' : 'none'}; flex-direction:column; gap:12px;">
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label>${t('mcp.cmdExec')}</label>
                                 <input type="text" id="mcp-command-${index}" class="form-control mono" value="${escapeHtml(server.command || '')}">
                             </div>
-                            <div class="details-label">${t('mcp.args')}</div>
-                            <div class="details-value">
+                        </div>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label>${t('mcp.args')}</label>
                                 <input type="text" id="mcp-args-${index}" class="form-control mono" value="${escapeHtml(server.args?.join(', ') || '')}">
                             </div>
-                        `}
-
-                        <div class="details-block-container" id="mcp-tools-zone-${index}" style="display:none;">
-                            <div class="details-label" style="margin-bottom: 6px;">${t('mcp.exposedCaps')}</div>
-                            <div class="mcp-tool-badge-list" id="mcp-tools-list-${index}"></div>
                         </div>
+                    </div>
+
+                    <div class="details-block-container" id="mcp-tools-zone-${index}" style="display:none;">
+                        <div class="details-label" style="margin-bottom: 6px;">${t('mcp.exposedCaps')}</div>
+                        <div class="mcp-tool-badge-list" id="mcp-tools-list-${index}"></div>
                     </div>
                 </div>
             `;
@@ -152,6 +178,8 @@ async function submitMcpServer() {
 
 async function updateSingleMcp(id, name, index) {
     const type = document.getElementById(`mcp-type-${index}`).value;
+    const nameInput = document.getElementById(`mcp-name-${index}`);
+    name = nameInput ? nameInput.value.trim() : name;
     const description = document.getElementById(`mcp-desc-${index}`).value.trim();
     let bodyPayload = {name: name, description: description};
 

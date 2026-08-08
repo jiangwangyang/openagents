@@ -69,8 +69,8 @@ function resetCronForm() {
     document.getElementById('cronMonth').value = '*';
     document.getElementById('cronWeek').value = '*';
     const display = document.getElementById('cronWorkspaceDisplay');
-    display.textContent = t('input.unset');
-    display.title = '';
+    display.textContent = currentWorkdir || t('input.unset');
+    display.title = currentWorkdir || '';
 }
 
 async function fetchCronTasks() {
@@ -110,51 +110,41 @@ async function fetchCronTasks() {
                     </div>
                 </div>
                 <div class="info-card-details" style="display: none;">
-                    <div class="details-grid">
-                        <div class="details-label">${t('cron.name')}</div>
-                        <div class="details-value">
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>${t('cron.name')}</label>
                             <input type="text" id="cron-name-${task.id}" class="form-control" value="${escapeHtml(task.name || '')}">
                         </div>
-
-                        <div class="details-label">${t('cron.agent')}</div>
-                        <div class="details-value">
-                            <select id="cron-agent-${task.id}" class="form-control"></select>
-                        </div>
-
-                        <div class="details-label">${t('cron.workingDir')}</div>
-                        <div class="details-value">
+                        <div class="form-group">
+                            <label>${t('cron.workingDir')}</label>
                             <button class="workspace-btn" style="margin-bottom:0;" title="Set Directory Context" onclick="selectCronCardWorkspace(${task.id})">
                                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                                     <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path>
                                 </svg>
                                 <span>CWD:</span>
-                                <span class="workspace-path" id="cron-workdir-display-${task.id}" title="${escapeHtml(task.work_dir || '')}">${escapeHtml(task.work_dir || t('input.unset'))}</span>
+                                <span class="workspace-path" id="cron-workdir-display-${task.id}" title="${escapeHtml(task.work_dir || currentWorkdir || '')}">${escapeHtml(task.work_dir || currentWorkdir || t('input.unset'))}</span>
                             </button>
                         </div>
-
-                        <div class="details-label">${t('cron.triggerSpec')}</div>
-                        <div class="details-value">
-                            <div style="display:flex; gap:4px; align-items:center; flex-wrap:wrap;">
-                                <label style="font-size:10px; color:var(--slate-400); min-width:20px;">${t('cron.minute')}</label>
-                                <input type="text" id="cron-min-${task.id}" class="form-control mono" style="width:50px; text-align:center;" value="${escapeHtml(cron.minute)}">
-                                <label style="font-size:10px; color:var(--slate-400); min-width:20px;">${t('cron.hour')}</label>
-                                <input type="text" id="cron-hour-${task.id}" class="form-control mono" style="width:50px; text-align:center;" value="${escapeHtml(cron.hour)}">
-                                <label style="font-size:10px; color:var(--slate-400); min-width:20px;">${t('cron.day')}</label>
-                                <input type="text" id="cron-day-${task.id}" class="form-control mono" style="width:50px; text-align:center;" value="${escapeHtml(cron.day)}">
-                                <label style="font-size:10px; color:var(--slate-400); min-width:20px;">${t('cron.month')}</label>
-                                <input type="text" id="cron-month-${task.id}" class="form-control mono" style="width:50px; text-align:center;" value="${escapeHtml(cron.month)}">
-                                <label style="font-size:10px; color:var(--slate-400); min-width:20px;">${t('cron.week')}</label>
-                                <input type="text" id="cron-week-${task.id}" class="form-control mono" style="width:50px; text-align:center;" value="${escapeHtml(cron.day_of_week)}">
-                            </div>
-                        </div>
-
-                        <div class="details-label">${t('cron.nextFire')}</div>
-                        <div class="details-value" style="font-family:var(--font-mono); font-size:12px;">${escapeHtml(task.next_fire_time || t('cron.suspended'))}</div>
-
-                        <div class="details-block-container">
-                            <div class="details-label" style="margin-bottom: 6px;">${t('cron.execContent')}</div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group"><label>${t('cron.agent')}</label><select id="cron-agent-${task.id}" class="form-control"></select></div>
+                        <div class="form-group"><label>${t('cron.minute')}</label><input type="text" id="cron-min-${task.id}" class="form-control mono" value="${escapeHtml(cron.minute)}"></div>
+                        <div class="form-group"><label>${t('cron.hour')}</label><input type="text" id="cron-hour-${task.id}" class="form-control mono" value="${escapeHtml(cron.hour)}"></div>
+                        <div class="form-group"><label>${t('cron.day')}</label><input type="text" id="cron-day-${task.id}" class="form-control mono" value="${escapeHtml(cron.day)}"></div>
+                        <div class="form-group"><label>${t('cron.month')}</label><input type="text" id="cron-month-${task.id}" class="form-control mono" value="${escapeHtml(cron.month)}"></div>
+                        <div class="form-group"><label>${t('cron.week')}</label><input type="text" id="cron-week-${task.id}" class="form-control mono" value="${escapeHtml(cron.day_of_week)}"></div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>${t('cron.execContent')}</label>
                             <textarea id="cron-content-${task.id}" class="form-control mono" rows="5" style="resize: vertical; font-size:11px;">${escapeHtml(task.content || '')}</textarea>
                         </div>
+                    </div>
+                    <div class="form-row" style="display:flex; align-items:center; gap:12px;">
+                        <div style="flex: 0 0 auto;">
+                            <label style="font-family:var(--font-display); font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:0.5px; color:var(--slate-400);">${t('cron.nextFire')}</label>
+                        </div>
+                        <div style="font-family:var(--font-mono); font-size:12px; color:var(--charcoal-800);">${escapeHtml(task.next_fire_time || t('cron.suspended'))}</div>
                     </div>
                 </div>
             `;

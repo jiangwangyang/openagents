@@ -65,34 +65,33 @@ async function fetchAgentRegistry() {
                     </div>
                 </div>
                 <div class="info-card-details" style="display: none;">
-                    <div class="details-grid">
-                        <div class="details-label">${t('agent.name')}</div>
-                        <div class="details-value">
+                    <div class="form-row">
+                        <div class="form-group" style="flex: 1;">
+                            <label>${t('agent.name')}</label>
                             <input type="text" id="agent-name-${agent.id}" class="form-control" value="${escapeHtml(agent.name)}">
                         </div>
-
-                        <div class="details-label">${t('common.description')}</div>
-                        <div class="details-value">
+                        <div class="form-group" style="flex: 2;">
+                            <label>${t('common.description')}</label>
                             <input type="text" id="agent-desc-${agent.id}" class="form-control" value="${escapeHtml(agent.description)}">
                         </div>
-
-                        <div class="details-label">${t('agent.prompt')}</div>
-                        <div class="details-value">
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>${t('agent.prompt')}</label>
                             <textarea id="agent-prompt-${agent.id}" class="form-control mono" rows="6" style="resize: vertical; font-size:11px;">${escapeHtml(agent.prompt)}</textarea>
                         </div>
-
-                        <div class="details-label">${t('input.providerTitle')}</div>
-                        <div class="details-value">
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group" style="flex: 1;">
+                            <label>${t('input.providerTitle')}</label>
                             <select id="agent-provider-${agent.id}" class="form-control"></select>
                         </div>
-
-                        <div class="details-label">${t('input.modelTitle')}</div>
-                        <div class="details-value">
+                        <div class="form-group" style="flex: 1;">
+                            <label>${t('input.modelTitle')}</label>
                             <input type="text" id="agent-model-${agent.id}" class="form-control mono" value="${escapeHtml(agent.model || '')}">
                         </div>
-
-                        <div class="details-label">${t('input.thinkingTitle')}</div>
-                        <div class="details-value">
+                        <div class="form-group" style="flex: 1;">
+                            <label>${t('input.thinkingTitle')}</label>
                             <select id="agent-thinking-${agent.id}" class="form-control">
                                 <option value="true" ${agent.thinking ? 'selected' : ''}>ON</option>
                                 <option value="false" ${agent.thinking ? '' : 'selected'}>OFF</option>

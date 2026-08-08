@@ -143,7 +143,7 @@ function confirmDirSelection() {
 function updateWorkspaceUI(path) {
     currentWorkdir = path;
     // 同步刷新对话页与任务创建面板的工作目录显示（复用同一组件状态）
-    ['workspaceDisplay', 'taskWorkspaceDisplay'].forEach(id => {
+    ['workspaceDisplay', 'taskWorkspaceDisplay', 'cronWorkspaceDisplay'].forEach(id => {
         const display = document.getElementById(id);
         display.textContent = path || t('input.unset');
         display.title = path;

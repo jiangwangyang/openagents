@@ -1,7 +1,7 @@
 // 应用入口与目录浏览
 use axum::extract::Query;
 use axum::http::{header, StatusCode, Uri};
-use axum::response::{Html, IntoResponse};
+use axum::response::{IntoResponse, Redirect};
 use rust_embed::Embed;
 use serde::Deserialize;
 use serde_json::json;
@@ -13,18 +13,15 @@ use crate::error::AppError;
 #[folder = "static/"]
 struct StaticAssets;
 
-// GET / 返回 index.html
+// GET / 重定向到 static/index.html
 pub async fn index() -> impl IntoResponse {
-    match StaticAssets::get("index.html") {
-        Some(content) => Html(content.data.as_ref().to_vec()).into_response(),
-        None => (StatusCode::NOT_FOUND, "index.html not found").into_response(),
-    }
+    Redirect::to("/static/index.html")
 }
 
 // GET /static/* 静态资源
 pub async fn static_file(uri: Uri) -> impl IntoResponse {
     let path = uri.path().trim_start_matches("/static/");
-    match StaticAssets::get(path) {
+    match <StaticAssets as rust_embed::Embed>::get(path) {
         Some(content) => {
             let mime = guess_mime_type(path);
             ([(header::CONTENT_TYPE, mime)], content.data).into_response()

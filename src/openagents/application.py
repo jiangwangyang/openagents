@@ -1,7 +1,6 @@
 import logging
 import pathlib
 import sys
-import threading
 from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
 from importlib.resources import files
@@ -26,7 +25,6 @@ logging.basicConfig(
         logging.StreamHandler(sys.stdout)
     ]
 )
-startup_event = threading.Event()
 
 
 @asynccontextmanager
@@ -39,7 +37,6 @@ async def lifespan(_app: FastAPI) -> AsyncIterator[None]:
     async with database.lifespan():
         async with mcp_tool.lifespan():
             # 启动完成
-            startup_event.set()
             logging.info("Application started")
             yield
 

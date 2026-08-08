@@ -203,7 +203,13 @@
                     </div>
                     <div class="form-group">
                         <label data-i18n="task.workDir">Working Directory</label>
-                        <input type="text" id="cronWorkDir" class="form-control" placeholder="e.g. /home/project/miniclaw" data-i18n-placeholder="cron.workDirPlaceholder">
+                        <button class="workspace-btn" id="cronWorkspaceBtn" onclick="selectCronWorkspace()" style="margin-bottom:0;" title="Set Directory Context" data-i18n-title="input.cwdTitle">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path>
+                            </svg>
+                            <span>CWD:</span>
+                            <span class="workspace-path" id="cronWorkspaceDisplay">UNSET</span>
+                        </button>
                     </div>
                 </div>
                 <div class="form-row">
@@ -225,7 +231,7 @@
                 </div>
                 <div class="form-row" style="justify-content: flex-end; margin-top: 4px; gap: 12px;">
                     <button class="btn btn-sm btn-secondary" onclick="toggleAddCronPanel()" data-i18n="common.cancel">Cancel</button>
-                    <button class="btn btn-sm send-button" onclick="submitCronTask()" data-i18n="common.save">Save</button>
+                    <button class="btn btn-sm send-button" id="cronSubmitBtn" onclick="submitCronTask()" data-i18n="common.save">Save</button>
                 </div>
             </div>
 

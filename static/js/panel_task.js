@@ -60,6 +60,8 @@ async function fetchTaskList() {
                         <span class="info-card-snippet">${escapeHtml(task.content)}</span>
                     </div>
                     <div style="display:flex; gap:8px; align-items:center;" onclick="event.stopPropagation();">
+                        <select id="task-start-agent-${task.id}" class="form-control" style="width:140px; height:28px; font-size:11px; padding:0 6px;"></select>
+                        <button class="btn btn-sm send-button" style="height:28px; white-space:nowrap;" onclick="startTask(${task.id})">${t('common.start')}</button>
                         <button class="delete-btn" style="opacity:1; padding:6px;">
                             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
                         </button>
@@ -75,13 +77,6 @@ async function fetchTaskList() {
                         <div class="details-value">${escapeHtml(task.work_dir || t('common.inheritedEnv'))}</div>
                         <div class="details-label">${t('task.candidateAgents')}</div>
                         <div class="details-value">${escapeHtml(agentNames) || t('common.none')}</div>
-                        <div class="details-label">${t('task.launch')}</div>
-                        <div class="details-value">
-                            <div style="display:flex; gap:8px; flex-wrap:wrap;">
-                                <select id="task-start-agent-${task.id}" class="form-control" style="flex:1; min-width:150px;"></select>
-                                <button class="btn btn-sm send-button" onclick="startTask(${task.id})">${t('common.start')}</button>
-                            </div>
-                        </div>
                         <div class="details-block-container">
                             <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 6px;">
                                 <div class="details-label" style="margin-bottom: 0;">${t('task.stageProgress')}</div>

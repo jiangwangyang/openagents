@@ -112,13 +112,14 @@ function refreshActiveViewI18n() {
     }
 }
 
-// 设置语言：持久化到 localStorage 并全量刷新页面文案
+// 设置语言：持久化到后端 Web 存储并全量刷新页面文案
 function setLanguage(lang) {
     if (lang !== 'zh' && lang !== 'en') {
         lang = 'en';
     }
     currentLang = lang;
-    localStorage.setItem(I18N_STORAGE_KEY, lang);
+    // 异步落库，不阻塞文案刷新
+    setWebStorage(I18N_STORAGE_KEY, lang);
     document.documentElement.lang = lang === 'zh' ? 'zh-CN' : 'en';
     applyStaticI18n();
     syncLanguageButton();
@@ -132,14 +133,15 @@ function toggleLanguage() {
     setLanguage(currentLang === 'zh' ? 'en' : 'zh');
 }
 
-// 初始化：优先本地存储，无记录时按浏览器语言判断（zh* 判中文，否则英文），检测值不落盘以保持跟随浏览器
+// 初始化：先按浏览器语言应用（zh* 判中文，否则英文），再异步加载后端持久化语言，有记录时覆盖浏览器判断结果
 (function initLanguage() {
-    let lang = localStorage.getItem(I18N_STORAGE_KEY);
-    if (!lang) {
-        lang = (navigator.language || 'en').toLowerCase().startsWith('zh') ? 'zh' : 'en';
-    }
-    currentLang = lang === 'zh' ? 'zh' : 'en';
+    currentLang = (navigator.language || 'en').toLowerCase().startsWith('zh') ? 'zh' : 'en';
     document.documentElement.lang = currentLang === 'zh' ? 'zh-CN' : 'en';
     applyStaticI18n();
     syncLanguageButton();
+    getWebStorage(I18N_STORAGE_KEY).then(savedLang => {
+        if (savedLang && savedLang !== currentLang) {
+            setLanguage(savedLang);
+        }
+    });
 })();

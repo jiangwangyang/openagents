@@ -12,6 +12,7 @@ pub mod model_provider_api;
 pub mod schedule_api;
 pub mod skill_api;
 pub mod task_api;
+pub mod web_storage_api;
 
 // 组装全部路由
 pub fn create_router(state: AppState) -> Router {
@@ -63,5 +64,8 @@ pub fn create_router(state: AppState) -> Router {
         .route("/task", post(task_api::add_task))
         .route("/task/{task_id}", delete(task_api::delete_task))
         .route("/task/{task_id}/start", post(task_api::start_task))
+        // Web 存储
+        .route("/web-storage/{key}", get(web_storage_api::get_web_storage))
+        .route("/web-storage/{key}", put(web_storage_api::put_web_storage))
         .with_state(state)
 }

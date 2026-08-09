@@ -1,9 +1,23 @@
 // ==========================================
 // 工作空间 (CWD) 及目录层级导航引擎
 // ==========================================
-// 工作目录历史记忆（localStorage）
+// 工作目录历史记忆（后端 Web 存储）
 const WORKDIR_HISTORY_KEY = 'openagents_recent_workdirs';
 const WORKDIR_HISTORY_LIMIT = 10;
+
+// 工作目录历史内存缓存（打开目录弹窗时从后端拉取）
+let workdirHistoryCache = [];
+
+// 从后端加载工作目录历史到内存缓存
+async function loadWorkdirHistory() {
+    const raw = await getWebStorage(WORKDIR_HISTORY_KEY);
+    try {
+        const list = raw ? JSON.parse(raw) : [];
+        workdirHistoryCache = Array.isArray(list) ? list : [];
+    } catch (e) {
+        workdirHistoryCache = [];
+    }
+}
 
 async function loadDirList(path) {
     const dirListContainer = document.getElementById('dirList');
@@ -39,13 +53,7 @@ async function initDefaultWorkspace() {
 }
 
 function getWorkdirHistory() {
-    try {
-        const raw = localStorage.getItem(WORKDIR_HISTORY_KEY);
-        const list = raw ? JSON.parse(raw) : [];
-        return Array.isArray(list) ? list : [];
-    } catch (e) {
-        return [];
-    }
+    return workdirHistoryCache;
 }
 
 function saveWorkdirToHistory(path) {
@@ -55,12 +63,13 @@ function saveWorkdirToHistory(path) {
     // 去重后置顶，超出上限截断
     const list = getWorkdirHistory().filter(item => item !== path);
     list.unshift(path);
-    localStorage.setItem(WORKDIR_HISTORY_KEY, JSON.stringify(list.slice(0, WORKDIR_HISTORY_LIMIT)));
+    workdirHistoryCache = list.slice(0, WORKDIR_HISTORY_LIMIT);
+    setWebStorage(WORKDIR_HISTORY_KEY, JSON.stringify(workdirHistoryCache));
 }
 
 function removeWorkdirFromHistory(path) {
-    const list = getWorkdirHistory().filter(item => item !== path);
-    localStorage.setItem(WORKDIR_HISTORY_KEY, JSON.stringify(list));
+    workdirHistoryCache = getWorkdirHistory().filter(item => item !== path);
+    setWebStorage(WORKDIR_HISTORY_KEY, JSON.stringify(workdirHistoryCache));
     renderWorkdirHistory();
 }
 
@@ -112,6 +121,8 @@ function confirmHistorySelection(path) {
 async function openDirModal(callback, currentPath) {
     dirConfirmCallback = callback || null;
     document.getElementById('dirModalOverlay').style.display = 'block';
+    // 从后端加载工作目录历史后再渲染
+    await loadWorkdirHistory();
     renderWorkdirHistory();
     await loadDirList(currentPath || "");
 }

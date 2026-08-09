@@ -139,6 +139,17 @@ async fn create_tables(pool: &SqlitePool) -> anyhow::Result<()> {
         .execute(pool)
         .await?;
 
+    sqlx::query(
+        "CREATE TABLE IF NOT EXISTS t_web_storage (
+            key TEXT PRIMARY KEY,
+            value TEXT NOT NULL,
+            create_time TEXT NOT NULL,
+            update_time TEXT NOT NULL
+        )",
+    )
+        .execute(pool)
+        .await?;
+
     // 创建索引
     sqlx::query("CREATE INDEX IF NOT EXISTS idx_message_conversation ON t_message(conversation_id)")
         .execute(pool)

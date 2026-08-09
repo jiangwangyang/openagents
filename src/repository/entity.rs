@@ -128,6 +128,15 @@ pub struct ScheduleEntity {
     pub update_time: String,
 }
 
+// Web 存储(前端持久化 KV)
+#[derive(Debug, Clone, FromRow, serde::Serialize)]
+pub struct WebStorageEntity {
+    pub key: String,
+    pub value: String,
+    pub create_time: String,
+    pub update_time: String,
+}
+
 // MCP 服务
 #[derive(Debug, Clone, FromRow, serde::Serialize)]
 pub struct McpServerEntity {

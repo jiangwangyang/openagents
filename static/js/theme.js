@@ -8,7 +8,8 @@ function setTheme(theme) {
     if (!Object.prototype.hasOwnProperty.call(THEME_EFFECTS, theme)) {
         theme = 'light';
     }
-    localStorage.setItem(THEME_STORAGE_KEY, theme);
+    // 持久化到后端 Web 存储（异步落库，不阻塞主题切换）
+    setWebStorage(THEME_STORAGE_KEY, theme);
     document.documentElement.dataset.theme = theme;
     syncThemePicker(theme);
     // 同步切换动态粒子特效（静态背景由 CSS 变量随 data-theme 自动生效）
@@ -98,6 +99,18 @@ function initThemePicker() {
     syncThemePicker(document.documentElement.dataset.theme);
 }
 
-setTheme(document.documentElement.dataset.theme);
+// 初始化：先应用内联脚本预设的主题（不触发持久化），再异步加载后端持久化主题并应用
+(function initTheme() {
+    const preset = document.documentElement.dataset.theme || 'light';
+    document.documentElement.dataset.theme = preset;
+    syncThemePicker(preset);
+    // 同步开启动态粒子特效（静态背景由 CSS 变量随 data-theme 自动生效）
+    startThemeEffects(preset);
+    getWebStorage(THEME_STORAGE_KEY).then(savedTheme => {
+        if (savedTheme && savedTheme !== preset) {
+            setTheme(savedTheme);
+        }
+    });
+})();
 initThemePicker();
 

@@ -126,7 +126,7 @@ function confirmDeleteConversation(conversationId, convTitle) {
     });
 }
 
-function startNewChat() {
+async function startNewChat() {
     currentConversationId = null;
     // 取消历史列表中所有条目的选中高亮
     conversationList.querySelectorAll('.conversation-item').forEach(item => item.classList.remove('active'));
@@ -139,6 +139,8 @@ function startNewChat() {
     conversationInfo.textContent = t('header.newTrace');
     usageInfo.textContent = '';
     initDefaultWorkspace();
+    // 先加载后端持久化偏好，再恢复智能体与模型配置
+    await loadDialogPrefs();
     loadAgentSelect();
     loadModelSelect();
     setContextLocked(false);
@@ -213,22 +215,42 @@ async function onAgentSelectChange() {
     }
 }
 
-// 模型输入历史记忆（localStorage）
+// 模型输入历史记忆（后端 Web 存储）
 const MODEL_HISTORY_KEY = 'openagents_model_history';
 const MODEL_HISTORY_LIMIT = 20;
-// 上次模型配置记忆（localStorage）
+// 上次模型配置记忆（后端 Web 存储）
 const LAST_MODEL_CONFIG_KEY = 'openagents_last_model_config';
-// 上次智能体选择记忆（localStorage）
+// 上次智能体选择记忆（后端 Web 存储）
 const LAST_AGENT_KEY = 'openagents_last_agent_id';
 
-function getModelHistory() {
+// 内存缓存：页面加载时从后端拉取，变更时整体写回
+let modelHistoryCache = [];
+let lastModelConfigCache = null;
+let lastAgentIdCache = '';
+
+// 从后端加载会话页持久化偏好到内存缓存（模型历史/上次模型配置/上次智能体）
+async function loadDialogPrefs() {
+    const [historyRaw, configRaw, agentIdRaw] = await Promise.all([
+        getWebStorage(MODEL_HISTORY_KEY),
+        getWebStorage(LAST_MODEL_CONFIG_KEY),
+        getWebStorage(LAST_AGENT_KEY)
+    ]);
     try {
-        const raw = localStorage.getItem(MODEL_HISTORY_KEY);
-        const list = raw ? JSON.parse(raw) : [];
-        return Array.isArray(list) ? list : [];
+        const list = historyRaw ? JSON.parse(historyRaw) : [];
+        modelHistoryCache = Array.isArray(list) ? list : [];
     } catch (e) {
-        return [];
+        modelHistoryCache = [];
     }
+    try {
+        lastModelConfigCache = configRaw ? JSON.parse(configRaw) : null;
+    } catch (e) {
+        lastModelConfigCache = null;
+    }
+    lastAgentIdCache = agentIdRaw || '';
+}
+
+function getModelHistory() {
+    return modelHistoryCache;
 }
 
 function addModelHistory(model) {
@@ -237,12 +259,13 @@ function addModelHistory(model) {
     }
     const list = getModelHistory().filter(item => item !== model);
     list.unshift(model);
-    localStorage.setItem(MODEL_HISTORY_KEY, JSON.stringify(list.slice(0, MODEL_HISTORY_LIMIT)));
+    modelHistoryCache = list.slice(0, MODEL_HISTORY_LIMIT);
+    setWebStorage(MODEL_HISTORY_KEY, JSON.stringify(modelHistoryCache));
 }
 
 function removeModelHistory(model) {
-    const list = getModelHistory().filter(item => item !== model);
-    localStorage.setItem(MODEL_HISTORY_KEY, JSON.stringify(list));
+    modelHistoryCache = getModelHistory().filter(item => item !== model);
+    setWebStorage(MODEL_HISTORY_KEY, JSON.stringify(modelHistoryCache));
     renderModelComboList();
 }
 
@@ -282,43 +305,28 @@ function renderModelComboList() {
 
 // 读取上次模型配置
 function getLastModelConfig() {
-    try {
-        const raw = localStorage.getItem(LAST_MODEL_CONFIG_KEY);
-        return raw ? JSON.parse(raw) : null;
-    } catch (e) {
-        return null;
-    }
+    return lastModelConfigCache;
 }
 
 // 读取上次智能体选择
 function getLastAgentId() {
-    try {
-        return localStorage.getItem(LAST_AGENT_KEY) || '';
-    } catch (e) {
-        return '';
-    }
+    return lastAgentIdCache;
 }
 
-// 保存智能体选择到 localStorage
+// 保存智能体选择到后端 Web 存储
 function saveLastAgentId(agentId) {
-    try {
-        if (agentId) {
-            localStorage.setItem(LAST_AGENT_KEY, String(agentId));
-        } else {
-            localStorage.removeItem(LAST_AGENT_KEY);
-        }
-    } catch (e) {
-        // 静默处理错误
-    }
+    lastAgentIdCache = agentId ? String(agentId) : '';
+    setWebStorage(LAST_AGENT_KEY, lastAgentIdCache);
 }
 
-// 保存当前模型配置到 localStorage
+// 保存当前模型配置到后端 Web 存储
 function saveLastModelConfig() {
     const providerId = document.getElementById('providerSelect').value;
     const model = document.getElementById('modelSelect').value.trim();
     const thinking = document.getElementById('thinkingSelect').value;
     if (providerId) {
-        localStorage.setItem(LAST_MODEL_CONFIG_KEY, JSON.stringify({provider_id: providerId, model: model, thinking: thinking}));
+        lastModelConfigCache = {provider_id: providerId, model: model, thinking: thinking};
+        setWebStorage(LAST_MODEL_CONFIG_KEY, JSON.stringify(lastModelConfigCache));
     }
 }
 

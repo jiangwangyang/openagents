@@ -5,19 +5,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>OpenAgents</title>
 
-    <script>
-        // 首屏渲染前预应用主题，避免深色主题下出现浅色闪烁
-        (function () {
-            let savedTheme = localStorage.getItem('openagents_theme');
-            // 校验是否为有效主题（防止已删除主题残留导致样式失效），非法值回退浅色
-            const validThemes = ['light', 'dark', 'draft', 'botanica', 'sunset', 'ink', 'aurora', 'cyberpunk', 'matrix', 'vaporwave'];
-            if (!validThemes.includes(savedTheme)) {
-                savedTheme = 'light';
-            }
-            document.documentElement.dataset.theme = savedTheme;
-        })();
-    </script>
-
     <!-- 主题字体（仅特色主题使用，light/dark 用系统默认字体）：JetBrains Mono(等宽) / Noto Serif SC(中文衬线) -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -408,6 +395,7 @@
         </div>
     </div>
 
+    <script src="js/web_storage.js"></script>
     <script src="js/i18n.js"></script>
     <script src="js/theme_effects.js"></script>
     <script src="js/theme.js"></script>

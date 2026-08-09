@@ -11,28 +11,28 @@ pub async fn list_tasks(pool: &SqlitePool) -> Result<Vec<TaskEntity>, sqlx::Erro
     sqlx::query_as::<_, TaskEntity>(
         "SELECT id, title, content, agent_ids, work_dir, create_time, update_time FROM t_task ORDER BY id",
     )
-    .fetch_all(pool)
-    .await
+        .fetch_all(pool)
+        .await
 }
 
 // 按 id 查询任务基本字段
-pub async fn get_task_entity(pool: &SqlitePool, task_id: i64) -> Result<Option<TaskEntity>, sqlx::Error> {
+pub async fn get_task(pool: &SqlitePool, task_id: i64) -> Result<Option<TaskEntity>, sqlx::Error> {
     sqlx::query_as::<_, TaskEntity>(
         "SELECT id, title, content, agent_ids, work_dir, create_time, update_time FROM t_task WHERE id = ?",
     )
-    .bind(task_id)
-    .fetch_optional(pool)
-    .await
+        .bind(task_id)
+        .fetch_optional(pool)
+        .await
 }
 
 // 按 id 查询任务，含阶段对话(含消息与执行 Agent)
-pub async fn get_task(pool: &SqlitePool, task_id: i64) -> Result<Option<TaskWithConversations>, sqlx::Error> {
+pub async fn get_task_and_conversation(pool: &SqlitePool, task_id: i64) -> Result<Option<TaskWithConversations>, sqlx::Error> {
     let task = sqlx::query_as::<_, TaskEntity>(
         "SELECT id, title, content, agent_ids, work_dir, create_time, update_time FROM t_task WHERE id = ?",
     )
-    .bind(task_id)
-    .fetch_optional(pool)
-    .await?;
+        .bind(task_id)
+        .fetch_optional(pool)
+        .await?;
 
     let task = match task {
         Some(t) => t,
@@ -43,9 +43,9 @@ pub async fn get_task(pool: &SqlitePool, task_id: i64) -> Result<Option<TaskWith
     let conversations = sqlx::query_as::<_, ConversationEntity>(
         "SELECT id, task_id, agent_id, title, work_dir, system_prompt, create_time, update_time FROM t_conversation WHERE task_id = ? ORDER BY id",
     )
-    .bind(task_id)
-    .fetch_all(pool)
-    .await?;
+        .bind(task_id)
+        .fetch_all(pool)
+        .await?;
 
     if conversations.is_empty() {
         return Ok(Some(TaskWithConversations {
@@ -112,14 +112,14 @@ pub async fn add_task(pool: &SqlitePool, title: &str, content: &str, agent_ids: 
     let result = sqlx::query(
         "INSERT INTO t_task (title, content, agent_ids, work_dir, create_time, update_time) VALUES (?, ?, ?, ?, ?, ?)",
     )
-    .bind(title)
-    .bind(content)
-    .bind(sqlx::types::Json(agent_ids))
-    .bind(work_dir)
-    .bind(&now)
-    .bind(&now)
-    .execute(pool)
-    .await?;
+        .bind(title)
+        .bind(content)
+        .bind(sqlx::types::Json(agent_ids))
+        .bind(work_dir)
+        .bind(&now)
+        .bind(&now)
+        .execute(pool)
+        .await?;
     Ok(result.last_insert_rowid())
 }
 

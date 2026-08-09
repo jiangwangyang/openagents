@@ -17,7 +17,7 @@ pub async fn execute(cmd_and_args: &[String], task_id: Option<i64>, db: &SqliteP
     }
 
     // 查询任务基本字段(交接只需标题/工作目录/团队,无需全量加载对话与消息)
-    let task = match task_repository::get_task_entity(db, task_id).await {
+    let task = match task_repository::get_task(db, task_id).await {
         Ok(Some(t)) => t,
         Ok(None) => return (format!("Task not found: {}", task_id), true),
         Err(e) => return (format!("Database error: {}", e), true),

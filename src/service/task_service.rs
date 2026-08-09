@@ -68,7 +68,7 @@ async fn do_run_task(
     conversations: &Arc<DashMap<i64, Arc<RwLock<ConversationState>>>>,
 ) -> anyhow::Result<()> {
     // 为第一个执行的 agent 创建阶段对话
-    let task = task_repository::get_task_entity(db, task_id).await?;
+    let task = task_repository::get_task(db, task_id).await?;
     let agent = agent_repository::get_agent(db, agent_id).await?;
     let (task, agent) = match (task, agent) {
         (Some(t), Some(a)) => (t, a),
@@ -86,7 +86,7 @@ async fn do_run_task(
 
     loop {
         // 每轮重新查询任务基本字段与最新阶段对话状态
-        let task = task_repository::get_task_entity(db, task_id).await?;
+        let task = task_repository::get_task(db, task_id).await?;
         let task = match task {
             Some(t) => t,
             None => return Ok(()),

@@ -108,6 +108,22 @@ async fn create_tables(pool: &SqlitePool) -> anyhow::Result<()> {
         .await?;
 
     sqlx::query(
+        "CREATE TABLE IF NOT EXISTS t_schedule (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            name TEXT NOT NULL,
+            content TEXT NOT NULL,
+            work_dir TEXT NOT NULL,
+            cron_expr TEXT NOT NULL,
+            agent_id INTEGER REFERENCES t_agent(id) ON DELETE RESTRICT,
+            enabled INTEGER NOT NULL DEFAULT 1,
+            create_time TEXT NOT NULL,
+            update_time TEXT NOT NULL
+        )",
+    )
+        .execute(pool)
+        .await?;
+
+    sqlx::query(
         "CREATE TABLE IF NOT EXISTS t_mcp_server (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             name TEXT NOT NULL UNIQUE,
@@ -117,22 +133,6 @@ async fn create_tables(pool: &SqlitePool) -> anyhow::Result<()> {
             headers TEXT,
             command TEXT,
             args TEXT,
-            create_time TEXT NOT NULL,
-            update_time TEXT NOT NULL
-        )",
-    )
-        .execute(pool)
-        .await?;
-
-    sqlx::query(
-        "CREATE TABLE IF NOT EXISTS t_schedule (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            name TEXT NOT NULL,
-            content TEXT NOT NULL,
-            work_dir TEXT NOT NULL,
-            cron_expr TEXT NOT NULL,
-            agent_id INTEGER REFERENCES t_agent(id) ON DELETE RESTRICT,
-            enabled INTEGER NOT NULL DEFAULT 1,
             create_time TEXT NOT NULL,
             update_time TEXT NOT NULL
         )",

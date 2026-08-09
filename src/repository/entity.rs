@@ -66,6 +66,44 @@ pub struct MessageEntity {
     pub time: String,
 }
 
+// 定时任务
+#[derive(Debug, Clone, FromRow, serde::Serialize)]
+pub struct ScheduleEntity {
+    pub id: i64,
+    pub name: String,
+    pub content: String,
+    pub work_dir: String,
+    pub cron_expr: String,
+    pub agent_id: i64,
+    pub enabled: bool,
+    pub create_time: String,
+    pub update_time: String,
+}
+
+// MCP 服务
+#[derive(Debug, Clone, FromRow, serde::Serialize)]
+pub struct McpServerEntity {
+    pub id: i64,
+    pub name: String,
+    pub description: String,
+    pub protocol_type: String,
+    pub url: Option<String>,
+    pub headers: Option<serde_json::Value>,
+    pub command: Option<String>,
+    pub args: Option<serde_json::Value>,
+    pub create_time: String,
+    pub update_time: String,
+}
+
+// Web 存储(前端持久化 KV)
+#[derive(Debug, Clone, FromRow, serde::Serialize)]
+pub struct WebStorageEntity {
+    pub key: String,
+    pub value: String,
+    pub create_time: String,
+    pub update_time: String,
+}
+
 // 待写入的消息(add_conversation_messages 参数)
 #[derive(Debug, Clone)]
 pub struct NewMessageEntity {
@@ -116,42 +154,4 @@ pub struct LatestConversationState {
 pub struct ConversationHistorySummary {
     pub agent_name: Option<String>,
     pub last_content: Option<serde_json::Value>,
-}
-
-// 定时任务
-#[derive(Debug, Clone, FromRow, serde::Serialize)]
-pub struct ScheduleEntity {
-    pub id: i64,
-    pub name: String,
-    pub content: String,
-    pub work_dir: String,
-    pub cron_expr: String,
-    pub agent_id: i64,
-    pub enabled: bool,
-    pub create_time: String,
-    pub update_time: String,
-}
-
-// Web 存储(前端持久化 KV)
-#[derive(Debug, Clone, FromRow, serde::Serialize)]
-pub struct WebStorageEntity {
-    pub key: String,
-    pub value: String,
-    pub create_time: String,
-    pub update_time: String,
-}
-
-// MCP 服务
-#[derive(Debug, Clone, FromRow, serde::Serialize)]
-pub struct McpServerEntity {
-    pub id: i64,
-    pub name: String,
-    pub description: String,
-    pub protocol_type: String,
-    pub url: Option<String>,
-    pub headers: Option<serde_json::Value>,
-    pub command: Option<String>,
-    pub args: Option<serde_json::Value>,
-    pub create_time: String,
-    pub update_time: String,
 }

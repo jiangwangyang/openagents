@@ -6,26 +6,28 @@ description = "Agents work for you."
 license = "MIT"
 
 [dependencies]
-tokio = { version = "1", features = ["full"] }
+anyhow = "1"
 axum = "0.8"
-sqlx = { version = "0.8", default-features = false, features = ["runtime-tokio", "sqlite", "chrono", "json", "macros"] }
-serde = { version = "1", features = ["derive"] }
-serde_json = { version = "1", features = ["preserve_order"] }
-reqwest = { version = "0.12", default-features = false, features = ["rustls-tls", "stream", "json"] }
+chrono = { version = "0.4", features = ["serde"] }
+cron = "0.17.0"
+dashmap = "6"
 eventsource-stream = "0.2"
 futures-util = "0.3"
-tracing = "0.1"
-tracing-subscriber = { version = "0.3", features = ["fmt", "env-filter"] }
-tracing-appender = "0.2"
-dashmap = "6"
-chrono = { version = "0.4", features = ["serde"] }
-thiserror = "2"
-anyhow = "1"
-rust-embed = "8"
-rmcp = { version = "3", features = ["client", "transport-child-process", "transport-streamable-http-client-reqwest", "reqwest"] }
 http = "1"
-wry = "0.56"
-tao = "0.36"
+reqwest = { version = "0.12", default-features = false, features = ["rustls-tls", "stream", "json"] }
+rmcp = { version = "3", features = ["client", "transport-child-process", "transport-streamable-http-client-reqwest", "reqwest"] }
+rust-embed = "8"
+serde = { version = "1", features = ["derive"] }
+serde_json = { version = "1", features = ["preserve_order"] }
+sqlx = { version = "0.8", default-features = false, features = ["runtime-tokio", "sqlite", "chrono", "json", "macros"] }
+tauri = { version = "2", features = [] }
+thiserror = "2"
+tokio = { version = "1", features = ["full"] }
 tokio-cron-scheduler = "0.15.1"
+tracing = "0.1"
+tracing-appender = "0.2"
+tracing-subscriber = { version = "0.3", features = ["fmt", "env-filter"] }
 uuid = { version = "1.24.0", features = ["v4"] }
-cron = "0.17.0"
+
+[build-dependencies]
+tauri-build = "2"

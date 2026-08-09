@@ -64,12 +64,7 @@ pub struct ScheduleRequest {
     pub day_of_week: String,
     pub second: String,
     pub agent_id: i64,
-    #[serde(default = "default_true")]
     pub enabled: bool,
-}
-
-fn default_true() -> bool {
-    true
 }
 
 // 新增定时任务接口，返回自增 id

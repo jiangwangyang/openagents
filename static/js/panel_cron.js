@@ -271,7 +271,9 @@ async function submitCronTask() {
         month: document.getElementById('cronMonth').value,
         day_of_week: document.getElementById('cronWeek').value,
         second: '0',
-        agent_id: parseInt(agentIdVal)
+        agent_id: parseInt(agentIdVal),
+        // 新增时后端忽略该字段，默认启用，但接口要求必传
+        enabled: true
     };
 
     try {

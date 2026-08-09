@@ -30,14 +30,8 @@ pub struct AgentRequest {
     pub description: String,
     pub prompt: String,
     pub model_provider_id: i64,
-    #[serde(default)]
     pub model: String,
-    #[serde(default = "default_true")]
     pub thinking: bool,
-}
-
-fn default_true() -> bool {
-    true
 }
 
 // 新增 Agent，返回自增 id

@@ -23,13 +23,6 @@ pub async fn execute(cmd_and_args: &[String], task_id: Option<i64>, db: &SqliteP
         Err(e) => return (format!("Database error: {}", e), true),
     };
 
-    // 任务无阶段对话时视为不存在(保持原有行为)
-    match conversation_repository::get_latest_task_conversation_state(db, task_id).await {
-        Ok(Some(_)) => {}
-        Ok(None) => return (format!("Task not found: {}", task_id), true),
-        Err(e) => return (format!("Database error: {}", e), true),
-    }
-
     // 新对话的 work_dir 取任务的工作目录
     let work_dir = &task.work_dir;
 

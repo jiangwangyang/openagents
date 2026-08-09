@@ -38,6 +38,14 @@ pub fn start_task(
     true
 }
 
+// 查询任务执行循环是否正在运行
+pub fn is_task_running(task_id: i64) -> bool {
+    match TASK_LOOPS.get(&task_id) {
+        Some(handle) => !handle.is_finished(),
+        None => false,
+    }
+}
+
 // 后台执行循环
 async fn run_task(
     task_id: i64,

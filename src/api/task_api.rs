@@ -74,8 +74,12 @@ pub async fn add_task(State(state): State<AppState>, Json(req): Json<AddTaskRequ
     Ok(Json(id))
 }
 
-// 删除任务接口，关联对话由数据库外键 ON DELETE CASCADE 级联删除，任务不存在返回 404
+// 删除任务接口，关联对话由数据库外键 ON DELETE CASCADE 级联删除，任务不存在返回 404，正在运行返回 409
 pub async fn delete_task(State(state): State<AppState>, Path(task_id): Path<i64>) -> Result<(), AppError> {
+    // 运行中的任务不允许删除,避免级联删除阶段对话导致后台循环写消息失败
+    if task_service::is_task_running(task_id) {
+        return Err(AppError::Conflict("Task is running".to_string()));
+    }
     let deleted = task_repository::delete_task(&state.db, task_id).await?;
     if !deleted {
         return Err(AppError::NotFound("Task not found".to_string()));

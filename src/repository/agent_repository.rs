@@ -98,8 +98,22 @@ pub async fn update_agent(pool: &SqlitePool, agent_id: i64, name: &str, descript
     Ok(result.rows_affected() > 0)
 }
 
-// 按 id 删除 Agent，不存在返回 false
+// 按 id 删除 Agent，不存在或被对话/定时任务引用返回 false
 pub async fn delete_agent(pool: &SqlitePool, agent_id: i64) -> Result<bool, sqlx::Error> {
+    let referenced: Option<(i64,)> = sqlx::query_as("SELECT id FROM t_conversation WHERE agent_id = ? LIMIT 1")
+        .bind(agent_id)
+        .fetch_optional(pool)
+        .await?;
+    if referenced.is_some() {
+        return Ok(false);
+    }
+    let referenced: Option<(i64,)> = sqlx::query_as("SELECT id FROM t_schedule WHERE agent_id = ? LIMIT 1")
+        .bind(agent_id)
+        .fetch_optional(pool)
+        .await?;
+    if referenced.is_some() {
+        return Ok(false);
+    }
     let result = sqlx::query("DELETE FROM t_agent WHERE id = ?")
         .bind(agent_id)
         .execute(pool)

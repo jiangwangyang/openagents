@@ -55,11 +55,15 @@ pub async fn update_agent(State(state): State<AppState>, Path(agent_id): Path<i6
     Ok(())
 }
 
-// 按 id 删除 Agent，不存在返回 404
+// 按 id 删除 Agent，不存在返回 404，被对话或定时任务引用返回 409
 pub async fn delete_agent(State(state): State<AppState>, Path(agent_id): Path<i64>) -> Result<(), AppError> {
+    let agent = agent_repository::get_agent(&state.db, agent_id).await?;
+    if agent.is_none() {
+        return Err(AppError::NotFound("Agent not found".to_string()));
+    }
     let deleted = agent_repository::delete_agent(&state.db, agent_id).await?;
     if !deleted {
-        return Err(AppError::NotFound("Agent not found".to_string()));
+        return Err(AppError::Conflict("Agent is referenced by conversations or schedules".to_string()));
     }
     Ok(())
 }

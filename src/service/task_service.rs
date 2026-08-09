@@ -6,7 +6,7 @@ use std::sync::Arc;
 use tokio::sync::RwLock;
 use tokio::task::JoinHandle;
 
-use crate::repository::{agent_repository, conversation_repository, task_repository};
+use crate::repository::{agent_repository, conversation_repository, model_provider_repository, task_repository};
 use crate::service::conversation_service;
 use crate::state::ConversationState;
 
@@ -76,9 +76,9 @@ async fn do_run_task(
     };
     conversation_repository::add_conversation(
         db,
-        &format!("{}-{}", task.title, agent.agent.name),
+        &format!("{}-{}", task.title, agent.name),
         &task.work_dir,
-        &agent.agent.prompt,
+        &agent.prompt,
         Some(task_id),
         Some(agent_id),
     )
@@ -121,9 +121,11 @@ async fn do_run_task(
         let agent = agent_repository::get_agent(db, latest_agent_id)
             .await?
             .ok_or_else(|| anyhow::anyhow!("agent not found"))?;
-        let provider = agent.model_provider.as_ref()
+        // 模型提供方由上层按需查询
+        let provider = model_provider_repository::get_model_provider(db, agent.model_provider_id)
+            .await?
             .ok_or_else(|| anyhow::anyhow!("model provider not configured"))?;
-        if agent.agent.model.is_empty() {
+        if agent.model.is_empty() {
             anyhow::bail!("model not configured");
         }
 
@@ -136,8 +138,8 @@ async fn do_run_task(
 
         // 团队成员为 agent_ids 候选池对应的 Agent
         let all_agents = agent_repository::list_agents(db).await?;
-        let team_agents: Vec<_> = all_agents.iter().filter(|a| task.agent_ids.0.contains(&a.agent.id)).collect();
-        let team_json: Vec<Value> = team_agents.iter().map(|a| json!({"id": a.agent.id, "name": a.agent.name, "description": a.agent.description})).collect();
+        let team_agents: Vec<_> = all_agents.iter().filter(|a| task.agent_ids.0.contains(&a.id)).collect();
+        let team_json: Vec<Value> = team_agents.iter().map(|a| json!({"id": a.id, "name": a.name, "description": a.description})).collect();
         task_content_list.push(format!("# Team\n{}", serde_json::to_string(&team_json)?));
 
         task_content_list.push("# History".to_string());
@@ -164,7 +166,7 @@ async fn do_run_task(
         let task_content = task_content_list.join("\n\n");
 
         // 触发对话执行并等待完成
-        if !conversation_service::start_conversation(latest.id, task_content, provider.id, agent.agent.model.clone(), agent.agent.thinking, conversations, db).await {
+        if !conversation_service::start_conversation(latest.id, task_content, provider.id, agent.model.clone(), agent.thinking, conversations, db).await {
             return Ok(());
         }
         // 等待对话完成: 订阅通知并等待,订阅后先复查 done 避免错过完成信号

@@ -58,9 +58,9 @@ pub async fn execute(cmd_and_args: &[String], task_id: Option<i64>, db: &SqliteP
             return (format!("Agent not found in task team: {}", agent_id), true);
         }
 
-        let title = format!("{}-{}", task.title, agent.agent.name);
-        match conversation_repository::add_conversation(db, &title, work_dir, &agent.agent.prompt, Some(task_id), Some(agent_id)).await {
-            Ok(_) => (format!("Task handed over to agent {}, please summarize the current progress", agent.agent.name), false),
+        let title = format!("{}-{}", task.title, agent.name);
+        match conversation_repository::add_conversation(db, &title, work_dir, &agent.prompt, Some(task_id), Some(agent_id)).await {
+            Ok(_) => (format!("Task handed over to agent {}, please summarize the current progress", agent.name), false),
             Err(e) => (format!("Failed to create conversation: {}", e), true),
         }
     }

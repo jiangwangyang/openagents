@@ -5,17 +5,17 @@ use serde::Deserialize;
 
 use crate::error::AppError;
 use crate::repository::agent_repository;
-use crate::repository::entity::AgentWithProvider;
+use crate::repository::entity::AgentEntity;
 use crate::state::AppState;
 
 // 查询全部 Agent，按 id 升序
-pub async fn list_agents(State(state): State<AppState>) -> Result<Json<Vec<AgentWithProvider>>, AppError> {
+pub async fn list_agents(State(state): State<AppState>) -> Result<Json<Vec<AgentEntity>>, AppError> {
     let agents = agent_repository::list_agents(&state.db).await?;
     Ok(Json(agents))
 }
 
 // 按 id 查询 Agent，不存在返回 404
-pub async fn get_agent(State(state): State<AppState>, Path(agent_id): Path<i64>) -> Result<Json<AgentWithProvider>, AppError> {
+pub async fn get_agent(State(state): State<AppState>, Path(agent_id): Path<i64>) -> Result<Json<AgentEntity>, AppError> {
     let agent = agent_repository::get_agent(&state.db, agent_id).await?;
     match agent {
         Some(a) => Ok(Json(a)),

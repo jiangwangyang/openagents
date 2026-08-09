@@ -27,14 +27,6 @@ pub struct AgentEntity {
     pub update_time: String,
 }
 
-// Agent 查询结果(含关联的 ModelProvider)
-#[derive(Debug, Clone, serde::Serialize)]
-pub struct AgentWithProvider {
-    #[serde(flatten)]
-    pub agent: AgentEntity,
-    pub model_provider: Option<ModelProviderEntity>,
-}
-
 // 任务
 #[derive(Debug, Clone, FromRow, serde::Serialize)]
 pub struct TaskEntity {
@@ -100,7 +92,7 @@ pub struct ConversationWithMessagesAndAgent {
     #[serde(flatten)]
     pub conversation: ConversationEntity,
     pub messages: Vec<MessageEntity>,
-    pub agent: Option<AgentWithProvider>,
+    pub agent: Option<AgentEntity>,
 }
 
 // 任务查询结果(含阶段对话)

@@ -28,22 +28,18 @@ pub async fn get_conversation(State(state): State<AppState>, Path(conversation_i
         Some(c) => c,
         None => return Err(AppError::NotFound("Conversation not found".to_string())),
     };
-    // 关联 Agent（含模型提供方）：用于对话页同步工作目录/智能体/模型提供方/模型/是否思考配置
+    // 关联 Agent：用于对话页同步工作目录/智能体/模型提供方/模型/是否思考配置
     let agent = match conversation.conversation.agent_id {
         Some(agent_id) => agent_repository::get_agent(&state.db, agent_id).await?,
         None => None,
     };
     let agent_json = agent.as_ref().map(|a| {
         json!({
-            "id": a.agent.id,
-            "name": a.agent.name,
-            "model_provider_id": a.agent.model_provider_id,
-            "model": a.agent.model,
-            "thinking": a.agent.thinking,
-            "model_provider": a.model_provider.as_ref().map(|p| json!({
-                "id": p.id,
-                "name": p.name,
-            })),
+            "id": a.id,
+            "name": a.name,
+            "model_provider_id": a.model_provider_id,
+            "model": a.model,
+            "thinking": a.thinking,
         })
     });
     // 对话基本字段由实体序列化展开，messages 与原接口保持一致(不含 conversation_id)，追加 agent 字段
@@ -130,10 +126,10 @@ pub async fn create_conversation_work(State(state): State<AppState>, Json(req): 
             Some(a) => a,
             None => return Err(AppError::NotFound("Agent not found".to_string())),
         };
-        system_prompt = agent.agent.prompt.clone();
-        model_provider_id = agent.agent.model_provider_id;
-        model = agent.agent.model.clone();
-        thinking = agent.agent.thinking;
+        system_prompt = agent.prompt.clone();
+        model_provider_id = agent.model_provider_id;
+        model = agent.model.clone();
+        thinking = agent.thinking;
     } else {
         // 未指定 agent 时使用用户传入的模型配置，模型配置必填
         match (req.model_provider_id, req.model, req.thinking) {

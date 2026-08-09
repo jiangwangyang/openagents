@@ -4,7 +4,7 @@ use dashmap::DashMap;
 use sqlx::SqlitePool;
 use tokio_cron_scheduler::{Job, JobScheduler, JobSchedulerError};
 
-use crate::repository::{agent_repository, conversation_repository, schedule_repository};
+use crate::repository::{agent_repository, conversation_repository, model_provider_repository, schedule_repository};
 use crate::service::conversation_service;
 use crate::state::ConversationState;
 
@@ -82,7 +82,9 @@ async fn execute_schedule(schedule_id: i64, db: &SqlitePool, conversations: &Arc
     let agent = agent_repository::get_agent(db, schedule.agent_id)
         .await?
         .ok_or_else(|| anyhow::anyhow!("agent not found"))?;
-    let provider = agent.model_provider.as_ref()
+    // 模型提供方由上层按需查询
+    let provider = model_provider_repository::get_model_provider(db, agent.model_provider_id)
+        .await?
         .ok_or_else(|| anyhow::anyhow!("model provider not configured"))?;
 
     // 创建对话
@@ -90,7 +92,7 @@ async fn execute_schedule(schedule_id: i64, db: &SqlitePool, conversations: &Arc
         db,
         &format!("[定时] {}", schedule.name),
         &schedule.work_dir,
-        &agent.agent.prompt,
+        &agent.prompt,
         None,
         Some(schedule.agent_id),
     )
@@ -101,8 +103,8 @@ async fn execute_schedule(schedule_id: i64, db: &SqlitePool, conversations: &Arc
         conversation_id,
         schedule.content.clone(),
         provider.id,
-        agent.agent.model.clone(),
-        agent.agent.thinking,
+        agent.model.clone(),
+        agent.thinking,
         conversations,
         db,
     )

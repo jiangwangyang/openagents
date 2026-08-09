@@ -1,9 +1,9 @@
-// agent loop + 流式状态发布
-use std::sync::Arc;
 use dashmap::DashMap;
-use futures_util::StreamExt;
+use futures_util::{FutureExt, StreamExt};
 use serde_json::{json, Value};
 use sqlx::SqlitePool;
+// agent loop + 流式状态发布
+use std::sync::Arc;
 use tokio::sync::RwLock;
 
 use crate::anthropic::client::AnthropicClient;
@@ -11,6 +11,9 @@ use crate::anthropic::types::{ContentBlock, ContentBlockDelta, CreateMessageRequ
 use crate::repository::{conversation_repository, model_provider_repository};
 use crate::state::ConversationState;
 use crate::tool::{self, ToolContext};
+
+// 查询对话状态在内存中的保留时长(秒)
+const QUERY_STATE_TTL_SECS: u64 = 300;
 
 // 启动对话,同一 conversation 不允许同时运行多个
 pub async fn start_conversation(
@@ -22,19 +25,28 @@ pub async fn start_conversation(
     conversations: &Arc<DashMap<i64, Arc<RwLock<ConversationState>>>>,
     db: &SqlitePool,
 ) -> bool {
-    // 防重入
-    if let Some(state) = conversations.get(&conversation_id) {
-        if !state.read().await.done {
-            return false;
-        }
-    }
     let (tx, _) = tokio::sync::watch::channel(0u64);
     let state = Arc::new(RwLock::new(ConversationState {
         chunks: Vec::new(),
         done: false,
         notify: tx,
     }));
-    conversations.insert(conversation_id, state.clone());
+    // 防重入: entry 原子检查并替换,持锁期间不 await,状态锁被占用视为运行中
+    match conversations.entry(conversation_id) {
+        dashmap::mapref::entry::Entry::Occupied(mut entry) => {
+            let finished = match entry.get().try_read() {
+                Ok(s) => s.done,
+                Err(_) => false,
+            };
+            if !finished {
+                return false;
+            }
+            entry.insert(state);
+        }
+        dashmap::mapref::entry::Entry::Vacant(entry) => {
+            entry.insert(state);
+        }
+    }
     let conversations = conversations.clone();
     let db = db.clone();
     tokio::spawn(run_conversation(conversation_id, task_content, model_provider_id, model, thinking, conversations, db));
@@ -47,18 +59,28 @@ pub async fn start_conversation_query(
     conversations: &Arc<DashMap<i64, Arc<RwLock<ConversationState>>>>,
     db: &SqlitePool,
 ) -> bool {
-    if let Some(state) = conversations.get(&conversation_id) {
-        if !state.read().await.done {
-            return false;
-        }
-    }
     let (tx, _) = tokio::sync::watch::channel(0u64);
     let state = Arc::new(RwLock::new(ConversationState {
         chunks: Vec::new(),
         done: false,
         notify: tx,
     }));
-    conversations.insert(conversation_id, state.clone());
+    // 防重入: entry 原子检查并替换,持锁期间不 await,状态锁被占用视为运行中
+    match conversations.entry(conversation_id) {
+        dashmap::mapref::entry::Entry::Occupied(mut entry) => {
+            let finished = match entry.get().try_read() {
+                Ok(s) => s.done,
+                Err(_) => false,
+            };
+            if !finished {
+                return false;
+            }
+            entry.insert(state);
+        }
+        dashmap::mapref::entry::Entry::Vacant(entry) => {
+            entry.insert(state);
+        }
+    }
     let conversations = conversations.clone();
     let db = db.clone();
     tokio::spawn(run_conversation(conversation_id, String::new(), 0, String::new(), false, conversations, db));
@@ -113,14 +135,32 @@ async fn run_conversation(
     conversations: Arc<DashMap<i64, Arc<RwLock<ConversationState>>>>,
     db: SqlitePool,
 ) {
-    let result = do_run_conversation(conversation_id, &task_content, model_provider_id, &model, thinking, &conversations, &db).await;
+    // 捕获 panic 兜底,保证 finish_conversation 必执行,避免对话被永久锁死
+    let result = std::panic::AssertUnwindSafe(do_run_conversation(conversation_id, &task_content, model_provider_id, &model, thinking, &conversations, &db))
+        .catch_unwind()
+        .await
+        .unwrap_or_else(|e| {
+            let msg = e.downcast_ref::<String>().cloned()
+                .or_else(|| e.downcast_ref::<&str>().map(|s| s.to_string()))
+                .unwrap_or_else(|| "unknown".to_string());
+            Err(anyhow::anyhow!("conversation panicked: {}", msg))
+        });
     if let Err(e) = result {
         publish_chunk(conversation_id, "error", &format!("Conversation execution failed: {}", e), json!({}), &conversations).await;
         tracing::error!("Conversation execution failed: {}", e);
     }
     finish_conversation(conversation_id, &conversations).await;
-    // 执行任务存储的 chunk 太碎需要清理,查询任务状态可以保留
-    if !task_content.is_empty() {
+    // 执行任务存储的 chunk 太碎立即移除,查询任务的状态则保留 5 分钟后再移除
+    if task_content.is_empty() {
+        // 仅当状态未被新启动的对话替换时才移除
+        if let Some(state) = conversations.get(&conversation_id).map(|r| r.clone()) {
+            let conversations = conversations.clone();
+            tokio::spawn(async move {
+                tokio::time::sleep(std::time::Duration::from_secs(QUERY_STATE_TTL_SECS)).await;
+                conversations.remove_if(&conversation_id, |_, current| Arc::ptr_eq(current, &state));
+            });
+        }
+    } else {
         conversations.remove(&conversation_id);
     }
 }
@@ -176,7 +216,7 @@ async fn do_run_conversation(
             }),
             conversations,
         )
-        .await;
+            .await;
     }
     if !task_content.is_empty() {
         publish_chunk(conversation_id, "user", task_content, json!({}), conversations).await;
@@ -329,7 +369,7 @@ async fn do_run_conversation(
                             }),
                             conversations,
                         )
-                        .await;
+                            .await;
                     }
                 }
                 MessageStreamEvent::MessageStop => {}

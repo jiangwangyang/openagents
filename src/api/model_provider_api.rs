@@ -23,9 +23,9 @@ pub async fn get_model_provider(State(state): State<AppState>, Path(provider_id)
     }
 }
 
-// 新增模型提供商请求体
+// 模型提供商新增/更新请求体
 #[derive(Debug, Deserialize)]
-pub struct AddModelProviderRequest {
+pub struct ModelProviderRequest {
     pub name: String,
     pub protocol_type: String,
     pub base_url: String,
@@ -33,7 +33,7 @@ pub struct AddModelProviderRequest {
 }
 
 // 新增模型提供商，名称已存在返回 409
-pub async fn add_model_provider(State(state): State<AppState>, Json(req): Json<AddModelProviderRequest>) -> Result<(), AppError> {
+pub async fn add_model_provider(State(state): State<AppState>, Json(req): Json<ModelProviderRequest>) -> Result<(), AppError> {
     let result = model_provider_repository::add_model_provider(&state.db, &req.name, &req.protocol_type, &req.base_url, &req.api_key).await?;
     if result.is_none() {
         return Err(AppError::Conflict("Model provider already exists".to_string()));
@@ -41,17 +41,8 @@ pub async fn add_model_provider(State(state): State<AppState>, Json(req): Json<A
     Ok(())
 }
 
-// 更新模型提供商请求体
-#[derive(Debug, Deserialize)]
-pub struct UpdateModelProviderRequest {
-    pub name: String,
-    pub protocol_type: String,
-    pub base_url: String,
-    pub api_key: String,
-}
-
 // 按 id 更新模型提供商，不存在或名称冲突返回 404
-pub async fn update_model_provider(State(state): State<AppState>, Path(provider_id): Path<i64>, Json(req): Json<UpdateModelProviderRequest>) -> Result<(), AppError> {
+pub async fn update_model_provider(State(state): State<AppState>, Path(provider_id): Path<i64>, Json(req): Json<ModelProviderRequest>) -> Result<(), AppError> {
     let updated = model_provider_repository::update_model_provider(&state.db, provider_id, &req.name, &req.protocol_type, &req.base_url, &req.api_key).await?;
     if !updated {
         return Err(AppError::NotFound("Model provider not found".to_string()));

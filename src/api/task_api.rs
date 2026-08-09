@@ -93,7 +93,7 @@ pub struct StartTaskRequest {
 // 启动任务执行循环接口，agent_id 为首个执行的 Agent，阶段对话的工作目录取任务的 work_dir
 // 任务/agent 不存在返回 404，执行循环已在运行返回 409
 pub async fn start_task(State(state): State<AppState>, Path(task_id): Path<i64>, Json(req): Json<StartTaskRequest>) -> Result<(), AppError> {
-    let task = task_repository::get_task(&state.db, task_id).await?;
+    let task = task_repository::get_task_entity(&state.db, task_id).await?;
     if task.is_none() {
         return Err(AppError::NotFound("Task not found".to_string()));
     }

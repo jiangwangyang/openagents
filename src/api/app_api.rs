@@ -72,7 +72,9 @@ pub async fn list_directory(Query(query): Query<DirListQuery>) -> Result<impl In
     let mut entries = tokio::fs::read_dir(&path).await.map_err(|e| AppError::Internal(e.into()))?;
     while let Some(entry) = entries.next_entry().await.map_err(|e| AppError::Internal(e.into()))? {
         let entry_path = entry.path();
-        if entry_path.is_dir() {
+        // 异步获取文件类型,避免阻塞运行时
+        let is_dir = entry.file_type().await.map(|t| t.is_dir()).unwrap_or(false);
+        if is_dir {
             let name = entry.file_name().to_string_lossy().to_string();
             let resolved = entry_path.canonicalize().unwrap_or(entry_path);
             directories.push(json!({

@@ -80,7 +80,7 @@ async fn run_server(port_tx: Option<Sender<u16>>, bind_addr: String) -> anyhow::
     if let Some(parent) = log_file.parent() {
         std::fs::create_dir_all(parent)?;
     }
-    let file_appender = tracing_appender::rolling::never(log_file.parent().unwrap(), log_file.file_name().unwrap());
+    let file_appender = tracing_appender::rolling::daily(log_file.parent().unwrap(), log_file.file_name().unwrap());
     let (non_blocking, _guard) = tracing_appender::non_blocking(file_appender);
     tracing_subscriber::registry()
         .with(tracing_subscriber::fmt::layer().with_writer(non_blocking))

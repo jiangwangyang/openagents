@@ -16,6 +16,7 @@ pub async fn init_db() -> anyhow::Result<SqlitePool> {
 
     let options = SqliteConnectOptions::from_str(&db_url)?
         .create_if_missing(true)
+        .pragma("journal_mode", "WAL")
         .pragma("foreign_keys", "ON");
 
     let pool = SqlitePoolOptions::new()
@@ -79,7 +80,7 @@ async fn create_tables(pool: &SqlitePool) -> anyhow::Result<()> {
         "CREATE TABLE IF NOT EXISTS t_conversation (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             task_id INTEGER REFERENCES t_task(id) ON DELETE CASCADE,
-            agent_id INTEGER NOT NULL REFERENCES t_agent(id) ON DELETE RESTRICT,
+            agent_id INTEGER REFERENCES t_agent(id) ON DELETE RESTRICT,
             title TEXT NOT NULL,
             work_dir TEXT NOT NULL,
             system_prompt TEXT NOT NULL,
@@ -130,7 +131,7 @@ async fn create_tables(pool: &SqlitePool) -> anyhow::Result<()> {
             content TEXT NOT NULL,
             work_dir TEXT NOT NULL,
             cron_expr TEXT NOT NULL,
-            agent_id INTEGER NOT NULL REFERENCES t_agent(id) ON DELETE RESTRICT,
+            agent_id INTEGER REFERENCES t_agent(id) ON DELETE RESTRICT,
             enabled INTEGER NOT NULL DEFAULT 1,
             create_time TEXT NOT NULL,
             update_time TEXT NOT NULL

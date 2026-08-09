@@ -16,23 +16,26 @@ pub async fn execute(cmd_and_args: &[String], task_id: Option<i64>, db: &SqliteP
         return (format!("Unknown task command: {}", cmd_and_args.join(" ")), true);
     }
 
-    // 查询任务
-    let task = match task_repository::get_task(db, task_id).await {
+    // 查询任务基本字段(交接只需标题/工作目录/团队,无需全量加载对话与消息)
+    let task = match task_repository::get_task_entity(db, task_id).await {
         Ok(Some(t)) => t,
         Ok(None) => return (format!("Task not found: {}", task_id), true),
         Err(e) => return (format!("Database error: {}", e), true),
     };
 
-    if task.conversations.is_empty() {
-        return (format!("Task not found: {}", task_id), true);
+    // 任务无阶段对话时视为不存在(保持原有行为)
+    match conversation_repository::get_latest_task_conversation_state(db, task_id).await {
+        Ok(Some(_)) => {}
+        Ok(None) => return (format!("Task not found: {}", task_id), true),
+        Err(e) => return (format!("Database error: {}", e), true),
     }
 
     // 新对话的 work_dir 取任务的工作目录
-    let work_dir = &task.task.work_dir;
+    let work_dir = &task.work_dir;
 
     // 移交给用户: 创建 agent_id 为 None 的用户审核对话
     if cmd_and_args[2] == "user" {
-        let title = format!("{}-User", task.task.title);
+        let title = format!("{}-User", task.title);
         match conversation_repository::add_conversation(db, &title, work_dir, "", Some(task_id), None).await {
             Ok(_) => ("Task handed over to the user, please summarize the current progress".to_string(), false),
             Err(e) => (format!("Failed to create conversation: {}", e), true),
@@ -51,7 +54,7 @@ pub async fn execute(cmd_and_args: &[String], task_id: Option<i64>, db: &SqliteP
         };
 
         // 检查 agent 是否在任务团队中
-        let agent_ids: Vec<i64> = match task.task.agent_ids.as_array() {
+        let agent_ids: Vec<i64> = match task.agent_ids.as_array() {
             Some(arr) => arr.iter().filter_map(|v| v.as_i64()).collect(),
             None => Vec::new(),
         };
@@ -60,7 +63,7 @@ pub async fn execute(cmd_and_args: &[String], task_id: Option<i64>, db: &SqliteP
             return (format!("Agent not found in task team: {}", agent_id), true);
         }
 
-        let title = format!("{}-{}", task.task.title, agent.agent.name);
+        let title = format!("{}-{}", task.title, agent.agent.name);
         match conversation_repository::add_conversation(db, &title, work_dir, &agent.agent.prompt, Some(task_id), Some(agent_id)).await {
             Ok(_) => (format!("Task handed over to agent {}, please summarize the current progress", agent.agent.name), false),
             Err(e) => (format!("Failed to create conversation: {}", e), true),

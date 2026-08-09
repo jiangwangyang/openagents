@@ -65,8 +65,14 @@ pub async fn get_conversation(State(state): State<AppState>, Path(conversation_i
     Ok(Json(result))
 }
 
-// 删除对话接口，消息由数据库外键 ON DELETE CASCADE 级联删除，对话不存在时返回 404
+// 删除对话接口，消息由数据库外键 ON DELETE CASCADE 级联删除，对话不存在返回 404，正在运行返回 409
 pub async fn delete_conversation(State(state): State<AppState>, Path(conversation_id): Path<i64>) -> Result<(), AppError> {
+    // 运行中的对话不允许删除,避免后台任务存消息时外键失败
+    if let Some(state) = conversation_service::get_conversation_state(conversation_id, &state.conversations) {
+        if !state.read().await.done {
+            return Err(AppError::Conflict("Conversation is running".to_string()));
+        }
+    }
     let deleted = conversation_repository::delete_conversation(&state.db, conversation_id).await?;
     if !deleted {
         return Err(AppError::NotFound("Conversation not found".to_string()));
@@ -221,10 +227,11 @@ fn create_sse_stream(conversation_state: Arc<RwLock<ConversationState>>) -> impl
                 return None;
             }
 
-            // 初始化 watch receiver
+            // 初始化 watch receiver 后立即重查状态,避免订阅发生在最后一次通知之后导致永久等待
             if rx.is_none() {
                 let s = conversation_state.read().await;
                 rx = Some(s.notify.subscribe());
+                continue;
             }
 
             // 异步等待新数据通知

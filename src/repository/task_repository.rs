@@ -3,8 +3,8 @@ use sqlx::SqlitePool;
 
 use super::agent_repository;
 use super::entity::{
-    ConversationEntity, ConversationWithMessagesAndAgent, MessageEntity, TaskEntity,
-    TaskWithConversations,
+    AgentWithProvider, ConversationEntity, ConversationWithMessagesAndAgent, MessageEntity,
+    TaskEntity, TaskWithConversations,
 };
 
 // 查询全部任务，按 id 升序
@@ -48,28 +48,45 @@ pub async fn get_task(pool: &SqlitePool, task_id: i64) -> Result<Option<TaskWith
     .fetch_all(pool)
     .await?;
 
-    let mut conv_results = Vec::with_capacity(conversations.len());
-    for conv in conversations {
-        // 查询该对话的消息，按 id 升序
-        let messages = sqlx::query_as::<_, MessageEntity>(
-            "SELECT id, conversation_id, role, content, stop_reason, cache_read_input_tokens, input_tokens, output_tokens, time FROM t_message WHERE conversation_id = ? ORDER BY id",
-        )
-        .bind(conv.id)
-        .fetch_all(pool)
-        .await?;
-
-        // 查询关联的 Agent(含 ModelProvider)
-        let agent = match conv.agent_id {
-            Some(aid) => agent_repository::get_agent(pool, aid).await?,
-            None => None,
-        };
-
-        conv_results.push(ConversationWithMessagesAndAgent {
-            conversation: conv,
-            messages,
-            agent,
-        });
+    if conversations.is_empty() {
+        return Ok(Some(TaskWithConversations {
+            task,
+            conversations: Vec::new(),
+        }));
     }
+
+    // 批量查询全部阶段对话的消息(一次 IN 查询 + 内存分组,避免 N+1)，按 id 升序
+    let placeholders = vec!["?"; conversations.len()].join(",");
+    let messages_sql = format!(
+        "SELECT id, conversation_id, role, content, stop_reason, cache_read_input_tokens, input_tokens, output_tokens, time FROM t_message WHERE conversation_id IN ({}) ORDER BY id",
+        placeholders
+    );
+    let mut messages_query = sqlx::query_as::<_, MessageEntity>(&messages_sql);
+    for conv in &conversations {
+        messages_query = messages_query.bind(conv.id);
+    }
+    let all_messages = messages_query.fetch_all(pool).await?;
+    let mut message_map: std::collections::HashMap<i64, Vec<MessageEntity>> = std::collections::HashMap::new();
+    for message in all_messages {
+        message_map.entry(message.conversation_id).or_default().push(message);
+    }
+
+    // 批量查询 Agent(含 ModelProvider),内存关联
+    let all_agents = agent_repository::list_agents(pool).await?;
+    let agent_map: std::collections::HashMap<i64, AgentWithProvider> = all_agents.into_iter().map(|a| (a.agent.id, a)).collect();
+
+    let conv_results = conversations
+        .into_iter()
+        .map(|conv| {
+            let messages = message_map.remove(&conv.id).unwrap_or_default();
+            let agent = conv.agent_id.and_then(|aid| agent_map.get(&aid).cloned());
+            ConversationWithMessagesAndAgent {
+                conversation: conv,
+                messages,
+                agent,
+            }
+        })
+        .collect();
 
     Ok(Some(TaskWithConversations {
         task,

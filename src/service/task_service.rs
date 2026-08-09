@@ -21,16 +21,20 @@ pub fn start_task(
     db: &SqlitePool,
     conversations: &Arc<DashMap<i64, Arc<RwLock<ConversationState>>>>,
 ) -> bool {
-    // 防重入
-    if let Some(handle) = TASK_LOOPS.get(&task_id) {
-        if !handle.is_finished() {
-            return false;
+    // 防重入: entry 原子检查并插入,持锁期间不 await
+    match TASK_LOOPS.entry(task_id) {
+        dashmap::mapref::entry::Entry::Occupied(mut entry) => {
+            if !entry.get().is_finished() {
+                return false;
+            }
+            let handle = tokio::spawn(run_task(task_id, agent_id, db.clone(), conversations.clone()));
+            entry.insert(handle);
+        }
+        dashmap::mapref::entry::Entry::Vacant(entry) => {
+            let handle = tokio::spawn(run_task(task_id, agent_id, db.clone(), conversations.clone()));
+            entry.insert(handle);
         }
     }
-    let db = db.clone();
-    let conversations = conversations.clone();
-    let handle = tokio::spawn(run_task(task_id, agent_id, db, conversations));
-    TASK_LOOPS.insert(task_id, handle);
     true
 }
 
@@ -158,8 +162,12 @@ async fn do_run_task(
         if !conversation_service::start_conversation(latest.id, task_content, provider.id, agent.agent.model.clone(), agent.agent.thinking, conversations, db).await {
             return Ok(());
         }
-        // 等待对话完成
+        // 等待对话完成: 订阅通知并等待,订阅后先复查 done 避免错过完成信号
         if let Some(state) = conversation_service::get_conversation_state(latest.id, conversations) {
+            let mut receiver = {
+                let s = state.read().await;
+                s.notify.subscribe()
+            };
             loop {
                 {
                     let s = state.read().await;
@@ -167,7 +175,10 @@ async fn do_run_task(
                         break;
                     }
                 }
-                tokio::time::sleep(std::time::Duration::from_millis(100)).await;
+                // 发送端关闭(状态被移除)时退出等待
+                if receiver.changed().await.is_err() {
+                    break;
+                }
             }
         }
     }

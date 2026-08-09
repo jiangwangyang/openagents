@@ -65,6 +65,7 @@ fn run_tauri(url: &str) -> anyhow::Result<()> {
             tauri::WebviewWindowBuilder::new(app, "main", tauri::WebviewUrl::External(url.clone()))
                 .title("OpenAgents")
                 .inner_size(1440.0, 900.0)
+                .maximized(true)
                 .build()?;
             Ok(())
         })

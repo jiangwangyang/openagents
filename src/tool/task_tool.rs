@@ -54,12 +54,7 @@ pub async fn execute(cmd_and_args: &[String], task_id: Option<i64>, db: &SqliteP
         };
 
         // 检查 agent 是否在任务团队中
-        let agent_ids: Vec<i64> = match task.agent_ids.as_array() {
-            Some(arr) => arr.iter().filter_map(|v| v.as_i64()).collect(),
-            None => Vec::new(),
-        };
-
-        if !agent_ids.contains(&agent_id) {
+        if !task.agent_ids.0.contains(&agent_id) {
             return (format!("Agent not found in task team: {}", agent_id), true);
         }
 

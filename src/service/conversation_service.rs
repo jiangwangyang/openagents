@@ -8,6 +8,7 @@ use tokio::sync::RwLock;
 
 use crate::anthropic::client::AnthropicClient;
 use crate::anthropic::types::{ContentBlock, ContentBlockDelta, CreateMessageRequest, MessageStreamEvent, RequestMessage, ThinkingConfig};
+use crate::repository::entity::NewMessageEntity;
 use crate::repository::{conversation_repository, model_provider_repository};
 use crate::state::ConversationState;
 use crate::tool::{self, ToolContext};
@@ -390,19 +391,17 @@ async fn do_run_conversation(
 
         if tool_use_list.is_empty() {
             // assistant 消息持久化
-            let messages_to_save: Vec<(String, Value, String, i64, i64, i64, String)> = messages
+            let messages_to_save: Vec<NewMessageEntity> = messages
                 .iter()
                 .filter(|m| m.get("time").is_some())
-                .map(|m| {
-                    (
-                        m["role"].as_str().unwrap_or("").to_string(),
-                        m["content"].clone(),
-                        m["stop_reason"].as_str().unwrap_or("").to_string(),
-                        m["usage"]["cache_read_input_tokens"].as_i64().unwrap_or(0),
-                        m["usage"]["input_tokens"].as_i64().unwrap_or(0),
-                        m["usage"]["output_tokens"].as_i64().unwrap_or(0),
-                        m["time"].as_str().unwrap_or("").to_string(),
-                    )
+                .map(|m| NewMessageEntity {
+                    role: m["role"].as_str().unwrap_or("").to_string(),
+                    content: m["content"].clone(),
+                    stop_reason: m["stop_reason"].as_str().unwrap_or("").to_string(),
+                    cache_read_input_tokens: m["usage"]["cache_read_input_tokens"].as_i64().unwrap_or(0),
+                    input_tokens: m["usage"]["input_tokens"].as_i64().unwrap_or(0),
+                    output_tokens: m["usage"]["output_tokens"].as_i64().unwrap_or(0),
+                    time: m["time"].as_str().unwrap_or("").to_string(),
                 })
                 .collect();
             conversation_repository::add_conversation_messages(db, conversation_id, &messages_to_save).await?;

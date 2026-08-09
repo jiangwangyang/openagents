@@ -11,8 +11,8 @@ use crate::service::conversation_service;
 use crate::state::ConversationState;
 
 // 每个 task 的执行循环后台任务句柄
-static TASK_LOOPS: std::sync::LazyLock<Arc<DashMap<i64, JoinHandle<()>>>> =
-    std::sync::LazyLock::new(|| Arc::new(DashMap::new()));
+static TASK_LOOPS: std::sync::LazyLock<DashMap<i64, JoinHandle<()>>> =
+    std::sync::LazyLock::new(DashMap::new);
 
 // 启动任务执行循环,同一 task 同时只允许一个循环运行
 pub fn start_task(
@@ -128,10 +128,7 @@ async fn do_run_task(
 
         // 团队成员为 agent_ids 候选池对应的 Agent
         let all_agents = agent_repository::list_agents(db).await?;
-        let task_agent_ids: Vec<i64> = task.agent_ids.as_array()
-            .map(|arr| arr.iter().filter_map(|v| v.as_i64()).collect())
-            .unwrap_or_default();
-        let team_agents: Vec<_> = all_agents.iter().filter(|a| task_agent_ids.contains(&a.agent.id)).collect();
+        let team_agents: Vec<_> = all_agents.iter().filter(|a| task.agent_ids.0.contains(&a.agent.id)).collect();
         let team_json: Vec<Value> = team_agents.iter().map(|a| json!({"id": a.agent.id, "name": a.agent.name, "description": a.agent.description})).collect();
         task_content_list.push(format!("# Team\n{}", serde_json::to_string(&team_json)?));
 

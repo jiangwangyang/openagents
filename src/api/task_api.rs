@@ -70,8 +70,7 @@ pub struct AddTaskRequest {
 
 // 新增任务接口，agent_ids 为可供 Agent 选择下一个执行者的候选池，work_dir 为任务阶段对话的工作目录，返回自增 id
 pub async fn add_task(State(state): State<AppState>, Json(req): Json<AddTaskRequest>) -> Result<Json<i64>, AppError> {
-    let agent_ids_json = serde_json::to_value(&req.agent_ids).map_err(|e| AppError::Internal(e.into()))?;
-    let id = task_repository::add_task(&state.db, &req.title, &req.content, &agent_ids_json, &req.work_dir).await?;
+    let id = task_repository::add_task(&state.db, &req.title, &req.content, &req.agent_ids, &req.work_dir).await?;
     Ok(Json(id))
 }
 

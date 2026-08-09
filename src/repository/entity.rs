@@ -41,7 +41,7 @@ pub struct TaskEntity {
     pub id: i64,
     pub title: String,
     pub content: String,
-    pub agent_ids: serde_json::Value,
+    pub agent_ids: sqlx::types::Json<Vec<i64>>,
     pub work_dir: String,
     pub create_time: String,
     pub update_time: String,
@@ -65,6 +65,18 @@ pub struct ConversationEntity {
 pub struct MessageEntity {
     pub id: i64,
     pub conversation_id: i64,
+    pub role: String,
+    pub content: serde_json::Value,
+    pub stop_reason: String,
+    pub cache_read_input_tokens: i64,
+    pub input_tokens: i64,
+    pub output_tokens: i64,
+    pub time: String,
+}
+
+// 待写入的消息(add_conversation_messages 参数)
+#[derive(Debug, Clone)]
+pub struct NewMessageEntity {
     pub role: String,
     pub content: serde_json::Value,
     pub stop_reason: String,

@@ -11,7 +11,7 @@ use tokio::sync::RwLock;
 use crate::config;
 use crate::error::AppError;
 use crate::repository::{agent_repository, conversation_repository};
-use crate::repository::entity::ConversationEntity;
+use crate::repository::entity::{ConversationEntity, NewMessageEntity};
 use crate::service::conversation_service;
 use crate::state::{AppState, ConversationState};
 
@@ -92,8 +92,15 @@ pub async fn add_conversation_message(State(state): State<AppState>, Path(conver
     if conversation.is_none() {
         return Err(AppError::NotFound("Conversation not found".to_string()));
     }
-    let now = chrono::Local::now().to_rfc3339();
-    let messages = vec![("user".to_string(), serde_json::Value::String(req.content), "".to_string(), 0i64, 0i64, 0i64, now)];
+    let messages = vec![NewMessageEntity {
+        role: "user".to_string(),
+        content: serde_json::Value::String(req.content),
+        stop_reason: String::new(),
+        cache_read_input_tokens: 0,
+        input_tokens: 0,
+        output_tokens: 0,
+        time: chrono::Local::now().to_rfc3339(),
+    }];
     conversation_repository::add_conversation_messages(&state.db, conversation_id, &messages).await?;
     Ok(())
 }

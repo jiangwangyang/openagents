@@ -3,7 +3,7 @@ use sqlx::SqlitePool;
 
 use super::entity::{
     ConversationEntity, ConversationHistorySummary, ConversationWithMessages,
-    LatestConversationState, MessageEntity,
+    LatestConversationState, MessageEntity, NewMessageEntity,
 };
 
 // 查询全部独立对话(不含任务中的阶段对话)，按更新时间倒序
@@ -60,20 +60,20 @@ pub async fn add_conversation(pool: &SqlitePool, title: &str, work_dir: &str, sy
 }
 
 // 批量追加对话消息，并原子刷新对话的更新时间
-pub async fn add_conversation_messages(pool: &SqlitePool, conversation_id: i64, messages: &[(String, serde_json::Value, String, i64, i64, i64, String)]) -> Result<(), sqlx::Error> {
+pub async fn add_conversation_messages(pool: &SqlitePool, conversation_id: i64, messages: &[NewMessageEntity]) -> Result<(), sqlx::Error> {
     let mut tx = pool.begin().await?;
-    for (role, content, stop_reason, cache_read_input_tokens, input_tokens, output_tokens, time) in messages {
+    for msg in messages {
         sqlx::query(
             "INSERT INTO t_message (conversation_id, role, content, stop_reason, cache_read_input_tokens, input_tokens, output_tokens, time) VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
         )
         .bind(conversation_id)
-        .bind(role)
-        .bind(content)
-        .bind(stop_reason)
-        .bind(cache_read_input_tokens)
-        .bind(input_tokens)
-        .bind(output_tokens)
-        .bind(time)
+        .bind(&msg.role)
+        .bind(&msg.content)
+        .bind(&msg.stop_reason)
+        .bind(msg.cache_read_input_tokens)
+        .bind(msg.input_tokens)
+        .bind(msg.output_tokens)
+        .bind(&msg.time)
         .execute(&mut *tx)
         .await?;
     }

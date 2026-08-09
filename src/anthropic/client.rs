@@ -10,7 +10,6 @@ use super::types::{CreateMessageRequest, MessageStreamEvent};
 pub struct AnthropicClient {
     base_url: String,
     api_key: String,
-    http: Client,
 }
 
 // 流式响应类型
@@ -38,7 +37,6 @@ impl AnthropicClient {
         Self {
             base_url: base_url.trim_end_matches('/').to_string(),
             api_key: api_key.to_string(),
-            http: HTTP_CLIENT.clone(),
         }
     }
 
@@ -48,8 +46,7 @@ impl AnthropicClient {
         request: &CreateMessageRequest,
     ) -> Result<EventStream, AnthropicError> {
         let url = format!("{}/v1/messages", self.base_url);
-        let response = self
-            .http
+        let response = HTTP_CLIENT
             .post(&url)
             .header("x-api-key", &self.api_key)
             .header("anthropic-version", "2023-06-01")

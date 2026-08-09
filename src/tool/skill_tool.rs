@@ -106,24 +106,25 @@ pub async fn init_skills() {
 
     // 更新全局存储
     {
-        let mut guard = SKILLS.write().unwrap();
+        // 锁被毒化时恢复内部数据继续写入，避免 panic
+        let mut guard = SKILLS.write().unwrap_or_else(|e| e.into_inner());
         *guard = skills;
     }
 
-    let count = SKILLS.read().unwrap().len();
+    let count = SKILLS.read().unwrap_or_else(|e| e.into_inner()).len();
     tracing::info!("Skills initialized, having {} skills", count);
 }
 
 // 获取技能列表
 pub fn list_skills() -> Vec<SkillInfo> {
-    SKILLS.read().unwrap().clone()
+    SKILLS.read().unwrap_or_else(|e| e.into_inner()).clone()
 }
 
 // 执行
 pub fn execute(cmd_and_args: &[String]) -> ToolResult {
     // 1. skill list
     if cmd_and_args.len() == 2 && cmd_and_args[0] == "skill" && cmd_and_args[1] == "list" {
-        let skills = SKILLS.read().unwrap();
+        let skills = SKILLS.read().unwrap_or_else(|e| e.into_inner());
         let result: Vec<serde_json::Value> = skills
             .iter()
             .map(|s| {

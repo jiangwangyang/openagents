@@ -49,8 +49,8 @@ fn run_desktop() -> anyhow::Result<()> {
         }
     });
 
-    // 等待服务就绪并获取实际端口
-    let port: u16 = port_rx.recv()?;
+    // 等待服务就绪并获取实际端口，超时说明后台服务在发送端口前挂起(如初始化阻塞)，避免主线程永久等待
+    let port: u16 = port_rx.recv_timeout(std::time::Duration::from_secs(30))?;
     let url: String = format!("http://127.0.0.1:{port}");
 
     // 主线程创建 Tauri 窗口 (GUI 事件循环必须在主线程，macOS 强制要求)

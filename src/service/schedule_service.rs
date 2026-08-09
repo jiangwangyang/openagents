@@ -9,12 +9,12 @@ use crate::service::conversation_service;
 use crate::state::ConversationState;
 
 // 调度器全局句柄
-static SCHEDULER: std::sync::LazyLock<Arc<tokio::sync::Mutex<Option<JobScheduler>>>> =
-    std::sync::LazyLock::new(|| Arc::new(tokio::sync::Mutex::new(None)));
+static SCHEDULER: std::sync::LazyLock<tokio::sync::Mutex<Option<JobScheduler>>> =
+    std::sync::LazyLock::new(|| tokio::sync::Mutex::new(None));
 
 // 每个 schedule 对应的 scheduler job uuid
-static JOB_IDS: std::sync::LazyLock<Arc<DashMap<i64, uuid::Uuid>>> =
-    std::sync::LazyLock::new(|| Arc::new(DashMap::new()));
+static JOB_IDS: std::sync::LazyLock<DashMap<i64, uuid::Uuid>> =
+    std::sync::LazyLock::new(DashMap::new);
 
 // 初始化调度器并从数据库加载所有启用的定时任务
 pub async fn init_scheduler(db: &SqlitePool, conversations: &Arc<DashMap<i64, Arc<tokio::sync::RwLock<ConversationState>>>>) -> anyhow::Result<()> {

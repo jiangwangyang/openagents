@@ -28,7 +28,7 @@ pub fn create_router(state: AppState) -> Router {
         .route("/agent/{agent_id}", put(agent_api::update_agent))
         .route("/agent/{agent_id}", delete(agent_api::delete_agent))
         // 对话
-        .route("/conversation/list", get(conversation_api::get_conversations))
+        .route("/conversation/list", get(conversation_api::list_conversations))
         .route("/conversation/{conversation_id}", get(conversation_api::get_conversation))
         .route("/conversation/{conversation_id}", delete(conversation_api::delete_conversation))
         .route("/conversation/{conversation_id}/message", post(conversation_api::add_conversation_message))

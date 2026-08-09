@@ -124,23 +124,6 @@ pub struct ConversationWithMessages {
     pub messages: Vec<MessageEntity>,
 }
 
-// 阶段对话(含消息与执行 Agent)
-#[derive(Debug, Clone, serde::Serialize)]
-pub struct ConversationWithMessagesAndAgent {
-    #[serde(flatten)]
-    pub conversation: ConversationEntity,
-    pub messages: Vec<MessageEntity>,
-    pub agent: Option<AgentEntity>,
-}
-
-// 任务查询结果(含阶段对话)
-#[derive(Debug, Clone, serde::Serialize)]
-pub struct TaskWithConversations {
-    #[serde(flatten)]
-    pub task: TaskEntity,
-    pub conversations: Vec<ConversationWithMessagesAndAgent>,
-}
-
 // 任务循环查询结果: 最新阶段对话状态
 #[derive(Debug, Clone, FromRow)]
 pub struct LatestConversationState {

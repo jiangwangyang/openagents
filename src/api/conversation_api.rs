@@ -10,14 +10,14 @@ use tokio::sync::RwLock;
 
 use crate::config;
 use crate::error::AppError;
-use crate::repository::{agent_repository, conversation_repository};
 use crate::repository::entity::{ConversationEntity, NewMessageEntity};
+use crate::repository::{agent_repository, conversation_repository};
 use crate::service::conversation_service;
 use crate::state::{AppState, ConversationState};
 
 // 对话列表接口，按更新时间倒序返回独立对话（不含任务中的阶段对话）
-pub async fn get_conversations(State(state): State<AppState>) -> Result<Json<Vec<ConversationEntity>>, AppError> {
-    let conversations = conversation_repository::get_conversations(&state.db).await?;
+pub async fn list_conversations(State(state): State<AppState>) -> Result<Json<Vec<ConversationEntity>>, AppError> {
+    let conversations = conversation_repository::list_conversations(&state.db).await?;
     Ok(Json(conversations))
 }
 
@@ -185,7 +185,7 @@ pub async fn start_conversation_work(State(state): State<AppState>, Path(convers
 }
 
 // GET /conversation/{conversation_id}/stream SSE 流式订阅
-pub async fn stream_conversation_work(State(state): State<AppState>, Path(conversation_id): Path<i64>) -> Result<Sse<impl futures_util::Stream<Item = Result<Event, Infallible>>>, AppError> {
+pub async fn stream_conversation_work(State(state): State<AppState>, Path(conversation_id): Path<i64>) -> Result<Sse<impl futures_util::Stream<Item=Result<Event, Infallible>>>, AppError> {
     let conversation = conversation_repository::get_conversation(&state.db, conversation_id).await?;
     if conversation.is_none() {
         return Err(AppError::NotFound("Conversation not found".to_string()));
@@ -206,7 +206,7 @@ pub async fn stream_conversation_work(State(state): State<AppState>, Path(conver
 }
 
 // 创建 SSE 流: 先回放历史 chunks，再实时跟随新数据
-fn create_sse_stream(conversation_state: Arc<RwLock<ConversationState>>) -> impl futures_util::Stream<Item = Result<Event, Infallible>> {
+fn create_sse_stream(conversation_state: Arc<RwLock<ConversationState>>) -> impl futures_util::Stream<Item=Result<Event, Infallible>> {
     let init_state = (0usize, None::<tokio::sync::watch::Receiver<u64>>);
     futures_util::stream::unfold((conversation_state, init_state), |(conversation_state, (mut index, mut rx))| async move {
         loop {

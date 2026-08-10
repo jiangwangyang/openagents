@@ -8,12 +8,12 @@ use crate::config;
 // 创建数据库连接池并初始化
 pub async fn init_db() -> anyhow::Result<SqlitePool> {
     // 确保数据目录存在
-    let data_dir = config::data_dir();
-    std::fs::create_dir_all(&data_dir)?;
-
     let db_file = config::database_file();
-    let db_url = format!("sqlite:{}", db_file.display());
+    if let Some(parent) = db_file.parent() {
+        std::fs::create_dir_all(parent)?;
+    }
 
+    let db_url = format!("sqlite:{}", db_file.display());
     let options = SqliteConnectOptions::from_str(&db_url)?
         .create_if_missing(true)
         .pragma("journal_mode", "WAL")

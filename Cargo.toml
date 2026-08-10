@@ -20,7 +20,7 @@ rust-embed = "8"
 serde = { version = "1", features = ["derive"] }
 serde_json = { version = "1", features = ["preserve_order"] }
 sqlx = { version = "0.8", default-features = false, features = ["runtime-tokio", "sqlite", "chrono", "json", "macros"] }
-tauri = { version = "2", features = [] }
+tauri = { version = "2", features = ["devtools"] }
 thiserror = "2"
 tokio = { version = "1", features = ["full"] }
 tokio-cron-scheduler = "0.15.1"

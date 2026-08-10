@@ -87,22 +87,16 @@ pub async fn delete_mcp_server(State(state): State<AppState>, Path(server_id): P
     Ok(())
 }
 
-// 按 id 查询数据库中的 MCP 服务配置，创建会话获取工具列表返回，不存在返回 404，连接失败返回 500
+// 按 id 连接数据库中的 MCP 服务，创建会话获取工具列表返回，不存在返回 404，连接失败返回 500
 pub async fn list_mcp_server_tools(State(state): State<AppState>, Path(server_id): Path<i64>) -> Result<Json<Vec<serde_json::Value>>, AppError> {
+    // 先校验服务存在，不存在返回 404(连接内部的查询不再区分该场景)
     let server = mcp_server_repository::get_mcp_server(&state.db, server_id).await?;
-    let server = match server {
-        Some(s) => s,
-        None => return Err(AppError::NotFound("MCP server not found".to_string())),
-    };
-    let service = mcp_tool::connect_mcp_server(
-        &server.protocol_type,
-        server.url.as_deref(),
-        server.headers.as_ref(),
-        server.command.as_deref(),
-        server.args.as_ref(),
-    )
-    .await
-    .map_err(|e| AppError::Internal(anyhow::anyhow!("MCP connect failed: {}", e)))?;
+    if server.is_none() {
+        return Err(AppError::NotFound("MCP server not found".to_string()));
+    }
+    let service = mcp_tool::connect_mcp_server(&state.db, server_id)
+        .await
+        .map_err(|e| AppError::Internal(anyhow::anyhow!("MCP connect failed: {}", e)))?;
     // 获取工具列表
     let tools = match service.peer().list_all_tools().await {
         Ok(t) => t,

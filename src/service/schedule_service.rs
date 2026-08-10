@@ -68,8 +68,8 @@ async fn execute_schedule(state: &AppState, schedule_id: i64) -> anyhow::Result<
     )
     .await?;
 
-    // 触发对话执行
-    conversation_service::start_conversation(
+    // 触发对话执行,启动失败时记录日志,避免对话已落库但未执行的静默失败
+    let started = conversation_service::start_conversation(
         state,
         conversation_id,
         schedule.content.clone(),
@@ -78,6 +78,9 @@ async fn execute_schedule(state: &AppState, schedule_id: i64) -> anyhow::Result<
         agent.thinking,
     )
     .await;
+    if !started {
+        tracing::warn!("Schedule {} conversation {} failed to start", schedule_id, conversation_id);
+    }
     tracing::info!("Schedule {} triggered conversation {}", schedule_id, conversation_id);
     Ok(())
 }

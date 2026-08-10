@@ -210,18 +210,15 @@ fn create_sse_stream(conversation_state: Arc<RwLock<ConversationState>>) -> impl
     let init_state = (0usize, None::<tokio::sync::watch::Receiver<u64>>);
     futures_util::stream::unfold((conversation_state, init_state), |(conversation_state, (mut index, mut rx))| async move {
         loop {
-            // 读锁获取 chunks 快照，多个 SSE 读者可并发
-            let (chunks_len, done) = {
+            // 单次读锁取当前 chunk 数据与完成标记，多个 SSE 读者可并发
+            let (data, done) = {
                 let s = conversation_state.read().await;
-                (s.chunks.len(), s.done)
+                let data = s.chunks.get(index).map(|chunk| serde_json::to_string(chunk).unwrap_or_default());
+                (data, s.done)
             };
 
             // 回放/输出新 chunks
-            if index < chunks_len {
-                let data = {
-                    let s = conversation_state.read().await;
-                    serde_json::to_string(&s.chunks[index]).unwrap_or_default()
-                };
+            if let Some(data) = data {
                 index += 1;
                 return Some((Ok(Event::default().data(data)), (conversation_state, (index, rx))));
             }

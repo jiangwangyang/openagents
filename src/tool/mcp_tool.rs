@@ -10,19 +10,18 @@ use sqlx::SqlitePool;
 
 use crate::repository::mcp_server_repository;
 
-// 连接 MCP 服务，返回创建好的客户端，获取工具与调用工具由调用方执行
-pub async fn connect_mcp_server(
-    protocol_type: &str,
-    url: Option<&str>,
-    headers: Option<&Value>,
-    command: Option<&str>,
-    args: Option<&Value>,
-) -> Result<RunningService<RoleClient, ClientInfo>, String> {
+// 连接 MCP 服务：按 id 从数据库读取配置即时创建客户端，获取工具与调用工具由调用方执行，使用完毕后由调用方 cancel
+pub async fn connect_mcp_server(db: &SqlitePool, server_id: i64) -> Result<RunningService<RoleClient, ClientInfo>, String> {
+    let server = mcp_server_repository::get_mcp_server(db, server_id)
+        .await
+        .map_err(|e| format!("failed to get MCP server: {}", e))?
+        .ok_or_else(|| "MCP server not found".to_string())?;
+
     // 按协议类型创建 transport
-    let service = match protocol_type {
+    let service = match server.protocol_type.as_str() {
         "stdio" => {
-            let command = command.ok_or_else(|| "missing command".to_string())?;
-            let args: Vec<String> = match args {
+            let command = server.command.as_deref().ok_or_else(|| "missing command".to_string())?;
+            let args: Vec<String> = match &server.args {
                 Some(Value::Array(arr)) => arr.iter().filter_map(|v| v.as_str().map(|s| s.to_string())).collect(),
                 _ => Vec::new(),
             };
@@ -43,9 +42,9 @@ pub async fn connect_mcp_server(
                 .map_err(|e| format!("failed to connect: {}", e))?
         }
         "streamable_http" => {
-            let url = url.ok_or_else(|| "missing url".to_string())?;
+            let url = server.url.as_deref().ok_or_else(|| "missing url".to_string())?;
             let mut config = rmcp::transport::streamable_http_client::StreamableHttpClientTransportConfig::with_uri(url);
-            if let Some(Value::Object(headers_map)) = headers {
+            if let Some(Value::Object(headers_map)) = &server.headers {
                 let mut custom_headers = HashMap::new();
                 for (k, v) in headers_map {
                     if let Some(val_str) = v.as_str() {
@@ -65,7 +64,7 @@ pub async fn connect_mcp_server(
                 .await
                 .map_err(|e| format!("failed to connect: {}", e))?
         }
-        _ => return Err(format!("unsupported protocol type: {}", protocol_type)),
+        _ => return Err(format!("unsupported protocol type: {}", server.protocol_type)),
     };
 
     Ok(service)
@@ -97,20 +96,7 @@ pub async fn execute(cmd_and_args: &[String], db: &SqlitePool) -> (String, bool)
             Ok(id) => id,
             Err(_) => return (format!("Invalid server id {}", cmd_and_args[2]), true),
         };
-        let server = match mcp_server_repository::get_mcp_server(db, server_id).await {
-            Ok(Some(s)) => s,
-            Ok(None) => return (format!("Unknown server {}", server_id), true),
-            Err(e) => return (format!("Failed to get MCP server {}: {}", server_id, e), true),
-        };
-        let service = match connect_mcp_server(
-            &server.protocol_type,
-            server.url.as_deref(),
-            server.headers.as_ref(),
-            server.command.as_deref(),
-            server.args.as_ref(),
-        )
-        .await
-        {
+        let service = match connect_mcp_server(db, server_id).await {
             Ok(v) => v,
             Err(e) => return (format!("Failed to connect MCP server {}: {}", server_id, e), true),
         };
@@ -142,20 +128,7 @@ pub async fn execute(cmd_and_args: &[String], db: &SqlitePool) -> (String, bool)
             Err(_) => return (format!("Invalid server id {}", cmd_and_args[2]), true),
         };
         let tool_name = &cmd_and_args[4];
-        let server = match mcp_server_repository::get_mcp_server(db, server_id).await {
-            Ok(Some(s)) => s,
-            Ok(None) => return (format!("Unknown server {}", server_id), true),
-            Err(e) => return (format!("Failed to get MCP server {}: {}", server_id, e), true),
-        };
-        let service = match connect_mcp_server(
-            &server.protocol_type,
-            server.url.as_deref(),
-            server.headers.as_ref(),
-            server.command.as_deref(),
-            server.args.as_ref(),
-        )
-        .await
-        {
+        let service = match connect_mcp_server(db, server_id).await {
             Ok(v) => v,
             Err(e) => return (format!("Failed to connect MCP server {}: {}", server_id, e), true),
         };
@@ -191,20 +164,7 @@ pub async fn execute(cmd_and_args: &[String], db: &SqlitePool) -> (String, bool)
         };
         let tool_name = &cmd_and_args[4];
         let json_string = &cmd_and_args[6];
-        let server = match mcp_server_repository::get_mcp_server(db, server_id).await {
-            Ok(Some(s)) => s,
-            Ok(None) => return (format!("Unknown server {}", server_id), true),
-            Err(e) => return (format!("Failed to get MCP server {}: {}", server_id, e), true),
-        };
-        let service = match connect_mcp_server(
-            &server.protocol_type,
-            server.url.as_deref(),
-            server.headers.as_ref(),
-            server.command.as_deref(),
-            server.args.as_ref(),
-        )
-        .await
-        {
+        let service = match connect_mcp_server(db, server_id).await {
             Ok(v) => v,
             Err(e) => return (format!("Failed to connect MCP server {}: {}", server_id, e), true),
         };

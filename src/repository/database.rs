@@ -19,8 +19,9 @@ pub async fn init_db() -> anyhow::Result<SqlitePool> {
         .pragma("journal_mode", "WAL")
         .pragma("foreign_keys", "ON");
 
+    // WAL 模式下读写可并发,连接数放宽到 5;写事务仍串行,由 sqlx 默认 5s busy_timeout 兜底
     let pool = SqlitePoolOptions::new()
-        .max_connections(1)
+        .max_connections(5)
         .connect_with(options)
         .await?;
 

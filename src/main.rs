@@ -77,10 +77,11 @@ fn run_tauri(url: &str) -> anyhow::Result<()> {
 async fn run_server(port_tx: Option<Sender<u16>>, bind_addr: String) -> anyhow::Result<()> {
     // 初始化日志: 文件 + 控制台双输出
     let log_file = config::log_file();
-    if let Some(parent) = log_file.parent() {
-        std::fs::create_dir_all(parent)?;
-    }
-    let file_appender = tracing_appender::rolling::daily(log_file.parent().unwrap(), log_file.file_name().unwrap());
+    // 路径固定为 ~/.openagents/app.log,parent 与 file_name 必然存在
+    let log_dir = log_file.parent().expect("log file has no parent directory");
+    let log_name = log_file.file_name().expect("log file has no file name");
+    std::fs::create_dir_all(log_dir)?;
+    let file_appender = tracing_appender::rolling::daily(log_dir, log_name);
     let (non_blocking, _guard) = tracing_appender::non_blocking(file_appender);
     tracing_subscriber::registry()
         .with(tracing_subscriber::fmt::layer().with_writer(non_blocking))

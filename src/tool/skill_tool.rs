@@ -65,10 +65,10 @@ pub async fn init_skills(skills_store: &std::sync::RwLock<Vec<SkillInfo>>) {
             let mut name = String::new();
             let mut description = String::new();
             for line in &lines[1..second_index] {
-                if line.starts_with("name:") {
-                    name = line[5..].trim().to_string();
-                } else if line.starts_with("description:") {
-                    description = line[12..].trim().to_string();
+                if let Some(value) = line.strip_prefix("name:") {
+                    name = value.trim().to_string();
+                } else if let Some(value) = line.strip_prefix("description:") {
+                    description = value.trim().to_string();
                 }
             }
 

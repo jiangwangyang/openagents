@@ -2,7 +2,6 @@
 use axum::extract::{Path, State};
 use axum::Json;
 use serde::Deserialize;
-use serde_json::json;
 use std::str::FromStr;
 
 use crate::error::AppError;
@@ -10,45 +9,58 @@ use crate::repository::schedule_repository;
 use crate::service::schedule_service;
 use crate::state::AppState;
 
+// 定时任务响应体(trigger 即 cron 表达式,含下次触发时间)
+#[derive(Debug, serde::Serialize)]
+pub struct ScheduleResponse {
+    pub id: i64,
+    pub name: String,
+    pub content: String,
+    pub work_dir: String,
+    pub trigger: String,
+    pub agent_id: i64,
+    pub enabled: bool,
+    pub next_fire_time: Option<String>,
+    pub create_time: String,
+    pub update_time: String,
+}
+
 // 定时任务列表接口，按 id 升序返回全部任务，含下次触发时间
-pub async fn list_schedules(State(state): State<AppState>) -> Result<Json<Vec<serde_json::Value>>, AppError> {
+pub async fn list_schedules(State(state): State<AppState>) -> Result<Json<Vec<ScheduleResponse>>, AppError> {
     let schedules = schedule_repository::list_schedules(&state.db).await?;
-    let result: Vec<serde_json::Value> = schedules.iter().map(|s| {
-        json!({
-            "id": s.id,
-            "name": s.name,
-            "content": s.content,
-            "work_dir": s.work_dir,
-            "trigger": s.cron_expr,
-            "agent_id": s.agent_id,
-            "enabled": s.enabled,
-            "next_fire_time": schedule_service::next_fire_time(&s.cron_expr),
-            "create_time": s.create_time,
-            "update_time": s.update_time,
-        })
+    let result: Vec<ScheduleResponse> = schedules.into_iter().map(|s| ScheduleResponse {
+        id: s.id,
+        name: s.name,
+        content: s.content,
+        work_dir: s.work_dir,
+        trigger: s.cron_expr.clone(),
+        agent_id: s.agent_id,
+        enabled: s.enabled,
+        next_fire_time: schedule_service::next_fire_time(&s.cron_expr),
+        create_time: s.create_time,
+        update_time: s.update_time,
     }).collect();
     Ok(Json(result))
 }
 
 // 定时任务详情接口，不存在返回 404
-pub async fn get_schedule(State(state): State<AppState>, Path(schedule_id): Path<i64>) -> Result<Json<serde_json::Value>, AppError> {
+pub async fn get_schedule(State(state): State<AppState>, Path(schedule_id): Path<i64>) -> Result<Json<ScheduleResponse>, AppError> {
     let schedule = schedule_repository::get_schedule(&state.db, schedule_id).await?;
     let s = match schedule {
         Some(s) => s,
         None => return Err(AppError::NotFound("Schedule not found".to_string())),
     };
-    Ok(Json(json!({
-        "id": s.id,
-        "name": s.name,
-        "content": s.content,
-        "work_dir": s.work_dir,
-        "trigger": s.cron_expr,
-        "agent_id": s.agent_id,
-        "enabled": s.enabled,
-        "next_fire_time": schedule_service::next_fire_time(&s.cron_expr),
-        "create_time": s.create_time,
-        "update_time": s.update_time,
-    })))
+    Ok(Json(ScheduleResponse {
+        id: s.id,
+        name: s.name,
+        content: s.content,
+        work_dir: s.work_dir,
+        trigger: s.cron_expr.clone(),
+        agent_id: s.agent_id,
+        enabled: s.enabled,
+        next_fire_time: schedule_service::next_fire_time(&s.cron_expr),
+        create_time: s.create_time,
+        update_time: s.update_time,
+    }))
 }
 
 // 定时任务新增/更新请求体（新增时 enabled 字段忽略，默认启用）

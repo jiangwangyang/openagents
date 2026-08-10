@@ -55,10 +55,10 @@ impl AnthropicClient {
             .send()
             .await?;
 
-        let status = response.status().as_u16();
-        if status != 200 {
+        let status = response.status();
+        if !status.is_success() {
             let body = response.text().await.unwrap_or_default();
-            return Err(AnthropicError::Api { status, body });
+            return Err(AnthropicError::Api { status: status.as_u16(), body });
         }
 
         // bytes_stream -> eventsource-stream -> 反序列化为 MessageStreamEvent
@@ -94,10 +94,10 @@ impl AnthropicClient {
             .send()
             .await?;
 
-        let status = response.status().as_u16();
-        if status != 200 {
+        let status = response.status();
+        if !status.is_success() {
             let body = response.text().await.unwrap_or_default();
-            return Err(AnthropicError::Api { status, body });
+            return Err(AnthropicError::Api { status: status.as_u16(), body });
         }
 
         let list = response.json::<ListModelsResponse>().await?;

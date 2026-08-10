@@ -33,16 +33,13 @@ pub struct ModelProviderRequest {
     pub api_key: String,
 }
 
-// 新增模型提供商，名称已存在返回 409
+// 新增模型提供商
 pub async fn add_model_provider(State(state): State<AppState>, Json(req): Json<ModelProviderRequest>) -> Result<(), AppError> {
-    let result = model_provider_repository::add_model_provider(&state.db, &req.name, &req.protocol_type, &req.base_url, &req.api_key).await?;
-    if result.is_none() {
-        return Err(AppError::Conflict("Model provider already exists".to_string()));
-    }
+    model_provider_repository::add_model_provider(&state.db, &req.name, &req.protocol_type, &req.base_url, &req.api_key).await?;
     Ok(())
 }
 
-// 按 id 更新模型提供商，不存在或名称冲突返回 404
+// 按 id 更新模型提供商，不存在返回 404
 pub async fn update_model_provider(State(state): State<AppState>, Path(provider_id): Path<i64>, Json(req): Json<ModelProviderRequest>) -> Result<(), AppError> {
     let updated = model_provider_repository::update_model_provider(&state.db, provider_id, &req.name, &req.protocol_type, &req.base_url, &req.api_key).await?;
     if !updated {

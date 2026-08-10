@@ -48,7 +48,7 @@ function renderProvidersFormList(providers) {
                 <div class="form-row" style="margin-bottom: 12px;">
                     <div class="form-group" style="flex: 1;">
                         <label style="font-family: var(--font-display); font-size: 11px; font-weight: 700; text-transform: uppercase; color: var(--charcoal-700);">${t('config.providerName')}</label>
-                        <input type="text" id="provider-name-${index}" class="form-control mono" value="${escapeHtml(provider.name)}" readonly title="${t('config.nameReadonly')}" style="opacity:0.5; cursor:not-allowed;">
+                        <input type="text" id="provider-name-${index}" class="form-control mono" value="${escapeHtml(provider.name)}">
                     </div>
                     <div class="form-group" style="flex: 1;">
                         <label style="font-family: var(--font-display); font-size: 11px; font-weight: 700; text-transform: uppercase; color: var(--charcoal-700);">${t('config.protocolType')}</label>

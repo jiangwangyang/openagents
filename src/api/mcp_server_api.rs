@@ -33,12 +33,9 @@ pub struct McpStreamableHttpRequest {
     pub headers: Option<serde_json::Value>,
 }
 
-// 新增 streamable_http 类型的 MCP 服务，名称已存在返回 409
+// 新增 streamable_http 类型的 MCP 服务
 pub async fn add_mcp_streamable_http_server(State(state): State<AppState>, Json(req): Json<McpStreamableHttpRequest>) -> Result<(), AppError> {
-    let result = mcp_server_repository::add_mcp_server(&state.db, &req.name, &req.description, "streamable_http", Some(&req.url), req.headers.as_ref(), None, None).await?;
-    if result.is_none() {
-        return Err(AppError::Conflict("MCP server already exists".to_string()));
-    }
+    mcp_server_repository::add_mcp_server(&state.db, &req.name, &req.description, "streamable_http", Some(&req.url), req.headers.as_ref(), None, None).await?;
     Ok(())
 }
 
@@ -51,16 +48,13 @@ pub struct McpStdioRequest {
     pub args: Option<serde_json::Value>,
 }
 
-// 新增 stdio 类型的 MCP 服务，名称已存在返回 409
+// 新增 stdio 类型的 MCP 服务
 pub async fn add_mcp_stdio_server(State(state): State<AppState>, Json(req): Json<McpStdioRequest>) -> Result<(), AppError> {
-    let result = mcp_server_repository::add_mcp_server(&state.db, &req.name, &req.description, "stdio", None, None, Some(&req.command), req.args.as_ref()).await?;
-    if result.is_none() {
-        return Err(AppError::Conflict("MCP server already exists".to_string()));
-    }
+    mcp_server_repository::add_mcp_server(&state.db, &req.name, &req.description, "stdio", None, None, Some(&req.command), req.args.as_ref()).await?;
     Ok(())
 }
 
-// 按 id 更新 streamable_http 类型的 MCP 服务，不存在或名称冲突返回 404
+// 按 id 更新 streamable_http 类型的 MCP 服务，不存在返回 404
 pub async fn update_mcp_streamable_http_server(State(state): State<AppState>, Path(server_id): Path<i64>, Json(req): Json<McpStreamableHttpRequest>) -> Result<(), AppError> {
     let updated = mcp_server_repository::update_mcp_server(&state.db, server_id, &req.name, &req.description, "streamable_http", Some(&req.url), req.headers.as_ref(), None, None).await?;
     if !updated {
@@ -69,7 +63,7 @@ pub async fn update_mcp_streamable_http_server(State(state): State<AppState>, Pa
     Ok(())
 }
 
-// 按 id 更新 stdio 类型的 MCP 服务，不存在或名称冲突返回 404
+// 按 id 更新 stdio 类型的 MCP 服务，不存在返回 404
 pub async fn update_mcp_stdio_server(State(state): State<AppState>, Path(server_id): Path<i64>, Json(req): Json<McpStdioRequest>) -> Result<(), AppError> {
     let updated = mcp_server_repository::update_mcp_server(&state.db, server_id, &req.name, &req.description, "stdio", None, None, Some(&req.command), req.args.as_ref()).await?;
     if !updated {

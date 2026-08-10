@@ -36,7 +36,7 @@ async fn create_tables(pool: &SqlitePool) -> anyhow::Result<()> {
     sqlx::query(
         "CREATE TABLE IF NOT EXISTS t_model_provider (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
-            name TEXT NOT NULL UNIQUE,
+            name TEXT NOT NULL,
             protocol_type TEXT NOT NULL,
             base_url TEXT NOT NULL,
             api_key TEXT NOT NULL,
@@ -127,7 +127,7 @@ async fn create_tables(pool: &SqlitePool) -> anyhow::Result<()> {
     sqlx::query(
         "CREATE TABLE IF NOT EXISTS t_mcp_server (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
-            name TEXT NOT NULL UNIQUE,
+            name TEXT NOT NULL,
             description TEXT NOT NULL,
             protocol_type TEXT NOT NULL,
             url TEXT,

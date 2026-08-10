@@ -18,15 +18,8 @@ pub async fn get_model_provider(pool: &SqlitePool, provider_id: i64) -> Result<O
         .await
 }
 
-// 新增模型提供商，名称已存在返回 None，成功返回自增 id
-pub async fn add_model_provider(pool: &SqlitePool, name: &str, protocol_type: &str, base_url: &str, api_key: &str) -> Result<Option<i64>, sqlx::Error> {
-    let exists: Option<(i64,)> = sqlx::query_as("SELECT id FROM t_model_provider WHERE name = ?")
-        .bind(name)
-        .fetch_optional(pool)
-        .await?;
-    if exists.is_some() {
-        return Ok(None);
-    }
+// 新增模型提供商，成功返回自增 id
+pub async fn add_model_provider(pool: &SqlitePool, name: &str, protocol_type: &str, base_url: &str, api_key: &str) -> Result<i64, sqlx::Error> {
     let now = chrono::Local::now().to_rfc3339();
     let result = sqlx::query(
         "INSERT INTO t_model_provider (name, protocol_type, base_url, api_key, create_time, update_time) VALUES (?, ?, ?, ?, ?, ?)",
@@ -39,19 +32,11 @@ pub async fn add_model_provider(pool: &SqlitePool, name: &str, protocol_type: &s
     .bind(&now)
     .execute(pool)
     .await?;
-    Ok(Some(result.last_insert_rowid()))
+    Ok(result.last_insert_rowid())
 }
 
-// 按 id 更新模型提供商，名称被其它记录占用或 id 不存在返回 false
+// 按 id 更新模型提供商，id 不存在返回 false
 pub async fn update_model_provider(pool: &SqlitePool, provider_id: i64, name: &str, protocol_type: &str, base_url: &str, api_key: &str) -> Result<bool, sqlx::Error> {
-    let conflict: Option<(i64,)> = sqlx::query_as("SELECT id FROM t_model_provider WHERE name = ? AND id != ?")
-        .bind(name)
-        .bind(provider_id)
-        .fetch_optional(pool)
-        .await?;
-    if conflict.is_some() {
-        return Ok(false);
-    }
     let now = chrono::Local::now().to_rfc3339();
     let result = sqlx::query(
         "UPDATE t_model_provider SET name = ?, protocol_type = ?, base_url = ?, api_key = ?, update_time = ? WHERE id = ?",

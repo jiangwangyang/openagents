@@ -22,15 +22,8 @@ pub async fn get_mcp_server(pool: &SqlitePool, server_id: i64) -> Result<Option<
     .await
 }
 
-// 新增 MCP 服务，名称已存在返回 None，成功返回自增 id
-pub async fn add_mcp_server(pool: &SqlitePool, name: &str, description: &str, protocol_type: &str, url: Option<&str>, headers: Option<&serde_json::Value>, command: Option<&str>, args: Option<&serde_json::Value>) -> Result<Option<i64>, sqlx::Error> {
-    let exists: Option<(i64,)> = sqlx::query_as("SELECT id FROM t_mcp_server WHERE name = ?")
-        .bind(name)
-        .fetch_optional(pool)
-        .await?;
-    if exists.is_some() {
-        return Ok(None);
-    }
+// 新增 MCP 服务，成功返回自增 id
+pub async fn add_mcp_server(pool: &SqlitePool, name: &str, description: &str, protocol_type: &str, url: Option<&str>, headers: Option<&serde_json::Value>, command: Option<&str>, args: Option<&serde_json::Value>) -> Result<i64, sqlx::Error> {
     let now = chrono::Local::now().to_rfc3339();
     let result = sqlx::query(
         "INSERT INTO t_mcp_server (name, description, protocol_type, url, headers, command, args, create_time, update_time) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
@@ -46,19 +39,11 @@ pub async fn add_mcp_server(pool: &SqlitePool, name: &str, description: &str, pr
     .bind(&now)
     .execute(pool)
     .await?;
-    Ok(Some(result.last_insert_rowid()))
+    Ok(result.last_insert_rowid())
 }
 
-// 按 id 更新 MCP 服务，名称被其它记录占用或 id 不存在返回 false
+// 按 id 更新 MCP 服务，id 不存在返回 false
 pub async fn update_mcp_server(pool: &SqlitePool, server_id: i64, name: &str, description: &str, protocol_type: &str, url: Option<&str>, headers: Option<&serde_json::Value>, command: Option<&str>, args: Option<&serde_json::Value>) -> Result<bool, sqlx::Error> {
-    let conflict: Option<(i64,)> = sqlx::query_as("SELECT id FROM t_mcp_server WHERE name = ? AND id != ?")
-        .bind(name)
-        .bind(server_id)
-        .fetch_optional(pool)
-        .await?;
-    if conflict.is_some() {
-        return Ok(false);
-    }
     let now = chrono::Local::now().to_rfc3339();
     let result = sqlx::query(
         "UPDATE t_mcp_server SET name = ?, description = ?, protocol_type = ?, url = ?, headers = ?, command = ?, args = ?, update_time = ? WHERE id = ?",

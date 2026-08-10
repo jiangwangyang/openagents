@@ -64,7 +64,7 @@ async function fetchMcpRegistry() {
                     <div class="form-row">
                         <div class="form-group" style="flex: 1;">
                             <label>${t('mcp.keyName')}</label>
-                            <input type="text" id="mcp-name-${index}" class="form-control mono" value="${escapeHtml(server.name || '')}" readonly title="${t('mcp.nameReadonly')}" style="opacity:0.5; cursor:not-allowed;">
+                            <input type="text" id="mcp-name-${index}" class="form-control mono" value="${escapeHtml(server.name || '')}">
                         </div>
                         <div class="form-group" style="flex: 1;">
                             <label>${t('common.description')}</label>
@@ -178,6 +178,10 @@ async function updateSingleMcp(id, name, index) {
     const type = document.getElementById(`mcp-type-${index}`).value;
     const nameInput = document.getElementById(`mcp-name-${index}`);
     name = nameInput ? nameInput.value.trim() : name;
+    if (!name) {
+        alert(t('mcp.nameRequired'));
+        return;
+    }
     const description = document.getElementById(`mcp-desc-${index}`).value.trim();
     let bodyPayload = {name: name, description: description};
 

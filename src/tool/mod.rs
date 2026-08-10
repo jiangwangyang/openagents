@@ -32,40 +32,46 @@ pub struct ToolDefinition {
     pub input_schema: Value,
 }
 
+// 内置命令帮助: (命令用法, 说明)
+const COMMAND_HELP: &[(&str, &str)] = &[
+    ("file read <path>", "Read file content from <path>."),
+    ("file write <path> <content>", "Write <content> to <path>. Creates the file if it doesn't exist, overwrites if it does."),
+    ("file edit <path> <old_str> <new_str>", "Replace all exact matches of <old_str> with <new_str> in <path>."),
+    ("skill list", "List all available skills."),
+    ("mcp server list", "List all MCP servers."),
+    ("mcp server <server_name> tool list", "List all tools of a specific MCP server."),
+    ("mcp server <server_name> tool <tool_name> info", "Show parameter format of a specific tool."),
+    ("mcp server <server_name> tool <tool_name> call <tool_json_args>", "Call a specific tool with JSON arguments."),
+    ("task handover <agent_id>", "Hand over the task to the specified agent."),
+    ("task handover user", "Hand over the task to the user."),
+];
+
+// 工具描述列表缓存, 进程内只生成一次
+static TOOL_DEFINITIONS: std::sync::LazyLock<Vec<ToolDefinition>> = std::sync::LazyLock::new(build_tool_definitions);
+
 // 获取工具描述列表
-pub fn list_tools() -> Vec<ToolDefinition> {
-    vec![command_tool_definition()]
+pub fn list_tools() -> &'static [ToolDefinition] {
+    &TOOL_DEFINITIONS
 }
 
-// command 工具定义
-fn command_tool_definition() -> ToolDefinition {
-    let shell_desc = if cfg!(windows) {
+// 构建工具描述列表
+fn build_tool_definitions() -> Vec<ToolDefinition> {
+    let (shell_cmd, shell_desc): (&str, &str) = if cfg!(windows) {
         if which_pwsh() {
-            "pwsh -Command <command>                                         # Execute a command in PowerShell 7 on Windows."
+            ("pwsh -Command <command>", "Execute a command in PowerShell 7 on Windows.")
         } else {
-            "powershell -Command <command>                                   # Execute a command in Windows PowerShell 5.1 on Windows."
+            ("powershell -Command <command>", "Execute a command in Windows PowerShell 5.1 on Windows.")
         }
     } else {
-        "bash -c <command>                                                   # Execute a command in Bash on Linux/macOS."
+        ("bash -c <command>", "Execute a command in Bash on Linux/macOS.")
     };
 
-    let description = format!(
-        "Execute a built-in command. Available commands:
-file read <path>                                                # Read file content from <path>.
-file write <path> <content>                                     # Write <content> to <path>. Creates the file if it doesn't exist, overwrites if it does.
-file edit <path> <old_str> <new_str>                            # Replace all exact matches of <old_str> with <new_str> in <path>.
-skill list                                                      # List all available skills.
-mcp server list                                                 # List all MCP servers.
-mcp server <server_name> tool list                              # List all tools of a specific MCP server.
-mcp server <server_name> tool <tool_name> info                  # Show parameter format of a specific tool.
-mcp server <server_name> tool <tool_name> call <tool_json_args> # Call a specific tool with JSON arguments.
-task handover <agent_id>                                        # Hand over the task to the specified agent.
-task handover user                                              # Hand over the task to the user.
-{}",
-        shell_desc
-    );
+    let mut description = String::from("Execute a built-in command. Available commands:\n");
+    for &(cmd, desc) in COMMAND_HELP.iter().chain(std::iter::once(&(shell_cmd, shell_desc))) {
+        description.push_str(&format!("{cmd} # {desc}\n"));
+    }
 
-    ToolDefinition {
+    vec![ToolDefinition {
         name: "command".to_string(),
         description,
         input_schema: serde_json::json!({
@@ -81,7 +87,7 @@ task handover user                                              # Hand over the 
             },
             "required": ["cmd_and_args"]
         }),
-    }
+    }]
 }
 
 // 检查 pwsh 是否可用

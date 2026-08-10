@@ -74,7 +74,7 @@ pub async fn add_schedule(State(state): State<AppState>, Json(req): Json<Schedul
     if cron::Schedule::from_str(&cron_expr).is_err() {
         return Err(AppError::BadRequest("Invalid cron expression".to_string()));
     }
-    let id = schedule_service::add_schedule(&state.db, &state.conversations, &req.name, &req.content, &req.work_dir, &cron_expr, req.agent_id).await?;
+    let id = schedule_service::add_schedule(&state, &req.name, &req.content, &req.work_dir, &cron_expr, req.agent_id).await?;
     Ok(Json(id))
 }
 
@@ -85,7 +85,7 @@ pub async fn update_schedule(State(state): State<AppState>, Path(schedule_id): P
     if cron::Schedule::from_str(&cron_expr).is_err() {
         return Err(AppError::BadRequest("Invalid cron expression".to_string()));
     }
-    let updated = schedule_service::update_schedule(&state.db, &state.conversations, schedule_id, &req.name, &req.content, &req.work_dir, &cron_expr, req.agent_id, req.enabled).await?;
+    let updated = schedule_service::update_schedule(&state, schedule_id, &req.name, &req.content, &req.work_dir, &cron_expr, req.agent_id, req.enabled).await?;
     if !updated {
         return Err(AppError::NotFound("Schedule not found".to_string()));
     }
@@ -94,7 +94,7 @@ pub async fn update_schedule(State(state): State<AppState>, Path(schedule_id): P
 
 // 按 id 删除定时任务，不存在返回 404
 pub async fn delete_schedule(State(state): State<AppState>, Path(schedule_id): Path<i64>) -> Result<(), AppError> {
-    let deleted = schedule_service::delete_schedule(&state.db, schedule_id).await?;
+    let deleted = schedule_service::delete_schedule(&state, schedule_id).await?;
     if !deleted {
         return Err(AppError::NotFound("Schedule not found".to_string()));
     }

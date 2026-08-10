@@ -16,7 +16,7 @@ use tracing_subscriber::layer::SubscriberExt;
 use tracing_subscriber::util::SubscriberInitExt;
 
 use crate::repository::database;
-use crate::state::AppState;
+use crate::state::{AppState, SkillInfo};
 use crate::tool::skill_tool;
 
 fn main() -> anyhow::Result<()> {
@@ -91,21 +91,29 @@ async fn run_server(port_tx: Option<Sender<u16>>, bind_addr: String) -> anyhow::
     // Windows 下配置 PowerShell UTF-8
     tool::shell_tool::setup_powershell_utf8().await;
 
-    // 初始化技能目录
-    skill_tool::init_skills().await;
+    // 初始化技能列表
+    let skills: Arc<std::sync::RwLock<Vec<SkillInfo>>> = Arc::new(std::sync::RwLock::new(Vec::new()));
+    skill_tool::init_skills(&skills).await;
 
     // 初始化数据库
     let db = database::init_db().await?;
 
-    // 初始化定时任务调度器
-    let conversations = Arc::new(DashMap::new());
-    service::schedule_service::init_scheduler(&db, &conversations).await?;
+    // 创建并启动定时任务调度器
+    let scheduler = tokio_cron_scheduler::JobScheduler::new().await?;
+    scheduler.start().await?;
 
     // 组装应用状态
     let state = AppState {
         db,
-        conversations,
+        scheduler,
+        job_ids: Arc::new(DashMap::new()),
+        task_loops: Arc::new(DashMap::new()),
+        conversation_states: Arc::new(DashMap::new()),
+        skills,
     };
+
+    // 从数据库加载所有启用的定时任务
+    service::schedule_service::init_scheduler(&state).await?;
 
     // 组装路由
     let app = api::create_router(state);

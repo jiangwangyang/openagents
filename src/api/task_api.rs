@@ -90,7 +90,7 @@ pub async fn add_task(State(state): State<AppState>, Json(req): Json<AddTaskRequ
 // 删除任务接口，关联对话由数据库外键 ON DELETE CASCADE 级联删除，任务不存在返回 404，正在运行返回 409
 pub async fn delete_task(State(state): State<AppState>, Path(task_id): Path<i64>) -> Result<(), AppError> {
     // 运行中的任务不允许删除,避免级联删除阶段对话导致后台循环写消息失败
-    if task_service::is_task_running(task_id) {
+    if task_service::is_task_running(&state, task_id) {
         return Err(AppError::Conflict("Task is running".to_string()));
     }
     let deleted = task_repository::delete_task(&state.db, task_id).await?;
@@ -117,7 +117,7 @@ pub async fn start_task(State(state): State<AppState>, Path(task_id): Path<i64>,
     if agent.is_none() {
         return Err(AppError::NotFound("Agent not found".to_string()));
     }
-    if !task_service::start_task(task_id, req.agent_id, &state.db, &state.conversations) {
+    if !task_service::start_task(&state, task_id, req.agent_id) {
         return Err(AppError::Conflict("Task already running".to_string()));
     }
     Ok(())

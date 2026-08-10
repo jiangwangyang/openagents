@@ -1,21 +1,9 @@
 // 技能列表工具
-use serde::Serialize;
 use std::path::PathBuf;
 
 use super::ToolResult;
 use crate::config;
-
-// Skill 数据结构
-#[derive(Debug, Clone, Serialize)]
-pub struct SkillInfo {
-    pub name: String,
-    pub description: String,
-    pub path: String,
-    pub content: String,
-}
-
-// 存储所有的 skill 信息
-static SKILLS: std::sync::RwLock<Vec<SkillInfo>> = std::sync::RwLock::new(Vec::new());
+use crate::state::SkillInfo;
 
 // Skill 读取目录
 fn skills_dir_list() -> Vec<PathBuf> {
@@ -27,7 +15,7 @@ fn skills_dir_list() -> Vec<PathBuf> {
 }
 
 // 初始化所有 skill 信息
-pub async fn init_skills() {
+pub async fn init_skills(skills_store: &std::sync::RwLock<Vec<SkillInfo>>) {
     let mut loaded = std::collections::HashSet::new();
     let mut skills = Vec::new();
 
@@ -104,27 +92,27 @@ pub async fn init_skills() {
         }
     }
 
-    // 更新全局存储
+    // 更新存储
     {
         // 锁被毒化时恢复内部数据继续写入，避免 panic
-        let mut guard = SKILLS.write().unwrap_or_else(|e| e.into_inner());
+        let mut guard = skills_store.write().unwrap_or_else(|e| e.into_inner());
         *guard = skills;
     }
 
-    let count = SKILLS.read().unwrap_or_else(|e| e.into_inner()).len();
+    let count = skills_store.read().unwrap_or_else(|e| e.into_inner()).len();
     tracing::info!("Skills initialized, having {} skills", count);
 }
 
 // 获取技能列表
-pub fn list_skills() -> Vec<SkillInfo> {
-    SKILLS.read().unwrap_or_else(|e| e.into_inner()).clone()
+pub fn list_skills(skills_store: &std::sync::RwLock<Vec<SkillInfo>>) -> Vec<SkillInfo> {
+    skills_store.read().unwrap_or_else(|e| e.into_inner()).clone()
 }
 
 // 执行
-pub fn execute(cmd_and_args: &[String]) -> ToolResult {
+pub fn execute(cmd_and_args: &[String], skills_store: &std::sync::RwLock<Vec<SkillInfo>>) -> ToolResult {
     // 1. skill list
     if cmd_and_args.len() == 2 && cmd_and_args[0] == "skill" && cmd_and_args[1] == "list" {
-        let skills = SKILLS.read().unwrap_or_else(|e| e.into_inner());
+        let skills = skills_store.read().unwrap_or_else(|e| e.into_inner());
         let result: Vec<serde_json::Value> = skills
             .iter()
             .map(|s| {

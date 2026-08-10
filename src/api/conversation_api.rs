@@ -64,8 +64,8 @@ pub async fn get_conversation(State(state): State<AppState>, Path(conversation_i
 // 删除对话接口，消息由数据库外键 ON DELETE CASCADE 级联删除，对话不存在返回 404，正在运行返回 409
 pub async fn delete_conversation(State(state): State<AppState>, Path(conversation_id): Path<i64>) -> Result<(), AppError> {
     // 运行中的对话不允许删除,避免后台任务存消息时外键失败
-    if let Some(state) = conversation_service::get_conversation_state(conversation_id, &state.conversations) {
-        if !state.read().await.done {
+    if let Some(conv_state) = conversation_service::get_conversation_state(&state, conversation_id) {
+        if !conv_state.read().await.done {
             return Err(AppError::Conflict("Conversation is running".to_string()));
         }
     }
@@ -159,7 +159,7 @@ pub async fn create_conversation_work(State(state): State<AppState>, Json(req): 
 
     // 先创建对话，再根据对话ID开始任务
     let conversation_id = conversation_repository::add_conversation(&state.db, &req.task_content, &req.work_dir, &system_prompt, None, req.agent_id).await?;
-    if !conversation_service::start_conversation(conversation_id, req.task_content.clone(), model_provider_id, model, thinking, &state.conversations, &state.db).await {
+    if !conversation_service::start_conversation(&state, conversation_id, req.task_content.clone(), model_provider_id, model, thinking).await {
         // 启动失败时清理刚创建的对话，避免产生孤儿数据
         let _ = conversation_repository::delete_conversation(&state.db, conversation_id).await;
         return Err(AppError::Conflict("Work already running".to_string()));
@@ -178,7 +178,7 @@ pub struct StartWorkRequest {
 
 // POST /conversation/{conversation_id}/start 启动历史回放
 pub async fn start_conversation_work(State(state): State<AppState>, Path(conversation_id): Path<i64>, Json(req): Json<StartWorkRequest>) -> Result<(), AppError> {
-    if !conversation_service::start_conversation(conversation_id, req.task_content, req.model_provider_id, req.model, req.thinking, &state.conversations, &state.db).await {
+    if !conversation_service::start_conversation(&state, conversation_id, req.task_content, req.model_provider_id, req.model, req.thinking).await {
         return Err(AppError::Conflict("Work already running".to_string()));
     }
     Ok(())
@@ -192,12 +192,12 @@ pub async fn stream_conversation_work(State(state): State<AppState>, Path(conver
     }
 
     // 查询对话状态
-    let conversation_state = conversation_service::get_conversation_state(conversation_id, &state.conversations);
+    let conversation_state = conversation_service::get_conversation_state(&state, conversation_id);
     if conversation_state.is_none() {
         // 如果没有对话启动一个查询不执行业务
-        conversation_service::start_conversation_query(conversation_id, &state.conversations, &state.db).await;
+        conversation_service::start_conversation_query(&state, conversation_id).await;
     }
-    let conversation_state = conversation_service::get_conversation_state(conversation_id, &state.conversations)
+    let conversation_state = conversation_service::get_conversation_state(&state, conversation_id)
         .ok_or_else(|| AppError::Internal(anyhow::anyhow!("Failed to get conversation state")))?;
 
     // 构造 SSE 流

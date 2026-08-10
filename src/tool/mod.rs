@@ -7,6 +7,8 @@ pub mod task_tool;
 
 use serde_json::Value;
 use sqlx::SqlitePool;
+
+use crate::state::SkillInfo;
 #[cfg(windows)]
 use std::os::windows::process::CommandExt;
 
@@ -16,6 +18,7 @@ pub struct ToolContext {
     pub db: SqlitePool,
     pub work_dir: String,
     pub task_id: Option<i64>,
+    pub skills: std::sync::Arc<std::sync::RwLock<Vec<SkillInfo>>>,
 }
 
 // 工具执行结果: (内容, 是否错误)
@@ -117,7 +120,7 @@ pub async fn execute_tool(name: &str, tool_input: &Value, ctx: &ToolContext) -> 
 
     match cmd_and_args[0].as_str() {
         "file" => file_tool::execute(&cmd_and_args, &ctx.work_dir).await,
-        "skill" => skill_tool::execute(&cmd_and_args),
+        "skill" => skill_tool::execute(&cmd_and_args, &ctx.skills),
         "mcp" => mcp_tool::execute(&cmd_and_args, &ctx.db).await,
         "task" => task_tool::execute(&cmd_and_args, ctx.task_id, &ctx.db).await,
         _ => shell_tool::execute(&cmd_and_args, &ctx.work_dir).await,

@@ -71,7 +71,7 @@ pub async fn connect_mcp_server(
     Ok(service)
 }
 
-// 执行 MCP 命令，用到某个客户端时按名称从数据库读取配置即时创建，使用完后直接 cancel
+// 执行 MCP 命令，用到某个客户端时按 id 从数据库读取配置即时创建，使用完后直接 cancel
 pub async fn execute(cmd_and_args: &[String], db: &SqlitePool) -> (String, bool) {
     // 1. mcp server list
     if cmd_and_args.len() == 3 && cmd_and_args[0] == "mcp" && cmd_and_args[1] == "server" && cmd_and_args[2] == "list" {
@@ -83,6 +83,7 @@ pub async fn execute(cmd_and_args: &[String], db: &SqlitePool) -> (String, bool)
             .iter()
             .map(|server| {
                 serde_json::json!({
+                    "id": server.id,
                     "name": server.name,
                     "description": server.description,
                 })
@@ -90,13 +91,16 @@ pub async fn execute(cmd_and_args: &[String], db: &SqlitePool) -> (String, bool)
             .collect();
         return (serde_json::to_string(&result).unwrap_or_default(), false);
     }
-    // 2. mcp server <server_name> tool list
+    // 2. mcp server <server_id> tool list
     else if cmd_and_args.len() == 5 && cmd_and_args[0] == "mcp" && cmd_and_args[1] == "server" && cmd_and_args[3] == "tool" && cmd_and_args[4] == "list" {
-        let server_name = &cmd_and_args[2];
-        let server = match mcp_server_repository::get_mcp_server_by_name(db, server_name).await {
+        let server_id = match cmd_and_args[2].parse::<i64>() {
+            Ok(id) => id,
+            Err(_) => return (format!("Invalid server id {}", cmd_and_args[2]), true),
+        };
+        let server = match mcp_server_repository::get_mcp_server(db, server_id).await {
             Ok(Some(s)) => s,
-            Ok(None) => return (format!("Unknown server {}", server_name), true),
-            Err(e) => return (format!("Failed to get MCP server {}: {}", server_name, e), true),
+            Ok(None) => return (format!("Unknown server {}", server_id), true),
+            Err(e) => return (format!("Failed to get MCP server {}: {}", server_id, e), true),
         };
         let service = match connect_mcp_server(
             &server.protocol_type,
@@ -108,14 +112,14 @@ pub async fn execute(cmd_and_args: &[String], db: &SqlitePool) -> (String, bool)
         .await
         {
             Ok(v) => v,
-            Err(e) => return (format!("Failed to connect MCP server {}: {}", server_name, e), true),
+            Err(e) => return (format!("Failed to connect MCP server {}: {}", server_id, e), true),
         };
         // 获取工具列表
         let tools = match service.peer().list_all_tools().await {
             Ok(t) => t,
             Err(e) => {
                 let _ = service.cancel().await;
-                return (format!("Failed to list tools of MCP server {}: {}", server_name, e), true);
+                return (format!("Failed to list tools of MCP server {}: {}", server_id, e), true);
             }
         };
         let result: Vec<serde_json::Value> = tools
@@ -131,14 +135,17 @@ pub async fn execute(cmd_and_args: &[String], db: &SqlitePool) -> (String, bool)
         let _ = service.cancel().await;
         return (serde_json::to_string(&result).unwrap_or_default(), false);
     }
-    // 3. mcp server <server_name> tool <tool_name> info
+    // 3. mcp server <server_id> tool <tool_name> info
     else if cmd_and_args.len() == 6 && cmd_and_args[0] == "mcp" && cmd_and_args[1] == "server" && cmd_and_args[3] == "tool" && cmd_and_args[5] == "info" {
-        let server_name = &cmd_and_args[2];
+        let server_id = match cmd_and_args[2].parse::<i64>() {
+            Ok(id) => id,
+            Err(_) => return (format!("Invalid server id {}", cmd_and_args[2]), true),
+        };
         let tool_name = &cmd_and_args[4];
-        let server = match mcp_server_repository::get_mcp_server_by_name(db, server_name).await {
+        let server = match mcp_server_repository::get_mcp_server(db, server_id).await {
             Ok(Some(s)) => s,
-            Ok(None) => return (format!("Unknown server {}", server_name), true),
-            Err(e) => return (format!("Failed to get MCP server {}: {}", server_name, e), true),
+            Ok(None) => return (format!("Unknown server {}", server_id), true),
+            Err(e) => return (format!("Failed to get MCP server {}: {}", server_id, e), true),
         };
         let service = match connect_mcp_server(
             &server.protocol_type,
@@ -150,14 +157,14 @@ pub async fn execute(cmd_and_args: &[String], db: &SqlitePool) -> (String, bool)
         .await
         {
             Ok(v) => v,
-            Err(e) => return (format!("Failed to connect MCP server {}: {}", server_name, e), true),
+            Err(e) => return (format!("Failed to connect MCP server {}: {}", server_id, e), true),
         };
         // 获取工具列表并查找目标工具
         let tools = match service.peer().list_all_tools().await {
             Ok(t) => t,
             Err(e) => {
                 let _ = service.cancel().await;
-                return (format!("Failed to list tools of MCP server {}: {}", server_name, e), true);
+                return (format!("Failed to list tools of MCP server {}: {}", server_id, e), true);
             }
         };
         let tool = match tools.iter().find(|t| t.name.as_ref() == tool_name) {
@@ -176,15 +183,18 @@ pub async fn execute(cmd_and_args: &[String], db: &SqlitePool) -> (String, bool)
         let _ = service.cancel().await;
         return (serde_json::to_string(&result).unwrap_or_default(), false);
     }
-    // 4. mcp server <server_name> tool <tool_name> call [tool_json_args]
+    // 4. mcp server <server_id> tool <tool_name> call [tool_json_args]
     else if cmd_and_args.len() == 7 && cmd_and_args[0] == "mcp" && cmd_and_args[1] == "server" && cmd_and_args[3] == "tool" && cmd_and_args[5] == "call" {
-        let server_name = &cmd_and_args[2];
+        let server_id = match cmd_and_args[2].parse::<i64>() {
+            Ok(id) => id,
+            Err(_) => return (format!("Invalid server id {}", cmd_and_args[2]), true),
+        };
         let tool_name = &cmd_and_args[4];
         let json_string = &cmd_and_args[6];
-        let server = match mcp_server_repository::get_mcp_server_by_name(db, server_name).await {
+        let server = match mcp_server_repository::get_mcp_server(db, server_id).await {
             Ok(Some(s)) => s,
-            Ok(None) => return (format!("Unknown server {}", server_name), true),
-            Err(e) => return (format!("Failed to get MCP server {}: {}", server_name, e), true),
+            Ok(None) => return (format!("Unknown server {}", server_id), true),
+            Err(e) => return (format!("Failed to get MCP server {}: {}", server_id, e), true),
         };
         let service = match connect_mcp_server(
             &server.protocol_type,
@@ -196,7 +206,7 @@ pub async fn execute(cmd_and_args: &[String], db: &SqlitePool) -> (String, bool)
         .await
         {
             Ok(v) => v,
-            Err(e) => return (format!("Failed to connect MCP server {}: {}", server_name, e), true),
+            Err(e) => return (format!("Failed to connect MCP server {}: {}", server_id, e), true),
         };
         let arguments: Option<rmcp::model::JsonObject> = if json_string.is_empty() {
             None

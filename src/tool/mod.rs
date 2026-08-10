@@ -39,9 +39,9 @@ const COMMAND_HELP: &[(&str, &str)] = &[
     ("file edit <path> <old_str> <new_str>", "Replace all exact matches of <old_str> with <new_str> in <path>."),
     ("skill list", "List all available skills."),
     ("mcp server list", "List all MCP servers."),
-    ("mcp server <server_name> tool list", "List all tools of a specific MCP server."),
-    ("mcp server <server_name> tool <tool_name> info", "Show parameter format of a specific tool."),
-    ("mcp server <server_name> tool <tool_name> call <tool_json_args>", "Call a specific tool with JSON arguments."),
+    ("mcp server <server_id> tool list", "List all tools of a specific MCP server."),
+    ("mcp server <server_id> tool <tool_name> info", "Show parameter format of a specific tool."),
+    ("mcp server <server_id> tool <tool_name> call <tool_json_args>", "Call a specific tool with JSON arguments."),
     ("task handover <agent_id>", "Hand over the task to the specified agent."),
     ("task handover user", "Hand over the task to the user."),
 ];

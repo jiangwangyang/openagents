@@ -22,16 +22,6 @@ pub async fn get_mcp_server(pool: &SqlitePool, server_id: i64) -> Result<Option<
     .await
 }
 
-// 按名称查询 MCP 服务
-pub async fn get_mcp_server_by_name(pool: &SqlitePool, name: &str) -> Result<Option<McpServerEntity>, sqlx::Error> {
-    sqlx::query_as::<_, McpServerEntity>(
-        "SELECT id, name, description, protocol_type, url, headers, command, args, create_time, update_time FROM t_mcp_server WHERE name = ?",
-    )
-    .bind(name)
-    .fetch_optional(pool)
-    .await
-}
-
 // 新增 MCP 服务，名称已存在返回 None，成功返回自增 id
 pub async fn add_mcp_server(pool: &SqlitePool, name: &str, description: &str, protocol_type: &str, url: Option<&str>, headers: Option<&serde_json::Value>, command: Option<&str>, args: Option<&serde_json::Value>) -> Result<Option<i64>, sqlx::Error> {
     let exists: Option<(i64,)> = sqlx::query_as("SELECT id FROM t_mcp_server WHERE name = ?")

@@ -7,6 +7,8 @@ pub mod task_tool;
 
 use serde_json::Value;
 use sqlx::SqlitePool;
+#[cfg(windows)]
+use std::os::windows::process::CommandExt;
 
 // 工具执行上下文
 #[derive(Clone)]
@@ -81,11 +83,16 @@ task handover user                                              # Hand over the 
 
 // 检查 pwsh 是否可用
 fn which_pwsh() -> bool {
-    std::process::Command::new("pwsh")
-        .arg("--version")
+    let mut cmd = std::process::Command::new("pwsh");
+    cmd.arg("--version")
         .stdout(std::process::Stdio::null())
-        .stderr(std::process::Stdio::null())
-        .status()
+        .stderr(std::process::Stdio::null());
+    // Windows 下隐藏子进程控制台窗口,避免桌面模式调用外部模型时弹出黑框
+    #[cfg(windows)]
+    {
+        cmd.creation_flags(0x08000000);
+    }
+    cmd.status()
         .map(|s| s.success())
         .unwrap_or(false)
 }

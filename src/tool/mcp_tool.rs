@@ -47,6 +47,11 @@ pub async fn connect_mcp_server(
             for arg in &args {
                 cmd.arg(arg);
             }
+            // Windows 下隐藏子进程控制台窗口,避免桌面模式调用外部模型时弹出黑框
+            #[cfg(windows)]
+            {
+                cmd.creation_flags(0x08000000);
+            }
             let transport = TokioChildProcess::new(cmd.configure(|_c| {}))
                 .map_err(|e| format!("failed to create stdio transport: {}", e))?;
             client_info

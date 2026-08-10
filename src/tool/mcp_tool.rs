@@ -1,10 +1,9 @@
 // MCP 客户端管理工具
 use std::collections::HashMap;
 
-use rmcp::model::{CallToolRequestParams, ClientInfo};
-use rmcp::service::{RoleClient, RunningService};
+use rmcp::model::{CallToolRequestParams, ClientInfo, ProtocolVersion};
+use rmcp::service::{ClientLifecycleMode, ClientServiceExt, RoleClient, RunningService};
 use rmcp::transport::{ConfigureCommandExt, StreamableHttpClientTransport, TokioChildProcess};
-use rmcp::ServiceExt;
 use serde_json::Value;
 use sqlx::SqlitePool;
 
@@ -38,7 +37,13 @@ pub async fn connect_mcp_server(
             let transport = TokioChildProcess::new(cmd.configure(|_c| {}))
                 .map_err(|e| format!("failed to create stdio transport: {}", e))?;
             ClientInfo::default()
-                .serve(transport)
+                .serve_with_lifecycle(
+                    transport,
+                    ClientLifecycleMode::Auto {
+                        preferred_versions: vec![ProtocolVersion::V_2026_07_28],
+                        legacy_version: Some(ProtocolVersion::V_2025_11_25),
+                    },
+                )
                 .await
                 .map_err(|e| format!("failed to connect: {}", e))?
         }
@@ -61,7 +66,13 @@ pub async fn connect_mcp_server(
             }
             let transport = StreamableHttpClientTransport::from_config(config);
             ClientInfo::default()
-                .serve(transport)
+                .serve_with_lifecycle(
+                    transport,
+                    ClientLifecycleMode::Auto {
+                        preferred_versions: vec![ProtocolVersion::V_2026_07_28],
+                        legacy_version: Some(ProtocolVersion::V_2025_11_25),
+                    },
+                )
                 .await
                 .map_err(|e| format!("failed to connect: {}", e))?
         }

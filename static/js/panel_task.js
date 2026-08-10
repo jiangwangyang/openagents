@@ -88,7 +88,7 @@ async function fetchTaskList() {
             // 删除按钮通过闭包绑定，避免标题中的引号破坏内联 onclick 字符串
             card.querySelector('.delete-btn').onclick = () => removeTask(task.id, task.title);
             taskListContainer.appendChild(card);
-            // 启动下拉仅列出候选 Agent
+            // 启动下拉仅列出候选 Agent；无候选 Agent 时禁用启动并提示原因，避免点击后才报错
             const startSelect = document.getElementById(`task-start-agent-${task.id}`);
             (task.agent_ids || []).forEach(agentId => {
                 const agent = agents.find(a => a.id === agentId);
@@ -99,6 +99,15 @@ async function fetchTaskList() {
                     startSelect.appendChild(opt);
                 }
             });
+            if (startSelect.options.length === 0) {
+                const hintOpt = document.createElement('option');
+                hintOpt.textContent = t('task.needCandidate');
+                startSelect.appendChild(hintOpt);
+                startSelect.disabled = true;
+                const startBtn = card.querySelector('.send-button');
+                startBtn.disabled = true;
+                startBtn.title = t('task.needCandidate');
+            }
         });
     } catch (e) {
         taskListContainer.innerHTML = errorListHtml('common.fetchFailed');
@@ -262,7 +271,7 @@ async function startTask(taskId) {
             body: JSON.stringify({agent_id: parseInt(agentId)})
         });
         if (response.ok) {
-            alert(t('task.launched'));
+            showToast(t('task.launched'));
             await loadTaskDetail(taskId);
         } else if (response.status === 409) {
             alert(t('task.alreadyRunning'));

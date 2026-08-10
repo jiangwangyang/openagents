@@ -4,6 +4,11 @@
 function autoResize() {
     messageInput.style.height = 'auto';
     messageInput.style.height = Math.min(messageInput.scrollHeight, 160) + 'px';
+    // 同步刷新字数计数（输入、清空等所有路径都会经过本函数）
+    const charCounter = document.getElementById('inputCharCount');
+    if (charCounter) {
+        charCounter.textContent = `${messageInput.value.length}/${messageInput.maxLength}`;
+    }
 }
 
 async function loadConversationList() {
@@ -147,7 +152,7 @@ async function startNewChat() {
     switchView('dialog');
 }
 
-// 锁定/解锁会话上下文：对话创建后工作目录与智能体不允许修改
+// 锁定/解锁会话上下文：对话创建后工作目录与智能体不允许修改，锁定期间展示说明文字避免误解
 function setContextLocked(locked) {
     const workspaceBtn = document.getElementById('workspaceBtn');
     const agentSelect = document.getElementById('agentSelect');
@@ -157,6 +162,7 @@ function setContextLocked(locked) {
     agentSelect.style.opacity = locked ? '0.4' : '';
     workspaceBtn.style.cursor = locked ? 'not-allowed' : '';
     agentSelect.style.cursor = locked ? 'not-allowed' : '';
+    document.getElementById('contextLockHint').style.display = locked ? '' : 'none';
 }
 
 // 加载智能体下拉框，首项为默认（不选智能体），选择结果仅在新会话首次发送时生效
@@ -273,8 +279,13 @@ async function renderModelComboList() {
         return;
     }
     comboList.innerHTML = '';
+    // 拉取失败或供应商无模型时展示提示，告知用户可直接手动输入模型名
     if (models.length === 0) {
-        comboList.classList.remove('open');
+        const hintItem = document.createElement('div');
+        hintItem.className = 'model-combo-item model-combo-hint';
+        hintItem.textContent = t('input.modelListUnavailable');
+        comboList.appendChild(hintItem);
+        comboList.classList.add('open');
         return;
     }
     models.forEach(model => {
@@ -397,11 +408,11 @@ async function sendMessage() {
         return;
     }
 
-    // 从模型路由控件读取发送参数，未填写时提示并终止
+    // 从模型路由控件读取发送参数，缺少供应商或模型时明确提示配置缺失，与启动失败区分
     const providerId = document.getElementById('providerSelect').value;
     const modelName = document.getElementById('modelSelect').value.trim();
     if (!providerId || !modelName) {
-        alert(t('stream.startFailed'));
+        alert(t('stream.configMissing'));
         return;
     }
     const modelConfig = {model_provider_id: parseInt(providerId), model: modelName, thinking: document.getElementById('thinkingSelect').value === 'true'};
@@ -570,7 +581,7 @@ function connectStream(conversationId) {
             if (usageCacheTokens > 0) {
                 usageText += ` · ${formatTokens(usageCacheTokens)} ${t('stream.usageCache')}`;
             }
-            usageText += ` · Σ ${formatTokens(usageTotalTokens)} ${t('stream.usageTotal')}`;
+            usageText += ` · ${formatTokens(usageTotalTokens)} ${t('stream.usageTotal')}`;
             usageInfo.textContent = usageText;
         }
 

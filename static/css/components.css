@@ -1162,3 +1162,68 @@ select.form-control {
 .password-toggle-btn:hover {
     border-color: var(--charcoal-900);
 }
+
+/* 轻量成功提示 toast（P1）：顶部居中淡入，自动消失，不阻断操作 */
+.app-toast {
+    position: fixed;
+    top: 16px;
+    left: 50%;
+    transform: translate(-50%, -8px);
+    background: var(--charcoal-900);
+    color: var(--bg-surface);
+    padding: 8px 16px;
+    font-family: var(--font-mono);
+    font-size: 12px;
+    border: 1px solid var(--border-hard);
+    border-radius: var(--radius-sm);
+    box-shadow: 4px 4px 0 rgba(var(--shadow-rgb), 0.15);
+    opacity: 0;
+    transition: opacity 0.25s, transform 0.25s;
+    pointer-events: none;
+    z-index: 9999;
+}
+
+.app-toast.visible {
+    opacity: 1;
+    transform: translate(-50%, 0);
+}
+
+/* 会话上下文锁定提示（P1）：会话创建后目录与智能体不可修改的说明文字 */
+.context-lock-hint {
+    font-family: var(--font-mono);
+    font-size: 10px;
+    color: var(--slate-400);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    align-self: center;
+}
+
+/* 输入框字数计数（P2）：绝对定位于输入容器右下角 */
+.input-char-count {
+    position: absolute;
+    right: 96px;
+    bottom: 10px;
+    font-family: var(--font-mono);
+    font-size: 10px;
+    color: var(--slate-300);
+    pointer-events: none;
+}
+
+/* 表单字段格式说明（P2）：cron 字段等的小字提示 */
+.form-hint {
+    font-family: var(--font-mono);
+    font-size: 10px;
+    color: var(--slate-400);
+    margin-top: -4px;
+}
+
+/* 模型组合框的空态/失败提示项：不可点击，hover 不变色 */
+.model-combo-hint {
+    color: var(--slate-400);
+    cursor: default;
+    font-style: italic;
+}
+
+.model-combo-hint:hover {
+    background: transparent;
+}

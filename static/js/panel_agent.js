@@ -91,8 +91,8 @@ async function fetchAgentRegistry() {
                         <div class="form-group" style="flex: 1;">
                             <label>${t('input.thinkingTitle')}</label>
                             <select id="agent-thinking-${agent.id}" class="form-control">
-                                <option value="true" ${agent.thinking ? 'selected' : ''}>ON</option>
-                                <option value="false" ${agent.thinking ? '' : 'selected'}>OFF</option>
+                                <option value="true" ${agent.thinking ? 'selected' : ''}>THINK</option>
+                                <option value="false" ${agent.thinking ? '' : 'selected'}>NO THINK</option>
                             </select>
                         </div>
                     </div>
@@ -177,7 +177,7 @@ async function updateSingleAgent(id) {
             })
         });
         if (response.ok) {
-            alert(t('agent.synced', {name: name}));
+            showToast(t('agent.synced', {name: name}));
             await fetchAgentRegistry();
         }
     } catch (e) {

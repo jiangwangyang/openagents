@@ -64,7 +64,7 @@ async function fetchMcpRegistry() {
                     <div class="form-row">
                         <div class="form-group" style="flex: 1;">
                             <label>${t('mcp.keyName')}</label>
-                            <input type="text" id="mcp-name-${index}" class="form-control mono" value="${escapeHtml(server.name || '')}">
+                            <input type="text" id="mcp-name-${index}" class="form-control mono" value="${escapeHtml(server.name || '')}" readonly title="${t('mcp.nameReadonly')}" style="opacity:0.5; cursor:not-allowed;">
                         </div>
                         <div class="form-group" style="flex: 1;">
                             <label>${t('common.description')}</label>
@@ -208,7 +208,7 @@ async function updateSingleMcp(id, name, index) {
             body: JSON.stringify(bodyPayload)
         });
         if (response.ok) {
-            alert(t('mcp.synced', {name: name}));
+            showToast(t('mcp.synced', {name: name}));
             await fetchMcpRegistry();
         }
     } catch (e) {

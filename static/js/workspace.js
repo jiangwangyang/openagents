@@ -120,7 +120,8 @@ function confirmHistorySelection(path) {
 // 打开目录选择弹窗：callback 为空时确认后写入对话工作目录（默认行为），否则回调处理选中路径
 async function openDirModal(callback, currentPath) {
     dirConfirmCallback = callback || null;
-    document.getElementById('dirModalOverlay').style.display = 'block';
+    // 遮罩层需为 flex，弹窗的 margin:auto 才能在垂直方向居中（block 时只能靠顶）
+    document.getElementById('dirModalOverlay').style.display = 'flex';
     // 从后端加载工作目录历史后再渲染
     await loadWorkdirHistory();
     renderWorkdirHistory();

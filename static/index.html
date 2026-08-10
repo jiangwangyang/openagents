@@ -96,7 +96,7 @@
                             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                                 <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path>
                             </svg>
-                            <span>CWD:</span>
+                            <span data-i18n="input.cwdLabel">WORKDIR:</span>
                             <span class="workspace-path" id="taskWorkspaceDisplay">UNSET</span>
                         </button>
                     </div>
@@ -142,7 +142,7 @@
                             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                                 <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path>
                             </svg>
-                            <span>CWD:</span>
+                            <span data-i18n="input.cwdLabel">WORKDIR:</span>
                             <span class="workspace-path" id="cronWorkspaceDisplay">UNSET</span>
                         </button>
                     </div>
@@ -158,6 +158,7 @@
                     <div class="form-group"><label data-i18n="cron.month">Month</label><input type="text" id="cronMonth" class="form-control mono" value="*"></div>
                     <div class="form-group"><label data-i18n="cron.week">Week</label><input type="text" id="cronWeek" class="form-control mono" value="*"></div>
                 </div>
+                <div class="form-hint" data-i18n="cron.formatHint"></div>
                 <div class="form-row">
                     <div class="form-group">
                         <label data-i18n="cron.contentLabel">Execution Content / Script Context</label>
@@ -210,8 +211,8 @@
                     <div class="form-group" style="flex: 1;">
                         <label data-i18n="input.thinkingTitle">Thinking Mode</label>
                         <select id="agentThinking" class="form-control">
-                            <option value="true">ON</option>
-                            <option value="false">OFF</option>
+                            <option value="true">THINK</option>
+                            <option value="false">NO THINK</option>
                         </select>
                     </div>
                 </div>
@@ -345,7 +346,7 @@
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                         <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path>
                     </svg>
-                    <span>CWD:</span>
+                    <span data-i18n="input.cwdLabel">WORKDIR:</span>
                     <span class="workspace-path" id="workspaceDisplay">UNSET</span>
                 </button>
                 <select id="agentSelect" class="form-control" title="Select Agent" data-i18n-title="input.agentTitle" onchange="onAgentSelectChange()" style="width:auto; height:28px; padding:4px 10px; font-size:11px; font-family:var(--font-mono); color:var(--slate-400); text-transform:uppercase;">
@@ -361,9 +362,12 @@
                     <option value="true">THINK</option>
                     <option value="false">NO THINK</option>
                 </select>
+                <!-- 会话创建后锁定目录与智能体的说明文字，默认隐藏，由 setContextLocked 控制显隐 -->
+                <span class="context-lock-hint" id="contextLockHint" style="display:none;" data-i18n="input.contextLocked"></span>
             </div>
             <div class="input-container">
                 <textarea class="message-input" id="messageInput" placeholder="Enter instructions..." data-i18n-placeholder="input.placeholder" maxlength="2000" disabled rows="1"></textarea>
+                <span class="input-char-count" id="inputCharCount">0/2000</span>
                 <button class="send-button btn" id="sendButton" onclick="sendMessage()" disabled data-i18n="input.execute">Execute</button>
             </div>
         </div>

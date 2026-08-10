@@ -206,6 +206,20 @@ function showConfirmDialog({title, text, onConfirm}) {
     });
 }
 
+// 轻量成功提示：顶部居中短暂展示后自动消失，避免 alert 阻断操作
+function showToast(text) {
+    const toast = document.createElement('div');
+    toast.className = 'app-toast';
+    toast.textContent = text;
+    document.body.appendChild(toast);
+    // 下一帧加 visible 类触发淡入过渡
+    requestAnimationFrame(() => toast.classList.add('visible'));
+    setTimeout(() => {
+        toast.classList.remove('visible');
+        setTimeout(() => toast.remove(), 300);
+    }, 2200);
+}
+
 function closeConfirmDialog() {
     const overlay = document.querySelector('.confirm-overlay');
     if (overlay) {

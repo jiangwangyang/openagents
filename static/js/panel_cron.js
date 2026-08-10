@@ -114,7 +114,7 @@ async function fetchCronTasks() {
                                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                                     <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path>
                                 </svg>
-                                <span>CWD:</span>
+                                <span>${t('input.cwdLabel')}</span>
                                 <span class="workspace-path" id="cron-workdir-display-${task.id}" title="${escapeHtml(task.work_dir || currentWorkdir || '')}">${escapeHtml(task.work_dir || currentWorkdir || t('input.unset'))}</span>
                             </button>
                         </div>
@@ -127,6 +127,7 @@ async function fetchCronTasks() {
                         <div class="form-group"><label>${t('cron.month')}</label><input type="text" id="cron-month-${task.id}" class="form-control mono" value="${escapeHtml(cron.month)}"></div>
                         <div class="form-group"><label>${t('cron.week')}</label><input type="text" id="cron-week-${task.id}" class="form-control mono" value="${escapeHtml(cron.day_of_week)}"></div>
                     </div>
+                    <div class="form-hint">${t('cron.formatHint')}</div>
                     <div class="form-row">
                         <div class="form-group">
                             <label>${t('cron.execContent')}</label>
@@ -223,18 +224,31 @@ async function updateSingleCron(taskId) {
         alert(t('common.requiredMissing'));
         return;
     }
-    // 从缓存列表中获取当前 enabled 状态（该字段不在编辑表单内）
+    // 简单格式校验：cron 字段仅允许数字与 * , - / 符号
+    const cronFieldValues = [
+        document.getElementById(`cron-min-${taskId}`).value,
+        document.getElementById(`cron-hour-${taskId}`).value,
+        document.getElementById(`cron-day-${taskId}`).value,
+        document.getElementById(`cron-month-${taskId}`).value,
+        document.getElementById(`cron-week-${taskId}`).value
+    ];
+    if (cronFieldValues.some(fieldValue => !/^[0-9*,\/\-]+$/.test(fieldValue.trim()))) {
+        alert(t('cron.invalidFormat'));
+        return;
+    }
+    // 从缓存列表中获取 enabled 状态与秒字段（均不在编辑表单内），避免保存时被重置
     const existing = cronTasksCache.find(taskItem => taskItem.id === taskId);
     const enabled = existing ? existing.enabled : true;
+    const second = existing ? parseCronExpr(existing.trigger).second : '0';
 
     const payload = {
         name, content, work_dir,
-        minute: document.getElementById(`cron-min-${taskId}`).value,
-        hour: document.getElementById(`cron-hour-${taskId}`).value,
-        day: document.getElementById(`cron-day-${taskId}`).value,
-        month: document.getElementById(`cron-month-${taskId}`).value,
-        day_of_week: document.getElementById(`cron-week-${taskId}`).value,
-        second: '0',
+        minute: cronFieldValues[0],
+        hour: cronFieldValues[1],
+        day: cronFieldValues[2],
+        month: cronFieldValues[3],
+        day_of_week: cronFieldValues[4],
+        second: second,
         agent_id: parseInt(agentIdVal),
         enabled: enabled,
     };
@@ -245,7 +259,7 @@ async function updateSingleCron(taskId) {
             body: JSON.stringify(payload)
         });
         if (response.ok) {
-            alert(t('cron.synced', {name: name}));
+            showToast(t('cron.synced', {name: name}));
             await fetchCronTasks();
         }
     } catch (e) {
@@ -263,13 +277,25 @@ async function submitCronTask() {
         alert(t('common.requiredMissing'));
         return;
     }
+    // 简单格式校验：cron 字段仅允许数字与 * , - / 符号
+    const cronFieldValues = [
+        document.getElementById('cronMin').value,
+        document.getElementById('cronHour').value,
+        document.getElementById('cronDay').value,
+        document.getElementById('cronMonth').value,
+        document.getElementById('cronWeek').value
+    ];
+    if (cronFieldValues.some(fieldValue => !/^[0-9*,\/\-]+$/.test(fieldValue.trim()))) {
+        alert(t('cron.invalidFormat'));
+        return;
+    }
     const payload = {
         name, content, work_dir,
-        minute: document.getElementById('cronMin').value,
-        hour: document.getElementById('cronHour').value,
-        day: document.getElementById('cronDay').value,
-        month: document.getElementById('cronMonth').value,
-        day_of_week: document.getElementById('cronWeek').value,
+        minute: cronFieldValues[0],
+        hour: cronFieldValues[1],
+        day: cronFieldValues[2],
+        month: cronFieldValues[3],
+        day_of_week: cronFieldValues[4],
         second: '0',
         agent_id: parseInt(agentIdVal),
         // 新增时后端忽略该字段，默认启用，但接口要求必传

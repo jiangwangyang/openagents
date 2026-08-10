@@ -38,6 +38,7 @@ pub fn create_router(state: AppState) -> Router {
         // 模型提供商 CRUD
         .route("/model-provider/list", get(model_provider_api::list_model_providers))
         .route("/model-provider/{provider_id}", get(model_provider_api::get_model_provider))
+        .route("/model-provider/{provider_id}/model/list", get(model_provider_api::list_provider_models))
         .route("/model-provider", post(model_provider_api::add_model_provider))
         .route("/model-provider/{provider_id}", put(model_provider_api::update_model_provider))
         .route("/model-provider/{provider_id}", delete(model_provider_api::delete_model_provider))

@@ -4,7 +4,7 @@ use futures_util::Stream;
 use reqwest::Client;
 use std::pin::Pin;
 
-use super::types::{CreateMessageRequest, MessageStreamEvent};
+use super::types::{CreateMessageRequest, ListModelsResponse, MessageStreamEvent};
 
 // Anthropic API 客户端
 pub struct AnthropicClient {
@@ -82,5 +82,25 @@ impl AnthropicClient {
         });
 
         Ok(Box::pin(stream))
+    }
+
+    // 获取可用模型列表,返回模型 id 列表
+    pub async fn list_models(&self) -> Result<Vec<String>, AnthropicError> {
+        let url = format!("{}/v1/models?limit=100", self.base_url);
+        let response = HTTP_CLIENT
+            .get(&url)
+            .header("x-api-key", &self.api_key)
+            .header("anthropic-version", "2023-06-01")
+            .send()
+            .await?;
+
+        let status = response.status().as_u16();
+        if status != 200 {
+            let body = response.text().await.unwrap_or_default();
+            return Err(AnthropicError::Api { status, body });
+        }
+
+        let list = response.json::<ListModelsResponse>().await?;
+        Ok(list.data.into_iter().map(|m| m.id).collect())
     }
 }

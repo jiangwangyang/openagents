@@ -135,3 +135,17 @@ pub enum ContentBlockDelta {
     #[serde(rename = "input_json_delta")]
     InputJsonDelta { partial_json: String },
 }
+
+// ========== 模型列表 ==========
+
+// 模型列表响应(GET /v1/models)
+#[derive(Debug, Deserialize)]
+pub struct ListModelsResponse {
+    pub data: Vec<ModelInfo>,
+}
+
+// 模型信息(仅取 id 字段)
+#[derive(Debug, Deserialize)]
+pub struct ModelInfo {
+    pub id: String,
+}

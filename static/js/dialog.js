@@ -215,32 +215,23 @@ async function onAgentSelectChange() {
     }
 }
 
-// 模型输入历史记忆（后端 Web 存储）
-const MODEL_HISTORY_KEY = 'openagents_model_history';
-const MODEL_HISTORY_LIMIT = 20;
-// 上次模型配置记忆（后端 Web 存储）
+// 上次模型配置记忆（后端 Web 存储，仅记最近一次并自动填入）
 const LAST_MODEL_CONFIG_KEY = 'openagents_last_model_config';
 // 上次智能体选择记忆（后端 Web 存储）
 const LAST_AGENT_KEY = 'openagents_last_agent_id';
 
 // 内存缓存：页面加载时从后端拉取，变更时整体写回
-let modelHistoryCache = [];
 let lastModelConfigCache = null;
 let lastAgentIdCache = '';
+// 供应商模型列表缓存：key 为供应商 id，值为 Promise（并发去重），避免聚焦时重复请求
+const providerModelsCache = {};
 
-// 从后端加载会话页持久化偏好到内存缓存（模型历史/上次模型配置/上次智能体）
+// 从后端加载会话页持久化偏好到内存缓存（上次模型配置/上次智能体）
 async function loadDialogPrefs() {
-    const [historyRaw, configRaw, agentIdRaw] = await Promise.all([
-        getWebStorage(MODEL_HISTORY_KEY),
+    const [configRaw, agentIdRaw] = await Promise.all([
         getWebStorage(LAST_MODEL_CONFIG_KEY),
         getWebStorage(LAST_AGENT_KEY)
     ]);
-    try {
-        const list = historyRaw ? JSON.parse(historyRaw) : [];
-        modelHistoryCache = Array.isArray(list) ? list : [];
-    } catch (e) {
-        modelHistoryCache = [];
-    }
     try {
         lastModelConfigCache = configRaw ? JSON.parse(configRaw) : null;
     } catch (e) {
@@ -249,37 +240,44 @@ async function loadDialogPrefs() {
     lastAgentIdCache = agentIdRaw || '';
 }
 
-function getModelHistory() {
-    return modelHistoryCache;
-}
-
-function addModelHistory(model) {
-    if (!model) {
-        return;
-    }
-    const list = getModelHistory().filter(item => item !== model);
-    list.unshift(model);
-    modelHistoryCache = list.slice(0, MODEL_HISTORY_LIMIT);
-    setWebStorage(MODEL_HISTORY_KEY, JSON.stringify(modelHistoryCache));
-}
-
-function removeModelHistory(model) {
-    modelHistoryCache = getModelHistory().filter(item => item !== model);
-    setWebStorage(MODEL_HISTORY_KEY, JSON.stringify(modelHistoryCache));
-    renderModelComboList();
-}
-
-// 渲染模型下拉列表，展示全部历史记录
-function renderModelComboList() {
+// 渲染模型下拉列表：聚焦时调用 Anthropic 模型接口拉取当前供应商全部模型并全量展示
+async function renderModelComboList() {
     const comboList = document.getElementById('modelComboList');
     const input = document.getElementById('modelSelect');
-    const history = getModelHistory();
-    comboList.innerHTML = '';
-    if (history.length === 0) {
+    const providerId = document.getElementById('providerSelect').value;
+    if (!providerId) {
         comboList.classList.remove('open');
         return;
     }
-    history.forEach(model => {
+    // 缓存未命中时调用后端接口实时拉取该供应商的模型列表，失败时移除缓存以便下次重试
+    if (!providerModelsCache[providerId]) {
+        providerModelsCache[providerId] = (async () => {
+            try {
+                const response = await fetch(`/model-provider/${providerId}/model/list`);
+                if (!response.ok) {
+                    return [];
+                }
+                const models = await response.json();
+                return Array.isArray(models) ? models : [];
+            } catch (e) {
+                return [];
+            }
+        })();
+    }
+    const models = await providerModelsCache[providerId];
+    if (models.length === 0) {
+        delete providerModelsCache[providerId];
+    }
+    // 等待期间供应商已切换则放弃本次渲染
+    if (String(providerId) !== document.getElementById('providerSelect').value) {
+        return;
+    }
+    comboList.innerHTML = '';
+    if (models.length === 0) {
+        comboList.classList.remove('open');
+        return;
+    }
+    models.forEach(model => {
         const item = document.createElement('div');
         item.className = 'model-combo-item';
         const textSpan = document.createElement('span');
@@ -289,15 +287,7 @@ function renderModelComboList() {
             input.value = model;
             comboList.classList.remove('open');
         };
-        const deleteBtn = document.createElement('button');
-        deleteBtn.className = 'model-combo-item-delete';
-        deleteBtn.textContent = '\u00d7';
-        deleteBtn.onclick = (e) => {
-            e.stopPropagation();
-            removeModelHistory(model);
-        };
         item.appendChild(textSpan);
-        item.appendChild(deleteBtn);
         comboList.appendChild(item);
     });
     comboList.classList.add('open');
@@ -415,9 +405,7 @@ async function sendMessage() {
         return;
     }
     const modelConfig = {model_provider_id: parseInt(providerId), model: modelName, thinking: document.getElementById('thinkingSelect').value === 'true'};
-    // 发送成功后把模型记入历史
-    addModelHistory(modelName);
-    // 保存当前模型配置供下次新对话自动填入
+    // 保存当前模型配置供下次新对话自动填入（仅记最近一次）
     saveLastModelConfig();
 
     // 启动对话：新会话先创建，已有会话直接启动

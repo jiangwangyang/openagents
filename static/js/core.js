@@ -104,10 +104,9 @@ document.addEventListener('DOMContentLoaded', () => {
         programScroll = false;
     });
 
-    // 模型输入框：聚焦/输入时展示下拉记忆，失焦延迟关闭（留时间给点击事件）
+    // 模型输入框：聚焦时拉取供应商模型列表全量展示，失焦延迟关闭（留时间给点击事件）
     const modelInput = document.getElementById('modelSelect');
     modelInput.addEventListener('focus', renderModelComboList);
-    modelInput.addEventListener('input', renderModelComboList);
     modelInput.addEventListener('blur', () => {
         setTimeout(() => document.getElementById('modelComboList').classList.remove('open'), 150);
     });

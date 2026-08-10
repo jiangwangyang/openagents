@@ -107,7 +107,7 @@ pub async fn test_mcp_server(Path(_type): Path<String>, Json(req): Json<TestMcpS
             if _type == "stdio" && req.command.is_none() {
                 return Err(AppError::BadRequest("command is required".to_string()));
             }
-            let (_peer, tool_dict, _service) = mcp_tool::connect_mcp_server(
+            let service = mcp_tool::connect_mcp_server(
                 &_type,
                 req.url.as_deref(),
                 req.headers.as_ref(),
@@ -116,8 +116,16 @@ pub async fn test_mcp_server(Path(_type): Path<String>, Json(req): Json<TestMcpS
             )
             .await
             .map_err(|e| AppError::Internal(anyhow::anyhow!("MCP test failed: {}", e)))?;
-            let result: Vec<serde_json::Value> = tool_dict
-                .values()
+            // 获取工具列表
+            let tools = match service.peer().list_all_tools().await {
+                Ok(t) => t,
+                Err(e) => {
+                    let _ = service.cancel().await;
+                    return Err(AppError::Internal(anyhow::anyhow!("MCP test failed: {}", e)));
+                }
+            };
+            let result: Vec<serde_json::Value> = tools
+                .iter()
                 .map(|tool| {
                     serde_json::json!({
                         "name": tool.name,
@@ -125,6 +133,8 @@ pub async fn test_mcp_server(Path(_type): Path<String>, Json(req): Json<TestMcpS
                     })
                 })
                 .collect();
+            // 测试完毕，关闭连接
+            let _ = service.cancel().await;
             Ok(Json(result))
         }
         _ => Err(AppError::BadRequest("Unknown MCP server type".to_string())),

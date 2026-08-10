@@ -118,7 +118,7 @@ pub async fn execute_tool(name: &str, tool_input: &Value, ctx: &ToolContext) -> 
     match cmd_and_args[0].as_str() {
         "file" => file_tool::execute(&cmd_and_args, &ctx.work_dir).await,
         "skill" => skill_tool::execute(&cmd_and_args),
-        "mcp" => mcp_tool::execute(&cmd_and_args).await,
+        "mcp" => mcp_tool::execute(&cmd_and_args, &ctx.db).await,
         "task" => task_tool::execute(&cmd_and_args, ctx.task_id, &ctx.db).await,
         _ => shell_tool::execute(&cmd_and_args, &ctx.work_dir).await,
     }

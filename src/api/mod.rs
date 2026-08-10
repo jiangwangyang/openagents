@@ -49,7 +49,7 @@ pub fn create_router(state: AppState) -> Router {
         .route("/mcp-server/{server_id}/streamable-http", put(mcp_server_api::update_mcp_streamable_http_server))
         .route("/mcp-server/{server_id}/stdio", put(mcp_server_api::update_mcp_stdio_server))
         .route("/mcp-server/{server_id}", delete(mcp_server_api::delete_mcp_server))
-        .route("/mcp-server/{_type}/test", post(mcp_server_api::test_mcp_server))
+        .route("/mcp-server/{server_id}/tool/list", post(mcp_server_api::list_mcp_server_tools))
         // 技能列表
         .route("/skill/list", get(skill_api::list_skills))
         // 定时任务 CRUD

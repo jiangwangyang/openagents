@@ -87,56 +87,40 @@ pub async fn delete_mcp_server(State(state): State<AppState>, Path(server_id): P
     Ok(())
 }
 
-// MCP 连接测试请求体
-#[derive(Debug, Deserialize)]
-pub struct TestMcpServerRequest {
-    pub url: Option<String>,
-    pub headers: Option<serde_json::Value>,
-    pub command: Option<String>,
-    pub args: Option<serde_json::Value>,
-}
-
-// 测试指定类型的 MCP 服务连接，创建会话获取工具列表返回，参数缺失返回 400，连接失败返回 502
-pub async fn test_mcp_server(Path(_type): Path<String>, Json(req): Json<TestMcpServerRequest>) -> Result<Json<Vec<serde_json::Value>>, AppError> {
-    match _type.as_str() {
-        "streamable_http" | "stdio" => {
-            // 校验必填参数
-            if _type == "streamable_http" && req.url.is_none() {
-                return Err(AppError::BadRequest("url is required".to_string()));
-            }
-            if _type == "stdio" && req.command.is_none() {
-                return Err(AppError::BadRequest("command is required".to_string()));
-            }
-            let service = mcp_tool::connect_mcp_server(
-                &_type,
-                req.url.as_deref(),
-                req.headers.as_ref(),
-                req.command.as_deref(),
-                req.args.as_ref(),
-            )
-            .await
-            .map_err(|e| AppError::Internal(anyhow::anyhow!("MCP test failed: {}", e)))?;
-            // 获取工具列表
-            let tools = match service.peer().list_all_tools().await {
-                Ok(t) => t,
-                Err(e) => {
-                    let _ = service.cancel().await;
-                    return Err(AppError::Internal(anyhow::anyhow!("MCP test failed: {}", e)));
-                }
-            };
-            let result: Vec<serde_json::Value> = tools
-                .iter()
-                .map(|tool| {
-                    serde_json::json!({
-                        "name": tool.name,
-                        "description": tool.description,
-                    })
-                })
-                .collect();
-            // 测试完毕，关闭连接
+// 按 id 查询数据库中的 MCP 服务配置，创建会话获取工具列表返回，不存在返回 404，连接失败返回 500
+pub async fn list_mcp_server_tools(State(state): State<AppState>, Path(server_id): Path<i64>) -> Result<Json<Vec<serde_json::Value>>, AppError> {
+    let server = mcp_server_repository::get_mcp_server(&state.db, server_id).await?;
+    let server = match server {
+        Some(s) => s,
+        None => return Err(AppError::NotFound("MCP server not found".to_string())),
+    };
+    let service = mcp_tool::connect_mcp_server(
+        &server.protocol_type,
+        server.url.as_deref(),
+        server.headers.as_ref(),
+        server.command.as_deref(),
+        server.args.as_ref(),
+    )
+    .await
+    .map_err(|e| AppError::Internal(anyhow::anyhow!("MCP connect failed: {}", e)))?;
+    // 获取工具列表
+    let tools = match service.peer().list_all_tools().await {
+        Ok(t) => t,
+        Err(e) => {
             let _ = service.cancel().await;
-            Ok(Json(result))
+            return Err(AppError::Internal(anyhow::anyhow!("MCP list tools failed: {}", e)));
         }
-        _ => Err(AppError::BadRequest("Unknown MCP server type".to_string())),
-    }
+    };
+    let result: Vec<serde_json::Value> = tools
+        .iter()
+        .map(|tool| {
+            serde_json::json!({
+                "name": tool.name,
+                "description": tool.description,
+            })
+        })
+        .collect();
+    // 获取完毕，关闭连接
+    let _ = service.cancel().await;
+    Ok(Json(result))
 }

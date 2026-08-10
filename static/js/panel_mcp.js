@@ -245,11 +245,7 @@ async function testMcpServerTools(targetServer, index) {
     listContainer.innerHTML = SKELETON_HTML;
 
     try {
-        const response = await fetch(`/mcp-server/${encodeURIComponent(targetServer.protocol_type)}/test`, {
-            method: 'POST',
-            headers: {'Content-Type': 'application/json'},
-            body: JSON.stringify(targetServer)
-        });
+        const response = await fetch(`/mcp-server/${targetServer.id}/tool/list`, {method: 'POST'});
         const tools = await response.json();
         listContainer.innerHTML = '';
         if (!tools || tools.length === 0) {

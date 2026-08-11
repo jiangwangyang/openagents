@@ -571,6 +571,17 @@ function connectStream(conversationId) {
         const data = JSON.parse(event.data);
         streamChunkCount += 1;
 
+        // 系统提示词：渲染为可折叠块，展示在消息流开头
+        if (data.type === 'system') {
+            if (data.text) {
+                const details = document.createElement('details');
+                details.className = 'system-details';
+                details.innerHTML = `<summary>${FOLD_SVG} ${t('stream.systemPrompt')}</summary><div class="content"></div>`;
+                details.querySelector('.content').innerHTML = formatMarkdown(data.text);
+                chatContainer.appendChild(details);
+            }
+        }
+
         // 错误消息
         if (data.type === 'error') {
             finalizeStreamBlock();

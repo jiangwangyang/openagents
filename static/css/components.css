@@ -33,7 +33,7 @@
     animation: slideInLeft 0.3s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
-details.think-details, details.tool-details {
+details.think-details, details.tool-details, details.system-details {
     background: var(--bg-surface);
     border: 1px solid var(--border-hard);
     border-radius: var(--radius-sm);
@@ -100,6 +100,18 @@ details.tool-details .content {
     border-left-style: solid;
     font-family: var(--font-mono);
     font-size: 12px;
+    background: var(--bg-canvas);
+    overflow-x: auto;
+}
+
+details.system-details {
+    align-self: flex-start;
+    width: 70%;
+}
+
+details.system-details .content {
+    border-left-color: var(--accent-color);
+    border-left-style: solid;
     background: var(--bg-canvas);
     overflow-x: auto;
 }

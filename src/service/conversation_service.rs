@@ -171,6 +171,9 @@ async fn do_run_conversation(
         .await?
         .ok_or_else(|| anyhow::anyhow!("conversation not found"))?;
 
+    // 流式数据开头发布系统提示词
+    publish_chunk(state, conversation_id, "system", &conversation.conversation.system_prompt, json!({})).await;
+
     // 发布历史消息
     for msg in &conversation.messages {
         if let Value::String(s) = &msg.content {

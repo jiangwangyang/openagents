@@ -8,7 +8,6 @@ use std::convert::Infallible;
 use std::sync::Arc;
 use tokio::sync::RwLock;
 
-use crate::config;
 use crate::error::AppError;
 use crate::repository::entity::{ConversationEntity, NewMessageEntity};
 use crate::repository::{agent_repository, conversation_repository};
@@ -140,19 +139,11 @@ pub async fn create_conversation_work(State(state): State<AppState>, Json(req): 
             }
             _ => return Err(AppError::BadRequest("Model config is required when agent_id is not provided".to_string())),
         }
-        // 读取 AGENTS.md，按优先级取第一个存在的文件
-        let home = config::home_dir();
-        let agents_files = [
-            std::path::PathBuf::from(&req.work_dir).join("AGENTS.md"),
-            std::path::PathBuf::from(&home).join(".openagents").join("AGENTS.md"),
-            std::path::PathBuf::from(&home).join(".agents").join("AGENTS.md"),
-        ];
-        for agents_file in &agents_files {
-            if agents_file.exists() && agents_file.is_file() {
-                if let Ok(content) = tokio::fs::read_to_string(agents_file).await {
-                    system_prompt = content;
-                    break;
-                }
+        // 未指定 agent 时只从工作目录读取 AGENTS.md 作为系统提示词
+        let agents_file = std::path::PathBuf::from(&req.work_dir).join("AGENTS.md");
+        if agents_file.exists() && agents_file.is_file() {
+            if let Ok(content) = tokio::fs::read_to_string(&agents_file).await {
+                system_prompt = content;
             }
         }
     }

@@ -1205,6 +1205,20 @@ select.form-control {
     align-self: center;
 }
 
+/* 系统提示词来源提示：与锁定说明同风格，超长来源路径省略号截断 */
+.prompt-source-hint {
+    font-family: var(--font-mono);
+    font-size: 10px;
+    color: var(--slate-400);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    align-self: center;
+    max-width: 320px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
 /* 输入框字数计数（P2）：绝对定位于输入容器右下角 */
 .input-char-count {
     position: absolute;

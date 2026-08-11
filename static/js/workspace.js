@@ -163,6 +163,8 @@ function updateWorkspaceUI(path) {
     const display = document.getElementById('workspaceDisplay');
     display.textContent = path || t('input.unset');
     display.title = path;
+    // 工作目录变化会影响系统提示词来源提示
+    updatePromptSourceHint();
 }
 
 function closeDirModal() {

@@ -1,6 +1,49 @@
 // ==========================================
 // 会话历史/交互流控与 SSE 核心网络模块 (DIALOG)
 // ==========================================
+// 当前已加载会话的系统提示词来源状态（loadConversation 时赋值，startNewChat 时清空）
+let currentSystemPrompt = '';
+let currentConvAgentName = '';
+
+// 系统提示词来源提示：已建会话按快照判断（智能体 > 工作目录 AGENTS.md > 无），新会话按当前控件状态预判
+function updatePromptSourceHint() {
+    const hint = document.getElementById('promptSourceHint');
+    let text;
+    let title;
+    if (currentConversationId) {
+        if (currentConvAgentName) {
+            text = t('input.promptSourceAgent', {name: currentConvAgentName});
+            title = text;
+        } else if (currentSystemPrompt) {
+            // 无智能体且提示词非空，说明创建时读取到了工作目录下的 AGENTS.md
+            const path = `${currentWorkdir}/AGENTS.md`;
+            text = t('input.promptSourceFile', {path: path});
+            title = path;
+        } else {
+            text = t('input.promptSourceNone');
+            title = text;
+        }
+    } else {
+        const agentSelect = document.getElementById('agentSelect');
+        if (agentSelect.value) {
+            const selectedOption = agentSelect.options[agentSelect.selectedIndex];
+            const name = selectedOption ? selectedOption.textContent : agentSelect.value;
+            text = t('input.promptSourceAgent', {name: name});
+            title = text;
+        } else if (currentWorkdir) {
+            // 未选智能体的新会话，提示词将在启动时从工作目录 AGENTS.md 读取
+            const path = `${currentWorkdir}/AGENTS.md`;
+            text = t('input.promptSourcePending', {path: path});
+            title = path;
+        } else {
+            text = t('input.promptSourceNone');
+            title = text;
+        }
+    }
+    hint.textContent = text;
+    hint.title = title;
+    hint.style.display = '';
+}
 function autoResize() {
     messageInput.style.height = 'auto';
     messageInput.style.height = Math.min(messageInput.scrollHeight, 160) + 'px';
@@ -62,6 +105,9 @@ async function loadConversation(conversationId) {
         const response = await fetch(`/conversation/${conversationId}`);
         if (response.ok) {
             const conversation = await response.json();
+            // 缓存系统提示词来源状态，供来源提示展示
+            currentSystemPrompt = conversation.system_prompt || '';
+            currentConvAgentName = (conversation.agent && conversation.agent.id != null) ? (conversation.agent.name || String(conversation.agent.id)) : '';
             updateWorkspaceUI(conversation.work_dir);
             const agentSelect = document.getElementById('agentSelect');
             const providerSelect = document.getElementById('providerSelect');
@@ -108,6 +154,7 @@ async function loadConversation(conversationId) {
     } catch (e) {
         // 静默处理错误
     }
+    updatePromptSourceHint();
     chatContainer.innerHTML = '';
     emptyState.style.display = 'none';
     messageInput.value = '';
@@ -141,6 +188,9 @@ function confirmDeleteConversation(conversationId, convTitle) {
 
 async function startNewChat() {
     currentConversationId = null;
+    // 清空已加载会话的提示词来源状态，恢复为新会话预判模式
+    currentSystemPrompt = '';
+    currentConvAgentName = '';
     // 取消历史列表中所有条目的选中高亮
     conversationList.querySelectorAll('.conversation-item').forEach(item => item.classList.remove('active'));
     chatContainer.innerHTML = '';
@@ -157,6 +207,7 @@ async function startNewChat() {
     loadAgentSelect();
     loadModelSelect();
     setContextLocked(false);
+    updatePromptSourceHint();
     switchView('dialog');
 }
 
@@ -201,6 +252,8 @@ async function loadAgentSelect() {
 // 选择智能体后填入其模型配置并禁止修改，取消选择（NONE）后解除禁用
 async function onAgentSelectChange() {
     const agentId = document.getElementById('agentSelect').value;
+    // 智能体选择变化会影响新会话的提示词来源预判
+    updatePromptSourceHint();
     // 记录智能体选择，供下次新对话自动填入
     saveLastAgentId(agentId);
     const providerSelect = document.getElementById('providerSelect');

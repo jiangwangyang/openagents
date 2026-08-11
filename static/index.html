@@ -364,6 +364,8 @@
                 </select>
                 <!-- 会话创建后锁定目录与智能体的说明文字，默认隐藏，由 setContextLocked 控制显隐 -->
                 <span class="context-lock-hint" id="contextLockHint" style="display:none;" data-i18n="input.contextLocked"></span>
+                <!-- 系统提示词来源提示，由 updatePromptSourceHint 维护内容与显隐 -->
+                <span class="prompt-source-hint" id="promptSourceHint" style="display:none;"></span>
             </div>
             <div class="input-container">
                 <textarea class="message-input" id="messageInput" placeholder="Enter instructions..." data-i18n-placeholder="input.placeholder" maxlength="20000" disabled rows="1"></textarea>

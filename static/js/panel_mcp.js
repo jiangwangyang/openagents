@@ -33,7 +33,7 @@ async function fetchMcpRegistry() {
         mcpListContainer.innerHTML = '';
 
         if (servers.length === 0) {
-            mcpListContainer.innerHTML = emptyListHtml('mcp.empty');
+            mcpListContainer.innerHTML = emptyListHtml('mcp.empty', 'mcp.emptyHint');
             return;
         }
 

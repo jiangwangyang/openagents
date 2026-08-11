@@ -41,13 +41,14 @@
         <!-- 头部导航 -->
         <div class="header">
             <div class="header-left">
-                <button class="header-nav-btn active" id="navDialogBtn" onclick="switchView('dialog')" data-i18n="nav.dialog">DIALOG</button>
-                <button class="header-nav-btn" id="navTaskBtn" onclick="switchView('task')" data-i18n="nav.task">TASK</button>
-                <button class="header-nav-btn" id="navCronBtn" onclick="switchView('cron')" data-i18n="nav.cron">CRON</button>
-                <button class="header-nav-btn" id="navAgentBtn" onclick="switchView('agent')" data-i18n="nav.agent">AGENT</button>
-                <button class="header-nav-btn" id="navSkillBtn" onclick="switchView('skill')" data-i18n="nav.skill">SKILL</button>
-                <button class="header-nav-btn" id="navMcpBtn" onclick="switchView('mcp')" data-i18n="nav.mcp">MCP</button>
-                <button class="header-nav-btn" id="navConfigBtn" onclick="switchView('config')" data-i18n="nav.config">CONFIG</button>
+                <!-- 导航按钮：data-i18n-title 提供悬停提示，一句话说明该栏目功能 -->
+                <button class="header-nav-btn active" id="navDialogBtn" onclick="switchView('dialog')" data-i18n="nav.dialog" title="Chat directly with an agent" data-i18n-title="nav.dialogTip">DIALOG</button>
+                <button class="header-nav-btn" id="navTaskBtn" onclick="switchView('task')" data-i18n="nav.task" title="Multi-agent pipeline with staged execution and review" data-i18n-title="nav.taskTip">TASK</button>
+                <button class="header-nav-btn" id="navCronBtn" onclick="switchView('cron')" data-i18n="nav.cron" title="Auto-run tasks on a cron schedule" data-i18n-title="nav.cronTip">CRON</button>
+                <button class="header-nav-btn" id="navAgentBtn" onclick="switchView('agent')" data-i18n="nav.agent" title="Register agents: model, prompt and behavior" data-i18n-title="nav.agentTip">AGENT</button>
+                <button class="header-nav-btn" id="navSkillBtn" onclick="switchView('skill')" data-i18n="nav.skill" title="Skills distilled automatically from task runs" data-i18n-title="nav.skillTip">SKILL</button>
+                <button class="header-nav-btn" id="navMcpBtn" onclick="switchView('mcp')" data-i18n="nav.mcp" title="Register external tool servers for agents" data-i18n-title="nav.mcpTip">MCP</button>
+                <button class="header-nav-btn" id="navConfigBtn" onclick="switchView('config')" data-i18n="nav.config" title="Configure model providers (protocol, URL, API key)" data-i18n-title="nav.configTip">CONFIG</button>
                 <!-- 主题选择器：色板预览下拉，菜单项由 theme.js 按 THEME_META 动态生成 -->
                 <div class="theme-picker" id="themePicker">
                     <button class="header-nav-btn theme-picker-btn" id="themePickerBtn" type="button" title="Switch Theme" data-i18n-title="header.switchTheme">
@@ -80,7 +81,10 @@
         <!-- ===== 视图 2: 任务流水线管理 (TASK) ===== -->
         <div class="view-container" id="viewTask">
             <div class="panel-view-header">
-                <h2 class="panel-view-title" data-i18n="task.viewTitle">Task Pipeline Management</h2>
+                <div class="panel-view-heading">
+                    <h2 class="panel-view-title" data-i18n="task.viewTitle">Task Pipeline Management</h2>
+                    <p class="panel-view-desc" data-i18n="task.viewDesc">A task is a multi-agent pipeline: work is split into stages, dispatched to candidate agents, and can pause for your review. Register agents in the AGENT page first.</p>
+                </div>
                 <button class="btn btn-sm send-button" onclick="toggleAddTaskPanel()" data-i18n="task.newTask">+ New Task</button>
             </div>
 
@@ -126,7 +130,10 @@
         <!-- ===== 视图 3: 定时任务管理 (CRON) ===== -->
         <div class="view-container" id="viewCron">
             <div class="panel-view-header">
-                <h2 class="panel-view-title" data-i18n="cron.viewTitle">Scheduled Cron Processes</h2>
+                <div class="panel-view-heading">
+                    <h2 class="panel-view-title" data-i18n="cron.viewTitle">Scheduled Cron Processes</h2>
+                    <p class="panel-view-desc" data-i18n="cron.viewDesc">Cron tasks fire automatically on a schedule (Min Hour Day Month Weekday) with no manual intervention. Execution history is kept on each card. Register an agent first.</p>
+                </div>
                 <button class="btn btn-sm send-button" onclick="toggleAddCronPanel()" data-i18n="cron.newCron">+ New Cron</button>
             </div>
 
@@ -177,7 +184,10 @@
         <!-- ===== 视图 4: Agent 管理 (AGENT) ===== -->
         <div class="view-container" id="viewAgent">
             <div class="panel-view-header">
-                <h2 class="panel-view-title" data-i18n="agent.viewTitle">Registered Agent Roster</h2>
+                <div class="panel-view-heading">
+                    <h2 class="panel-view-title" data-i18n="agent.viewTitle">Registered Agent Roster</h2>
+                    <p class="panel-view-desc" data-i18n="agent.viewDesc">An agent binds a model provider, a system prompt and a behavior description, and can be used by DIALOG, TASK and CRON. Add a model provider in CONFIG first.</p>
+                </div>
                 <button class="btn btn-sm send-button" onclick="toggleAddAgentPanel()" data-i18n="agent.newAgent">+ New Agent</button>
             </div>
 
@@ -228,7 +238,10 @@
         <!-- ===== 视图 5: 系统核心技能 (SKILL) ===== -->
         <div class="view-container" id="viewSkill">
             <div class="panel-view-header">
-                <h2 class="panel-view-title" data-i18n="skill.viewTitle">Registered Agent Skills</h2>
+                <div class="panel-view-heading">
+                    <h2 class="panel-view-title" data-i18n="skill.viewTitle">Registered Agent Skills</h2>
+                    <p class="panel-view-desc" data-i18n="skill.viewDesc">Skills are scanned and loaded automatically from ~/.openagents/skills and ~/.agents/skills under your home directory. Nothing to create here, this page is read-only.</p>
+                </div>
             </div>
             <div class="info-card-list" id="skillListContainer"></div>
         </div>
@@ -236,7 +249,10 @@
         <!-- ===== 视图 6: MCP 服务架构生态映射 (MCP) ===== -->
         <div class="view-container" id="viewMcp">
             <div class="panel-view-header">
-                <h2 class="panel-view-title" data-i18n="mcp.viewTitle">Model Context Protocol Servers</h2>
+                <div class="panel-view-heading">
+                    <h2 class="panel-view-title" data-i18n="mcp.viewTitle">Model Context Protocol Servers</h2>
+                    <p class="panel-view-desc" data-i18n="mcp.viewDesc">Register MCP tool servers (remote HTTP or local command). Once connected, the tools they expose become available to agents.</p>
+                </div>
                 <button class="btn btn-sm send-button" onclick="toggleAddMcpPanel()" data-i18n="mcp.newServer">+ New Server</button>
             </div>
 
@@ -295,7 +311,10 @@
         <!-- ===== 视图 7: 全局生产环境配置控制台 (CONFIG) ===== -->
         <div class="view-container" id="viewConfig">
             <div class="panel-view-header">
-                <h2 class="panel-view-title" data-i18n="config.viewTitle">System Runtime Configurations</h2>
+                <div class="panel-view-heading">
+                    <h2 class="panel-view-title" data-i18n="config.viewTitle">System Runtime Configurations</h2>
+                    <p class="panel-view-desc" data-i18n="config.viewDesc">Model providers (protocol / base URL / API key) power every agent. Adding a provider is step one before creating agents.</p>
+                </div>
                 <button class="btn btn-sm send-button" onclick="toggleAddProviderPanel()" data-i18n="config.newProvider">+ New Provider</button>
             </div>
 

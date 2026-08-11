@@ -135,9 +135,10 @@ function formatMarkdown(text) {
     return escapeHtml(decoded).replaceAll("\n", "<br>");
 }
 
-// 各面板列表通用空态/错误态排版，textKey 为 i18n 文案 key
-function emptyListHtml(textKey) {
-    return `<div style="padding:30px; text-align:center; border:1px dashed var(--border-hard); color:var(--slate-400)">${t(textKey)}</div>`;
+// 各面板列表通用空态/错误态排版，textKey 为 i18n 文案 key，hintKey 为可选的功能引导说明 key
+function emptyListHtml(textKey, hintKey) {
+    const hintHtml = hintKey ? `<div style="margin-top:10px; font-size:11px; font-family:var(--font-mono); line-height:1.7;">${t(hintKey)}</div>` : '';
+    return `<div style="padding:30px; text-align:center; border:1px dashed var(--border-hard); color:var(--slate-400)"><div>${t(textKey)}</div>${hintHtml}</div>`;
 }
 
 function errorListHtml(textKey) {

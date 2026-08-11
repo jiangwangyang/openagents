@@ -41,7 +41,7 @@ async function fetchAgentRegistry() {
         agentListContainer.innerHTML = '';
 
         if (agents.length === 0) {
-            agentListContainer.innerHTML = emptyListHtml('agent.empty');
+            agentListContainer.innerHTML = emptyListHtml('agent.empty', 'agent.emptyHint');
             return;
         }
 

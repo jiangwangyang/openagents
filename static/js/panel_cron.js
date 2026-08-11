@@ -77,7 +77,7 @@ async function fetchCronTasks() {
         cronListContainer.innerHTML = '';
 
         if (tasks.length === 0) {
-            cronListContainer.innerHTML = emptyListHtml('cron.empty');
+            cronListContainer.innerHTML = emptyListHtml('cron.empty', 'cron.emptyHint');
             return;
         }
 

@@ -55,7 +55,7 @@ async function fetchTaskList() {
         renderAgentCheckList(document.getElementById('addTaskAgentList'), agents, []);
 
         if (tasks.length === 0) {
-            taskListContainer.innerHTML = emptyListHtml('task.empty');
+            taskListContainer.innerHTML = emptyListHtml('task.empty', 'task.emptyHint');
             return;
         }
 

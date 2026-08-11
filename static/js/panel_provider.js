@@ -24,6 +24,12 @@ function renderProvidersFormList(providers) {
     const providerList = document.getElementById('providerConfigList');
     providerList.innerHTML = '';
 
+    // 空列表时展示功能引导：配置页是创建智能体的第一步
+    if (providers.length === 0) {
+        providerList.innerHTML = emptyListHtml('config.empty', 'config.emptyHint');
+        return;
+    }
+
     providers.forEach((provider, index) => {
         const card = document.createElement('div');
         card.className = 'info-card';

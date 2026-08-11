@@ -11,7 +11,7 @@ async function fetchSkillData() {
         skillListContainer.innerHTML = '';
 
         if (skills.length === 0) {
-            skillListContainer.innerHTML = emptyListHtml('skill.empty');
+            skillListContainer.innerHTML = emptyListHtml('skill.empty', 'skill.emptyHint');
             return;
         }
 

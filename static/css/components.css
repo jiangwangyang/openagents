@@ -186,6 +186,24 @@ details.system-details .content {
     font-weight: 400;
 }
 
+/* 标题与副标题说明的纵向容器，flex:1 占满标题栏剩余空间避免副标题被压缩换行 */
+.panel-view-heading {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    min-width: 0;
+    flex: 1;
+}
+
+/* 栏目功能副标题：一句话说明页面用途与前置条件 */
+.panel-view-desc {
+    margin: 0;
+    font-family: var(--font-mono);
+    font-size: 12px;
+    line-height: 1.6;
+    color: var(--slate-400);
+}
+
 .info-card-list {
     display: flex;
     flex-direction: column;

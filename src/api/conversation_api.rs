@@ -158,7 +158,7 @@ pub async fn create_conversation_work(State(state): State<AppState>, Json(req): 
     }
 
     // 先创建对话，再根据对话ID开始任务
-    let conversation_id = conversation_repository::add_conversation(&state.db, &req.task_content, &req.work_dir, &system_prompt, None, req.agent_id).await?;
+    let conversation_id = conversation_repository::add_conversation(&state.db, &req.task_content, &req.work_dir, &system_prompt, None, req.agent_id, None).await?;
     if !conversation_service::start_conversation(&state, conversation_id, req.task_content.clone(), model_provider_id, model, thinking).await {
         // 启动失败时清理刚创建的对话，避免产生孤儿数据
         let _ = conversation_repository::delete_conversation(&state.db, conversation_id).await;

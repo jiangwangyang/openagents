@@ -29,7 +29,7 @@ pub async fn execute(cmd_and_args: &[String], task_id: Option<i64>, db: &SqliteP
     // 移交给用户: 创建 agent_id 为 None 的用户审核对话
     if cmd_and_args[2] == "user" {
         let title = format!("{}-User", task.title);
-        match conversation_repository::add_conversation(db, &title, work_dir, "", Some(task_id), None).await {
+        match conversation_repository::add_conversation(db, &title, work_dir, "", Some(task_id), None, None).await {
             Ok(_) => ("Task handed over to the user, please summarize the current progress".to_string(), false),
             Err(e) => (format!("Failed to create conversation: {}", e), true),
         }
@@ -52,7 +52,7 @@ pub async fn execute(cmd_and_args: &[String], task_id: Option<i64>, db: &SqliteP
         }
 
         let title = format!("{}-{}", task.title, agent.name);
-        match conversation_repository::add_conversation(db, &title, work_dir, &agent.prompt, Some(task_id), Some(agent_id)).await {
+        match conversation_repository::add_conversation(db, &title, work_dir, &agent.prompt, Some(task_id), Some(agent_id), None).await {
             Ok(_) => (format!("Task handed over to agent {}, please summarize the current progress", agent.name), false),
             Err(e) => (format!("Failed to create conversation: {}", e), true),
         }

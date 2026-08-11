@@ -65,6 +65,7 @@ async fn execute_schedule(state: &AppState, schedule_id: i64) -> anyhow::Result<
         &agent.prompt,
         None,
         Some(schedule.agent_id),
+        Some(schedule_id),
     )
     .await?;
 

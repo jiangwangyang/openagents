@@ -39,11 +39,26 @@ pub struct TaskEntity {
     pub update_time: String,
 }
 
+// 定时任务
+#[derive(Debug, Clone, FromRow, serde::Serialize)]
+pub struct ScheduleEntity {
+    pub id: i64,
+    pub name: String,
+    pub content: String,
+    pub work_dir: String,
+    pub cron_expr: String,
+    pub agent_id: i64,
+    pub enabled: bool,
+    pub create_time: String,
+    pub update_time: String,
+}
+
 // 对话
 #[derive(Debug, Clone, FromRow, serde::Serialize)]
 pub struct ConversationEntity {
     pub id: i64,
     pub task_id: Option<i64>,
+    pub schedule_id: Option<i64>,
     pub agent_id: Option<i64>,
     pub title: String,
     pub work_dir: String,
@@ -64,20 +79,6 @@ pub struct MessageEntity {
     pub input_tokens: i64,
     pub output_tokens: i64,
     pub time: String,
-}
-
-// 定时任务
-#[derive(Debug, Clone, FromRow, serde::Serialize)]
-pub struct ScheduleEntity {
-    pub id: i64,
-    pub name: String,
-    pub content: String,
-    pub work_dir: String,
-    pub cron_expr: String,
-    pub agent_id: i64,
-    pub enabled: bool,
-    pub create_time: String,
-    pub update_time: String,
 }
 
 // MCP 服务

@@ -57,6 +57,7 @@ async fn do_run_task(state: &AppState, task_id: i64, agent_id: i64) -> anyhow::R
         &agent.prompt,
         Some(task_id),
         Some(agent_id),
+        None,
     )
         .await?;
 
@@ -81,6 +82,7 @@ async fn do_run_task(state: &AppState, task_id: i64, agent_id: i64) -> anyhow::R
                 &task.work_dir,
                 "",
                 Some(task_id),
+                None,
                 None,
             )
                 .await?;

@@ -9,7 +9,7 @@ use super::entity::{
 // 查询全部独立对话(不含任务中的阶段对话)，按更新时间倒序
 pub async fn list_conversations(pool: &SqlitePool) -> Result<Vec<ConversationEntity>, sqlx::Error> {
     sqlx::query_as::<_, ConversationEntity>(
-        "SELECT id, task_id, agent_id, title, work_dir, system_prompt, create_time, update_time FROM t_conversation WHERE task_id IS NULL ORDER BY update_time DESC",
+        "SELECT id, task_id, schedule_id, agent_id, title, work_dir, system_prompt, create_time, update_time FROM t_conversation WHERE task_id IS NULL ORDER BY update_time DESC",
     )
         .fetch_all(pool)
         .await
@@ -18,7 +18,7 @@ pub async fn list_conversations(pool: &SqlitePool) -> Result<Vec<ConversationEnt
 // 按 task_id 查询任务的全部阶段对话，按 id 升序
 pub async fn list_conversations_by_task_id(pool: &SqlitePool, task_id: i64) -> Result<Vec<ConversationEntity>, sqlx::Error> {
     sqlx::query_as::<_, ConversationEntity>(
-        "SELECT id, task_id, agent_id, title, work_dir, system_prompt, create_time, update_time FROM t_conversation WHERE task_id = ? ORDER BY id",
+        "SELECT id, task_id, schedule_id, agent_id, title, work_dir, system_prompt, create_time, update_time FROM t_conversation WHERE task_id = ? ORDER BY id",
     )
         .bind(task_id)
         .fetch_all(pool)
@@ -42,7 +42,7 @@ pub async fn list_messages_by_conversation_ids(pool: &SqlitePool, conversation_i
 // 按 id 查询对话，含消息列表(按 id 升序)
 pub async fn get_conversation(pool: &SqlitePool, conversation_id: i64) -> Result<Option<ConversationWithMessages>, sqlx::Error> {
     let conv = sqlx::query_as::<_, ConversationEntity>(
-        "SELECT id, task_id, agent_id, title, work_dir, system_prompt, create_time, update_time FROM t_conversation WHERE id = ?",
+        "SELECT id, task_id, schedule_id, agent_id, title, work_dir, system_prompt, create_time, update_time FROM t_conversation WHERE id = ?",
     )
         .bind(conversation_id)
         .fetch_optional(pool)
@@ -66,15 +66,16 @@ pub async fn get_conversation(pool: &SqlitePool, conversation_id: i64) -> Result
 }
 
 // 新建对话，返回自增 id
-pub async fn add_conversation(pool: &SqlitePool, title: &str, work_dir: &str, system_prompt: &str, task_id: Option<i64>, agent_id: Option<i64>) -> Result<i64, sqlx::Error> {
+pub async fn add_conversation(pool: &SqlitePool, title: &str, work_dir: &str, system_prompt: &str, task_id: Option<i64>, agent_id: Option<i64>, schedule_id: Option<i64>) -> Result<i64, sqlx::Error> {
     let now = chrono::Local::now().to_rfc3339();
     let result = sqlx::query(
-        "INSERT INTO t_conversation (title, work_dir, system_prompt, task_id, agent_id, create_time, update_time) VALUES (?, ?, ?, ?, ?, ?, ?)",
+        "INSERT INTO t_conversation (title, work_dir, system_prompt, task_id, schedule_id, agent_id, create_time, update_time) VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
     )
         .bind(title)
         .bind(work_dir)
         .bind(system_prompt)
         .bind(task_id)
+        .bind(schedule_id)
         .bind(agent_id)
         .bind(&now)
         .bind(&now)

@@ -51,26 +51,26 @@ async function fetchMcpRegistry() {
                 <div class="info-card-summary" onclick="toggleCardOpen(this.parentNode)">
                     <div class="info-card-main">
                         ${ARROW_SVG}
-                        <span class="info-card-name" style="min-width:180px; max-width:280px;">${escapeHtml(name)}</span>
+                        <span class="info-card-name card-name-fixed">${escapeHtml(name)}</span>
                         <span class="info-card-snippet">${escapeHtml(snippet)}</span>
                     </div>
-                    <div style="display:flex; gap:8px; align-items:center;" onclick="event.stopPropagation();">
-                        <button class="btn btn-sm send-button mcp-save-btn" style="height:28px; padding:0 8px; font-size:10px;">${t('common.save')}</button>
+                    <div class="card-actions" onclick="event.stopPropagation();">
+                        <button class="btn btn-sm send-button mcp-save-btn btn-card-sm">${t('common.save')}</button>
                         <button class="btn btn-sm send-button mcp-test-btn" style="height:28px;">${t('mcp.testProbe')}</button>
-                        <button class="delete-btn" style="opacity:1; padding:6px;">${DELETE_SVG}</button>
+                        <button class="delete-btn always-visible">${DELETE_SVG}</button>
                     </div>
                 </div>
                 <div class="info-card-details" style="display: none;">
                     <div class="form-row">
-                        <div class="form-group" style="flex: 1;">
+                        <div class="form-group flex-1">
                             <label>${t('mcp.keyName')}</label>
                             <input type="text" id="mcp-name-${index}" class="form-control mono" value="${escapeHtml(server.name || '')}">
                         </div>
-                        <div class="form-group" style="flex: 1;">
+                        <div class="form-group flex-1">
                             <label>${t('common.description')}</label>
                             <input type="text" id="mcp-desc-${index}" class="form-control" value="${escapeHtml(server.description || '')}">
                         </div>
-                        <div class="form-group" style="flex: 1;">
+                        <div class="form-group flex-1">
                             <label>${t('mcp.protocolType')}</label>
                             <select id="mcp-type-${index}" class="form-control" onchange="adaptMcpCardFields(${index})">
                                 <option value="streamable-http" ${server.protocol_type !== 'stdio' ? 'selected' : ''}>streamable_http</option>
@@ -78,7 +78,7 @@ async function fetchMcpRegistry() {
                             </select>
                         </div>
                     </div>
-                    <div id="mcp-network-zone-${index}" style="display:${isStdio ? 'none' : 'flex'}; flex-direction:column; gap:12px;">
+                    <div id="mcp-network-zone-${index}" class="mcp-zone" style="display:${isStdio ? 'none' : 'flex'};">
                         <div class="form-row">
                             <div class="form-group">
                                 <label>${t('mcp.targetUrl')}</label>
@@ -88,11 +88,11 @@ async function fetchMcpRegistry() {
                         <div class="form-row">
                             <div class="form-group">
                                 <label>${t('mcp.httpHeaders')}</label>
-                                <textarea id="mcp-headers-${index}" class="form-control mono" rows="3" style="resize: vertical; font-size:11px;">${escapeHtml(JSON.stringify(server.headers || {}, null, 2))}</textarea>
+                                <textarea id="mcp-headers-${index}" class="form-control mono textarea-sm" rows="3">${escapeHtml(JSON.stringify(server.headers || {}, null, 2))}</textarea>
                             </div>
                         </div>
                     </div>
-                    <div id="mcp-local-zone-${index}" style="display:${isStdio ? 'flex' : 'none'}; flex-direction:column; gap:12px;">
+                    <div id="mcp-local-zone-${index}" class="mcp-zone" style="display:${isStdio ? 'flex' : 'none'};">
                         <div class="form-row">
                             <div class="form-group">
                                 <label>${t('mcp.cmdExec')}</label>
@@ -255,7 +255,7 @@ async function testMcpServerTools(targetServer, index) {
         const tools = await response.json();
         listContainer.innerHTML = '';
         if (!tools || tools.length === 0) {
-            listContainer.innerHTML = `<div style="font-size:12px; color:var(--slate-400); font-style:italic;">${t('mcp.connectedNoTools')}</div>`;
+            listContainer.innerHTML = `<div class="text-hint">${t('mcp.connectedNoTools')}</div>`;
             return;
         }
         tools.forEach(tool => {
@@ -268,7 +268,7 @@ async function testMcpServerTools(targetServer, index) {
             listContainer.appendChild(item);
         });
     } catch (e) {
-        listContainer.innerHTML = `<div style="font-family:var(--font-mono); font-size:12px; color:var(--danger-color)">${t('mcp.sessionCrashed')}</div>`;
+        listContainer.innerHTML = `<div class="text-error-mono">${t('mcp.sessionCrashed')}</div>`;
     }
 }
 

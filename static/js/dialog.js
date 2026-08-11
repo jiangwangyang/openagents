@@ -428,17 +428,8 @@ async function loadModelSelect() {
         const pResponse = await fetch('/model-provider/list');
         const providers = await pResponse.json();
 
-        providerSelect.innerHTML = '';
-        providers.forEach(provider => {
-            const opt = document.createElement('option');
-            opt.value = provider.id;
-            opt.textContent = provider.name;
-            if (String(provider.id) === String(prevProvider)) {
-                opt.selected = true;
-            }
-            providerSelect.appendChild(opt);
-        });
-        // 供应商列表加载完成后恢复上次模型配置
+        // 填充供应商下拉并保持刷新前的选中项，加载完成后恢复上次模型配置
+        fillSelectOptions(providerSelect, providers, prevProvider);
         restoreLastModelConfig();
     } catch (e) {
         // 静默处理错误
@@ -599,8 +590,7 @@ function connectStream(conversationId) {
             finalizeStreamBlock();
             streamWrapper = null;
             const errorDiv = document.createElement('div');
-            errorDiv.className = 'user-message';
-            errorDiv.style.cssText = 'background: var(--danger-bg); color: var(--danger-color); border: 1px solid var(--danger-color); align-self: center; max-width: 80%;';
+            errorDiv.className = 'user-message stream-error';
             errorDiv.innerHTML = `\u26a0 ${escapeHtml(data.text || t('stream.unknownError'))}`;
             chatContainer.appendChild(errorDiv);
         }

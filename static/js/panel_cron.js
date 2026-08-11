@@ -10,33 +10,10 @@ async function loadCronAgentOptions() {
     try {
         const response = await fetch('/agent/list');
         const agents = await response.json();
-        const select = document.getElementById('cronAgentId');
-        select.innerHTML = '';
-        agents.forEach(agent => {
-            const option = document.createElement('option');
-            option.value = agent.id;
-            option.textContent = agent.name;
-            select.appendChild(option);
-        });
-    } catch (e) {}
-}
-
-// 打开目录选择弹窗，选中后写入 cron 面板的目录显示
-function selectCronWorkspace() {
-    openDirModal((path) => {
-        const display = document.getElementById('cronWorkspaceDisplay');
-        display.textContent = path || t('input.unset');
-        display.title = path;
-    }, document.getElementById('cronWorkspaceDisplay').title || '');
-}
-
-// 打开目录选择弹窗，选中后写入指定 cron 卡片的工作目录显示
-function selectCronCardWorkspace(taskId) {
-    openDirModal((path) => {
-        const display = document.getElementById(`cron-workdir-display-${taskId}`);
-        display.textContent = path || t('input.unset');
-        display.title = path;
-    }, document.getElementById(`cron-workdir-display-${taskId}`).title || '');
+        fillSelectOptions(document.getElementById('cronAgentId'), agents, null);
+    } catch (e) {
+        // 静默处理错误
+    }
 }
 
 // 解析后端 6 段 cron 表达式到各个字段
@@ -92,16 +69,16 @@ async function fetchCronTasks() {
                 <div class="info-card-summary" onclick="toggleCronCard(this.parentNode, ${task.id})">
                     <div class="info-card-main">
                         ${ARROW_SVG}
-                        <span class="info-card-name" style="min-width:180px; max-width:280px;">${escapeHtml(task.name || t('cron.unnamed'))}</span>
+                        <span class="info-card-name card-name-fixed">${escapeHtml(task.name || t('cron.unnamed'))}</span>
                         <span class="info-card-snippet">${escapeHtml(task.content || '')}</span>
-                        <span style="font-size:10px; font-family:var(--font-mono); color:${enabledColor}; margin-left:8px; flex-shrink:0;">${enabledText}</span>
-                        <span style="font-size:10px; font-family:var(--font-mono); color:var(--slate-400); margin-left:8px; flex-shrink:0;" title="${t('cron.triggerSpec')}">${escapeHtml(`${cron.minute} ${cron.hour} ${cron.day} ${cron.month} ${cron.day_of_week}`)}</span>
-                        <span style="font-size:10px; font-family:var(--font-mono); color:var(--slate-400); flex-shrink:0;">${t('cron.nextFire')}: ${escapeHtml(task.next_fire_time || t('cron.suspended'))}</span>
+                        <span class="card-meta card-meta-gap" style="color:${enabledColor};">${enabledText}</span>
+                        <span class="card-meta card-meta-gap" title="${t('cron.triggerSpec')}">${escapeHtml(`${cron.minute} ${cron.hour} ${cron.day} ${cron.month} ${cron.day_of_week}`)}</span>
+                        <span class="card-meta">${t('cron.nextFire')}: ${escapeHtml(task.next_fire_time || t('cron.suspended'))}</span>
                     </div>
-                    <div style="display:flex; gap:4px; align-items:center;" onclick="event.stopPropagation();">
-                        <button class="btn btn-sm btn-secondary cron-toggle-btn" style="height:28px; padding:0 8px; font-size:10px;">${task.enabled ? t('cron.disable') : t('cron.enable')}</button>
-                        <button class="btn btn-sm send-button cron-save-btn" style="height:28px; padding:0 8px; font-size:10px;">${t('common.save')}</button>
-                        <button class="delete-btn" style="opacity:1; padding:6px;">${DELETE_SVG}</button>
+                    <div class="card-actions" style="gap:4px;" onclick="event.stopPropagation();">
+                        <button class="btn btn-sm btn-secondary cron-toggle-btn btn-card-sm">${task.enabled ? t('cron.disable') : t('cron.enable')}</button>
+                        <button class="btn btn-sm send-button cron-save-btn btn-card-sm">${t('common.save')}</button>
+                        <button class="delete-btn always-visible">${DELETE_SVG}</button>
                     </div>
                 </div>
                 <div class="info-card-details" style="display: none;">
@@ -112,7 +89,7 @@ async function fetchCronTasks() {
                         </div>
                         <div class="form-group">
                             <label>${t('cron.workingDir')}</label>
-                            <button class="workspace-btn" style="margin-bottom:0;" title="Set Directory Context" onclick="selectCronCardWorkspace(${task.id})">
+                            <button class="workspace-btn flush" title="Set Directory Context" onclick="selectPanelWorkspace('cron-workdir-display-${task.id}')">
                                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                                     <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path>
                                 </svg>
@@ -133,19 +110,17 @@ async function fetchCronTasks() {
                     <div class="form-row">
                         <div class="form-group">
                             <label>${t('cron.execContent')}</label>
-                            <textarea id="cron-content-${task.id}" class="form-control mono" rows="5" style="resize: vertical; font-size:11px;">${escapeHtml(task.content || '')}</textarea>
+                            <textarea id="cron-content-${task.id}" class="form-control mono textarea-sm" rows="5">${escapeHtml(task.content || '')}</textarea>
                         </div>
                     </div>
-                    <div class="form-row" style="display:flex; align-items:center; gap:12px;">
-                        <div style="flex: 0 0 auto;">
-                            <label style="font-family:var(--font-display); font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:0.5px; color:var(--slate-400);">${t('cron.nextFire')}</label>
-                        </div>
-                        <div style="font-family:var(--font-mono); font-size:12px; color:var(--charcoal-800);">${escapeHtml(task.next_fire_time || t('cron.suspended'))}</div>
+                    <div class="form-row align-center">
+                        <label class="nextfire-label">${t('cron.nextFire')}</label>
+                        <div class="nextfire-value">${escapeHtml(task.next_fire_time || t('cron.suspended'))}</div>
                     </div>
                     <div class="details-block-container" style="margin-top:12px;">
-                        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 6px;">
-                            <div class="details-label" style="margin-bottom: 0;">${t('cron.execHistory')}</div>
-                            <button class="btn btn-sm btn-secondary" style="height:24px; padding:0 8px; font-size:10px;" onclick="loadCronDetail(${task.id})">${t('common.refresh')}</button>
+                        <div class="details-block-header">
+                            <div class="details-label">${t('cron.execHistory')}</div>
+                            <button class="btn btn-sm btn-secondary btn-card-xs" onclick="loadCronDetail(${task.id})">${t('common.refresh')}</button>
                         </div>
                         <div class="task-stage-list" id="cron-stages-${task.id}"></div>
                     </div>
@@ -163,8 +138,8 @@ async function fetchCronTasks() {
                 removeCronTask(task.id, task.name);
             };
             cronListContainer.appendChild(card);
-            // 异步填充 agent 下拉并选中当前值
-            loadCronCardAgentOptions(`cron-agent-${task.id}`, task.agent_id, agents);
+            // 填充 agent 下拉并选中当前值
+            fillSelectOptions(document.getElementById(`cron-agent-${task.id}`), agents, task.agent_id);
         });
     } catch (e) {
         cronListContainer.innerHTML = errorListHtml('common.fetchFailed');
@@ -186,53 +161,48 @@ async function loadCronDetail(scheduleId) {
     try {
         const response = await fetch(`/schedule/${scheduleId}`);
         if (!response.ok) {
-            stageList.innerHTML = `<div style="font-family:var(--font-mono); font-size:12px; color:var(--danger-color)">${t('common.fetchFailed')}</div>`;
+            stageList.innerHTML = `<div class="text-error-mono">${t('common.fetchFailed')}</div>`;
             return;
         }
         const schedule = await response.json();
         stageList.innerHTML = '';
         if (!schedule.conversations || schedule.conversations.length === 0) {
-            stageList.innerHTML = `<div style="font-size:12px; color:var(--slate-400); font-style:italic;">${t('cron.notTriggered')}</div>`;
+            stageList.innerHTML = `<div class="text-hint">${t('cron.notTriggered')}</div>`;
             return;
         }
         schedule.conversations.forEach(conversation => {
-            // agent 对话且无消息说明正在执行中，提示点击查看实时流式内容
-            const isRunning = conversation.agent_id != null && (!conversation.messages || conversation.messages.length === 0);
-            const snippet = isRunning ? t('task.generating') : getLastMessageText(conversation.messages);
-            const item = document.createElement('div');
-            item.className = 'task-stage-item';
-            item.innerHTML = `
-                <div class="task-stage-title">
-                    <span>${escapeHtml(conversation.title)}</span>
-                    <span style="font-family:var(--font-mono); font-weight:400; color:var(--slate-300);">${escapeHtml(conversation.update_time || '')}</span>
-                </div>
-                <div class="task-stage-snippet"${isRunning ? ' style="color:var(--charcoal-900); font-weight:600;"' : ''}>${escapeHtml(snippet)}</div>
-            `;
             // 点击执行记录项复用对话页右侧展示区：切换视图并流式回放/跟随该次执行对话（只读，禁止发送消息）
-            item.onclick = () => {
-                switchView('dialog');
-                loadConversation(conversation.id, true);
-            };
-            stageList.appendChild(item);
+            stageList.appendChild(createStageRecordItem(conversation));
         });
     } catch (e) {
-        stageList.innerHTML = `<div style="font-family:var(--font-mono); font-size:12px; color:var(--danger-color)">${t('common.fetchFailed')}</div>`;
+        stageList.innerHTML = `<div class="text-error-mono">${t('common.fetchFailed')}</div>`;
     }
 }
 
-// 填充 cron 卡片内的 agent 下拉选项
-function loadCronCardAgentOptions(elementId, selectedId, agents) {
-    const select = document.getElementById(elementId);
-    select.innerHTML = '';
-    agents.forEach(agent => {
-        const opt = document.createElement('option');
-        opt.value = agent.id;
-        opt.textContent = agent.name;
-        if (String(agent.id) === String(selectedId)) {
-            opt.selected = true;
-        }
-        select.appendChild(opt);
-    });
+// 组装定时任务提交载荷：校验必填项与 cron 字段格式，失败时提示并返回 null
+function buildCronPayload(name, content, workDir, agentIdVal, cronFieldValues, second, enabled) {
+    if (!name || !content || !workDir || !agentIdVal) {
+        showToast(t('common.requiredMissing'), 'error');
+        return null;
+    }
+    // 简单格式校验：cron 字段仅允许数字与 * , - / 符号
+    if (cronFieldValues.some(fieldValue => !/^[0-9*,\/\-]+$/.test(fieldValue.trim()))) {
+        showToast(t('cron.invalidFormat'), 'error');
+        return null;
+    }
+    return {
+        name: name,
+        content: content,
+        work_dir: workDir,
+        minute: cronFieldValues[0],
+        hour: cronFieldValues[1],
+        day: cronFieldValues[2],
+        month: cronFieldValues[3],
+        day_of_week: cronFieldValues[4],
+        second: second,
+        agent_id: parseInt(agentIdVal),
+        enabled: enabled
+    };
 }
 
 function toggleAddCronPanel() {
@@ -278,13 +248,8 @@ async function toggleCronEnabled(task) {
 async function updateSingleCron(taskId) {
     const name = document.getElementById(`cron-name-${taskId}`).value.trim();
     const content = document.getElementById(`cron-content-${taskId}`).value.trim();
-    const work_dir = document.getElementById(`cron-workdir-display-${taskId}`).title || '';
+    const workDir = document.getElementById(`cron-workdir-display-${taskId}`).title || '';
     const agentIdVal = document.getElementById(`cron-agent-${taskId}`).value;
-    if (!name || !content || !work_dir || !agentIdVal) {
-        showToast(t('common.requiredMissing'), 'error');
-        return;
-    }
-    // 简单格式校验：cron 字段仅允许数字与 * , - / 符号
     const cronFieldValues = [
         document.getElementById(`cron-min-${taskId}`).value,
         document.getElementById(`cron-hour-${taskId}`).value,
@@ -292,26 +257,14 @@ async function updateSingleCron(taskId) {
         document.getElementById(`cron-month-${taskId}`).value,
         document.getElementById(`cron-week-${taskId}`).value
     ];
-    if (cronFieldValues.some(fieldValue => !/^[0-9*,\/\-]+$/.test(fieldValue.trim()))) {
-        showToast(t('cron.invalidFormat'), 'error');
-        return;
-    }
     // 从缓存列表中获取 enabled 状态与秒字段（均不在编辑表单内），避免保存时被重置
     const existing = cronTasksCache.find(taskItem => taskItem.id === taskId);
     const enabled = existing ? existing.enabled : true;
     const second = existing ? parseCronExpr(existing.trigger).second : '0';
-
-    const payload = {
-        name, content, work_dir,
-        minute: cronFieldValues[0],
-        hour: cronFieldValues[1],
-        day: cronFieldValues[2],
-        month: cronFieldValues[3],
-        day_of_week: cronFieldValues[4],
-        second: second,
-        agent_id: parseInt(agentIdVal),
-        enabled: enabled,
-    };
+    const payload = buildCronPayload(name, content, workDir, agentIdVal, cronFieldValues, second, enabled);
+    if (!payload) {
+        return;
+    }
     try {
         const response = await fetch(`/schedule/${taskId}`, {
             method: 'PUT',
@@ -330,14 +283,8 @@ async function updateSingleCron(taskId) {
 async function submitCronTask() {
     const name = document.getElementById('cronName').value.trim();
     const content = document.getElementById('cronContent').value.trim();
-    const work_dir = document.getElementById('cronWorkspaceDisplay').title || '';
-
+    const workDir = document.getElementById('cronWorkspaceDisplay').title || '';
     const agentIdVal = document.getElementById('cronAgentId').value;
-    if (!name || !content || !work_dir || !agentIdVal) {
-        showToast(t('common.requiredMissing'), 'error');
-        return;
-    }
-    // 简单格式校验：cron 字段仅允许数字与 * , - / 符号
     const cronFieldValues = [
         document.getElementById('cronMin').value,
         document.getElementById('cronHour').value,
@@ -345,23 +292,11 @@ async function submitCronTask() {
         document.getElementById('cronMonth').value,
         document.getElementById('cronWeek').value
     ];
-    if (cronFieldValues.some(fieldValue => !/^[0-9*,\/\-]+$/.test(fieldValue.trim()))) {
-        showToast(t('cron.invalidFormat'), 'error');
+    // 新增时后端忽略 enabled 字段，默认启用，但接口要求必传
+    const payload = buildCronPayload(name, content, workDir, agentIdVal, cronFieldValues, '0', true);
+    if (!payload) {
         return;
     }
-    const payload = {
-        name, content, work_dir,
-        minute: cronFieldValues[0],
-        hour: cronFieldValues[1],
-        day: cronFieldValues[2],
-        month: cronFieldValues[3],
-        day_of_week: cronFieldValues[4],
-        second: '0',
-        agent_id: parseInt(agentIdVal),
-        // 新增时后端忽略该字段，默认启用，但接口要求必传
-        enabled: true
-    };
-
     try {
         const response = await fetch('/schedule', {
             method: 'POST',

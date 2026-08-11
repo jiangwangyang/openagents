@@ -95,26 +95,18 @@ function refreshActiveViewI18n() {
     if (!activeView) {
         return;
     }
-    if (activeView.id === 'viewTask') {
-        fetchTaskList();
-    } else if (activeView.id === 'viewAgent') {
-        fetchAgentRegistry();
-    } else if (activeView.id === 'viewCron') {
-        fetchCronTasks();
-    } else if (activeView.id === 'viewSkill') {
-        fetchSkillData();
-    } else if (activeView.id === 'viewMcp') {
-        fetchMcpRegistry();
-    } else if (activeView.id === 'viewConfig') {
-        fetchGlobalSettings();
-    } else {
-        conversationInfo.textContent = currentConversationId ? `ID: ${currentConversationId}` : t('header.newTrace');
-        // 对话页动态文案：系统提示词来源提示需随语言重新渲染
-        updatePromptSourceHint();
-        // 只读会话的占位文案会被 data-i18n-placeholder 批量刷新覆盖，需单独恢复
-        if (currentConvReadonly) {
-            messageInput.placeholder = t('input.readonlyPlaceholder');
-        }
+    // 面板视图：按 VIEW_CONFIG 路由表（core.js）找到对应加载函数重新拉取渲染
+    const cfg = Object.values(VIEW_CONFIG).find(item => item.view === activeView.id);
+    if (cfg && cfg.load) {
+        window[cfg.load]();
+        return;
+    }
+    // 会话页：仅刷新 header 文案与提示词来源提示，不重载流式消息
+    conversationInfo.textContent = currentConversationId ? `ID: ${currentConversationId}` : t('header.newTrace');
+    updatePromptSourceHint();
+    // 只读会话的占位文案会被 data-i18n-placeholder 批量刷新覆盖，需单独恢复
+    if (currentConvReadonly) {
+        messageInput.placeholder = t('input.readonlyPlaceholder');
     }
 }
 

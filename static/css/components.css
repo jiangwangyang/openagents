@@ -415,6 +415,11 @@ select.form-control {
     height: 36px;
 }
 
+/* 输入框与下拉框统一 36px 高度（textarea 由 rows 控制高度，不受影响；小型控件由更高优先级类覆盖） */
+input.form-control {
+    height: 36px;
+}
+
 /* 禁用态统一样式：选择智能体后模型配置锁定等场景，与上下文锁定视觉保持一致 */
 .form-control:disabled {
     opacity: 0.4;
@@ -1192,8 +1197,8 @@ select.form-control {
     flex: 1;
 }
 .password-toggle-btn {
-    flex: 0 0 38px;
-    height: 38px;
+    flex: 0 0 36px;
+    height: 36px;
     border: 1px solid var(--border-hard);
     background: var(--bg-panel);
     border-radius: var(--radius-sm);
@@ -1301,4 +1306,294 @@ select.form-control {
 
 .model-combo-hint:hover {
     background: transparent;
+}
+
+/* ==========================================
+   通用工具类：收敛面板模板与输入区中重复的内联样式
+   ========================================== */
+/* 头部输入区的小型下拉框（智能体/供应商/模型/思考模式），.form-control 前缀提升优先级以覆盖 select.form-control 的默认高度 */
+.form-control.header-select {
+    width: auto;
+    height: 28px;
+    padding: 4px 10px;
+    font-size: 11px;
+    font-family: var(--font-mono);
+    color: var(--slate-400);
+    text-transform: uppercase;
+}
+
+/* 输入区顶部工具行（工作目录/智能体/模型路由控件） */
+.input-toolbar {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+    margin-bottom: 12px;
+}
+
+/* 卡片摘要行右侧的操作按钮组 */
+.card-actions {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+}
+
+/* 卡片名称列的固定宽度约束 */
+.card-name-fixed {
+    min-width: 180px;
+    max-width: 280px;
+}
+
+/* 卡片摘要行内的小型按钮（保存/启用切换等） */
+.btn-card-sm {
+    height: 28px;
+    padding: 0 8px;
+    font-size: 10px;
+}
+
+/* 详情块头部的迷你按钮（刷新等） */
+.btn-card-xs {
+    height: 24px;
+    padding: 0 8px;
+    font-size: 10px;
+}
+
+/* 卡片摘要内的等宽小字元信息（启用状态/触发规则/下次触发） */
+.card-meta {
+    font-size: 10px;
+    font-family: var(--font-mono);
+    color: var(--slate-400);
+    flex-shrink: 0;
+}
+
+/* 元信息项之间的左间距 */
+.card-meta-gap {
+    margin-left: 8px;
+}
+
+/* 面板列表通用空态/错误态 */
+.list-empty {
+    padding: 30px;
+    text-align: center;
+    border: 1px dashed var(--border-hard);
+    color: var(--slate-400);
+}
+
+.list-empty-hint {
+    margin-top: 10px;
+    font-size: 11px;
+    font-family: var(--font-mono);
+    line-height: 1.7;
+}
+
+.list-error {
+    padding: 20px;
+    color: var(--danger-color);
+}
+
+/* 斜体弱提示 / 等宽弱提示 / 等宽错误提示 */
+.text-hint {
+    font-size: 12px;
+    color: var(--slate-400);
+    font-style: italic;
+}
+
+.text-hint-mono {
+    font-size: 12px;
+    color: var(--slate-400);
+    font-family: var(--font-mono);
+}
+
+.text-error-mono {
+    font-family: var(--font-mono);
+    font-size: 12px;
+    color: var(--danger-color);
+}
+
+/* 表单底部按钮行（取消/保存右对齐） */
+.form-actions {
+    justify-content: flex-end;
+    margin-top: 4px;
+    gap: 12px;
+}
+
+/* 详情块头部（块标签 + 右侧操作按钮） */
+.details-block-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 6px;
+}
+
+.details-block-header .details-label {
+    margin-bottom: 0;
+}
+
+/* 执行中的阶段摘要高亮 */
+.stage-running {
+    color: var(--charcoal-900);
+    font-weight: 600;
+}
+
+/* 任务审核区（等待人工审核的提示与输入行） */
+.review-hint {
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--charcoal-900);
+    margin-top: 8px;
+}
+
+.review-area {
+    display: flex;
+    gap: 8px;
+    margin-top: 4px;
+    align-items: flex-start;
+}
+
+.review-input {
+    flex: 1;
+    resize: vertical;
+    font-size: 11px;
+}
+
+/* MCP 卡片协议字段分区（显示/隐藏由 JS 控制 display） */
+.mcp-zone {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+/* 卡片详情内的小型多行编辑框 */
+.textarea-sm {
+    resize: vertical;
+    font-size: 11px;
+}
+
+/* 加粗大写表单标签 */
+.form-label-strong {
+    font-family: var(--font-display);
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    color: var(--charcoal-700);
+}
+
+/* 卡片上常驻可见的删除按钮（默认删除按钮 hover 才显现） */
+.delete-btn.always-visible {
+    opacity: 1;
+    padding: 6px;
+}
+
+/* 去除工作目录按钮的默认下外边距（嵌入表单行时使用） */
+.workspace-btn.flush {
+    margin-bottom: 0;
+}
+
+/* 流式错误消息块（居中警示样式） */
+.stream-error {
+    background: var(--danger-bg);
+    color: var(--danger-color);
+    border: 1px solid var(--danger-color);
+    align-self: center;
+    max-width: 80%;
+}
+
+/* 表单项弹性占比工具类（form-row 内宽度分配） */
+.flex-1 {
+    flex: 1;
+}
+
+.flex-2 {
+    flex: 2;
+}
+
+/* flex 行垂直居中工具类（配合 form-row 使用） */
+.align-center {
+    align-items: center;
+}
+
+/* 表单内可拉伸多行编辑框（任务/定时/智能体新增面板通用） */
+.form-textarea {
+    resize: vertical;
+    min-height: 100px;
+}
+
+/* 加高按钮（配置页新增供应商表单的取消/保存按钮） */
+.btn-tall {
+    height: 36px;
+}
+
+/* 执行记录项的时间戳 */
+.stage-time {
+    font-family: var(--font-mono);
+    font-weight: 400;
+    color: var(--slate-300);
+}
+
+/* 任务卡片摘要行的启动控件（候选智能体下拉 + 启动按钮），.form-control 前缀提升优先级以覆盖 select.form-control 的默认高度 */
+.form-control.task-start-select {
+    width: 140px;
+    height: 28px;
+    font-size: 11px;
+    padding: 0 6px;
+}
+
+.task-start-btn {
+    height: 28px;
+    white-space: nowrap;
+}
+
+/* 定时卡片详情内的下次触发信息行 */
+.nextfire-label {
+    font-family: var(--font-display);
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: var(--slate-400);
+}
+
+.nextfire-value {
+    font-family: var(--font-mono);
+    font-size: 12px;
+    color: var(--charcoal-800);
+}
+
+/* 目录选择弹窗：手动路径输入行 / 路径输入框 / 跳转按钮 / 当前路径栏 */
+.dir-modal-toolbar {
+    padding: 12px 24px;
+    border-bottom: 1px solid var(--border-hard);
+    display: flex;
+    gap: 8px;
+    background: var(--bg-surface);
+}
+
+.dir-path-input {
+    flex: 1;
+    padding: 8px 12px;
+    border: 1px solid var(--border-hard);
+    background: transparent;
+    font-family: var(--font-mono);
+    font-size: 12px;
+    outline: none;
+}
+
+.dir-go-btn {
+    height: auto;
+    padding: 8px 16px;
+}
+
+.dir-modal-pathbar {
+    padding: 6px 24px;
+    font-family: var(--font-mono);
+    font-size: 11px;
+    color: var(--slate-400);
+    background: var(--bg-surface);
+    border-bottom: 1px solid var(--border-hard);
+}
+
+/* 配置页供应商列表容器 */
+.config-form-container {
+    display: flex;
+    flex-direction: column;
+    gap: 24px;
 }

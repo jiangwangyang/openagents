@@ -24,9 +24,6 @@ let isTyping = false;
 let currentConvReadonly = false;
 let currentEventSource = null;
 let currentWorkdir = '';
-let tempSelectedPath = "";
-// 目录选择弹窗的确认回调，为空则写入对话工作目录（默认行为）
-let dirConfirmCallback = null;
 
 // 流式渲染状态变量
 let streamWrapper = null;
@@ -139,12 +136,12 @@ function formatMarkdown(text) {
 
 // 各面板列表通用空态/错误态排版，textKey 为 i18n 文案 key，hintKey 为可选的功能引导说明 key
 function emptyListHtml(textKey, hintKey) {
-    const hintHtml = hintKey ? `<div style="margin-top:10px; font-size:11px; font-family:var(--font-mono); line-height:1.7;">${t(hintKey)}</div>` : '';
-    return `<div style="padding:30px; text-align:center; border:1px dashed var(--border-hard); color:var(--slate-400)"><div>${t(textKey)}</div>${hintHtml}</div>`;
+    const hintHtml = hintKey ? `<div class="list-empty-hint">${t(hintKey)}</div>` : '';
+    return `<div class="list-empty"><div>${t(textKey)}</div>${hintHtml}</div>`;
 }
 
 function errorListHtml(textKey) {
-    return `<div style="padding:20px; color:var(--danger-color)">${t(textKey)}</div>`;
+    return `<div class="list-error">${t(textKey)}</div>`;
 }
 
 function scrollToBottom() {
@@ -160,6 +157,56 @@ function scrollToBottomIfNotUserScroll() {
         viewDialog.scrollTop = viewDialog.scrollHeight;
         isAtBottom = true;
     }
+}
+
+// 填充下拉框选项：items 为含 id/name 的列表，selectedId 非空时选中匹配项
+function fillSelectOptions(select, items, selectedId) {
+    select.innerHTML = '';
+    items.forEach(item => {
+        const opt = document.createElement('option');
+        opt.value = item.id;
+        opt.textContent = item.name;
+        if (selectedId != null && String(item.id) === String(selectedId)) {
+            opt.selected = true;
+        }
+        select.appendChild(opt);
+    });
+}
+
+// 取对话最后一条消息的展示文本：content 为数组时取最后一个 block 的 text
+function getLastMessageText(messages) {
+    if (!messages || messages.length === 0) {
+        return t('task.noMessages');
+    }
+    const content = messages[messages.length - 1].content;
+    if (typeof content === 'string') {
+        return content;
+    }
+    if (Array.isArray(content) && content.length > 0) {
+        return content[content.length - 1].text || '';
+    }
+    return '';
+}
+
+// 渲染执行记录项（任务阶段/定时执行记录通用）：执行中的 agent 对话高亮提示，点击进入对话页只读流式回放
+function createStageRecordItem(conversation) {
+    // agent 对话且无消息说明正在执行中，提示点击查看实时流式内容；用户对话由用户自己处理，不在执行
+    const isRunning = conversation.agent_id != null && (!conversation.messages || conversation.messages.length === 0);
+    const snippet = isRunning ? t('task.generating') : getLastMessageText(conversation.messages);
+    const item = document.createElement('div');
+    item.className = 'task-stage-item';
+    item.innerHTML = `
+        <div class="task-stage-title">
+            <span>${escapeHtml(conversation.title)}</span>
+            <span class="stage-time">${escapeHtml(conversation.update_time || '')}</span>
+        </div>
+        <div class="task-stage-snippet${isRunning ? ' stage-running' : ''}">${escapeHtml(snippet)}</div>
+    `;
+    item.onclick = () => {
+        switchView('dialog');
+        loadConversation(conversation.id, true);
+    };
+    return item;
 }
 
 function toggleCardOpen(cardElement) {

@@ -1,6 +1,10 @@
 // ==========================================
 // 工作空间 (CWD) 及目录层级导航引擎
 // ==========================================
+// 目录选择弹窗暂存路径与确认回调（回调为空则写入对话工作目录，默认行为）
+let tempSelectedPath = "";
+let dirConfirmCallback = null;
+
 // 工作目录历史记忆（后端 Web 存储）
 const WORKDIR_HISTORY_KEY = 'openagents_recent_workdirs';
 const WORKDIR_HISTORY_LIMIT = 10;
@@ -130,6 +134,15 @@ async function openDirModal(callback, currentPath) {
 
 async function selectWorkspace() {
     await openDirModal(null, currentWorkdir);
+}
+
+// 打开目录选择弹窗，选中后写入指定显示元素（任务/定时面板各自维护独立目录，不回写对话页）
+function selectPanelWorkspace(displayId) {
+    const display = document.getElementById(displayId);
+    openDirModal((path) => {
+        display.textContent = path || t('input.unset');
+        display.title = path;
+    }, display.title || '');
 }
 
 function handleManualJump() {

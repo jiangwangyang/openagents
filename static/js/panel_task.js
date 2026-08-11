@@ -15,20 +15,11 @@ function toggleAddTaskPanel() {
     }
 }
 
-// 打开目录选择弹窗，选中后仅写入任务面板的目录显示，不影响对话页工作目录
-function selectTaskWorkspace() {
-    openDirModal((path) => {
-        const display = document.getElementById('taskWorkspaceDisplay');
-        display.textContent = path || t('input.unset');
-        display.title = path;
-    }, document.getElementById('taskWorkspaceDisplay').title || '');
-}
-
 // 渲染候选 Agent 多选列表，agents 为 Agent 列表，checkedIds 为已选中的 Agent id
 function renderAgentCheckList(container, agents, checkedIds) {
     container.innerHTML = '';
     if (agents.length === 0) {
-        container.innerHTML = `<div style="font-size:12px; color:var(--slate-400); font-family:var(--font-mono);">${t('task.noAgents')}</div>`;
+        container.innerHTML = `<div class="text-hint-mono">${t('task.noAgents')}</div>`;
         return;
     }
     agents.forEach(agent => {
@@ -72,13 +63,13 @@ async function fetchTaskList() {
                 <div class="info-card-summary" onclick="toggleTaskCard(this.parentNode, ${task.id})">
                     <div class="info-card-main">
                         ${ARROW_SVG}
-                        <span class="info-card-name" style="min-width:180px; max-width:280px;">${escapeHtml(task.title)}</span>
+                        <span class="info-card-name card-name-fixed">${escapeHtml(task.title)}</span>
                         <span class="info-card-snippet">${escapeHtml(task.content)}</span>
                     </div>
-                    <div style="display:flex; gap:8px; align-items:center;" onclick="event.stopPropagation();">
-                        <select id="task-start-agent-${task.id}" class="form-control" style="width:140px; height:28px; font-size:11px; padding:0 6px;"></select>
-                        <button class="btn btn-sm send-button" style="height:28px; white-space:nowrap;" onclick="startTask(${task.id})">${t('common.start')}</button>
-                        <button class="delete-btn" style="opacity:1; padding:6px;">${DELETE_SVG}</button>
+                    <div class="card-actions" onclick="event.stopPropagation();">
+                        <select id="task-start-agent-${task.id}" class="form-control task-start-select"></select>
+                        <button class="btn btn-sm send-button task-start-btn" onclick="startTask(${task.id})">${t('common.start')}</button>
+                        <button class="delete-btn always-visible">${DELETE_SVG}</button>
                     </div>
                 </div>
                 <div class="info-card-details" style="display: none;">
@@ -92,9 +83,9 @@ async function fetchTaskList() {
                         <div class="details-label">${t('task.candidateAgents')}</div>
                         <div class="details-value">${escapeHtml(agentNames) || t('common.none')}</div>
                         <div class="details-block-container">
-                            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 6px;">
-                                <div class="details-label" style="margin-bottom: 0;">${t('task.stageProgress')}</div>
-                                <button class="btn btn-sm btn-secondary" style="height:24px; padding:0 8px; font-size:10px;" onclick="loadTaskDetail(${task.id})">${t('common.refresh')}</button>
+                            <div class="details-block-header">
+                                <div class="details-label">${t('task.stageProgress')}</div>
+                                <button class="btn btn-sm btn-secondary btn-card-xs" onclick="loadTaskDetail(${task.id})">${t('common.refresh')}</button>
                             </div>
                             <div class="task-stage-list" id="task-stages-${task.id}"></div>
                         </div>
@@ -147,53 +138,37 @@ async function loadTaskDetail(taskId) {
     try {
         const response = await fetch(`/task/${taskId}`);
         if (!response.ok) {
-            stageList.innerHTML = `<div style="font-family:var(--font-mono); font-size:12px; color:var(--danger-color)">${t('common.fetchFailed')}</div>`;
+            stageList.innerHTML = `<div class="text-error-mono">${t('common.fetchFailed')}</div>`;
             return;
         }
         const task = await response.json();
         stageList.innerHTML = '';
         if (!task.conversations || task.conversations.length === 0) {
-            stageList.innerHTML = `<div style="font-size:12px; color:var(--slate-400); font-style:italic;">${t('task.notStarted')}</div>`;
+            stageList.innerHTML = `<div class="text-hint">${t('task.notStarted')}</div>`;
             return;
         }
         task.conversations.forEach(conversation => {
-            // agent 对话且无消息说明正在执行中，提示点击查看实时流式内容；用户对话由用户自己处理，不在执行
-            const isRunning = conversation.agent_id != null && (!conversation.messages || conversation.messages.length === 0);
-            const snippet = isRunning ? t('task.generating') : getLastMessageText(conversation.messages);
-            const item = document.createElement('div');
-            item.className = 'task-stage-item';
-            item.innerHTML = `
-                <div class="task-stage-title">
-                    <span>${escapeHtml(conversation.title)}</span>
-                    <span style="font-family:var(--font-mono); font-weight:400; color:var(--slate-300);">${escapeHtml(conversation.update_time || '')}</span>
-                </div>
-                <div class="task-stage-snippet"${isRunning ? ' style="color:var(--charcoal-900); font-weight:600;"' : ''}>${escapeHtml(snippet)}</div>
-            `;
             // 点击阶段项复用对话页右侧展示区：切换视图并流式回放/跟随该阶段对话（只读，禁止发送消息）
-            item.onclick = () => {
-                switchView('dialog');
-                loadConversation(conversation.id, true);
-            };
-            stageList.appendChild(item);
+            stageList.appendChild(createStageRecordItem(conversation));
         });
         // 最后一条为用户对话（无 agent_id）且尚无消息（审核中）时，追加用户意见输入框与审核按钮，审核即向该对话追加一条用户消息
         const lastConversation = task.conversations[task.conversations.length - 1];
         if (lastConversation.agent_id == null && (!lastConversation.messages || lastConversation.messages.length === 0)) {
             // 审核等待提示：说明流水线当前暂停在人工审核环节，避免用户不理解输入框用途
             const reviewHint = document.createElement('div');
-            reviewHint.style.cssText = 'font-size:11px; font-weight:600; color:var(--charcoal-900); margin-top:8px;';
+            reviewHint.className = 'review-hint';
             reviewHint.textContent = t('task.reviewWaiting');
             stageList.appendChild(reviewHint);
             const reviewArea = document.createElement('div');
-            reviewArea.style.cssText = 'display:flex; gap:8px; margin-top:4px; align-items:flex-start;';
+            reviewArea.className = 'review-area';
             reviewArea.innerHTML = `
-                <textarea id="task-review-input-${taskId}" class="form-control" rows="2" style="flex:1; resize:vertical; font-size:11px;" placeholder="${t('task.reviewPlaceholder')}"></textarea>
+                <textarea id="task-review-input-${taskId}" class="form-control review-input" rows="2" placeholder="${t('task.reviewPlaceholder')}"></textarea>
                 <button class="btn btn-sm send-button" onclick="submitTaskReview(${taskId}, ${lastConversation.id})">${t('common.review')}</button>
             `;
             stageList.appendChild(reviewArea);
         }
     } catch (e) {
-        stageList.innerHTML = `<div style="font-family:var(--font-mono); font-size:12px; color:var(--danger-color)">${t('common.fetchFailed')}</div>`;
+        stageList.innerHTML = `<div class="text-error-mono">${t('common.fetchFailed')}</div>`;
     }
 }
 
@@ -219,21 +194,6 @@ async function submitTaskReview(taskId, conversationId) {
     } catch (e) {
         showToast(t('task.reviewFault'), 'error');
     }
-}
-
-// 取对话最后一条消息的展示文本：content 为数组时取最后一个 block 的 text
-function getLastMessageText(messages) {
-    if (!messages || messages.length === 0) {
-        return t('task.noMessages');
-    }
-    const content = messages[messages.length - 1].content;
-    if (typeof content === 'string') {
-        return content;
-    }
-    if (Array.isArray(content) && content.length > 0) {
-        return content[content.length - 1].text || '';
-    }
-    return '';
 }
 
 async function submitTask() {

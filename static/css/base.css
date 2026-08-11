@@ -330,3 +330,11 @@
     animation: fadeIn 0.25s ease;
 }
 
+/* 会话页聊天容器：占满视图高度，纵向排列消息流 */
+.chat-container {
+    padding: 0;
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+}
+

@@ -68,7 +68,7 @@
 
         <!-- ===== 视图 1: 智能会话区域 (DIALOG) ===== -->
         <div class="view-container active" id="viewDialog">
-            <div class="chat-container" id="chatContainer" style="padding:0; flex:1; display:flex; flex-direction:column;">
+            <div class="chat-container" id="chatContainer">
                 <div class="empty-state" id="emptyState">
                     <div class="empty-state-icon"><span>✦</span></div>
                     <div class="empty-state-title" data-i18n="empty.title">Start a Conversation</div>
@@ -90,13 +90,13 @@
 
             <div class="add-cron-panel" id="addTaskPanel" style="display: none;">
                 <div class="form-row">
-                    <div class="form-group" style="flex: 1;">
+                    <div class="form-group flex-1">
                         <label data-i18n="task.title">Task Title</label>
                         <input type="text" id="taskTitle" class="form-control" placeholder="e.g. Daily Code Review Pipeline" data-i18n-placeholder="task.titlePlaceholder">
                     </div>
-                    <div class="form-group" style="flex: 1;">
+                    <div class="form-group flex-1">
                         <label data-i18n="task.workDir">Working Directory</label>
-                        <button class="workspace-btn" id="taskWorkspaceBtn" onclick="selectTaskWorkspace()" style="margin-bottom:0;" title="Set Directory Context" data-i18n-title="input.cwdTitle">
+                        <button class="workspace-btn flush" id="taskWorkspaceBtn" onclick="selectPanelWorkspace('taskWorkspaceDisplay')" title="Set Directory Context" data-i18n-title="input.cwdTitle">
                             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                                 <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path>
                             </svg>
@@ -109,7 +109,7 @@
                 <div class="form-row">
                     <div class="form-group">
                         <label data-i18n="task.content">Task Content</label>
-                        <textarea id="taskContent" class="form-control mono" rows="5" style="resize: vertical; min-height: 100px;" placeholder="# Enter task description..." data-i18n-placeholder="task.contentPlaceholder"></textarea>
+                        <textarea id="taskContent" class="form-control mono form-textarea" rows="5" placeholder="# Enter task description..." data-i18n-placeholder="task.contentPlaceholder"></textarea>
                     </div>
                 </div>
                 <div class="form-row">
@@ -118,7 +118,7 @@
                         <div class="agent-check-list" id="addTaskAgentList"></div>
                     </div>
                 </div>
-                <div class="form-row" style="justify-content: flex-end; margin-top: 4px; gap: 12px;">
+                <div class="form-row form-actions">
                     <button class="btn btn-sm btn-secondary" onclick="toggleAddTaskPanel()" data-i18n="common.cancel">Cancel</button>
                     <button class="btn btn-sm send-button" onclick="submitTask()" data-i18n="common.save">Save</button>
                 </div>
@@ -145,7 +145,7 @@
                     </div>
                     <div class="form-group">
                         <label data-i18n="task.workDir">Working Directory</label>
-                        <button class="workspace-btn" id="cronWorkspaceBtn" onclick="selectCronWorkspace()" style="margin-bottom:0;" title="Set Directory Context" data-i18n-title="input.cwdTitle">
+                        <button class="workspace-btn flush" id="cronWorkspaceBtn" onclick="selectPanelWorkspace('cronWorkspaceDisplay')" title="Set Directory Context" data-i18n-title="input.cwdTitle">
                             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                                 <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path>
                             </svg>
@@ -169,10 +169,10 @@
                 <div class="form-row">
                     <div class="form-group">
                         <label data-i18n="cron.contentLabel">Task Content</label>
-                        <textarea id="cronContent" class="form-control mono" rows="5" style="resize: vertical; min-height: 100px;" placeholder="# Enter task description..." data-i18n-placeholder="cron.contentPlaceholder"></textarea>
+                        <textarea id="cronContent" class="form-control mono form-textarea" rows="5" placeholder="# Enter task description..." data-i18n-placeholder="cron.contentPlaceholder"></textarea>
                     </div>
                 </div>
-                <div class="form-row" style="justify-content: flex-end; margin-top: 4px; gap: 12px;">
+                <div class="form-row form-actions">
                     <button class="btn btn-sm btn-secondary" onclick="toggleAddCronPanel()" data-i18n="common.cancel">Cancel</button>
                     <button class="btn btn-sm send-button" id="cronSubmitBtn" onclick="submitCronTask()" data-i18n="common.save">Save</button>
                 </div>
@@ -194,11 +194,11 @@
             <!-- Agent 新增面板 -->
             <div class="add-cron-panel" id="addAgentPanel" style="display: none;">
                 <div class="form-row">
-                    <div class="form-group" style="flex: 1;">
+                    <div class="form-group flex-1">
                         <label data-i18n="agent.name">Agent Name</label>
                         <input type="text" id="agentName" class="form-control" placeholder="e.g. Code Reviewer" data-i18n-placeholder="agent.namePlaceholder">
                     </div>
-                    <div class="form-group" style="flex: 2;">
+                    <div class="form-group flex-2">
                         <label data-i18n="common.description">Description</label>
                         <input type="text" id="agentDesc" class="form-control" placeholder="e.g. Reviews pull requests and reports issues" data-i18n-placeholder="agent.descPlaceholder">
                     </div>
@@ -206,19 +206,19 @@
                 <div class="form-row">
                     <div class="form-group">
                         <label data-i18n="agent.prompt">System Prompt</label>
-                        <textarea id="agentPrompt" class="form-control mono" rows="5" style="resize: vertical; min-height: 100px;" placeholder="# Enter agent system prompt..." data-i18n-placeholder="agent.promptPlaceholder"></textarea>
+                        <textarea id="agentPrompt" class="form-control mono form-textarea" rows="5" placeholder="# Enter agent system prompt..." data-i18n-placeholder="agent.promptPlaceholder"></textarea>
                     </div>
                 </div>
                 <div class="form-row">
-                    <div class="form-group" style="flex: 1;">
+                    <div class="form-group flex-1">
                         <label data-i18n="input.providerTitle">Select Provider</label>
                         <select id="agentProvider" class="form-control"></select>
                     </div>
-                    <div class="form-group" style="flex: 1;">
+                    <div class="form-group flex-1">
                         <label data-i18n="input.modelTitle">Select Model</label>
                         <input type="text" id="agentModel" class="form-control mono" placeholder="e.g. deepseek-v4-pro">
                     </div>
-                    <div class="form-group" style="flex: 1;">
+                    <div class="form-group flex-1">
                         <label data-i18n="input.thinkingTitle">Thinking Mode</label>
                         <select id="agentThinking" class="form-control">
                             <option value="true">THINK</option>
@@ -226,7 +226,7 @@
                         </select>
                     </div>
                 </div>
-                <div class="form-row" style="justify-content: flex-end; margin-top: 4px; gap: 12px;">
+                <div class="form-row form-actions">
                     <button class="btn btn-sm btn-secondary" onclick="toggleAddAgentPanel()" data-i18n="common.cancel">Cancel</button>
                     <button class="btn btn-sm send-button" onclick="submitAgent()" data-i18n="common.save">Save</button>
                 </div>
@@ -259,15 +259,15 @@
             <!-- MCP 新增注册面板 -->
             <div class="add-cron-panel" id="addMcpPanel" style="display: none;">
                 <div class="form-row">
-                    <div class="form-group" style="flex: 1;">
+                    <div class="form-group flex-1">
                         <label data-i18n="mcp.keyName">Server Name</label>
                         <input type="text" id="mcpKey" class="form-control mono" placeholder="e.g. file_server" data-i18n-placeholder="mcp.keyPlaceholder">
                     </div>
-                    <div class="form-group" style="flex: 1;">
+                    <div class="form-group flex-1">
                         <label data-i18n="common.description">Description</label>
                         <input type="text" id="mcpDesc" class="form-control" placeholder="e.g. File Server" data-i18n-placeholder="mcp.descPlaceholder">
                     </div>
-                    <div class="form-group" style="flex: 1;">
+                    <div class="form-group flex-1">
                         <label data-i18n="mcp.protocolArch">Protocol Type</label>
                         <select id="mcpType" class="form-control" onchange="adaptMcpFormFields()">
                             <option value="streamable-http">streamable_http</option>
@@ -299,7 +299,7 @@
                         <input type="text" id="mcpArgs" class="form-control mono" placeholder="-m, mcp_server_package">
                     </div>
                 </div>
-                <div class="form-row" style="justify-content: flex-end; margin-top: 4px; gap: 12px;">
+                <div class="form-row form-actions">
                     <button class="btn btn-sm btn-secondary" onclick="toggleAddMcpPanel()" data-i18n="common.cancel">Cancel</button>
                     <button class="btn btn-sm send-button" onclick="submitMcpServer()" data-i18n="common.save">Save</button>
                 </div>
@@ -318,16 +318,16 @@
                 <button class="btn btn-sm send-button" onclick="toggleAddProviderPanel()" data-i18n="config.newProvider">+ New Provider</button>
             </div>
 
-            <div id="configFormContainer" style="display: flex; flex-direction: column; gap: 24px;">
+            <div id="configFormContainer" class="config-form-container">
                 <!-- 动态新增 Provider 表单控制卡 -->
                 <div class="add-cron-panel" id="addProviderPanel" style="display: none;">
                     <h3 class="panel-view-title" style="font-size: 12px; color: var(--charcoal-700); margin-bottom: 4px;" data-i18n="config.newProviderCard">+ New Model Provider</h3>
                     <div class="form-row">
-                        <div class="form-group" style="flex: 1;">
+                        <div class="form-group flex-1">
                             <label data-i18n="config.providerName">Provider Name</label>
                             <input type="text" id="newProviderName" class="form-control" placeholder="e.g. deepseek" data-i18n-placeholder="config.providerNamePlaceholder">
                         </div>
-                        <div class="form-group" style="flex: 1;">
+                        <div class="form-group flex-1">
                             <label data-i18n="config.protocolType">Protocol Type</label>
                             <select id="newProviderType" class="form-control">
                                 <option value="anthropic">anthropic</option>
@@ -335,11 +335,11 @@
                         </div>
                     </div>
                     <div class="form-row">
-                        <div class="form-group" style="flex: 1;">
+                        <div class="form-group flex-1">
                             <label data-i18n="config.baseUrl">Base URL Endpoint</label>
                             <input type="text" id="newProviderUrl" class="form-control mono" placeholder="https://api.deepseek.com/anthropic">
                         </div>
-                        <div class="form-group" style="flex: 1;">
+                        <div class="form-group flex-1">
                             <label data-i18n="config.secretToken">Secret Token (API Key)</label>
                             <div class="password-toggle-group">
                                 <input type="password" id="newProviderKey" class="form-control mono">
@@ -347,9 +347,9 @@
                             </div>
                         </div>
                     </div>
-                    <div class="form-row" style="justify-content: flex-end; margin-top: 4px; gap: 12px;">
-                        <button class="btn btn-sm btn-secondary" style="height: 36px;" onclick="toggleAddProviderPanel()" data-i18n="common.cancel">Cancel</button>
-                        <button class="btn btn-sm send-button" style="height: 36px;" onclick="submitNewProvider()" data-i18n="common.save">Save</button>
+                    <div class="form-row form-actions">
+                        <button class="btn btn-sm btn-secondary btn-tall" onclick="toggleAddProviderPanel()" data-i18n="common.cancel">Cancel</button>
+                        <button class="btn btn-sm send-button btn-tall" onclick="submitNewProvider()" data-i18n="common.save">Save</button>
                     </div>
                 </div>
 
@@ -360,24 +360,24 @@
 
         <!-- ===== 输入层组件包裹器 ===== -->
         <div class="input-wrapper" id="globalInputWrapper">
-            <div style="display:flex; gap:8px; align-items:center; margin-bottom:12px;">
-                <button class="workspace-btn" id="workspaceBtn" onclick="selectWorkspace()" title="Set Directory Context" data-i18n-title="input.cwdTitle" style="margin-bottom:0;">
+            <div class="input-toolbar">
+                <button class="workspace-btn flush" id="workspaceBtn" onclick="selectWorkspace()" title="Set Directory Context" data-i18n-title="input.cwdTitle">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                         <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path>
                     </svg>
                     <span data-i18n="input.cwdLabel">WORKDIR:</span>
                     <span class="workspace-path" id="workspaceDisplay">UNSET</span>
                 </button>
-                <select id="agentSelect" class="form-control" title="Select Agent" data-i18n-title="input.agentTitle" onchange="onAgentSelectChange()" style="width:auto; height:28px; padding:4px 10px; font-size:11px; font-family:var(--font-mono); color:var(--slate-400); text-transform:uppercase;">
+                <select id="agentSelect" class="form-control header-select" title="Select Agent" data-i18n-title="input.agentTitle" onchange="onAgentSelectChange()">
                     <option value="" data-i18n="common.none">NONE</option>
                 </select>
                 <!-- 模型路由选择：供应商下拉，模型输入记忆历史，思考开关，每次发送消息时生效 -->
-                <select id="providerSelect" class="form-control" title="Select Provider" data-i18n-title="input.providerTitle" style="width:auto; height:28px; padding:4px 10px; font-size:11px; font-family:var(--font-mono); color:var(--slate-400); text-transform:uppercase;"></select>
+                <select id="providerSelect" class="form-control header-select" title="Select Provider" data-i18n-title="input.providerTitle"></select>
                 <div class="model-combo-wrapper" id="modelComboWrapper">
-                    <input id="modelSelect" class="form-control" title="Select Model" data-i18n-title="input.modelTitle" placeholder="MODEL" autocomplete="off" style="width:160px; height:28px; padding:4px 10px; font-size:11px; font-family:var(--font-mono); color:var(--slate-400); text-transform:uppercase;">
+                    <input id="modelSelect" class="form-control header-select" title="Select Model" data-i18n-title="input.modelTitle" placeholder="MODEL" autocomplete="off" style="width:160px;">
                     <div class="model-combo-list" id="modelComboList"></div>
                 </div>
-                <select id="thinkingSelect" class="form-control" title="Thinking Mode" data-i18n-title="input.thinkingTitle" style="width:auto; height:28px; padding:4px 10px; font-size:11px; font-family:var(--font-mono); color:var(--slate-400); text-transform:uppercase;">
+                <select id="thinkingSelect" class="form-control header-select" title="Thinking Mode" data-i18n-title="input.thinkingTitle">
                     <option value="true">THINK</option>
                     <option value="false">NO THINK</option>
                 </select>
@@ -401,11 +401,11 @@
                 <h3 class="confirm-title" style="margin-bottom:0" data-i18n="modal.workspaceContext">Workspace Context</h3>
                 <button class="delete-btn" onclick="closeDirModal()" style="opacity:1; color:var(--charcoal-900)">✕</button>
             </div>
-            <div style="padding: 12px 24px; border-bottom: 1px solid var(--border-hard); display: flex; gap: 8px; background: var(--bg-surface);">
-                <input type="text" id="manualPathInput" style="flex:1; padding: 8px 12px; border: 1px solid var(--border-hard); background: transparent; font-family: var(--font-mono); font-size: 12px; outline: none;" placeholder="Input path..." data-i18n-placeholder="modal.pathPlaceholder">
-                <button class="btn send-button" style="height: auto; padding: 8px 16px;" onclick="handleManualJump()" data-i18n="modal.go">GO</button>
+            <div class="dir-modal-toolbar">
+                <input type="text" id="manualPathInput" class="dir-path-input" placeholder="Input path..." data-i18n-placeholder="modal.pathPlaceholder">
+                <button class="btn send-button dir-go-btn" onclick="handleManualJump()" data-i18n="modal.go">GO</button>
             </div>
-            <div style="padding: 6px 24px; font-family: var(--font-mono); font-size: 11px; color: var(--slate-400); background: var(--bg-surface); border-bottom: 1px solid var(--border-hard);" id="currentPathDisplay"></div>
+            <div class="dir-modal-pathbar" id="currentPathDisplay"></div>
 
             <div class="dir-history-section" id="dirHistorySection" style="display:none;">
                 <div class="dir-history-header" data-i18n="modal.recentWorkdirs">Recent Workdirs</div>

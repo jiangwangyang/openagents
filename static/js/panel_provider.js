@@ -42,22 +42,22 @@ function renderProvidersFormList(providers) {
             <div class="info-card-summary" onclick="toggleCardOpen(this.parentNode)">
                 <div class="info-card-main">
                     ${ARROW_SVG}
-                    <span class="info-card-name" style="min-width:180px; max-width:280px;">${escapeHtml(provider.name)}</span>
+                    <span class="info-card-name card-name-fixed">${escapeHtml(provider.name)}</span>
                     <span class="info-card-snippet">${escapeHtml(snippet)}</span>
                 </div>
-                <div style="display:flex; gap:12px; align-items:center;" onclick="event.stopPropagation();">
-                    <button class="btn btn-sm send-button provider-save-btn" style="height:28px; padding:0 8px; font-size:10px;">${t('common.save')}</button>
-                    <button class="delete-btn" style="opacity:1; color:var(--danger-color); font-size:11px; font-family:var(--font-mono); font-weight:700; padding:6px;">${DELETE_SVG}</button>
+                <div class="card-actions" style="gap:12px;" onclick="event.stopPropagation();">
+                    <button class="btn btn-sm send-button provider-save-btn btn-card-sm">${t('common.save')}</button>
+                    <button class="delete-btn always-visible" style="color:var(--danger-color); font-size:11px; font-family:var(--font-mono); font-weight:700;">${DELETE_SVG}</button>
                 </div>
             </div>
             <div class="info-card-details" style="display: none; background: var(--bg-surface); border-top: 1px solid var(--border-hard);">
                 <div class="form-row" style="margin-bottom: 12px;">
-                    <div class="form-group" style="flex: 1;">
-                        <label style="font-family: var(--font-display); font-size: 11px; font-weight: 700; text-transform: uppercase; color: var(--charcoal-700);">${t('config.providerName')}</label>
+                    <div class="form-group flex-1">
+                        <label class="form-label-strong">${t('config.providerName')}</label>
                         <input type="text" id="provider-name-${index}" class="form-control mono" value="${escapeHtml(provider.name)}">
                     </div>
-                    <div class="form-group" style="flex: 1;">
-                        <label style="font-family: var(--font-display); font-size: 11px; font-weight: 700; text-transform: uppercase; color: var(--charcoal-700);">${t('config.protocolType')}</label>
+                    <div class="form-group flex-1">
+                        <label class="form-label-strong">${t('config.protocolType')}</label>
                         <select id="provider-type-${index}" class="form-control">
                             <option value="anthropic">anthropic</option>
                             ${provider.protocol_type && provider.protocol_type !== 'anthropic' ? `<option value="${escapeHtml(provider.protocol_type)}" selected>${escapeHtml(provider.protocol_type)}</option>` : ''}
@@ -65,12 +65,12 @@ function renderProvidersFormList(providers) {
                     </div>
                 </div>
                 <div class="form-row">
-                    <div class="form-group" style="flex: 1;">
-                        <label style="font-family: var(--font-display); font-size: 11px; font-weight: 700; text-transform: uppercase; color: var(--charcoal-700);">${t('config.baseUrl')}</label>
+                    <div class="form-group flex-1">
+                        <label class="form-label-strong">${t('config.baseUrl')}</label>
                         <input type="text" id="provider-url-${index}" class="form-control mono" value="${escapeHtml(provider.base_url || '')}">
                     </div>
-                    <div class="form-group" style="flex: 1;">
-                        <label style="font-family: var(--font-display); font-size: 11px; font-weight: 700; text-transform: uppercase; color: var(--charcoal-700);">${t('config.secretToken')}</label>
+                    <div class="form-group flex-1">
+                        <label class="form-label-strong">${t('config.secretToken')}</label>
                         <div class="password-toggle-group">
                             <input type="password" id="provider-key-${index}" class="form-control mono" value="${escapeHtml(provider.api_key || '')}" placeholder="••••••••••••">
                             <button type="button" class="password-toggle-btn" onclick="toggleKeyVisibility('provider-key-${index}', this)" title="Show / Hide Secret">👁</button>

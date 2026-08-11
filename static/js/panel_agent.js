@@ -14,20 +14,10 @@ function toggleAddAgentPanel() {
 
 // 加载供应商下拉选项（必填，无空选项），selectedId 指定后选中
 async function loadAgentProviderOptions(elementId, selectedId) {
-    const select = document.getElementById(elementId);
     try {
         const response = await fetch('/model-provider/list');
         const providers = await response.json();
-        select.innerHTML = '';
-        providers.forEach(provider => {
-            const opt = document.createElement('option');
-            opt.value = provider.id;
-            opt.textContent = provider.name;
-            if (selectedId !== null && String(provider.id) === String(selectedId)) {
-                opt.selected = true;
-            }
-            select.appendChild(opt);
-        });
+        fillSelectOptions(document.getElementById(elementId), providers, selectedId);
     } catch (e) {
         // 静默处理错误
     }
@@ -54,21 +44,21 @@ async function fetchAgentRegistry() {
                 <div class="info-card-summary" onclick="toggleCardOpen(this.parentNode)">
                     <div class="info-card-main">
                         ${ARROW_SVG}
-                        <span class="info-card-name" style="min-width:180px; max-width:280px;">${escapeHtml(agent.name)}</span>
+                        <span class="info-card-name card-name-fixed">${escapeHtml(agent.name)}</span>
                         <span class="info-card-snippet">${escapeHtml(agent.description)}</span>
                     </div>
-                    <div style="display:flex; gap:8px; align-items:center;" onclick="event.stopPropagation();">
-                        <button class="btn btn-sm send-button" style="height:28px; padding:0 8px; font-size:10px;" onclick="updateSingleAgent(${agent.id})">${t('common.save')}</button>
-                        <button class="delete-btn" style="opacity:1; padding:6px;">${DELETE_SVG}</button>
+                    <div class="card-actions" onclick="event.stopPropagation();">
+                        <button class="btn btn-sm send-button btn-card-sm" onclick="updateSingleAgent(${agent.id})">${t('common.save')}</button>
+                        <button class="delete-btn always-visible">${DELETE_SVG}</button>
                     </div>
                 </div>
                 <div class="info-card-details" style="display: none;">
                     <div class="form-row">
-                        <div class="form-group" style="flex: 1;">
+                        <div class="form-group flex-1">
                             <label>${t('agent.name')}</label>
                             <input type="text" id="agent-name-${agent.id}" class="form-control" value="${escapeHtml(agent.name)}">
                         </div>
-                        <div class="form-group" style="flex: 2;">
+                        <div class="form-group flex-2">
                             <label>${t('common.description')}</label>
                             <input type="text" id="agent-desc-${agent.id}" class="form-control" value="${escapeHtml(agent.description)}">
                         </div>
@@ -76,19 +66,19 @@ async function fetchAgentRegistry() {
                     <div class="form-row">
                         <div class="form-group">
                             <label>${t('agent.prompt')}</label>
-                            <textarea id="agent-prompt-${agent.id}" class="form-control mono" rows="6" style="resize: vertical; font-size:11px;">${escapeHtml(agent.prompt)}</textarea>
+                            <textarea id="agent-prompt-${agent.id}" class="form-control mono textarea-sm" rows="6">${escapeHtml(agent.prompt)}</textarea>
                         </div>
                     </div>
                     <div class="form-row">
-                        <div class="form-group" style="flex: 1;">
+                        <div class="form-group flex-1">
                             <label>${t('input.providerTitle')}</label>
                             <select id="agent-provider-${agent.id}" class="form-control"></select>
                         </div>
-                        <div class="form-group" style="flex: 1;">
+                        <div class="form-group flex-1">
                             <label>${t('input.modelTitle')}</label>
                             <input type="text" id="agent-model-${agent.id}" class="form-control mono" value="${escapeHtml(agent.model || '')}">
                         </div>
-                        <div class="form-group" style="flex: 1;">
+                        <div class="form-group flex-1">
                             <label>${t('input.thinkingTitle')}</label>
                             <select id="agent-thinking-${agent.id}" class="form-control">
                                 <option value="true" ${agent.thinking ? 'selected' : ''}>THINK</option>

@@ -134,7 +134,7 @@
                 <div class="form-row">
                     <div class="form-group">
                         <label data-i18n="cron.name">Task Name</label>
-                        <input type="text" id="cronName" class="form-control" placeholder="e.g. Daily Market Scraper" data-i18n-placeholder="cron.namePlaceholder">
+                        <input type="text" id="cronName" class="form-control" placeholder="e.g. Daily Code Review" data-i18n-placeholder="cron.namePlaceholder">
                     </div>
                     <div class="form-group">
                         <label data-i18n="task.workDir">Working Directory</label>
@@ -161,8 +161,8 @@
                 <div class="form-hint" data-i18n="cron.formatHint"></div>
                 <div class="form-row">
                     <div class="form-group">
-                        <label data-i18n="cron.contentLabel">Execution Content / Script Context</label>
-                        <textarea id="cronContent" class="form-control mono" rows="5" style="resize: vertical; min-height: 100px;" placeholder="# Enter detailed script steps..." data-i18n-placeholder="cron.contentPlaceholder"></textarea>
+                        <label data-i18n="cron.contentLabel">Task Content</label>
+                        <textarea id="cronContent" class="form-control mono" rows="5" style="resize: vertical; min-height: 100px;" placeholder="# Enter task description..." data-i18n-placeholder="cron.contentPlaceholder"></textarea>
                     </div>
                 </div>
                 <div class="form-row" style="justify-content: flex-end; margin-top: 4px; gap: 12px;">
@@ -245,11 +245,11 @@
                 <div class="form-row">
                     <div class="form-group" style="flex: 1;">
                         <label data-i18n="mcp.keyName">Server Name</label>
-                        <input type="text" id="mcpKey" class="form-control mono" placeholder="e.g. vserver_wind_financial_data" data-i18n-placeholder="mcp.keyPlaceholder">
+                        <input type="text" id="mcpKey" class="form-control mono" placeholder="e.g. file_server" data-i18n-placeholder="mcp.keyPlaceholder">
                     </div>
                     <div class="form-group" style="flex: 1;">
                         <label data-i18n="common.description">Description</label>
-                        <input type="text" id="mcpDesc" class="form-control" placeholder="e.g. Wind Financial Data Provider" data-i18n-placeholder="mcp.descPlaceholder">
+                        <input type="text" id="mcpDesc" class="form-control" placeholder="e.g. File Server" data-i18n-placeholder="mcp.descPlaceholder">
                     </div>
                     <div class="form-group" style="flex: 1;">
                         <label data-i18n="mcp.protocolArch">Protocol Type</label>
@@ -318,12 +318,12 @@
                     <div class="form-row">
                         <div class="form-group" style="flex: 1;">
                             <label data-i18n="config.baseUrl">Base URL Endpoint</label>
-                            <input type="text" id="newProviderUrl" class="form-control mono" placeholder="https://api.example.com/v1">
+                            <input type="text" id="newProviderUrl" class="form-control mono" placeholder="https://api.deepseek.com/anthropic">
                         </div>
                         <div class="form-group" style="flex: 1;">
                             <label data-i18n="config.secretToken">Secret Token (API Key)</label>
                             <div class="password-toggle-group">
-                                <input type="password" id="newProviderKey" class="form-control mono" placeholder="••••••••••••">
+                                <input type="password" id="newProviderKey" class="form-control mono">
                                 <button type="button" class="password-toggle-btn" onclick="toggleKeyVisibility('newProviderKey', this)" title="Show / Hide Secret">👁</button>
                             </div>
                         </div>

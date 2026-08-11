@@ -2,10 +2,12 @@
 use axum::extract::{Path, State};
 use axum::Json;
 use serde::Deserialize;
+use serde_json::json;
 use std::str::FromStr;
 
 use crate::error::AppError;
-use crate::repository::schedule_repository;
+use crate::repository::entity::MessageEntity;
+use crate::repository::{conversation_repository, schedule_repository};
 use crate::service::schedule_service;
 use crate::state::AppState;
 
@@ -42,25 +44,62 @@ pub async fn list_schedules(State(state): State<AppState>) -> Result<Json<Vec<Sc
     Ok(Json(result))
 }
 
-// 定时任务详情接口，不存在返回 404
-pub async fn get_schedule(State(state): State<AppState>, Path(schedule_id): Path<i64>) -> Result<Json<ScheduleResponse>, AppError> {
+// 定时任务详情接口，包含全部执行对话（对话按 id 升序，每条对话含全部按 id 升序的消息），不存在返回 404
+pub async fn get_schedule(State(state): State<AppState>, Path(schedule_id): Path<i64>) -> Result<Json<serde_json::Value>, AppError> {
     let schedule = schedule_repository::get_schedule(&state.db, schedule_id).await?;
     let s = match schedule {
         Some(s) => s,
         None => return Err(AppError::NotFound("Schedule not found".to_string())),
     };
-    Ok(Json(ScheduleResponse {
-        id: s.id,
-        name: s.name,
-        content: s.content,
-        work_dir: s.work_dir,
-        trigger: s.cron_expr.clone(),
-        agent_id: s.agent_id,
-        enabled: s.enabled,
-        next_fire_time: schedule_service::next_fire_time(&s.cron_expr),
-        create_time: s.create_time,
-        update_time: s.update_time,
-    }))
+
+    // 查询定时任务的全部执行对话，按 id 升序
+    let conversations = conversation_repository::list_conversations_by_schedule_id(&state.db, schedule_id).await?;
+
+    // 批量查询全部执行对话的消息(一次 IN 查询 + 内存分组,避免 N+1)，按 id 升序
+    let mut message_map: std::collections::HashMap<i64, Vec<MessageEntity>> = std::collections::HashMap::new();
+    if !conversations.is_empty() {
+        let conversation_ids: Vec<i64> = conversations.iter().map(|c| c.id).collect();
+        let messages = conversation_repository::list_messages_by_conversation_ids(&state.db, &conversation_ids).await?;
+        for message in messages {
+            message_map.entry(message.conversation_id).or_default().push(message);
+        }
+    }
+
+    let conversations: Vec<serde_json::Value> = conversations.into_iter().map(|c| {
+        let messages = message_map.remove(&c.id).unwrap_or_default();
+        let messages: Vec<serde_json::Value> = messages.iter().map(|msg| {
+            json!({
+                "id": msg.id,
+                "role": msg.role,
+                "content": msg.content,
+                "time": msg.time,
+            })
+        }).collect();
+        json!({
+            "id": c.id,
+            "schedule_id": c.schedule_id,
+            "agent_id": c.agent_id,
+            "title": c.title,
+            "work_dir": c.work_dir,
+            "create_time": c.create_time,
+            "update_time": c.update_time,
+            "messages": messages,
+        })
+    }).collect();
+
+    Ok(Json(json!({
+        "id": s.id,
+        "name": s.name,
+        "content": s.content,
+        "work_dir": s.work_dir,
+        "trigger": s.cron_expr.clone(),
+        "agent_id": s.agent_id,
+        "enabled": s.enabled,
+        "next_fire_time": schedule_service::next_fire_time(&s.cron_expr),
+        "create_time": s.create_time,
+        "update_time": s.update_time,
+        "conversations": conversations,
+    })))
 }
 
 // 定时任务新增/更新请求体（新增时 enabled 字段忽略，默认启用）

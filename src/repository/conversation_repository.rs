@@ -6,11 +6,21 @@ use super::entity::{
     LatestConversationState, MessageEntity, NewMessageEntity,
 };
 
-// 查询全部独立对话(不含任务中的阶段对话)，按更新时间倒序
+// 查询全部独立对话(不含任务阶段对话与定时任务对话)，按更新时间倒序
 pub async fn list_conversations(pool: &SqlitePool) -> Result<Vec<ConversationEntity>, sqlx::Error> {
     sqlx::query_as::<_, ConversationEntity>(
-        "SELECT id, task_id, schedule_id, agent_id, title, work_dir, system_prompt, create_time, update_time FROM t_conversation WHERE task_id IS NULL ORDER BY update_time DESC",
+        "SELECT id, task_id, schedule_id, agent_id, title, work_dir, system_prompt, create_time, update_time FROM t_conversation WHERE task_id IS NULL AND schedule_id IS NULL ORDER BY update_time DESC",
     )
+        .fetch_all(pool)
+        .await
+}
+
+// 按 schedule_id 查询定时任务的全部执行对话，按 id 升序
+pub async fn list_conversations_by_schedule_id(pool: &SqlitePool, schedule_id: i64) -> Result<Vec<ConversationEntity>, sqlx::Error> {
+    sqlx::query_as::<_, ConversationEntity>(
+        "SELECT id, task_id, schedule_id, agent_id, title, work_dir, system_prompt, create_time, update_time FROM t_conversation WHERE schedule_id = ? ORDER BY id",
+    )
+        .bind(schedule_id)
         .fetch_all(pool)
         .await
 }

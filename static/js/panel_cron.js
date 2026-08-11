@@ -89,7 +89,7 @@ async function fetchCronTasks() {
             card.className = 'info-card';
             card.id = `cron-card-${task.id}`;
             card.innerHTML = `
-                <div class="info-card-summary" onclick="toggleCardOpen(this.parentNode)">
+                <div class="info-card-summary" onclick="toggleCronCard(this.parentNode, ${task.id})">
                     <div class="info-card-main">
                         ${ARROW_SVG}
                         <span class="info-card-name" style="min-width:180px; max-width:280px;">${escapeHtml(task.name || t('cron.unnamed'))}</span>
@@ -140,6 +140,13 @@ async function fetchCronTasks() {
                         </div>
                         <div style="font-family:var(--font-mono); font-size:12px; color:var(--charcoal-800);">${escapeHtml(task.next_fire_time || t('cron.suspended'))}</div>
                     </div>
+                    <div class="details-block-container" style="margin-top:12px;">
+                        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 6px;">
+                            <div class="details-label" style="margin-bottom: 0;">${t('cron.execHistory')}</div>
+                            <button class="btn btn-sm btn-secondary" style="height:24px; padding:0 8px; font-size:10px;" onclick="loadCronDetail(${task.id})">${t('common.refresh')}</button>
+                        </div>
+                        <div class="task-stage-list" id="cron-stages-${task.id}"></div>
+                    </div>
                 </div>
             `;
             // 保存按钮
@@ -157,6 +164,55 @@ async function fetchCronTasks() {
         });
     } catch (e) {
         cronListContainer.innerHTML = errorListHtml('common.fetchFailed');
+    }
+}
+
+// 展开 cron 卡片时加载定时任务详情（执行对话记录）
+function toggleCronCard(cardElement, scheduleId) {
+    toggleCardOpen(cardElement);
+    if (cardElement.hasAttribute('open')) {
+        loadCronDetail(scheduleId);
+    }
+}
+
+// 加载定时任务详情：渲染各次执行对话的最后一条消息
+async function loadCronDetail(scheduleId) {
+    const stageList = document.getElementById(`cron-stages-${scheduleId}`);
+    stageList.innerHTML = SKELETON_HTML;
+    try {
+        const response = await fetch(`/schedule/${scheduleId}`);
+        if (!response.ok) {
+            stageList.innerHTML = `<div style="font-family:var(--font-mono); font-size:12px; color:var(--danger-color)">${t('common.fetchFailed')}</div>`;
+            return;
+        }
+        const schedule = await response.json();
+        stageList.innerHTML = '';
+        if (!schedule.conversations || schedule.conversations.length === 0) {
+            stageList.innerHTML = `<div style="font-size:12px; color:var(--slate-400); font-style:italic;">${t('cron.notTriggered')}</div>`;
+            return;
+        }
+        schedule.conversations.forEach(conversation => {
+            // agent 对话且无消息说明正在执行中，提示点击查看实时流式内容
+            const isRunning = conversation.agent_id != null && (!conversation.messages || conversation.messages.length === 0);
+            const snippet = isRunning ? t('task.generating') : getLastMessageText(conversation.messages);
+            const item = document.createElement('div');
+            item.className = 'task-stage-item';
+            item.innerHTML = `
+                <div class="task-stage-title">
+                    <span>${escapeHtml(conversation.title)}</span>
+                    <span style="font-family:var(--font-mono); font-weight:400; color:var(--slate-300);">${escapeHtml(conversation.update_time || '')}</span>
+                </div>
+                <div class="task-stage-snippet"${isRunning ? ' style="color:var(--charcoal-900); font-weight:600;"' : ''}>${escapeHtml(snippet)}</div>
+            `;
+            // 点击执行记录项复用对话页右侧展示区：切换视图并流式回放/跟随该次执行对话
+            item.onclick = () => {
+                switchView('dialog');
+                loadConversation(conversation.id);
+            };
+            stageList.appendChild(item);
+        });
+    } catch (e) {
+        stageList.innerHTML = `<div style="font-family:var(--font-mono); font-size:12px; color:var(--danger-color)">${t('common.fetchFailed')}</div>`;
     }
 }
 

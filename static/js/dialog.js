@@ -95,9 +95,10 @@ async function loadConversationList() {
     }
 }
 
-// 加载指定对话：切换当前会话并从对话详情接口同步工作目录与模型路由配置
-async function loadConversation(conversationId) {
+// 加载指定对话：切换当前会话并从对话详情接口同步工作目录与模型路由配置；readonly 为 true 时（任务/定时来源）禁止发送消息
+async function loadConversation(conversationId, readonly = false) {
     currentConversationId = conversationId;
+    currentConvReadonly = readonly;
     // 对话已创建，锁定工作目录与智能体选择
     setContextLocked(true);
     // 从对话详情接口获取工作目录与配置（智能体/模型提供方/模型/是否思考）
@@ -164,6 +165,8 @@ async function loadConversation(conversationId) {
     const items = conversationList.querySelectorAll('.conversation-item');
     items.forEach(item => item.classList.toggle('active', String(item.dataset.id) === String(conversationId)));
 
+    // 应用只读状态：任务/定时来源的会话禁用输入框与发送按钮
+    setConversationReadonly(readonly);
     // 通过对话流式接口回放历史消息并实时跟随
     connectStream(conversationId);
 }
@@ -191,6 +194,8 @@ async function startNewChat() {
     // 清空已加载会话的提示词来源状态，恢复为新会话预判模式
     currentSystemPrompt = '';
     currentConvAgentName = '';
+    // 新会话恢复可输入状态（清除任务/定时来源的只读标记与占位文案）
+    setConversationReadonly(false);
     // 取消历史列表中所有条目的选中高亮
     conversationList.querySelectorAll('.conversation-item').forEach(item => item.classList.remove('active'));
     chatContainer.innerHTML = '';
@@ -446,6 +451,14 @@ function enableInput() {
     messageInput.focus();
 }
 
+// 只读会话切换：任务/定时来源的对话仅供查看，禁用输入框与发送按钮；恢复启用时需尊重流式输出中的禁用状态
+function setConversationReadonly(readonly) {
+    currentConvReadonly = readonly;
+    messageInput.disabled = readonly || isTyping;
+    sendButton.disabled = readonly || isTyping;
+    messageInput.placeholder = readonly ? t('input.readonlyPlaceholder') : t('input.placeholder');
+}
+
 function addUserMessage(content, time) {
     emptyState.style.display = 'none';
     const div = document.createElement('div');
@@ -456,13 +469,15 @@ function addUserMessage(content, time) {
 
 function setTyping(typing) {
     isTyping = typing;
-    sendButton.disabled = typing;
-    messageInput.disabled = typing;
+    // 只读会话（任务/定时来源）保持禁用，不随流式结束恢复输入
+    sendButton.disabled = typing || currentConvReadonly;
+    messageInput.disabled = typing || currentConvReadonly;
 }
 
 async function sendMessage() {
     const message = messageInput.value.trim();
-    if (!message || isTyping) {
+    // 只读会话（任务/定时来源）禁止发送，作为禁用控件之外的防御性校验
+    if (!message || isTyping || currentConvReadonly) {
         return;
     }
 

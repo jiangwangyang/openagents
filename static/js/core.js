@@ -20,6 +20,8 @@ sendButton.disabled = false;
 // 运行时会话/流控状态变量
 let currentConversationId = null;
 let isTyping = false;
+// 当前会话是否为任务/定时来源的只读会话（仅供查看，禁止发送消息）
+let currentConvReadonly = false;
 let currentEventSource = null;
 let currentWorkdir = '';
 let tempSelectedPath = "";

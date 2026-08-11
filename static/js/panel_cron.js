@@ -208,10 +208,10 @@ async function loadCronDetail(scheduleId) {
                 </div>
                 <div class="task-stage-snippet"${isRunning ? ' style="color:var(--charcoal-900); font-weight:600;"' : ''}>${escapeHtml(snippet)}</div>
             `;
-            // 点击执行记录项复用对话页右侧展示区：切换视图并流式回放/跟随该次执行对话
+            // 点击执行记录项复用对话页右侧展示区：切换视图并流式回放/跟随该次执行对话（只读，禁止发送消息）
             item.onclick = () => {
                 switchView('dialog');
-                loadConversation(conversation.id);
+                loadConversation(conversation.id, true);
             };
             stageList.appendChild(item);
         });

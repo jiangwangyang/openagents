@@ -215,12 +215,9 @@ async function startNewChat() {
 function setContextLocked(locked) {
     const workspaceBtn = document.getElementById('workspaceBtn');
     const agentSelect = document.getElementById('agentSelect');
+    // 禁用态视觉统一由 CSS :disabled 规则（透明度 0.4 + 禁止光标）承担
     workspaceBtn.disabled = locked;
     agentSelect.disabled = locked;
-    workspaceBtn.style.opacity = locked ? '0.4' : '';
-    agentSelect.style.opacity = locked ? '0.4' : '';
-    workspaceBtn.style.cursor = locked ? 'not-allowed' : '';
-    agentSelect.style.cursor = locked ? 'not-allowed' : '';
     document.getElementById('contextLockHint').style.display = locked ? '' : 'none';
 }
 

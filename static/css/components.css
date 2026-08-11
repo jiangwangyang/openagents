@@ -397,6 +397,12 @@ select.form-control {
     height: 36px;
 }
 
+/* 禁用态统一样式：选择智能体后模型配置锁定等场景，与上下文锁定视觉保持一致 */
+.form-control:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+}
+
 /* ===== 9. MCP 扩展样式 ===== */
 .mcp-tool-badge-list {
     display: flex;
@@ -530,9 +536,15 @@ select.form-control {
     text-transform: uppercase;
 }
 
-.workspace-btn:hover {
+.workspace-btn:hover:not(:disabled) {
     border-color: var(--charcoal-900);
     color: var(--charcoal-900);
+}
+
+/* 禁用态统一样式：会话上下文锁定后不再响应悬停高亮 */
+.workspace-btn:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
 }
 
 .workspace-btn svg {
@@ -603,6 +615,12 @@ select.form-control {
     color: var(--slate-300);
 }
 
+/* 禁用态统一样式：流式回复期间输入框锁定 */
+.message-input:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+}
+
 .btn {
     padding: 10px 20px;
     border: none;
@@ -654,7 +672,7 @@ select.form-control {
 }
 
 .send-button:disabled {
-    opacity: 0.3;
+    opacity: 0.4;
     cursor: not-allowed;
 }
 

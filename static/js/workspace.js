@@ -159,12 +159,10 @@ function confirmDirSelection() {
 
 function updateWorkspaceUI(path) {
     currentWorkdir = path;
-    // 同步刷新对话页与任务创建面板的工作目录显示（复用同一组件状态）
-    ['workspaceDisplay', 'taskWorkspaceDisplay', 'cronWorkspaceDisplay'].forEach(id => {
-        const display = document.getElementById(id);
-        display.textContent = path || t('input.unset');
-        display.title = path;
-    });
+    // 仅刷新对话页的工作目录显示；任务/定时面板各自维护独立目录状态，避免互相覆盖
+    const display = document.getElementById('workspaceDisplay');
+    display.textContent = path || t('input.unset');
+    display.title = path;
 }
 
 function closeDirModal() {

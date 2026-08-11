@@ -116,7 +116,9 @@ async function fetchMcpRegistry() {
             // 按钮通过闭包绑定，避免服务名中的引号破坏内联 onclick 字符串
             card.querySelector('.mcp-save-btn').onclick = () => updateSingleMcp(server.id, server.name, index);
             card.querySelector('.mcp-test-btn').onclick = () => testMcpServerTools(server, index);
-            card.querySelector('.delete-btn').onclick = () => removeMcpServer(server.id, name);
+            const deleteBtn = card.querySelector('.delete-btn');
+            deleteBtn.title = t('common.purge');
+            deleteBtn.onclick = () => removeMcpServer(server.id, name);
             mcpListContainer.appendChild(card);
         });
     } catch (e) {
@@ -129,7 +131,7 @@ async function submitMcpServer() {
     const description = document.getElementById('mcpDesc').value.trim();
     const type = document.getElementById('mcpType').value;
     if (!name) {
-        alert(t('mcp.nameRequired'));
+        showToast(t('mcp.nameRequired'), 'error');
         return;
     }
 
@@ -145,7 +147,7 @@ async function submitMcpServer() {
             try {
                 bodyPayload.headers = JSON.parse(headersStr);
             } catch (e) {
-                alert(t('mcp.headersInvalid'));
+                showToast(t('mcp.headersInvalid'), 'error');
                 return;
             }
         } else {
@@ -170,7 +172,7 @@ async function submitMcpServer() {
             await fetchMcpRegistry();
         }
     } catch (e) {
-        alert(t('mcp.regRejected'));
+        showToast(t('mcp.regRejected'), 'error');
     }
 }
 
@@ -179,7 +181,7 @@ async function updateSingleMcp(id, name, index) {
     const nameInput = document.getElementById(`mcp-name-${index}`);
     name = nameInput ? nameInput.value.trim() : name;
     if (!name) {
-        alert(t('mcp.nameRequired'));
+        showToast(t('mcp.nameRequired'), 'error');
         return;
     }
     const description = document.getElementById(`mcp-desc-${index}`).value.trim();
@@ -196,7 +198,7 @@ async function updateSingleMcp(id, name, index) {
             try {
                 bodyPayload.headers = JSON.parse(headersStr);
             } catch (e) {
-                alert(t('mcp.headersInvalid'));
+                showToast(t('mcp.headersInvalid'), 'error');
                 return;
             }
         } else {
@@ -216,7 +218,7 @@ async function updateSingleMcp(id, name, index) {
             await fetchMcpRegistry();
         }
     } catch (e) {
-        alert(t('common.syncCrashed'));
+        showToast(t('common.syncCrashed'), 'error');
     }
 }
 
@@ -231,7 +233,7 @@ function removeMcpServer(id, name) {
                     await fetchMcpRegistry();
                 }
             } catch (e) {
-                alert(t('common.purgeFailure'));
+                showToast(t('common.purgeFailure'), 'error');
             }
         }
     });

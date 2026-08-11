@@ -75,7 +75,9 @@ function renderProvidersFormList(providers) {
         `;
         // 按钮通过闭包绑定，避免供应商名中的引号破坏内联 onclick 字符串
         card.querySelector('.provider-save-btn').onclick = () => updateSingleProvider(provider.id, index);
-        card.querySelector('.delete-btn').onclick = () => removeModelProvider(provider.id, provider.name);
+        const deleteBtn = card.querySelector('.delete-btn');
+        deleteBtn.title = t('common.purge');
+        deleteBtn.onclick = () => removeModelProvider(provider.id, provider.name);
         providerList.appendChild(card);
     });
 }
@@ -83,7 +85,7 @@ function renderProvidersFormList(providers) {
 async function submitNewProvider() {
     const name = document.getElementById('newProviderName').value.trim();
     if (!name) {
-        alert(t('config.nameRequired'));
+        showToast(t('config.nameRequired'), 'error');
         return;
     }
 
@@ -108,14 +110,14 @@ async function submitNewProvider() {
             await fetchGlobalSettings();
         }
     } catch (e) {
-        alert(t('config.injectionFault'));
+        showToast(t('config.injectionFault'), 'error');
     }
 }
 
 async function updateSingleProvider(id, index) {
     const name = document.getElementById(`provider-name-${index}`).value.trim();
     if (!name) {
-        alert(t('config.nameRequired'));
+        showToast(t('config.nameRequired'), 'error');
         return;
     }
     const bodyPayload = {
@@ -136,7 +138,7 @@ async function updateSingleProvider(id, index) {
             await fetchGlobalSettings();
         }
     } catch (e) {
-        alert(t('common.syncCrashed'));
+        showToast(t('common.syncCrashed'), 'error');
     }
 }
 
@@ -151,7 +153,7 @@ function removeModelProvider(id, name) {
                     await fetchGlobalSettings();
                 }
             } catch (e) {
-                alert(t('common.purgeFailure'));
+                showToast(t('common.purgeFailure'), 'error');
             }
         }
     });

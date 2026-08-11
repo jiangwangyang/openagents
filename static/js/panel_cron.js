@@ -95,6 +95,8 @@ async function fetchCronTasks() {
                         <span class="info-card-name" style="min-width:180px; max-width:280px;">${escapeHtml(task.name || t('cron.unnamed'))}</span>
                         <span class="info-card-snippet">${escapeHtml(task.content || '')}</span>
                         <span style="font-size:10px; font-family:var(--font-mono); color:${enabledColor}; margin-left:8px; flex-shrink:0;">${enabledText}</span>
+                        <span style="font-size:10px; font-family:var(--font-mono); color:var(--slate-400); margin-left:8px; flex-shrink:0;" title="${t('cron.triggerSpec')}">${escapeHtml(`${cron.minute} ${cron.hour} ${cron.day} ${cron.month} ${cron.day_of_week}`)}</span>
+                        <span style="font-size:10px; font-family:var(--font-mono); color:var(--slate-400); flex-shrink:0;">${t('cron.nextFire')}: ${escapeHtml(task.next_fire_time || t('cron.suspended'))}</span>
                     </div>
                     <div style="display:flex; gap:4px; align-items:center;" onclick="event.stopPropagation();">
                         <button class="btn btn-sm btn-secondary cron-toggle-btn" style="height:28px; padding:0 8px; font-size:10px;">${task.enabled ? t('cron.disable') : t('cron.enable')}</button>
@@ -115,7 +117,7 @@ async function fetchCronTasks() {
                                     <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path>
                                 </svg>
                                 <span>${t('input.cwdLabel')}</span>
-                                <span class="workspace-path" id="cron-workdir-display-${task.id}" title="${escapeHtml(task.work_dir || currentWorkdir || '')}">${escapeHtml(task.work_dir || currentWorkdir || t('input.unset'))}</span>
+                                <span class="workspace-path" id="cron-workdir-display-${task.id}" title="${escapeHtml(task.work_dir || '')}">${escapeHtml(task.work_dir || t('input.unset'))}</span>
                             </button>
                         </div>
                     </div>
@@ -154,7 +156,9 @@ async function fetchCronTasks() {
             // 启用/禁用切换按钮
             card.querySelector('.cron-toggle-btn').onclick = () => toggleCronEnabled(task);
             // 删除按钮通过闭包绑定，避免任务名中的引号破坏内联 onclick 字符串
-            card.querySelector('.delete-btn').onclick = (event) => {
+            const deleteBtn = card.querySelector('.delete-btn');
+            deleteBtn.title = t('common.purge');
+            deleteBtn.onclick = (event) => {
                 event.stopPropagation();
                 removeCronTask(task.id, task.name);
             };
@@ -266,7 +270,7 @@ async function toggleCronEnabled(task) {
             await fetchCronTasks();
         }
     } catch (e) {
-        alert(t('common.syncCrashed'));
+        showToast(t('common.syncCrashed'), 'error');
     }
 }
 
@@ -277,7 +281,7 @@ async function updateSingleCron(taskId) {
     const work_dir = document.getElementById(`cron-workdir-display-${taskId}`).title || '';
     const agentIdVal = document.getElementById(`cron-agent-${taskId}`).value;
     if (!name || !content || !work_dir || !agentIdVal) {
-        alert(t('common.requiredMissing'));
+        showToast(t('common.requiredMissing'), 'error');
         return;
     }
     // 简单格式校验：cron 字段仅允许数字与 * , - / 符号
@@ -289,7 +293,7 @@ async function updateSingleCron(taskId) {
         document.getElementById(`cron-week-${taskId}`).value
     ];
     if (cronFieldValues.some(fieldValue => !/^[0-9*,\/\-]+$/.test(fieldValue.trim()))) {
-        alert(t('cron.invalidFormat'));
+        showToast(t('cron.invalidFormat'), 'error');
         return;
     }
     // 从缓存列表中获取 enabled 状态与秒字段（均不在编辑表单内），避免保存时被重置
@@ -319,7 +323,7 @@ async function updateSingleCron(taskId) {
             await fetchCronTasks();
         }
     } catch (e) {
-        alert(t('common.syncCrashed'));
+        showToast(t('common.syncCrashed'), 'error');
     }
 }
 
@@ -330,7 +334,7 @@ async function submitCronTask() {
 
     const agentIdVal = document.getElementById('cronAgentId').value;
     if (!name || !content || !work_dir || !agentIdVal) {
-        alert(t('common.requiredMissing'));
+        showToast(t('common.requiredMissing'), 'error');
         return;
     }
     // 简单格式校验：cron 字段仅允许数字与 * , - / 符号
@@ -342,7 +346,7 @@ async function submitCronTask() {
         document.getElementById('cronWeek').value
     ];
     if (cronFieldValues.some(fieldValue => !/^[0-9*,\/\-]+$/.test(fieldValue.trim()))) {
-        alert(t('cron.invalidFormat'));
+        showToast(t('cron.invalidFormat'), 'error');
         return;
     }
     const payload = {
@@ -369,7 +373,7 @@ async function submitCronTask() {
             await fetchCronTasks();
         }
     } catch (e) {
-        alert(t('common.creationFault'));
+        showToast(t('common.creationFault'), 'error');
     }
 }
 
@@ -384,7 +388,7 @@ function removeCronTask(taskId, taskName) {
                     await fetchCronTasks();
                 }
             } catch (e) {
-                alert(t('cron.purgeFailed'));
+                showToast(t('cron.purgeFailed'), 'error');
             }
         }
     });

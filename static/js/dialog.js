@@ -8,6 +8,12 @@ function autoResize() {
     const charCounter = document.getElementById('inputCharCount');
     if (charCounter) {
         charCounter.textContent = `${messageInput.value.length}/${messageInput.maxLength}`;
+        // 达到上限时计数器标红；maxlength 会静默截断粘贴内容，需显式提示用户
+        const atLimit = messageInput.value.length >= messageInput.maxLength;
+        charCounter.classList.toggle('at-limit', atLimit);
+        if (atLimit) {
+            showToast(t('input.charLimit', {max: messageInput.maxLength}), 'error');
+        }
     }
 }
 
@@ -25,7 +31,9 @@ async function loadConversationList() {
                 <button class="delete-btn">${DELETE_SVG}</button>
             `;
             // 删除按钮通过闭包绑定，避免标题中的引号破坏内联 onclick 字符串
-            item.querySelector('.delete-btn').onclick = (event) => {
+            const deleteBtn = item.querySelector('.delete-btn');
+            deleteBtn.title = t('common.purge');
+            deleteBtn.onclick = (event) => {
                 event.stopPropagation();
                 confirmDeleteConversation(conversation.id, conversation.title.replaceAll('\n', ''));
             };
@@ -412,7 +420,7 @@ async function sendMessage() {
     const providerId = document.getElementById('providerSelect').value;
     const modelName = document.getElementById('modelSelect').value.trim();
     if (!providerId || !modelName) {
-        alert(t('stream.configMissing'));
+        showToast(t('stream.configMissing'), 'error');
         return;
     }
     const modelConfig = {model_provider_id: parseInt(providerId), model: modelName, thinking: document.getElementById('thinkingSelect').value === 'true'};
@@ -422,6 +430,11 @@ async function sendMessage() {
     // 启动对话：新会话先创建，已有会话直接启动
     try {
         if (!currentConversationId) {
+            // 新会话发送前校验工作目录，避免未设置时静默落到后端默认目录
+            if (!currentWorkdir) {
+                showToast(t('stream.workdirMissing'), 'error');
+                return;
+            }
             // 新会话可指定智能体，未选择（空值）则不携带 agent_id
             const payload = {task_content: message, work_dir: currentWorkdir, ...modelConfig};
             const agentId = document.getElementById('agentSelect').value;
@@ -434,7 +447,7 @@ async function sendMessage() {
                 body: JSON.stringify(payload)
             });
             if (!response.ok) {
-                alert(t('stream.startFailed'));
+                showToast(t('stream.startFailed'), 'error');
                 return;
             }
             currentConversationId = await response.json();
@@ -449,12 +462,12 @@ async function sendMessage() {
                 body: JSON.stringify({task_content: message, ...modelConfig})
             });
             if (!response.ok) {
-                alert(t('stream.startFailed'));
+                showToast(t('stream.startFailed'), 'error');
                 return;
             }
         }
     } catch (e) {
-        alert(t('stream.startFailed'));
+        showToast(t('stream.startFailed'), 'error');
         return;
     }
 

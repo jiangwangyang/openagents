@@ -5,7 +5,23 @@ const taskListContainer = document.getElementById('taskListContainer');
 const addTaskPanel = document.getElementById('addTaskPanel');
 
 function toggleAddTaskPanel() {
-    addTaskPanel.style.display = addTaskPanel.style.display === 'none' ? 'flex' : 'none';
+    const isOpening = addTaskPanel.style.display === 'none';
+    addTaskPanel.style.display = isOpening ? 'flex' : 'none';
+    // 打开面板时将任务目录默认填入对话页当前目录（仅作初值，确认后独立保存，不回写对话页）
+    if (isOpening) {
+        const display = document.getElementById('taskWorkspaceDisplay');
+        display.textContent = currentWorkdir || t('input.unset');
+        display.title = currentWorkdir || '';
+    }
+}
+
+// 打开目录选择弹窗，选中后仅写入任务面板的目录显示，不影响对话页工作目录
+function selectTaskWorkspace() {
+    openDirModal((path) => {
+        const display = document.getElementById('taskWorkspaceDisplay');
+        display.textContent = path || t('input.unset');
+        display.title = path;
+    }, document.getElementById('taskWorkspaceDisplay').title || '');
 }
 
 // 渲染候选 Agent 多选列表，agents 为 Agent 列表，checkedIds 为已选中的 Agent id
@@ -86,7 +102,9 @@ async function fetchTaskList() {
                 </div>
             `;
             // 删除按钮通过闭包绑定，避免标题中的引号破坏内联 onclick 字符串
-            card.querySelector('.delete-btn').onclick = () => removeTask(task.id, task.title);
+            const deleteBtn = card.querySelector('.delete-btn');
+            deleteBtn.title = t('common.purge');
+            deleteBtn.onclick = () => removeTask(task.id, task.title);
             taskListContainer.appendChild(card);
             // 启动下拉仅列出候选 Agent；无候选 Agent 时禁用启动并提示原因，避免点击后才报错
             const startSelect = document.getElementById(`task-start-agent-${task.id}`);
@@ -161,8 +179,13 @@ async function loadTaskDetail(taskId) {
         // 最后一条为用户对话（无 agent_id）且尚无消息（审核中）时，追加用户意见输入框与审核按钮，审核即向该对话追加一条用户消息
         const lastConversation = task.conversations[task.conversations.length - 1];
         if (lastConversation.agent_id == null && (!lastConversation.messages || lastConversation.messages.length === 0)) {
+            // 审核等待提示：说明流水线当前暂停在人工审核环节，避免用户不理解输入框用途
+            const reviewHint = document.createElement('div');
+            reviewHint.style.cssText = 'font-size:11px; font-weight:600; color:var(--charcoal-900); margin-top:8px;';
+            reviewHint.textContent = t('task.reviewWaiting');
+            stageList.appendChild(reviewHint);
             const reviewArea = document.createElement('div');
-            reviewArea.style.cssText = 'display:flex; gap:8px; margin-top:8px; align-items:flex-start;';
+            reviewArea.style.cssText = 'display:flex; gap:8px; margin-top:4px; align-items:flex-start;';
             reviewArea.innerHTML = `
                 <textarea id="task-review-input-${taskId}" class="form-control" rows="2" style="flex:1; resize:vertical; font-size:11px;" placeholder="${t('task.reviewPlaceholder')}"></textarea>
                 <button class="btn btn-sm send-button" onclick="submitTaskReview(${taskId}, ${lastConversation.id})">${t('common.review')}</button>
@@ -179,7 +202,7 @@ async function submitTaskReview(taskId, conversationId) {
     const input = document.getElementById(`task-review-input-${taskId}`);
     const content = input.value.trim();
     if (!content) {
-        alert(t('task.reviewRequired'));
+        showToast(t('task.reviewRequired'), 'error');
         return;
     }
     try {
@@ -191,10 +214,10 @@ async function submitTaskReview(taskId, conversationId) {
         if (response.ok) {
             await loadTaskDetail(taskId);
         } else {
-            alert(t('task.reviewFault'));
+            showToast(t('task.reviewFault'), 'error');
         }
     } catch (e) {
-        alert(t('task.reviewFault'));
+        showToast(t('task.reviewFault'), 'error');
     }
 }
 
@@ -216,10 +239,11 @@ function getLastMessageText(messages) {
 async function submitTask() {
     const title = document.getElementById('taskTitle').value.trim();
     const content = document.getElementById('taskContent').value.trim();
-    const workDir = currentWorkdir;
+    // 任务面板独立维护工作目录，从面板显示元素读取而非全局对话目录
+    const workDir = document.getElementById('taskWorkspaceDisplay').title || '';
     const agentIds = getCheckedAgentIds(document.getElementById('addTaskAgentList'));
     if (!title || !content || !workDir) {
-        alert(t('common.requiredMissing'));
+        showToast(t('common.requiredMissing'), 'error');
         return;
     }
 
@@ -236,7 +260,7 @@ async function submitTask() {
             await fetchTaskList();
         }
     } catch (e) {
-        alert(t('common.creationFault'));
+        showToast(t('common.creationFault'), 'error');
     }
 }
 
@@ -251,7 +275,7 @@ function removeTask(taskId, taskTitle) {
                     await fetchTaskList();
                 }
             } catch (e) {
-                alert(t('common.purgeFailure'));
+                showToast(t('common.purgeFailure'), 'error');
             }
         }
     });
@@ -260,7 +284,7 @@ function removeTask(taskId, taskTitle) {
 async function startTask(taskId) {
     const agentId = document.getElementById(`task-start-agent-${taskId}`).value;
     if (!agentId) {
-        alert(t('task.agentRequired'));
+        showToast(t('task.agentRequired'), 'error');
         return;
     }
 
@@ -274,12 +298,12 @@ async function startTask(taskId) {
             showToast(t('task.launched'));
             await loadTaskDetail(taskId);
         } else if (response.status === 409) {
-            alert(t('task.alreadyRunning'));
+            showToast(t('task.alreadyRunning'), 'error');
         } else {
-            alert(t('task.startFault'));
+            showToast(t('task.startFault'), 'error');
         }
     } catch (e) {
-        alert(t('task.startFault'));
+        showToast(t('task.startFault'), 'error');
     }
 }
 

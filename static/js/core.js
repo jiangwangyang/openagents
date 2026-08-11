@@ -206,10 +206,10 @@ function showConfirmDialog({title, text, onConfirm}) {
     });
 }
 
-// 轻量成功提示：顶部居中短暂展示后自动消失，避免 alert 阻断操作
-function showToast(text) {
+// 轻量提示：顶部居中短暂展示后自动消失，避免 alert 阻断操作；type 为 'error' 时使用错误配色
+function showToast(text, type) {
     const toast = document.createElement('div');
-    toast.className = 'app-toast';
+    toast.className = type === 'error' ? 'app-toast error' : 'app-toast';
     toast.textContent = text;
     document.body.appendChild(toast);
     // 下一帧加 visible 类触发淡入过渡

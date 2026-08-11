@@ -99,7 +99,9 @@ async function fetchAgentRegistry() {
                 </div>
             `;
             // 删除按钮通过闭包绑定，避免名称中的引号破坏内联 onclick 字符串
-            card.querySelector('.delete-btn').onclick = () => removeAgent(agent.id, agent.name);
+            const deleteBtn = card.querySelector('.delete-btn');
+            deleteBtn.title = t('common.purge');
+            deleteBtn.onclick = () => removeAgent(agent.id, agent.name);
             agentListContainer.appendChild(card);
             // 异步填充供应商下拉
             loadAgentProviderOptions(`agent-provider-${agent.id}`, agent.model_provider_id);
@@ -114,12 +116,12 @@ async function submitAgent() {
     const description = document.getElementById('agentDesc').value.trim();
     const prompt = document.getElementById('agentPrompt').value.trim();
     if (!name) {
-        alert(t('agent.nameRequired'));
+        showToast(t('agent.nameRequired'), 'error');
         return;
     }
     const providerValue = document.getElementById('agentProvider').value;
     if (!providerValue) {
-        alert(t('agent.providerRequired'));
+        showToast(t('agent.providerRequired'), 'error');
         return;
     }
 
@@ -145,7 +147,7 @@ async function submitAgent() {
             await fetchAgentRegistry();
         }
     } catch (e) {
-        alert(t('agent.commitFailure'));
+        showToast(t('agent.commitFailure'), 'error');
     }
 }
 
@@ -154,12 +156,12 @@ async function updateSingleAgent(id) {
     const description = document.getElementById(`agent-desc-${id}`).value.trim();
     const prompt = document.getElementById(`agent-prompt-${id}`).value.trim();
     if (!name) {
-        alert(t('agent.nameRequired'));
+        showToast(t('agent.nameRequired'), 'error');
         return;
     }
     const providerValue = document.getElementById(`agent-provider-${id}`).value;
     if (!providerValue) {
-        alert(t('agent.providerRequired'));
+        showToast(t('agent.providerRequired'), 'error');
         return;
     }
 
@@ -181,7 +183,7 @@ async function updateSingleAgent(id) {
             await fetchAgentRegistry();
         }
     } catch (e) {
-        alert(t('common.syncCrashed'));
+        showToast(t('common.syncCrashed'), 'error');
     }
 }
 
@@ -196,7 +198,7 @@ function removeAgent(id, name) {
                     await fetchAgentRegistry();
                 }
             } catch (e) {
-                alert(t('common.purgeFailure'));
+                showToast(t('common.purgeFailure'), 'error');
             }
         }
     });

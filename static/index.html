@@ -32,7 +32,7 @@
             </div>
             <button class="new-chat-btn" onclick="startNewChat()" data-i18n="sidebar.newDialog">+ New Dialog</button>
         </div>
-        <div class="sidebar-title" data-i18n="sidebar.history">History Logs</div>
+        <div class="sidebar-title" data-i18n="sidebar.history">History</div>
         <div class="conversation-list" id="conversationList"></div>
     </div>
 
@@ -57,11 +57,11 @@
                     <div class="theme-picker-menu" id="themePickerMenu"></div>
                 </div>
                 <!-- 语言切换按钮：点击中英直接互换，按钮显示目标语言 -->
-                <button class="header-nav-btn" id="langToggleBtn" type="button" title="Switch Language" data-i18n-title="lang.toggleTitle" onclick="toggleLanguage()">中</button>
+                <button class="header-nav-btn" id="langToggleBtn" type="button" title="Switch Language" data-i18n-title="lang.toggleTitle" onclick="toggleLanguage()">中/EN</button>
             </div>
             <div class="header-right">
                 <span class="header-usage-info" id="usageInfo"></span>
-                <span class="header-conversation-info" id="conversationInfo" data-i18n="header.newTrace">NEW TRACE</span>
+                <span class="header-conversation-info" id="conversationInfo" data-i18n="header.newTrace">NEW CONVERSATION</span>
             </div>
         </div>
 
@@ -70,9 +70,9 @@
             <div class="chat-container" id="chatContainer" style="padding:0; flex:1; display:flex; flex-direction:column;">
                 <div class="empty-state" id="emptyState">
                     <div class="empty-state-icon"><span>✦</span></div>
-                    <div class="empty-state-title" data-i18n="empty.title">Initialize Process</div>
-                    <div class="empty-state-text" data-i18n="empty.text">Start a new conversation or select an existing trace from the sidebar to continue.</div>
-                    <div class="empty-state-hint" data-i18n="empty.hint">Press Enter to execute / Shift+Enter for newline</div>
+                    <div class="empty-state-title" data-i18n="empty.title">Start a Conversation</div>
+                    <div class="empty-state-text" data-i18n="empty.text">Start a new conversation or select an existing one from the sidebar to continue.</div>
+                    <div class="empty-state-hint" data-i18n="empty.hint">Press Enter to send / Shift+Enter for newline</div>
                 </div>
             </div>
         </div>
@@ -92,7 +92,7 @@
                     </div>
                     <div class="form-group" style="flex: 1;">
                         <label data-i18n="task.workDir">Working Directory</label>
-                        <button class="workspace-btn" id="taskWorkspaceBtn" onclick="selectWorkspace()" style="margin-bottom:0;" title="Set Directory Context" data-i18n-title="input.cwdTitle">
+                        <button class="workspace-btn" id="taskWorkspaceBtn" onclick="selectTaskWorkspace()" style="margin-bottom:0;" title="Set Directory Context" data-i18n-title="input.cwdTitle">
                             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                                 <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path>
                             </svg>
@@ -244,7 +244,7 @@
             <div class="add-cron-panel" id="addMcpPanel" style="display: none;">
                 <div class="form-row">
                     <div class="form-group" style="flex: 1;">
-                        <label data-i18n="mcp.keyName">Server Unique Name</label>
+                        <label data-i18n="mcp.keyName">Server Name</label>
                         <input type="text" id="mcpKey" class="form-control mono" placeholder="e.g. vserver_wind_financial_data" data-i18n-placeholder="mcp.keyPlaceholder">
                     </div>
                     <div class="form-group" style="flex: 1;">
@@ -305,7 +305,7 @@
                     <h3 class="panel-view-title" style="font-size: 12px; color: var(--charcoal-700); margin-bottom: 4px;" data-i18n="config.newProviderCard">+ New Model Provider</h3>
                     <div class="form-row">
                         <div class="form-group" style="flex: 1;">
-                            <label data-i18n="config.providerName">Provider Unique Name</label>
+                            <label data-i18n="config.providerName">Provider Name</label>
                             <input type="text" id="newProviderName" class="form-control" placeholder="e.g. deepseek" data-i18n-placeholder="config.providerNamePlaceholder">
                         </div>
                         <div class="form-group" style="flex: 1;">
@@ -366,9 +366,9 @@
                 <span class="context-lock-hint" id="contextLockHint" style="display:none;" data-i18n="input.contextLocked"></span>
             </div>
             <div class="input-container">
-                <textarea class="message-input" id="messageInput" placeholder="Enter instructions..." data-i18n-placeholder="input.placeholder" maxlength="2000" disabled rows="1"></textarea>
-                <span class="input-char-count" id="inputCharCount">0/2000</span>
-                <button class="send-button btn" id="sendButton" onclick="sendMessage()" disabled data-i18n="input.execute">Execute</button>
+                <textarea class="message-input" id="messageInput" placeholder="Enter instructions..." data-i18n-placeholder="input.placeholder" maxlength="20000" disabled rows="1"></textarea>
+                <span class="input-char-count" id="inputCharCount">0/20000</span>
+                <button class="send-button btn" id="sendButton" onclick="sendMessage()" disabled data-i18n="input.execute">Send</button>
             </div>
         </div>
     </div>

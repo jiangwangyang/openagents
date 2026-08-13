@@ -12,7 +12,9 @@ const THEME_EFFECTS = {
     'aurora': {kind: 'aurora', count: 90},
     'vaporwave': {kind: 'vapor', count: 55},
     'cyberpunk': {kind: 'neon-rain', count: 42},
-    'matrix': {kind: 'matrix', count: 0}
+    'matrix': {kind: 'matrix', count: 0},
+    // 黑洞主题为独立 WebGL 渲染层（theme_blackhole.js），不走下方 2D 粒子循环
+    'blackhole': {kind: 'blackhole', count: 0}
 };
 
 // 矩阵字符雨字符集：日文片假名 + 数字 + 符号
@@ -57,8 +59,18 @@ function startThemeEffects(theme) {
     fx.t = 0;
     fx.meteors = [];
     fx.gridOff = 0;
+    // 黑洞主题为独立 WebGL 渲染层：切换任何主题时先停止其渲染循环
+    stopBlackhole();
     const cfg = THEME_EFFECTS[theme] || null;
     fx.kind = cfg ? cfg.kind : null;
+    // 黑洞主题：清空粒子画布残留后交由 WebGL 渲染层（reducedMotion 由其内部降级为静态单帧）
+    if (fx.kind === 'blackhole') {
+        if (fx.ctx && fx.canvas) {
+            fx.ctx.clearRect(0, 0, fx.canvas.width, fx.canvas.height);
+        }
+        startBlackhole();
+        return;
+    }
     // 无特效/系统要求减弱动态：先清空画布残留，再直接退出
     if (!cfg || reducedMotion) {
         if (fx.ctx && fx.canvas) {

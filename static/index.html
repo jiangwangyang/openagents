@@ -22,6 +22,10 @@
     <div id="themeEffects" aria-hidden="true">
         <canvas id="themeEffectsCanvas"></canvas>
     </div>
+    <!-- ===== 黑洞主题 WebGL 渲染层（仅 blackhole 主题显示，位于静态背景之上、内容之下） ===== -->
+    <div id="themeBlackhole" aria-hidden="true">
+        <canvas id="blackholeCanvas"></canvas>
+    </div>
 
     <!-- ===== 侧边栏：Logo / 新建会话 / 历史会话列表 ===== -->
     <div class="sidebar">
@@ -422,6 +426,7 @@
 
     <script src="js/web_storage.js"></script>
     <script src="js/i18n.js"></script>
+    <script src="js/theme_blackhole.js"></script>
     <script src="js/theme_effects.js"></script>
     <script src="js/theme.js"></script>
     <script src="js/core.js"></script>

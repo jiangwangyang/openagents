@@ -27,7 +27,8 @@ const THEME_META = [
     {id: 'aurora', label: 'AURORA', bg: '#060a18', accent: '#5ff0c0'},
     {id: 'vaporwave', label: 'VAPORWAVE', bg: '#1b1035', accent: '#ff71ce'},
     {id: 'cyberpunk', label: 'CYBERPUNK', bg: '#04040c', accent: '#ff2a6d'},
-    {id: 'matrix', label: 'MATRIX', bg: '#000000', accent: '#00ff41'}
+    {id: 'matrix', label: 'MATRIX', bg: '#000000', accent: '#00ff41'},
+    {id: 'blackhole', label: 'BLACK HOLE', bg: '#000000', accent: '#ff9a3d'}
 ];
 
 // 同步主题选择器显示：按钮色板与标签 + 菜单项高亮

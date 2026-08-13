@@ -439,6 +439,50 @@
     --backdrop-repeat: no-repeat;
 }
 
+/* BLACK HOLE — 史瓦西黑洞 理念：纯黑深空 + WebGL 实时光线追踪黑洞背景（引力透镜吸积盘/光子环辉光/星空），吸积盘橙琥珀辉光，毛玻璃面板悬浮于深空之上 */
+:root[data-theme="blackhole"] {
+    --charcoal-900: #f2f4f8;
+    --charcoal-800: #c8cfdb;
+    --charcoal-700: #8f99ab;
+    --slate-400: #5f6a7d;
+    --slate-300: #424b5c;
+    --bg-canvas: #000000;
+    --bg-surface: #07080c;
+    --bg-panel: #0b0d13;
+    --border-hard: #232a38;
+    --border-soft: #161b26;
+
+    --accent-color: #ff9a3d;
+    --danger-color: #ff5e5e;
+    --danger-bg: #2a1010;
+
+    --shadow-rgb: 255, 154, 61;
+    --shadow-hard: 4px 4px 0 rgba(var(--shadow-rgb), 0.12);
+    --shadow-hard-lg: 8px 8px 0 rgba(var(--shadow-rgb), 0.15);
+
+    --hover-bg: rgba(255, 154, 61, 0.07);
+    --subtle-bg: rgba(255, 154, 61, 0.03);
+    --summary-bg: #0e1018;
+    --inline-code-bg: rgba(255, 154, 61, 0.12);
+    --overlay-bg: rgba(0, 0, 0, 0.88);
+    --on-accent-muted: rgba(0, 0, 0, 0.5);
+    --noise-opacity: 0.04;
+    --noise-filter: none;
+
+    --radius-sm: 8px;
+    --radius-md: 14px;
+    --radius-lg: 20px;
+
+    --font-display: 'JetBrains Mono', 'SF Mono', 'Fira Code', 'Courier New', monospace;
+    --font-body: 'JetBrains Mono', 'SF Mono', 'Fira Code', 'Courier New', monospace;
+
+    /* 无静态背景图：WebGL 黑洞画布即背景，此处仅保留微弱径向渐变作为 WebGL 不可用时的降级底色 */
+    --backdrop-image: radial-gradient(ellipse at 50% 55%, rgba(255, 154, 61, 0.07) 0%, rgba(255, 154, 61, 0) 55%);
+    --backdrop-size: cover;
+    --backdrop-position: center;
+    --backdrop-repeat: no-repeat;
+}
+
 /* ===== 1.7 新主题专属组件覆写 ===== */
 /* INK 覆写：印章红 + 衬线字距 */
 :root[data-theme="ink"] .logo-icon {
@@ -965,6 +1009,115 @@
     caret-color: #00ff41;
 }
 
+/* BLACK HOLE 覆写：毛玻璃深空面板 + 吸积盘橙辉光，黑洞透过面板隐约可见 */
+:root[data-theme="blackhole"] .sidebar,
+:root[data-theme="blackhole"] .sidebar-header,
+:root[data-theme="blackhole"] .main-content,
+:root[data-theme="blackhole"] .header,
+:root[data-theme="blackhole"] .input-wrapper {
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+}
+
+:root[data-theme="blackhole"] .sidebar {
+    background: color-mix(in srgb, var(--bg-surface) 62%, transparent);
+}
+
+:root[data-theme="blackhole"] .sidebar-header {
+    background: color-mix(in srgb, var(--bg-panel) 52%, transparent);
+}
+
+:root[data-theme="blackhole"] .main-content {
+    background: color-mix(in srgb, var(--bg-panel) 58%, transparent);
+}
+
+:root[data-theme="blackhole"] .header {
+    background: color-mix(in srgb, var(--bg-panel) 52%, transparent);
+}
+
+:root[data-theme="blackhole"] .input-wrapper {
+    background: color-mix(in srgb, var(--bg-panel) 60%, transparent);
+}
+
+/* 输入区上方渐隐条同步半透明，避免一条不透明色带切断玻璃质感 */
+:root[data-theme="blackhole"] .input-wrapper::before {
+    background: linear-gradient(to top, color-mix(in srgb, var(--bg-panel) 60%, transparent), transparent);
+}
+
+:root[data-theme="blackhole"] .info-card,
+:root[data-theme="blackhole"] .config-section-card {
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    background: color-mix(in srgb, var(--bg-panel) 70%, transparent);
+    border-color: rgba(255, 255, 255, 0.08);
+}
+
+:root[data-theme="blackhole"] .logo-icon {
+    background: linear-gradient(135deg, #ff9a3d, #ff5e3a);
+    color: #140a00;
+    box-shadow: 0 0 18px rgba(255, 154, 61, 0.45);
+}
+
+:root[data-theme="blackhole"] .logo-text,
+:root[data-theme="blackhole"] .panel-view-title,
+:root[data-theme="blackhole"] .empty-state-title {
+    color: #ffd9ad;
+    text-shadow: 0 0 12px rgba(255, 154, 61, 0.35);
+}
+
+:root[data-theme="blackhole"] .send-button {
+    background: linear-gradient(135deg, #ffb35c 0%, #ff7a2f 100%);
+    color: #140a00;
+    box-shadow: 0 4px 20px rgba(255, 154, 61, 0.35);
+}
+
+:root[data-theme="blackhole"] .send-button:hover:not(:disabled) {
+    box-shadow: 0 6px 28px rgba(255, 122, 47, 0.5);
+    transform: translateY(-2px);
+}
+
+:root[data-theme="blackhole"] .new-chat-btn:hover {
+    border-color: #ff9a3d;
+    color: #ffb35c;
+    box-shadow: 0 0 14px rgba(255, 154, 61, 0.3);
+}
+
+:root[data-theme="blackhole"] .header-nav-btn:hover,
+:root[data-theme="blackhole"] .header-nav-btn.active {
+    color: #ffb35c;
+    background: rgba(255, 154, 61, 0.1);
+}
+
+:root[data-theme="blackhole"] .user-message {
+    background: linear-gradient(135deg, #ff9a3d 0%, #ff7a2f 100%);
+    color: #140a00;
+    box-shadow: 0 8px 30px rgba(255, 154, 61, 0.25);
+    border-radius: 14px 14px 4px 14px;
+}
+
+:root[data-theme="blackhole"] .conversation-item.active {
+    background: rgba(255, 154, 61, 0.1);
+    border-color: rgba(255, 154, 61, 0.4);
+}
+
+:root[data-theme="blackhole"] .info-card:hover {
+    border-color: rgba(255, 154, 61, 0.45);
+    box-shadow: 0 0 20px rgba(255, 154, 61, 0.15);
+}
+
+:root[data-theme="blackhole"] .input-container:focus-within {
+    border-color: rgba(255, 154, 61, 0.55);
+    box-shadow: 0 0 24px rgba(255, 154, 61, 0.18);
+}
+
+:root[data-theme="blackhole"] details > summary {
+    color: #e8b98a;
+}
+
+:root[data-theme="blackhole"] .message-input {
+    caret-color: #ff9a3d;
+}
+
 /* 新主题专属动画 */
 @keyframes neonFlicker {
     0%, 100% { opacity: 1; }
@@ -995,7 +1148,8 @@
 :root[data-theme="aurora"] *,
 :root[data-theme="vaporwave"] *,
 :root[data-theme="cyberpunk"] *,
-:root[data-theme="matrix"] * {
+:root[data-theme="matrix"] *,
+:root[data-theme="blackhole"] * {
     transition: background-color 0.3s ease, color 0.3s ease, border-color 0.3s ease, box-shadow 0.3s ease;
 }
 
@@ -1061,6 +1215,25 @@ body {
 }
 
 #themeEffectsCanvas {
+    display: block;
+    width: 100%;
+    height: 100%;
+}
+
+/* ===== 1.6b 黑洞主题 WebGL 渲染层（仅 blackhole 主题显示，位于静态背景之上、内容之下） ===== */
+#themeBlackhole {
+    position: fixed;
+    inset: 0;
+    z-index: 0;
+    pointer-events: none;
+    display: none;
+}
+
+:root[data-theme="blackhole"] #themeBlackhole {
+    display: block;
+}
+
+#blackholeCanvas {
     display: block;
     width: 100%;
     height: 100%;

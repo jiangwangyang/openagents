@@ -18,6 +18,10 @@
 <body>
     <!-- ===== 主题背景装饰层（静态，纯 CSS） ===== -->
     <div id="themeBackdrop" aria-hidden="true"></div>
+    <!-- ===== 主题布景层（Canvas 实体背景建筑，位于静态背景之上、内容之下，仅需要的主题显示） ===== -->
+    <div id="themeScenery" aria-hidden="true">
+        <canvas id="themeSceneryCanvas"></canvas>
+    </div>
     <!-- ===== 主题动态特效层（Canvas 粒子，pointer-events 关闭不拦截交互） ===== -->
     <div id="themeEffects" aria-hidden="true">
         <canvas id="themeEffectsCanvas"></canvas>

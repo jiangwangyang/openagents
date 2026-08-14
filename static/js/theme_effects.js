@@ -21,7 +21,7 @@ const THEME_EFFECTS = {
 const MATRIX_CHARS = 'アイウエオカキクケコサシスセソタチツテトナニヌネノ0123456789ABCDEFZ:\u30fb."=*+-<>'.split('');
 
 // 运行时状态（纯数据对象）
-let fx = {running: false, raf: null, parts: [], kind: null, canvas: null, ctx: null, last: 0, t: 0, meteors: [], gridOff: 0};
+let fx = {running: false, raf: null, parts: [], kind: null, canvas: null, ctx: null, scenery: null, sctx: null, last: 0, t: 0, meteors: [], gridOff: 0};
 // 系统要求减少动态效果时自动关闭粒子
 const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 // 帧间隔上限：全部主题特效限制 30fps，降低 GPU/CPU 常驻开销（dt 按真实流逝时间计算，运动速度不受影响）
@@ -40,9 +40,20 @@ function initThemeEffects() {
     fx.ctx = canvas.getContext('2d');
     canvas.width = window.innerWidth;
     canvas.height = window.innerHeight;
+    // 布景层画布（z-index 0，内容之下）：城市剪影等实体背景在此绘制，避免遮挡阅读区
+    fx.scenery = document.getElementById('themeSceneryCanvas');
+    fx.sctx = fx.scenery ? fx.scenery.getContext('2d') : null;
+    if (fx.scenery) {
+        fx.scenery.width = window.innerWidth;
+        fx.scenery.height = window.innerHeight;
+    }
     window.addEventListener('resize', () => {
         canvas.width = window.innerWidth;
         canvas.height = window.innerHeight;
+        if (fx.scenery) {
+            fx.scenery.width = window.innerWidth;
+            fx.scenery.height = window.innerHeight;
+        }
         // 矩阵字符列密度依赖画布宽度，缩放后按新宽度重建
         if (fx.kind === 'matrix') {
             startThemeEffects(document.documentElement.dataset.theme);
@@ -61,6 +72,10 @@ function startThemeEffects(theme) {
     fx.t = 0;
     fx.meteors = [];
     fx.gridOff = 0;
+    // 布景层实体背景只属特定主题，切换任何主题时先擦除残留
+    if (fx.sctx && fx.scenery) {
+        fx.sctx.clearRect(0, 0, fx.scenery.width, fx.scenery.height);
+    }
     // 黑洞主题为独立 WebGL 渲染层：切换任何主题时先停止其渲染循环
     stopBlackhole();
     const cfg = THEME_EFFECTS[theme] || null;
@@ -266,7 +281,11 @@ function tick(now) {
         updateMeteors(ctx, w, h, dt);
     } else if (fx.kind === 'neon-rain') {
         fx.gridOff = (fx.gridOff + dt * 60) % 560;
-        drawCyberGrid(ctx, w, h);
+        // 实体城市剪影绘制到内容之下的布景层；半透明光带/透视网格与霓虹雨粒子留在上层画布
+        if (fx.sctx && fx.scenery) {
+            fx.sctx.clearRect(0, 0, fx.scenery.width, fx.scenery.height);
+        }
+        drawCyberGrid(ctx, fx.sctx, w, h);
     }
     for (let i = 0; i < fx.parts.length; i++) {
         const p = fx.parts[i];
@@ -478,11 +497,44 @@ function drawBird(ctx, p) {
     ctx.restore();
 }
 
-// 绘制赛博透视网格：垂直线汇聚于消失点，水平线加速向观察者流动
-function drawCyberGrid(ctx, w, h) {
+// 绘制赛博背景层：城市剪影（实体色块，画到内容之下的布景层 sctx）+ 霓虹光带与透视网格（半透明，画到上层 ctx，垂直线汇聚于消失点，水平线加速向观察者流动）
+function drawCyberGrid(ctx, sctx, w, h) {
     const horizon = h * 0.6;
     const cx = w / 2;
+    // 城市剪影：建筑轮廓与亮窗位置由索引哈希生成，逐帧稳定不闪烁
+    if (sctx) {
+        sctx.save();
+        const bw = 46;
+        const count = Math.ceil(w / bw) + 1;
+        for (let i = 0; i < count; i++) {
+            const seed = Math.abs(Math.sin(i * 12.9898) * 43758.5453) % 1;
+            const bh = h * (0.05 + seed * 0.17);
+            const bx = i * bw;
+            sctx.fillStyle = 'rgba(5, 7, 18, 0.92)';
+            sctx.fillRect(bx, horizon - bh, bw - 4, bh);
+            sctx.strokeStyle = 'rgba(0, 240, 255, 0.1)';
+            sctx.strokeRect(bx + 0.5, horizon - bh + 0.5, bw - 5, bh - 1);
+            for (let r = 0; r < Math.floor(bh / 18); r++) {
+                for (let c = 0; c < 3; c++) {
+                    const wseed = Math.abs(Math.sin((i * 31 + r * 7 + c * 13) * 5.4321) * 12543.123) % 1;
+                    // 仅约 1/6 窗格点亮，青/品红/暖黄三色霓虹
+                    if (wseed < 0.16) {
+                        sctx.fillStyle = ['rgba(0, 240, 255, 0.5)', 'rgba(255, 42, 109, 0.45)', 'rgba(255, 220, 120, 0.4)'][Math.floor(wseed * 97) % 3];
+                        sctx.fillRect(bx + 7 + c * 12, horizon - bh + 6 + r * 18, 5, 8);
+                    }
+                }
+            }
+        }
+        sctx.restore();
+    }
     ctx.save();
+    // 地平线霓虹光带：中央青色向两侧品红渐隐
+    const band = ctx.createLinearGradient(0, 0, w, 0);
+    band.addColorStop(0, 'rgba(255, 42, 109, 0)');
+    band.addColorStop(0.5, 'rgba(0, 240, 255, 0.35)');
+    band.addColorStop(1, 'rgba(255, 42, 109, 0)');
+    ctx.fillStyle = band;
+    ctx.fillRect(0, horizon - 2, w, 4);
     ctx.lineWidth = 1;
     const spacing = w / 24;
     for (let i = -12; i <= 12; i++) {

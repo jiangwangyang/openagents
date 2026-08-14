@@ -388,6 +388,10 @@
     --font-display: 'JetBrains Mono', 'SF Mono', 'Fira Code', 'Courier New', monospace;
     --font-body: 'JetBrains Mono', 'SF Mono', 'Fira Code', 'Courier New', monospace;
 
+    --radius-sm: 0px;
+    --radius-md: 0px;
+    --radius-lg: 0px;
+
     --backdrop-image: radial-gradient(ellipse at 50% 115%, rgba(255, 42, 109, 0.22) 0%, rgba(255, 42, 109, 0) 55%),
     radial-gradient(ellipse at 50% -10%, rgba(0, 240, 255, 0.1) 0%, rgba(0, 240, 255, 0) 50%),
     linear-gradient(180deg, #04040c 0%, #0a0820 60%, #170a2e 100%);
@@ -879,39 +883,56 @@
     color: #1b1035;
 }
 
-/* CYBERPUNK 覆写：霓虹辉光 + 故障抖动 */
+/* CYBERPUNK 覆写：斜切角 + 双色霓虹辉光（clip-path 会裁剪 box-shadow，辉光统一改用 drop-shadow 以贴合切角轮廓） */
 :root[data-theme="cyberpunk"] .logo-icon {
     background: #ff2a6d;
     color: #04040c;
-    box-shadow: 0 0 14px rgba(255, 42, 109, 0.7);
+    clip-path: polygon(0 0, calc(100% - 8px) 0, 100% 8px, 100% 100%, 8px 100%, 0 calc(100% - 8px));
+    filter: drop-shadow(0 0 8px rgba(255, 42, 109, 0.7));
 }
 
 :root[data-theme="cyberpunk"] .logo-text {
     color: #6ff3ff;
+    letter-spacing: 0.18em;
     text-shadow: 0 0 8px rgba(0, 240, 255, 0.8), 0 0 28px rgba(255, 42, 109, 0.45);
     animation: neonFlicker 4s linear infinite;
 }
 
 :root[data-theme="cyberpunk"] .panel-view-title,
 :root[data-theme="cyberpunk"] .empty-state-title {
+    letter-spacing: 0.12em;
     text-shadow: 0 0 10px rgba(0, 240, 255, 0.55);
 }
 
+/* 交互元素统一斜切角：右上/左下各切 10px（导航按钮较小切 8px） */
+:root[data-theme="cyberpunk"] .send-button,
+:root[data-theme="cyberpunk"] .new-chat-btn,
+:root[data-theme="cyberpunk"] .info-card,
+:root[data-theme="cyberpunk"] .input-container,
+:root[data-theme="cyberpunk"] .conversation-item,
+:root[data-theme="cyberpunk"] .user-message {
+    clip-path: polygon(0 0, calc(100% - 10px) 0, 100% 10px, 100% 100%, 10px 100%, 0 calc(100% - 10px));
+}
+
+:root[data-theme="cyberpunk"] .header-nav-btn {
+    clip-path: polygon(0 0, calc(100% - 8px) 0, 100% 8px, 100% 100%, 8px 100%, 0 calc(100% - 8px));
+}
+
 :root[data-theme="cyberpunk"] .send-button {
-    box-shadow: 0 0 14px rgba(0, 240, 255, 0.5);
+    filter: drop-shadow(0 0 8px rgba(0, 240, 255, 0.5));
 }
 
 :root[data-theme="cyberpunk"] .send-button:hover:not(:disabled) {
     background: #ff2a6d;
     color: #04040c;
-    box-shadow: 0 0 18px rgba(255, 42, 109, 0.7);
+    filter: drop-shadow(0 0 10px rgba(255, 42, 109, 0.7));
     animation: cyberGlitch 0.25s steps(2) infinite;
 }
 
 :root[data-theme="cyberpunk"] .new-chat-btn:hover {
     background: #6ff3ff;
     color: #04040c;
-    box-shadow: 0 0 16px rgba(0, 240, 255, 0.6);
+    filter: drop-shadow(0 0 10px rgba(0, 240, 255, 0.6));
 }
 
 :root[data-theme="cyberpunk"] .header-nav-btn:hover,
@@ -919,26 +940,47 @@
     border-color: #00f0ff;
     color: #6ff3ff;
     text-shadow: 0 0 6px rgba(0, 240, 255, 0.7);
-    box-shadow: 0 0 8px rgba(0, 240, 255, 0.25);
+    filter: drop-shadow(0 0 6px rgba(0, 240, 255, 0.3)) drop-shadow(0 0 12px rgba(255, 42, 109, 0.25));
 }
 
 :root[data-theme="cyberpunk"] .user-message {
-    box-shadow: 0 0 18px rgba(0, 240, 255, 0.3);
+    filter: drop-shadow(0 0 10px rgba(0, 240, 255, 0.25));
 }
 
 :root[data-theme="cyberpunk"] .info-card:hover {
     border-color: #00f0ff;
-    box-shadow: 0 0 14px rgba(0, 240, 255, 0.22), 4px 4px 0 rgba(255, 42, 109, 0.18);
+    filter: drop-shadow(0 0 8px rgba(0, 240, 255, 0.25)) drop-shadow(0 0 16px rgba(255, 42, 109, 0.2));
 }
 
 :root[data-theme="cyberpunk"] .input-container:focus-within {
     border-color: #00f0ff;
-    box-shadow: 0 0 16px rgba(0, 240, 255, 0.35);
+    filter: drop-shadow(0 0 10px rgba(0, 240, 255, 0.35));
 }
 
 :root[data-theme="cyberpunk"] .conversation-item.active {
     border-color: rgba(0, 240, 255, 0.4);
-    box-shadow: 0 0 10px rgba(0, 240, 255, 0.15);
+    filter: drop-shadow(0 0 8px rgba(0, 240, 255, 0.2));
+}
+
+/* CYBERPUNK 面板高透明度（无模糊）：让布景层的城市剪影清晰透入面板 */
+:root[data-theme="cyberpunk"] .sidebar {
+    background: color-mix(in srgb, var(--bg-surface) 45%, transparent);
+}
+
+:root[data-theme="cyberpunk"] .sidebar-header {
+    background: color-mix(in srgb, var(--bg-panel) 40%, transparent);
+}
+
+:root[data-theme="cyberpunk"] .main-content {
+    background: color-mix(in srgb, var(--bg-panel) 42%, transparent);
+}
+
+:root[data-theme="cyberpunk"] .header {
+    background: color-mix(in srgb, var(--bg-panel) 40%, transparent);
+}
+
+:root[data-theme="cyberpunk"] .input-wrapper {
+    background: color-mix(in srgb, var(--bg-panel) 40%, transparent);
 }
 
 /* MATRIX 覆写：终端辉光 + 提示符 */
@@ -1184,6 +1226,25 @@ body {
     background-position: var(--backdrop-position, center);
     background-repeat: var(--backdrop-repeat, no-repeat);
     transition: background-color 0.4s ease, background-image 0.4s ease;
+}
+
+/* ===== 1.5b 主题布景层（Canvas 实体背景建筑，仅 cyberpunk 等需要的主题显示，位于静态背景之上、内容之下） ===== */
+#themeScenery {
+    position: fixed;
+    inset: 0;
+    z-index: 0;
+    pointer-events: none;
+    display: none;
+}
+
+:root[data-theme="cyberpunk"] #themeScenery {
+    display: block;
+}
+
+#themeSceneryCanvas {
+    display: block;
+    width: 100%;
+    height: 100%;
 }
 
 /* ===== 1.6 主题动态特效层（Canvas 粒子） ===== */

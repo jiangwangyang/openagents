@@ -526,16 +526,7 @@
     border-radius: 2px 14px 2px 14px;
 }
 
-/* SUNSET 覆写：落日圆盘 logo + 暮色渐变标题 + 胶囊按钮（面板磨砂半透，落日余晖透过面板弥散） */
-:root[data-theme="sunset"] .sidebar,
-:root[data-theme="sunset"] .sidebar-header,
-:root[data-theme="sunset"] .main-content,
-:root[data-theme="sunset"] .header,
-:root[data-theme="sunset"] .input-wrapper {
-    backdrop-filter: blur(8px);
-    -webkit-backdrop-filter: blur(8px);
-}
-
+/* SUNSET 覆写：落日圆盘 logo + 暮色渐变标题 + 胶囊按钮（面板半透明，落日余晖透过面板弥散；backdrop-filter 已移除以验证 GPU 开销） */
 :root[data-theme="sunset"] .sidebar {
     background: color-mix(in srgb, var(--bg-surface) 78%, transparent);
 }
@@ -786,16 +777,7 @@
     box-shadow: 3px 3px 0 rgba(232, 113, 10, 0.28);
 }
 
-/* AURORA 覆写：玻璃拟态 + 渐变按钮（面板半透明 + 背景模糊，极光可透过面板弥散） */
-:root[data-theme="aurora"] .sidebar,
-:root[data-theme="aurora"] .sidebar-header,
-:root[data-theme="aurora"] .main-content,
-:root[data-theme="aurora"] .header,
-:root[data-theme="aurora"] .input-wrapper {
-    backdrop-filter: blur(18px);
-    -webkit-backdrop-filter: blur(18px);
-}
-
+/* AURORA 覆写：面板半透明（极光可透过面板弥散；backdrop-filter 已移除以验证 GPU 开销） */
 :root[data-theme="aurora"] .sidebar {
     background: color-mix(in srgb, var(--bg-surface) 60%, transparent);
 }
@@ -823,8 +805,6 @@
 
 :root[data-theme="aurora"] .info-card,
 :root[data-theme="aurora"] .config-section-card {
-    backdrop-filter: blur(12px);
-    -webkit-backdrop-filter: blur(12px);
     background: color-mix(in srgb, var(--bg-panel) 70%, transparent);
     border-color: rgba(255, 255, 255, 0.08);
 }

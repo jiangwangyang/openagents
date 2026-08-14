@@ -24,6 +24,8 @@ const MATRIX_CHARS = 'アイウエオカキクケコサシスセソタチツテ�
 let fx = {running: false, raf: null, parts: [], kind: null, canvas: null, ctx: null, last: 0, t: 0, meteors: [], gridOff: 0};
 // 系统要求减少动态效果时自动关闭粒子
 const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+// 帧间隔上限：全部主题特效限制 30fps，降低 GPU/CPU 常驻开销（dt 按真实流逝时间计算，运动速度不受影响）
+const FX_FRAME_MS = 1000 / 30;
 // 初始化标记：防止 script 顶部 setTheme 与 DOMContentLoaded 重复绑定
 let fxBound = false;
 
@@ -246,6 +248,11 @@ function tick(now) {
     if (!fx.running) {
         return;
     }
+    fx.raf = requestAnimationFrame(tick);
+    // 30fps 限速：未到帧间隔直接跳帧，仅跳绘制不跳计时
+    if (now - fx.last < FX_FRAME_MS) {
+        return;
+    }
     const dt = Math.min((now - fx.last) / 1000, 0.05);
     fx.last = now;
     const ctx = fx.ctx;
@@ -394,7 +401,6 @@ function tick(now) {
             drawDraftMark(ctx, p);
         }
     }
-    fx.raf = requestAnimationFrame(tick);
 }
 
 // 绘制光点（光尘/星光/孢子通用）

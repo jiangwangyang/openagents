@@ -232,6 +232,7 @@ const BH_PITCH = 0.38;                           // 相机俯仰（弧度）
 const BH_YAW0 = 0.6;                             // 初始方位角（弧度）
 const BH_ORBIT_SPEED = 0.05;                     // 自动环绕角速度（弧度/秒）
 const BH_TAN_FOV = Math.tan(50 * Math.PI / 360); // 视场角 50 度
+const BH_FRAME_MS = 1000 / 30;                   // 帧间隔上限：限制 30fps 降低 GPU 常驻开销（dt 按真实流逝时间计算，环绕速度不受影响）
 
 // 渲染器运行时状态（纯数据对象）
 let bh = {running: false, raf: null, canvas: null, gl: null, U: null, simT: 0, prevT: 0, yaw: BH_YAW0, ready: false, failed: false};
@@ -366,6 +367,10 @@ function tickBlackhole(now) {
         return;
     }
     bh.raf = requestAnimationFrame(tickBlackhole);
+    // 30fps 限速：未到帧间隔直接跳帧，仅跳渲染不跳计时
+    if (now - bh.prevT < BH_FRAME_MS) {
+        return;
+    }
     resizeBlackhole();
     const dt = Math.min((now - bh.prevT) / 1000, 0.1);
     bh.prevT = now;

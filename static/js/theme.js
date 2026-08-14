@@ -16,19 +16,19 @@ function setTheme(theme) {
     startThemeEffects(theme);
 }
 
-// 主题选择器元数据：菜单顺序即数组顺序，bg/accent 用于色板预览
+// 主题选择器元数据：菜单顺序即数组顺序，分 3 组（基础 light/dark → 其它主题 → 黑洞），divider 标记该项前插入分组分割线，bg/accent 用于色板预览，名称取自 i18n theme 组
 const THEME_META = [
-    {id: 'light', label: 'LIGHT', bg: '#f0efe9', accent: '#121417'},
-    {id: 'ink', label: 'INK', bg: '#f2ecdf', accent: '#b03a2e'},
-    {id: 'sunset', label: 'SUNSET', bg: '#ffd6bd', accent: '#e85d3d'},
-    {id: 'botanica', label: 'BOTANICA', bg: '#f4f2e4', accent: '#2e6b34'},
-    {id: 'draft', label: 'DRAFT', bg: '#eef4fd', accent: '#1a56c4'},
-    {id: 'dark', label: 'DARK', bg: '#101214', accent: '#e6e8eb'},
-    {id: 'aurora', label: 'AURORA', bg: '#060a18', accent: '#5ff0c0'},
-    {id: 'vaporwave', label: 'VAPORWAVE', bg: '#1b1035', accent: '#ff71ce'},
-    {id: 'cyberpunk', label: 'CYBERPUNK', bg: '#04040c', accent: '#ff2a6d'},
-    {id: 'matrix', label: 'MATRIX', bg: '#000000', accent: '#00ff41'},
-    {id: 'blackhole', label: 'BLACK HOLE', bg: '#000000', accent: '#ff9a3d'}
+    {id: 'light', bg: '#f0efe9', accent: '#121417'},
+    {id: 'dark', bg: '#101214', accent: '#e6e8eb'},
+    {id: 'ink', divider: true, bg: '#f2ecdf', accent: '#b03a2e'},
+    {id: 'sunset', bg: '#ffd6bd', accent: '#e85d3d'},
+    {id: 'botanica', bg: '#f4f2e4', accent: '#2e6b34'},
+    {id: 'draft', bg: '#eef4fd', accent: '#1a56c4'},
+    {id: 'aurora', bg: '#060a18', accent: '#5ff0c0'},
+    {id: 'vaporwave', bg: '#1b1035', accent: '#ff71ce'},
+    {id: 'cyberpunk', bg: '#04040c', accent: '#ff2a6d'},
+    {id: 'matrix', bg: '#000000', accent: '#00ff41'},
+    {id: 'blackhole', divider: true, bg: '#000000', accent: '#ff9a3d'}
 ];
 
 // 同步主题选择器显示：按钮色板与标签 + 菜单项高亮
@@ -41,7 +41,7 @@ function syncThemePicker(theme) {
         dot.style.borderColor = meta.accent;
     }
     if (label) {
-        label.textContent = meta.label;
+        label.textContent = t('theme.' + meta.id);
     }
     const menu = document.getElementById('themePickerMenu');
     if (menu) {
@@ -58,9 +58,9 @@ function initThemePicker() {
     if (!menu || !btn || menu.childElementCount > 0) {
         return;
     }
-    THEME_META.forEach(t => {
-        // 明暗两组之间加分隔线（dark 为暗色组首项）
-        if (t.id === 'dark') {
+    THEME_META.forEach(meta => {
+        // 三组主题之间插入分割线（divider 标记的项为一组之首）
+        if (meta.divider) {
             const divider = document.createElement('div');
             divider.className = 'theme-picker-divider';
             menu.appendChild(divider);
@@ -68,21 +68,21 @@ function initThemePicker() {
         const item = document.createElement('button');
         item.type = 'button';
         item.className = 'theme-picker-item';
-        item.dataset.theme = t.id;
+        item.dataset.theme = meta.id;
         const swatch = document.createElement('span');
         swatch.className = 'theme-picker-swatch';
-        swatch.style.background = t.bg;
-        swatch.style.borderColor = t.accent;
+        swatch.style.background = meta.bg;
+        swatch.style.borderColor = meta.accent;
         const swatchDot = document.createElement('span');
         swatchDot.className = 'theme-picker-swatch-dot';
-        swatchDot.style.background = t.accent;
+        swatchDot.style.background = meta.accent;
         swatch.appendChild(swatchDot);
         const text = document.createElement('span');
-        text.textContent = t.label;
+        text.textContent = t('theme.' + meta.id);
         item.appendChild(swatch);
         item.appendChild(text);
         item.addEventListener('click', () => {
-            setTheme(t.id);
+            setTheme(meta.id);
             menu.classList.remove('open');
         });
         menu.appendChild(item);

@@ -7,6 +7,7 @@ const I18N_STORAGE_KEY = 'openagents_lang';
 const I18N = {
     en: {
         lang: {toggleTitle: 'Switch Language'},
+        theme: {light: 'LIGHT', dark: 'DARK', ink: 'INK', sunset: 'SUNSET', botanica: 'BOTANICA', draft: 'DRAFT', aurora: 'AURORA', vaporwave: 'VAPORWAVE', cyberpunk: 'CYBERPUNK', matrix: 'MATRIX', blackhole: 'BLACK HOLE'},
         sidebar: {newDialog: '+ New Dialog', history: 'History'},
         nav: {dialog: 'DIALOG', task: 'TASK', cron: 'CRON', agent: 'AGENT', skill: 'SKILL', mcp: 'MCP', config: 'CONFIG', dialogTip: 'Chat directly with an agent', taskTip: 'Multi-agent pipeline with staged execution and review', cronTip: 'Auto-run tasks on a cron schedule', agentTip: 'Register agents: model, prompt and behavior', skillTip: 'Skills distilled automatically from task runs', mcpTip: 'Register external tool servers for agents', configTip: 'Configure model providers (protocol, URL, API key)'},
         header: {newTrace: 'NEW CONVERSATION', switchTheme: 'Switch Theme', coreTask: 'TASK PIPELINE', coreCron: 'SCHEDULE', coreSkill: 'SKILLS', coreMcp: 'MCP SERVERS', coreAgent: 'AGENTS', coreConfig: 'CONFIGURATION'},
@@ -25,6 +26,7 @@ const I18N = {
     },
     zh: {
         lang: {toggleTitle: '切换语言'},
+        theme: {light: '浅色', dark: '深色', ink: '水墨', sunset: '落日', botanica: '植语', draft: '蓝图', aurora: '极光', vaporwave: '蒸汽波', cyberpunk: '赛博朋克', matrix: '矩阵', blackhole: '黑洞'},
         sidebar: {newDialog: '+ 新建会话', history: '历史会话'},
         nav: {dialog: '会话', task: '任务', cron: '定时', agent: '智能体', skill: '技能', mcp: 'MCP', config: '配置', dialogTip: '与智能体直接对话', taskTip: '多智能体协作流水线，分阶段执行并可审核', cronTip: '按 cron 规则自动触发任务', agentTip: '注册智能体：模型、提示词与行为', skillTip: '任务执行中自动沉淀的技能', mcpTip: '注册外部工具服务，供智能体调用', configTip: '配置模型供应商（协议/地址/密钥）'},
         header: {newTrace: '新会话', switchTheme: '切换主题', coreTask: '任务流水线', coreCron: '定时排程', coreSkill: '技能清单', coreMcp: 'MCP 服务', coreAgent: '智能体名册', coreConfig: '系统配置'},
@@ -121,6 +123,8 @@ function setLanguage(lang) {
     document.documentElement.lang = lang === 'zh' ? 'zh-CN' : 'en';
     applyStaticI18n();
     syncLanguageButton();
+    // 刷新主题选择器文案（主题名随语言切换）
+    syncThemePicker(document.documentElement.dataset.theme);
     // 刷新 CWD 显示（空路径回退为本地化 UNSET 文案）
     updateWorkspaceUI(currentWorkdir);
     refreshActiveViewI18n();

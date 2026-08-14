@@ -1,5 +1,5 @@
 // ==========================================
-// SKILLS 核心原子能力展示面板
+// SKILL 技能展示面板（只读）
 // ==========================================
 const skillListContainer = document.getElementById('skillListContainer');
 

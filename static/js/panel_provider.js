@@ -1,5 +1,5 @@
 // ==========================================
-// CONFIG 全局环境核心控制台面板（模型供应商）
+// CONFIG 系统配置面板（模型供应商）
 // ==========================================
 const addProviderPanel = document.getElementById('addProviderPanel');
 
@@ -16,7 +16,7 @@ async function fetchGlobalSettings() {
         const providers = await pResponse.json();
         renderProvidersFormList(providers);
     } catch (e) {
-        providerList.innerHTML = errorListHtml('config.settingsFault');
+        providerList.innerHTML = errorListHtml('common.fetchFailed');
     }
 }
 
@@ -165,10 +165,12 @@ function removeModelProvider(id, name) {
     });
 }
 
-// Secret Token 显示/隐藏切换（增加卡片与修改卡片通用）
+// 密钥显示/隐藏切换（新增卡片与编辑卡片通用）
 function toggleKeyVisibility(inputId, btn) {
     const input = document.getElementById(inputId);
-    if (!input) return;
+    if (!input) {
+        return;
+    }
     const isVisible = input.type === 'text';
     input.type = isVisible ? 'password' : 'text';
     btn.textContent = isVisible ? '👁' : '🙈';

@@ -1,8 +1,8 @@
 // ==========================================
-// 工作空间 (CWD) 及目录层级导航引擎
+// 工作空间 (CWD) 及目录层级导航
 // ==========================================
 // 目录选择弹窗暂存路径与确认回调（回调为空则写入对话工作目录，默认行为）
-let tempSelectedPath = "";
+let tempSelectedPath = '';
 let dirConfirmCallback = null;
 
 // 工作目录历史记忆（后端 Web 存储）
@@ -20,39 +20,6 @@ async function loadWorkdirHistory() {
         workdirHistoryCache = Array.isArray(list) ? list : [];
     } catch (e) {
         workdirHistoryCache = [];
-    }
-}
-
-async function loadDirList(path) {
-    const dirListContainer = document.getElementById('dirList');
-    const pathDisplay = document.getElementById('currentPathDisplay');
-    dirListContainer.innerHTML = SKELETON_HTML;
-    try {
-        const response = await fetch(`/dir/list?path=${encodeURIComponent(path)}`);
-        const data = await response.json();
-        tempSelectedPath = data.current_path;
-        pathDisplay.textContent = `> ${data.current_path}`;
-        dirListContainer.innerHTML = "";
-        if (data.parent_path) {
-            dirListContainer.appendChild(createDirItem(t('workspace.upLevel'), data.parent_path));
-        }
-        data.directories.forEach(dir => {
-            dirListContainer.appendChild(createDirItem(dir.name, dir.path));
-        });
-    } catch (e) {
-        dirListContainer.innerHTML = errorListHtml('workspace.connFailed');
-    }
-}
-
-async function initDefaultWorkspace() {
-    try {
-        const response = await fetch(`/dir/list?path=`);
-        const data = await response.json();
-        if (data.current_path) {
-            updateWorkspaceUI(data.current_path);
-        }
-    } catch (e) {
-        // 默认静默降级逻辑
     }
 }
 
@@ -121,6 +88,47 @@ function confirmHistorySelection(path) {
     closeDirModal();
 }
 
+async function loadDirList(path) {
+    const dirListContainer = document.getElementById('dirList');
+    const pathDisplay = document.getElementById('currentPathDisplay');
+    dirListContainer.innerHTML = SKELETON_HTML;
+    try {
+        const response = await fetch(`/dir/list?path=${encodeURIComponent(path)}`);
+        const data = await response.json();
+        tempSelectedPath = data.current_path;
+        pathDisplay.textContent = `> ${data.current_path}`;
+        dirListContainer.innerHTML = '';
+        if (data.parent_path) {
+            dirListContainer.appendChild(createDirItem(t('workspace.upLevel'), data.parent_path));
+        }
+        data.directories.forEach(dir => {
+            dirListContainer.appendChild(createDirItem(dir.name, dir.path));
+        });
+    } catch (e) {
+        dirListContainer.innerHTML = errorListHtml('workspace.connFailed');
+    }
+}
+
+function createDirItem(name, path) {
+    const div = document.createElement('div');
+    div.className = 'dir-item';
+    div.innerHTML = `<span>[DIR]</span><span>${escapeHtml(name)}</span>`;
+    div.onclick = () => loadDirList(path);
+    return div;
+}
+
+async function initDefaultWorkspace() {
+    try {
+        const response = await fetch(`/dir/list?path=`);
+        const data = await response.json();
+        if (data.current_path) {
+            updateWorkspaceUI(data.current_path);
+        }
+    } catch (e) {
+        // 静默处理错误
+    }
+}
+
 // 打开目录选择弹窗：callback 为空时确认后写入对话工作目录（默认行为），否则回调处理选中路径
 async function openDirModal(callback, currentPath) {
     dirConfirmCallback = callback || null;
@@ -129,7 +137,7 @@ async function openDirModal(callback, currentPath) {
     // 从后端加载工作目录历史后再渲染
     await loadWorkdirHistory();
     renderWorkdirHistory();
-    await loadDirList(currentPath || "");
+    await loadDirList(currentPath || '');
 }
 
 async function selectWorkspace() {
@@ -150,14 +158,6 @@ function handleManualJump() {
     if (targetPath) {
         loadDirList(targetPath);
     }
-}
-
-function createDirItem(name, path) {
-    const div = document.createElement('div');
-    div.className = 'dir-item';
-    div.innerHTML = `<span>[DIR]</span><span>${escapeHtml(name)}</span>`;
-    div.onclick = () => loadDirList(path);
-    return div;
 }
 
 function confirmDirSelection() {

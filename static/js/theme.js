@@ -1,7 +1,18 @@
 // ==========================================
-// 主题切换引擎（浅色/深色，未手动选择时默认浅色）
+// 主题切换引擎（多套主题，未手动选择时默认浅色，非法值回退浅色）
 // ==========================================
 const THEME_STORAGE_KEY = 'openagents_theme';
+
+// 主题选择器元数据：菜单顺序即数组顺序，分 3 组（基础 light/dark → 其它主题 → 黑洞），divider 标记该项前插入分组分割线，bg/accent 用于色板预览，名称取自 i18n theme 组
+const THEME_META = [
+    {id: 'light', bg: '#f0efe9', accent: '#121417'},
+    {id: 'dark', bg: '#101214', accent: '#e6e8eb'},
+    {id: 'ink', divider: true, bg: '#f2ecdf', accent: '#b03a2e'},
+    {id: 'sunset', bg: '#ffd6bd', accent: '#e85d3d'},
+    {id: 'aurora', bg: '#060a18', accent: '#5ff0c0'},
+    {id: 'cyberpunk', bg: '#04040c', accent: '#ff2a6d'},
+    {id: 'blackhole', divider: true, bg: '#000000', accent: '#ff9a3d'}
+];
 
 function setTheme(theme) {
     // 校验主题合法性（已删除主题/非法值回退浅色），THEME_EFFECTS 的 key 即有效主题白名单
@@ -16,20 +27,9 @@ function setTheme(theme) {
     startThemeEffects(theme);
 }
 
-// 主题选择器元数据：菜单顺序即数组顺序，分 3 组（基础 light/dark → 其它主题 → 黑洞），divider 标记该项前插入分组分割线，bg/accent 用于色板预览，名称取自 i18n theme 组
-const THEME_META = [
-    {id: 'light', bg: '#f0efe9', accent: '#121417'},
-    {id: 'dark', bg: '#101214', accent: '#e6e8eb'},
-    {id: 'ink', divider: true, bg: '#f2ecdf', accent: '#b03a2e'},
-    {id: 'sunset', bg: '#ffd6bd', accent: '#e85d3d'},
-    {id: 'aurora', bg: '#060a18', accent: '#5ff0c0'},
-    {id: 'cyberpunk', bg: '#04040c', accent: '#ff2a6d'},
-    {id: 'blackhole', divider: true, bg: '#000000', accent: '#ff9a3d'}
-];
-
 // 同步主题选择器显示：按钮色板与标签 + 菜单项高亮
 function syncThemePicker(theme) {
-    const meta = THEME_META.find(t => t.id === theme) || THEME_META[0];
+    const meta = THEME_META.find(item => item.id === theme) || THEME_META[0];
     const dot = document.getElementById('themePickerDot');
     const label = document.getElementById('themePickerLabel');
     if (dot) {
@@ -113,4 +113,3 @@ function initThemePicker() {
     });
 })();
 initThemePicker();
-

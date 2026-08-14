@@ -13,10 +13,6 @@ const manualPathInput = document.getElementById('manualPathInput');
 
 const globalInputWrapper = document.getElementById('globalInputWrapper');
 
-// 初始化基础交互输入状态
-messageInput.disabled = false;
-sendButton.disabled = false;
-
 // 运行时会话/流控状态变量
 let currentConversationId = null;
 let isTyping = false;
@@ -65,6 +61,10 @@ const VIEW_CONFIG = {
 document.addEventListener('DOMContentLoaded', () => {
     // 初始化主题动态特效层
     initThemeEffects();
+
+    // 初始化基础交互输入状态
+    messageInput.disabled = false;
+    sendButton.disabled = false;
 
     // 自动缩放用户输入框
     messageInput.addEventListener('input', autoResize);
@@ -116,7 +116,7 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 // ==========================================
-// 3. 通用公共核心排版与基础工具引擎
+// 3. 通用公共工具
 // ==========================================
 // textContent 转义仅覆盖 & < >，需额外转义引号以兼容 value="..." 等属性插值场景
 function escapeHtml(text) {
@@ -131,7 +131,7 @@ function escapeHtml(text) {
 function formatMarkdown(text) {
     // 解码工具 JSON 等内容中字面量的 Unicode 转义序列（如 \u4e2d\u6587 -> 中文），需在 HTML 转义前执行
     const decoded = text.replace(/\\u([0-9a-fA-F]{4})/g, (match, hex) => String.fromCharCode(parseInt(hex, 16)));
-    return escapeHtml(decoded).replaceAll("\n", "<br>");
+    return escapeHtml(decoded).replaceAll('\n', '<br>');
 }
 
 // 各面板列表通用空态/错误态排版，textKey 为 i18n 文案 key，hintKey 为可选的功能引导说明 key
@@ -220,9 +220,9 @@ function toggleCardOpen(cardElement) {
     }
 }
 
-// ----- 通用高级确认弹窗二次沉淀引擎 -----
+// 通用确认弹窗：危险操作二次确认，确认后执行 onConfirm 回调
 function showConfirmDialog({title, text, onConfirm}) {
-    // 先行做边界清理安全机制
+    // 先清理已有弹窗，避免叠加
     closeConfirmDialog();
 
     const overlay = document.createElement('div');
@@ -240,7 +240,6 @@ function showConfirmDialog({title, text, onConfirm}) {
     `;
     document.body.appendChild(overlay);
 
-    // 绑定动作触发回调函数
     document.getElementById('globalConfirmExecuteBtn').onclick = () => {
         if (typeof onConfirm === 'function') {
             onConfirm();
@@ -248,12 +247,19 @@ function showConfirmDialog({title, text, onConfirm}) {
         closeConfirmDialog();
     };
 
-    // 点击背景遮罩层优雅退场
+    // 点击遮罩层关闭弹窗
     overlay.addEventListener('click', (e) => {
         if (e.target === overlay) {
             closeConfirmDialog();
         }
     });
+}
+
+function closeConfirmDialog() {
+    const overlay = document.querySelector('.confirm-overlay');
+    if (overlay) {
+        overlay.remove();
+    }
 }
 
 // 轻量提示：顶部居中短暂展示后自动消失，避免 alert 阻断操作；type 为 'error' 时使用错误配色
@@ -270,15 +276,8 @@ function showToast(text, type) {
     }, 2200);
 }
 
-function closeConfirmDialog() {
-    const overlay = document.querySelector('.confirm-overlay');
-    if (overlay) {
-        overlay.remove();
-    }
-}
-
 // ==========================================
-// 4. 核心骨干控制：视图路由导航引擎
+// 4. 视图路由导航
 // ==========================================
 function switchView(viewName) {
     const cfg = VIEW_CONFIG[viewName];
@@ -299,4 +298,3 @@ function switchView(viewName) {
         window[cfg.load]();
     }
 }
-

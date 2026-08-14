@@ -1,9 +1,19 @@
 // ==========================================
-// 会话历史/交互流控与 SSE 核心网络模块 (DIALOG)
+// 会话历史/交互流控与 SSE 流式模块 (DIALOG)
 // ==========================================
 // 当前已加载会话的系统提示词来源状态（loadConversation 时赋值，startNewChat 时清空）
 let currentSystemPrompt = '';
 let currentConvAgentName = '';
+
+// 上次模型配置与智能体选择记忆（后端 Web 存储，仅记最近一次并自动填入）
+const LAST_MODEL_CONFIG_KEY = 'openagents_last_model_config';
+const LAST_AGENT_KEY = 'openagents_last_agent_id';
+
+// 内存缓存：页面加载时从后端拉取，变更时整体写回
+let lastModelConfigCache = null;
+let lastAgentIdCache = '';
+// 供应商模型列表缓存：key 为供应商 id，值为 Promise（并发去重），避免聚焦时重复请求
+const providerModelsCache = {};
 
 // 系统提示词来源提示：已建会话按快照判断（智能体 > 工作目录 AGENTS.md > 无），新会话按当前控件状态预判
 function updatePromptSourceHint() {
@@ -44,6 +54,7 @@ function updatePromptSourceHint() {
     hint.title = title;
     hint.style.display = '';
 }
+
 function autoResize() {
     messageInput.style.height = 'auto';
     messageInput.style.height = Math.min(messageInput.scrollHeight, 160) + 'px';
@@ -183,7 +194,7 @@ function confirmDeleteConversation(conversationId, convTitle) {
                 }
                 await loadConversationList();
             } catch (e) {
-                // 异常捕获
+                // 静默处理错误
             }
         }
     });
@@ -284,17 +295,6 @@ async function onAgentSelectChange() {
     }
 }
 
-// 上次模型配置记忆（后端 Web 存储，仅记最近一次并自动填入）
-const LAST_MODEL_CONFIG_KEY = 'openagents_last_model_config';
-// 上次智能体选择记忆（后端 Web 存储）
-const LAST_AGENT_KEY = 'openagents_last_agent_id';
-
-// 内存缓存：页面加载时从后端拉取，变更时整体写回
-let lastModelConfigCache = null;
-let lastAgentIdCache = '';
-// 供应商模型列表缓存：key 为供应商 id，值为 Promise（并发去重），避免聚焦时重复请求
-const providerModelsCache = {};
-
 // 从后端加载会话页持久化偏好到内存缓存（上次模型配置/上次智能体）
 async function loadDialogPrefs() {
     const [configRaw, agentIdRaw] = await Promise.all([
@@ -307,6 +307,75 @@ async function loadDialogPrefs() {
         lastModelConfigCache = null;
     }
     lastAgentIdCache = agentIdRaw || '';
+}
+
+// 读取上次模型配置
+function getLastModelConfig() {
+    return lastModelConfigCache;
+}
+
+// 读取上次智能体选择
+function getLastAgentId() {
+    return lastAgentIdCache;
+}
+
+// 保存当前模型配置到后端 Web 存储
+function saveLastModelConfig() {
+    const providerId = document.getElementById('providerSelect').value;
+    const model = document.getElementById('modelSelect').value.trim();
+    const thinking = document.getElementById('thinkingSelect').value;
+    if (providerId) {
+        lastModelConfigCache = {provider_id: providerId, model: model, thinking: thinking};
+        setWebStorage(LAST_MODEL_CONFIG_KEY, JSON.stringify(lastModelConfigCache));
+    }
+}
+
+// 保存智能体选择到后端 Web 存储
+function saveLastAgentId(agentId) {
+    lastAgentIdCache = agentId ? String(agentId) : '';
+    setWebStorage(LAST_AGENT_KEY, lastAgentIdCache);
+}
+
+// 恢复上次模型配置到控件
+function restoreLastModelConfig() {
+    const config = getLastModelConfig();
+    if (!config) {
+        return;
+    }
+    // 已选择智能体时由其配置覆盖，不恢复手动模型配置
+    const agentSelect = document.getElementById('agentSelect');
+    if (agentSelect && agentSelect.value) {
+        return;
+    }
+    const providerSelect = document.getElementById('providerSelect');
+    const modelInput = document.getElementById('modelSelect');
+    const thinkingSelect = document.getElementById('thinkingSelect');
+    // 供应商下拉框需等选项加载完再赋值
+    if (config.provider_id) {
+        providerSelect.value = config.provider_id;
+    }
+    if (config.model) {
+        modelInput.value = config.model;
+    }
+    if (config.thinking) {
+        thinkingSelect.value = config.thinking;
+    }
+}
+
+// 加载对话输入区的供应商下拉框
+async function loadModelSelect() {
+    const providerSelect = document.getElementById('providerSelect');
+    const prevProvider = providerSelect.value;
+    try {
+        const pResponse = await fetch('/model-provider/list');
+        const providers = await pResponse.json();
+
+        // 填充供应商下拉并保持刷新前的选中项，加载完成后恢复上次模型配置
+        fillSelectOptions(providerSelect, providers, prevProvider);
+        restoreLastModelConfig();
+    } catch (e) {
+        // 静默处理错误
+    }
 }
 
 // 渲染模型下拉列表：聚焦时调用 Anthropic 模型接口拉取当前供应商全部模型并全量展示
@@ -365,75 +434,6 @@ async function renderModelComboList() {
         comboList.appendChild(item);
     });
     comboList.classList.add('open');
-}
-
-// 读取上次模型配置
-function getLastModelConfig() {
-    return lastModelConfigCache;
-}
-
-// 读取上次智能体选择
-function getLastAgentId() {
-    return lastAgentIdCache;
-}
-
-// 保存智能体选择到后端 Web 存储
-function saveLastAgentId(agentId) {
-    lastAgentIdCache = agentId ? String(agentId) : '';
-    setWebStorage(LAST_AGENT_KEY, lastAgentIdCache);
-}
-
-// 保存当前模型配置到后端 Web 存储
-function saveLastModelConfig() {
-    const providerId = document.getElementById('providerSelect').value;
-    const model = document.getElementById('modelSelect').value.trim();
-    const thinking = document.getElementById('thinkingSelect').value;
-    if (providerId) {
-        lastModelConfigCache = {provider_id: providerId, model: model, thinking: thinking};
-        setWebStorage(LAST_MODEL_CONFIG_KEY, JSON.stringify(lastModelConfigCache));
-    }
-}
-
-// 恢复上次模型配置到控件
-function restoreLastModelConfig() {
-    const config = getLastModelConfig();
-    if (!config) {
-        return;
-    }
-    // 已选择智能体时由其配置覆盖，不恢复手动模型配置
-    const agentSelect = document.getElementById('agentSelect');
-    if (agentSelect && agentSelect.value) {
-        return;
-    }
-    const providerSelect = document.getElementById('providerSelect');
-    const modelInput = document.getElementById('modelSelect');
-    const thinkingSelect = document.getElementById('thinkingSelect');
-    // 供应商下拉框需等选项加载完再赋值
-    if (config.provider_id) {
-        providerSelect.value = config.provider_id;
-    }
-    if (config.model) {
-        modelInput.value = config.model;
-    }
-    if (config.thinking) {
-        thinkingSelect.value = config.thinking;
-    }
-}
-
-// 加载对话输入区的供应商下拉框
-async function loadModelSelect() {
-    const providerSelect = document.getElementById('providerSelect');
-    const prevProvider = providerSelect.value;
-    try {
-        const pResponse = await fetch('/model-provider/list');
-        const providers = await pResponse.json();
-
-        // 填充供应商下拉并保持刷新前的选中项，加载完成后恢复上次模型配置
-        fillSelectOptions(providerSelect, providers, prevProvider);
-        restoreLastModelConfig();
-    } catch (e) {
-        // 静默处理错误
-    }
 }
 
 function enableInput() {
@@ -690,10 +690,8 @@ function connectStream(conversationId) {
             chatContainer.appendChild(emptyState);
             emptyState.style.display = 'flex';
         }
-        // 恢复按钮
         setTyping(false);
-        // 刷新列表
+        // 刷新会话列表
         await loadConversationList();
     };
 }
-

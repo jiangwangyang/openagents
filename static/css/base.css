@@ -1,4 +1,124 @@
-/* ===== 2. 自定义硬朗极简滚动条 ===== */
+/* ==========================================
+   全局基础样式与整体布局
+   ========================================== */
+
+/* ===== 1. 全局基础重置 ===== */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+/* 文本选中（高亮）样式 */
+::selection {
+    background: var(--charcoal-900);
+    color: var(--bg-canvas);
+}
+
+body {
+    font-family: var(--font-body);
+    background: var(--bg-canvas);
+    color: var(--charcoal-900);
+    height: 100vh;
+    display: flex;
+    overflow: hidden;
+    font-size: 14px;
+    box-shadow: inset 0 0 0 1px var(--border-hard);
+    transition: background 0.3s ease, color 0.3s ease;
+    -webkit-font-smoothing: antialiased;
+}
+
+/* 噪点纹理叠加 */
+body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    z-index: 9999;
+    opacity: var(--noise-opacity);
+    filter: var(--noise-filter);
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E");
+}
+
+/* ===== 2. 主题背景层 ===== */
+/* 静态背景装饰层（纯 CSS，由各主题的 --backdrop-* 变量驱动） */
+#themeBackdrop {
+    position: fixed;
+    inset: 0;
+    z-index: 0;
+    pointer-events: none;
+    background-color: var(--bg-canvas);
+    background-image: var(--backdrop-image, none);
+    background-size: var(--backdrop-size, cover);
+    background-position: var(--backdrop-position, center);
+    background-repeat: var(--backdrop-repeat, no-repeat);
+    transition: background-color 0.4s ease, background-image 0.4s ease;
+}
+
+/* 布景层（Canvas 实体背景建筑，仅 cyberpunk 等需要的主题显示，位于静态背景之上、内容之下） */
+#themeScenery {
+    position: fixed;
+    inset: 0;
+    z-index: 0;
+    pointer-events: none;
+    display: none;
+}
+
+:root[data-theme="cyberpunk"] #themeScenery {
+    display: block;
+}
+
+#themeSceneryCanvas {
+    display: block;
+    width: 100%;
+    height: 100%;
+}
+
+/* 动态特效层（Canvas 粒子，浮于内容之上，pointer-events 关闭不拦截交互） */
+#themeEffects {
+    position: fixed;
+    inset: 0;
+    z-index: 9998;
+    pointer-events: none;
+}
+
+#themeEffectsCanvas {
+    display: block;
+    width: 100%;
+    height: 100%;
+}
+
+/* 黑洞主题 WebGL 渲染层（仅 blackhole 主题显示，位于静态背景之上、内容之下） */
+#themeBlackhole {
+    position: fixed;
+    inset: 0;
+    z-index: 0;
+    pointer-events: none;
+    display: none;
+}
+
+:root[data-theme="blackhole"] #themeBlackhole {
+    display: block;
+}
+
+#blackholeCanvas {
+    display: block;
+    width: 100%;
+    height: 100%;
+}
+
+/* ===== 3. 减少动态效果（无障碍） ===== */
+/* 关闭全部 CSS 动画与过渡，粒子特效由 theme_effects.js 的 reducedMotion 同步关闭 */
+@media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+        animation: none !important;
+        transition: none !important;
+    }
+}
+
+/* ===== 4. 自定义滚动条 ===== */
 ::-webkit-scrollbar {
     width: 4px;
     height: 4px;
@@ -17,7 +137,7 @@
     background: var(--slate-400);
 }
 
-/* ===== 3. 侧边栏 ===== */
+/* ===== 5. 侧边栏 ===== */
 .sidebar {
     width: 320px;
     background: color-mix(in srgb, var(--bg-surface) 88%, transparent);
@@ -53,6 +173,13 @@
     font-weight: 800;
     font-size: 18px;
     border-radius: var(--radius-sm);
+    transition: var(--transition-snap);
+}
+
+.sidebar-logo:hover .logo-icon {
+    background: var(--bg-canvas);
+    color: var(--charcoal-900);
+    box-shadow: inset 0 0 0 1px var(--charcoal-900);
 }
 
 .logo-text {
@@ -61,16 +188,6 @@
     font-weight: 700;
     letter-spacing: -0.5px;
     text-transform: uppercase;
-}
-
-.logo-icon {
-    transition: var(--transition-snap);
-}
-
-.sidebar-logo:hover .logo-icon {
-    background: var(--bg-canvas);
-    color: var(--charcoal-900);
-    box-shadow: inset 0 0 0 1px var(--charcoal-900);
 }
 
 .new-chat-btn {
@@ -206,7 +323,7 @@
     letter-spacing: 1px;
 }
 
-/* ===== 4. 主区域与头部导航 ===== */
+/* ===== 6. 主区域与头部导航 ===== */
 .main-content {
     flex: 1;
     display: flex;
@@ -233,31 +350,6 @@
     display: flex;
     align-items: center;
     gap: 8px;
-}
-
-/* 主题切换下拉框：对齐导航按钮风格，透明底，悬停显现边框 */
-.form-control.theme-select {
-    width: auto;
-    height: auto;
-    padding: 6px 12px;
-    background: transparent;
-    border: 1px solid transparent;
-    border-radius: 0;
-    font-size: 12px;
-    font-weight: 600;
-    font-family: var(--font-display);
-    color: var(--slate-400);
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
-    cursor: pointer;
-    outline: none;
-    transition: var(--transition-snap);
-}
-
-.form-control.theme-select:hover {
-    color: var(--charcoal-900);
-    border-color: var(--border-hard);
-    background: var(--bg-surface);
 }
 
 .header-nav-btn {
@@ -314,7 +406,7 @@
     animation: blink 1.6s step-end infinite;
 }
 
-/* ===== 5. 各视图通用容器 ===== */
+/* ===== 7. 各视图通用容器 ===== */
 .view-container {
     flex: 1;
     overflow-y: auto;
@@ -337,4 +429,3 @@
     display: flex;
     flex-direction: column;
 }
-

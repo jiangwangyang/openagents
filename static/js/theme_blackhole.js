@@ -237,8 +237,7 @@ const BH_FRAME_MS = 1000 / 30;                   // 帧间隔上限：限制 30f
 // 渲染器运行时状态（纯数据对象）
 let bh = {running: false, raf: null, canvas: null, gl: null, U: null, simT: 0, prevT: 0, yaw: BH_YAW0, ready: false, failed: false};
 
-// 初始化黑洞渲染器：编译链接着色器、建立全屏三角形、解析 uniform 位置、绑定窗口缩放
-// @returns {boolean} 初始化是否成功（WebGL 不可用或着色器编译失败时静默降级返回 false）
+// 初始化黑洞渲染器：编译链接着色器、建立全屏三角形、解析 uniform 位置、绑定窗口缩放；WebGL 不可用或着色器编译失败时静默降级返回 false
 function initBlackhole() {
     if (bh.ready || bh.failed) {
         return bh.ready;
@@ -250,10 +249,7 @@ function initBlackhole() {
         return false;
     }
     try {
-        // 编译单个着色器
-        // @param {number} type - 着色器类型（gl.VERTEX_SHADER / gl.FRAGMENT_SHADER）
-        // @param {string} src - 着色器源码
-        // @returns {WebGLShader} 编译完成的着色器对象
+        // 编译单个着色器，编译失败时抛出异常
         const compile = (type, src) => {
             const s = gl.createShader(type);
             gl.shaderSource(s, src);
@@ -300,7 +296,6 @@ function initBlackhole() {
 // 同步渲染分辨率：0.5 倍渲染比例再乘 devicePixelRatio（上限 2），半分辨率渲染缓解 GPU 压力
 // 普通屏(DPR=1)为 0.5 倍窗口分辨率（像素数 1/4），Retina 屏(DPR=2)回到 1 倍 CSS 分辨率更锐利
 // 画布显示尺寸由 CSS 撑满全屏，浏览器负责放大
-// @returns {void}
 function resizeBlackhole() {
     if (!bh.ready) {
         return;
@@ -316,7 +311,6 @@ function resizeBlackhole() {
 }
 
 // 绘制当前帧：按固定参数计算相机基向量与吸积盘姿态，上传 uniform 并渲染
-// @returns {void}
 function drawBlackholeFrame() {
     const gl = bh.gl;
     const U = bh.U;
@@ -359,9 +353,7 @@ function drawBlackholeFrame() {
     gl.drawArrays(gl.TRIANGLES, 0, 3);
 }
 
-// 渲染循环：推进模拟时间与环绕角，每帧先同步分辨率再绘制
-// @param {number} now - requestAnimationFrame 时间戳（毫秒）
-// @returns {void}
+// 渲染循环：推进模拟时间与环绕角，每帧先同步分辨率再绘制；now 为 requestAnimationFrame 时间戳（毫秒）
 function tickBlackhole(now) {
     if (!bh.running) {
         return;
@@ -380,7 +372,6 @@ function tickBlackhole(now) {
 }
 
 // 启动黑洞渲染：初始化 WebGL 并开始 RAF 循环；系统要求减少动态时仅渲染一帧静态画面
-// @returns {void}
 function startBlackhole() {
     if (!initBlackhole()) {
         return;
@@ -402,7 +393,6 @@ function startBlackhole() {
 }
 
 // 停止黑洞渲染：取消 RAF 循环（WebGL 上下文与资源保留，便于切回时快速重启）
-// @returns {void}
 function stopBlackhole() {
     bh.running = false;
     if (bh.raf) {

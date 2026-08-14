@@ -1,6 +1,9 @@
-/* ===== 1. 设计变量与全局基础 ===== */
-/* 浅色主题 */
-:root[data-theme='light'] {
+/* ==========================================
+   主题设计变量与主题专属覆写
+   ========================================== */
+
+/* ===== 1. 浅色主题 (LIGHT) ===== */
+:root[data-theme="light"] {
     --charcoal-900: #121417;
     --charcoal-800: #1a1d21;
     --charcoal-700: #2c3138;
@@ -30,7 +33,6 @@
     --noise-filter: none;
 
     --transition-snap: all 0.2s cubic-bezier(0.2, 0, 0, 1);
-    --transition-smooth: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
 
     --radius-sm: 4px;
     --radius-md: 8px;
@@ -41,8 +43,8 @@
     --font-mono: 'SF Mono', 'Fira Code', 'JetBrains Mono', monospace;
 }
 
-/* 深色主题 */
-:root[data-theme='dark'] {
+/* ===== 2. 深色主题 (DARK) ===== */
+:root[data-theme="dark"] {
     --charcoal-900: #e6e8eb;
     --charcoal-800: #c9cdd3;
     --charcoal-700: #aab1ba;
@@ -71,12 +73,17 @@
     --noise-opacity: 0.06;
     --noise-filter: invert(1);
 
+    --radius-sm: 4px;
+    --radius-md: 8px;
+    --radius-lg: 12px;
+
     --font-display: -apple-system, 'Segoe UI', 'PingFang SC', 'Microsoft YaHei', sans-serif;
     --font-body: -apple-system, 'Segoe UI', 'PingFang SC', 'Microsoft YaHei', sans-serif;
     --font-mono: 'SF Mono', 'Fira Code', 'JetBrains Mono', monospace;
 }
 
-/* INK — 东方水墨 理念：宣纸米白底 + 底部远山淡墨 + 顶部枯笔飞白 + 右上角朱红闲章，墨滴在宣纸四缘晕染、竹叶飘落 */
+/* ===== 3. 水墨主题 (INK) ===== */
+/* 宣纸米白底 + 底部远山淡墨 + 顶部枯笔飞白 + 右上角朱红闲章，墨滴在宣纸四缘晕染、竹叶飘落 */
 :root[data-theme="ink"] {
     --charcoal-900: #1c1a17;
     --charcoal-800: #3a352e;
@@ -112,6 +119,7 @@
 
     --font-display: 'Noto Serif SC', 'Songti SC', 'STSong', Georgia, serif;
     --font-body: 'Noto Serif SC', 'Songti SC', 'STSong', Georgia, serif;
+    --font-mono: 'SF Mono', 'Fira Code', 'JetBrains Mono', monospace;
 
     --backdrop-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='64' height='64' viewBox='0 0 64 64'%3E%3Cg transform='rotate(3 32 32)'%3E%3Crect x='8' y='8' width='48' height='48' rx='4' fill='%23b03a2e' opacity='0.85'/%3E%3Ctext x='32' y='43' font-size='26' text-anchor='middle' fill='%23faf6ec' font-family='serif'%3E%E5%A2%A8%3C/text%3E%3C/g%3E%3C/svg%3E"),
     url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='600' height='90' viewBox='0 0 600 90'%3E%3Cg fill='%231c1a17'%3E%3Cpath d='M20 40 C140 30 300 26 580 34 C500 40 300 42 60 48 Z' opacity='0.1'/%3E%3Cpath d='M40 52 C200 46 380 44 560 50 C420 54 220 56 50 60 Z' opacity='0.07'/%3E%3Cpath d='M90 62 C240 58 400 57 530 62 C400 65 240 66 100 68 Z' opacity='0.05'/%3E%3C/g%3E%3C/svg%3E"),
@@ -124,7 +132,8 @@
     --backdrop-repeat: no-repeat, no-repeat, no-repeat, no-repeat, no-repeat, no-repeat;
 }
 
-/* SUNSET — 黄金时刻 理念：蜜桃-珊瑚-薰衣草三色天空 + 巨大落日圆盘沉入海平线 + 双层海浪剪影，海鸥掠过，暮色电影场景 */
+/* ===== 4. 落日主题 (SUNSET) ===== */
+/* 蜜桃-珊瑚-薰衣草三色天空 + 巨大落日圆盘沉入海平线 + 双层海浪剪影，海鸥掠过，暮色电影场景 */
 :root[data-theme="sunset"] {
     --charcoal-900: #4e2333;
     --charcoal-800: #6f3644;
@@ -160,6 +169,7 @@
 
     --font-display: 'Quicksand', 'Segoe UI', 'PingFang SC', 'Microsoft YaHei', sans-serif;
     --font-body: 'Quicksand', 'Segoe UI', 'PingFang SC', 'Microsoft YaHei', sans-serif;
+    --font-mono: 'SF Mono', 'Fira Code', 'JetBrains Mono', monospace;
 
     --backdrop-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='720' height='140' viewBox='0 0 720 140'%3E%3Cpath d='M0 140 L0 84 C120 64 220 96 330 80 C440 64 540 92 720 70 L720 140 Z' fill='%236f3644' opacity='0.72'/%3E%3C/svg%3E"),
     url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='720' height='180' viewBox='0 0 720 180'%3E%3Cpath d='M0 180 L0 96 C90 78 180 108 270 92 C360 76 450 104 540 88 C630 74 680 92 720 84 L720 180 Z' fill='%23b87f9b' opacity='0.5'/%3E%3C/svg%3E"),
@@ -173,7 +183,8 @@
     --backdrop-repeat: repeat-x, repeat-x, repeat-x, no-repeat, no-repeat, no-repeat, no-repeat;
 }
 
-/* AURORA — 流动极光 理念：极夜深空 + 青绿/紫罗兰极光带与流星，玻璃拟态悬浮面板 */
+/* ===== 5. 极光主题 (AURORA) ===== */
+/* 极夜深空 + 青绿/紫罗兰极光带与流星，玻璃拟态悬浮面板 */
 :root[data-theme="aurora"] {
     --charcoal-900: #eaf6ff;
     --charcoal-800: #b8d8f0;
@@ -209,6 +220,7 @@
 
     --font-display: 'Outfit', 'Segoe UI', 'PingFang SC', 'Microsoft YaHei', sans-serif;
     --font-body: 'Outfit', 'Segoe UI', 'PingFang SC', 'Microsoft YaHei', sans-serif;
+    --font-mono: 'SF Mono', 'Fira Code', 'JetBrains Mono', monospace;
 
     --backdrop-image: radial-gradient(ellipse at 20% 0%, rgba(95, 240, 192, 0.1) 0%, rgba(95, 240, 192, 0) 45%),
     radial-gradient(ellipse at 85% 15%, rgba(123, 108, 240, 0.12) 0%, rgba(123, 108, 240, 0) 50%),
@@ -218,7 +230,8 @@
     --backdrop-repeat: no-repeat, no-repeat, no-repeat;
 }
 
-/* CYBERPUNK — 赛博朋克霓虹都市 理念：深空黑底 + 霓虹青/品红双色辉光，透视网格地平线 + 霓虹雨，全息终端质感 */
+/* ===== 6. 赛博朋克主题 (CYBERPUNK) ===== */
+/* 深空黑底 + 霓虹青/品红双色辉光，透视网格地平线 + 霓虹雨，全息终端质感 */
 :root[data-theme="cyberpunk"] {
     --charcoal-900: #6ff3ff;
     --charcoal-800: #3fd2ea;
@@ -254,6 +267,7 @@
 
     --font-display: 'JetBrains Mono', 'SF Mono', 'Fira Code', 'Courier New', monospace;
     --font-body: 'JetBrains Mono', 'SF Mono', 'Fira Code', 'Courier New', monospace;
+    --font-mono: 'JetBrains Mono', 'SF Mono', 'Fira Code', monospace;
 
     --backdrop-image: radial-gradient(ellipse at 50% 115%, rgba(255, 42, 109, 0.22) 0%, rgba(255, 42, 109, 0) 55%),
     radial-gradient(ellipse at 50% -10%, rgba(0, 240, 255, 0.1) 0%, rgba(0, 240, 255, 0) 50%),
@@ -263,7 +277,8 @@
     --backdrop-repeat: no-repeat, no-repeat, no-repeat;
 }
 
-/* BLACK HOLE — 史瓦西黑洞 理念：纯黑深空 + WebGL 实时光线追踪黑洞背景（引力透镜吸积盘/光子环辉光/星空），吸积盘橙琥珀辉光，毛玻璃面板悬浮于深空之上 */
+/* ===== 7. 黑洞主题 (BLACK HOLE) ===== */
+/* 纯黑深空 + WebGL 实时光线追踪黑洞背景（引力透镜吸积盘/光子环辉光/星空），吸积盘橙琥珀辉光，毛玻璃面板悬浮于深空之上 */
 :root[data-theme="blackhole"] {
     --charcoal-900: #f2f4f8;
     --charcoal-800: #c8cfdb;
@@ -299,6 +314,7 @@
 
     --font-display: 'JetBrains Mono', 'SF Mono', 'Fira Code', 'Courier New', monospace;
     --font-body: 'JetBrains Mono', 'SF Mono', 'Fira Code', 'Courier New', monospace;
+    --font-mono: 'JetBrains Mono', 'SF Mono', 'Fira Code', monospace;
 
     /* 无静态背景图：WebGL 黑洞画布即背景，此处仅保留微弱径向渐变作为 WebGL 不可用时的降级底色 */
     --backdrop-image: radial-gradient(ellipse at 50% 55%, rgba(255, 154, 61, 0.07) 0%, rgba(255, 154, 61, 0) 55%);
@@ -307,8 +323,8 @@
     --backdrop-repeat: no-repeat;
 }
 
-/* ===== 1.7 新主题专属组件覆写 ===== */
-/* INK 覆写：印章红 + 衬线字距 */
+/* ===== 8. 水墨主题覆写 ===== */
+/* 印章红 + 衬线字距 */
 :root[data-theme="ink"] .logo-icon {
     background: #b03a2e;
     color: #faf6ec;
@@ -377,7 +393,8 @@
     box-shadow: 3px 4px 0 rgba(176, 58, 46, 0.15);
 }
 
-/* SUNSET 覆写：落日圆盘 logo + 暮色渐变标题 + 胶囊按钮（面板半透明，落日余晖透过面板弥散；backdrop-filter 已移除以验证 GPU 开销） */
+/* ===== 9. 落日主题覆写 ===== */
+/* 落日圆盘 logo + 暮色渐变标题 + 胶囊按钮；面板半透明，落日余晖透过面板弥散 */
 :root[data-theme="sunset"] .sidebar {
     background: color-mix(in srgb, var(--bg-surface) 78%, transparent);
 }
@@ -473,7 +490,8 @@
     box-shadow: 0 0 0 3px rgba(232, 93, 61, 0.14);
 }
 
-/* AURORA 覆写：面板半透明（极光可透过面板弥散；backdrop-filter 已移除以验证 GPU 开销） */
+/* ===== 10. 极光主题覆写 ===== */
+/* 面板半透明，极光可透过面板弥散 */
 :root[data-theme="aurora"] .sidebar {
     background: color-mix(in srgb, var(--bg-surface) 60%, transparent);
 }
@@ -499,8 +517,7 @@
     background: linear-gradient(to top, color-mix(in srgb, var(--bg-panel) 60%, transparent), transparent);
 }
 
-:root[data-theme="aurora"] .info-card,
-:root[data-theme="aurora"] .config-section-card {
+:root[data-theme="aurora"] .info-card {
     background: color-mix(in srgb, var(--bg-panel) 70%, transparent);
     border-color: rgba(255, 255, 255, 0.08);
 }
@@ -564,7 +581,8 @@
     box-shadow: 0 0 20px rgba(95, 240, 192, 0.18);
 }
 
-/* CYBERPUNK 覆写：斜切角 + 双色霓虹辉光（clip-path 会裁剪 box-shadow，辉光统一改用 drop-shadow 以贴合切角轮廓） */
+/* ===== 11. 赛博朋克主题覆写 ===== */
+/* 斜切角 + 双色霓虹辉光（clip-path 会裁剪 box-shadow，辉光统一改用 drop-shadow 以贴合切角轮廓） */
 :root[data-theme="cyberpunk"] .logo-icon {
     background: #ff2a6d;
     color: #04040c;
@@ -643,7 +661,7 @@
     filter: drop-shadow(0 0 8px rgba(0, 240, 255, 0.2));
 }
 
-/* CYBERPUNK 面板高透明度（无模糊）：让布景层的城市剪影清晰透入面板 */
+/* 面板高透明度（无模糊）：让布景层的城市剪影清晰透入面板 */
 :root[data-theme="cyberpunk"] .sidebar {
     background: color-mix(in srgb, var(--bg-surface) 45%, transparent);
 }
@@ -669,7 +687,8 @@
     background: linear-gradient(to top, color-mix(in srgb, var(--bg-panel) 40%, transparent), transparent);
 }
 
-/* BLACK HOLE 覆写：毛玻璃深空面板 + 吸积盘橙辉光，黑洞透过面板隐约可见 */
+/* ===== 12. 黑洞主题覆写 ===== */
+/* 毛玻璃深空面板 + 吸积盘橙辉光，黑洞透过面板隐约可见 */
 :root[data-theme="blackhole"] .sidebar,
 :root[data-theme="blackhole"] .sidebar-header,
 :root[data-theme="blackhole"] .main-content,
@@ -704,8 +723,7 @@
     background: linear-gradient(to top, color-mix(in srgb, var(--bg-panel) 60%, transparent), transparent);
 }
 
-:root[data-theme="blackhole"] .info-card,
-:root[data-theme="blackhole"] .config-section-card {
+:root[data-theme="blackhole"] .info-card {
     backdrop-filter: blur(12px);
     -webkit-backdrop-filter: blur(12px);
     background: color-mix(in srgb, var(--bg-panel) 70%, transparent);
@@ -778,7 +796,7 @@
     caret-color: #ff9a3d;
 }
 
-/* 新主题专属动画 */
+/* ===== 13. 主题专属动画 ===== */
 @keyframes neonFlicker {
     0%, 100% { opacity: 1; }
     3% { opacity: 0.6; }
@@ -798,7 +816,7 @@
     100% { transform: translate(0, 0); }
 }
 
-/* 主题切换时的全局过渡 */
+/* ===== 14. 主题切换全局过渡 ===== */
 :root[data-theme="light"] *,
 :root[data-theme="dark"] *,
 :root[data-theme="ink"] *,
@@ -808,119 +826,3 @@
 :root[data-theme="blackhole"] * {
     transition: background-color 0.3s ease, color 0.3s ease, border-color 0.3s ease, box-shadow 0.3s ease;
 }
-
-/* 全局样式 */
-* {
-    margin: 0;
-    padding: 0;
-    box-sizing: border-box;
-}
-
-/* 文本选中（高亮）样式 */
-::selection {
-    background: var(--charcoal-900);
-    color: var(--bg-canvas);
-}
-
-/* 噪点纹理叠加 */
-body::before {
-    content: '';
-    position: fixed;
-    inset: 0;
-    pointer-events: none;
-    z-index: 9999;
-    opacity: var(--noise-opacity);
-    filter: var(--noise-filter);
-    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E");
-}
-
-body {
-    font-family: var(--font-body);
-    background: var(--bg-canvas);
-    color: var(--charcoal-900);
-    height: 100vh;
-    display: flex;
-    overflow: hidden;
-    font-size: 14px;
-    box-sizing: border-box;
-    box-shadow: inset 0 0 0 1px var(--border-hard);
-    transition: background 0.3s ease, color 0.3s ease;
-    -webkit-font-smoothing: antialiased;
-}
-
-/* ===== 1.5 主题背景装饰层 ===== */
-#themeBackdrop {
-    position: fixed;
-    inset: 0;
-    z-index: 0;
-    pointer-events: none;
-    background-color: var(--bg-canvas);
-    background-image: var(--backdrop-image, none);
-    background-size: var(--backdrop-size, cover);
-    background-position: var(--backdrop-position, center);
-    background-repeat: var(--backdrop-repeat, no-repeat);
-    transition: background-color 0.4s ease, background-image 0.4s ease;
-}
-
-/* ===== 1.5b 主题布景层（Canvas 实体背景建筑，仅 cyberpunk 等需要的主题显示，位于静态背景之上、内容之下） ===== */
-#themeScenery {
-    position: fixed;
-    inset: 0;
-    z-index: 0;
-    pointer-events: none;
-    display: none;
-}
-
-:root[data-theme="cyberpunk"] #themeScenery {
-    display: block;
-}
-
-#themeSceneryCanvas {
-    display: block;
-    width: 100%;
-    height: 100%;
-}
-
-/* ===== 1.6 主题动态特效层（Canvas 粒子） ===== */
-#themeEffects {
-    position: fixed;
-    inset: 0;
-    z-index: 9998;
-    pointer-events: none;
-}
-
-#themeEffectsCanvas {
-    display: block;
-    width: 100%;
-    height: 100%;
-}
-
-/* ===== 1.6b 黑洞主题 WebGL 渲染层（仅 blackhole 主题显示，位于静态背景之上、内容之下） ===== */
-#themeBlackhole {
-    position: fixed;
-    inset: 0;
-    z-index: 0;
-    pointer-events: none;
-    display: none;
-}
-
-:root[data-theme="blackhole"] #themeBlackhole {
-    display: block;
-}
-
-#blackholeCanvas {
-    display: block;
-    width: 100%;
-    height: 100%;
-}
-
-/* ===== 1.8 减少动态效果（无障碍）：关闭全部 CSS 动画与过渡，粒子特效由 theme.js 的 reducedMotion 同步关闭 ===== */
-@media (prefers-reduced-motion: reduce) {
-    *,
-    *::before,
-    *::after {
-        animation: none !important;
-        transition: none !important;
-    }
-}
-

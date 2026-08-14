@@ -122,7 +122,7 @@ async function fetchMcpRegistry() {
             mcpListContainer.appendChild(card);
         });
     } catch (e) {
-        mcpListContainer.innerHTML = errorListHtml('mcp.topologyCrashed');
+        mcpListContainer.innerHTML = errorListHtml('common.fetchFailed');
     }
 }
 

@@ -1,10 +1,34 @@
 // ==========================================
-// CRON 核心排程自动化面板
+// CRON 定时任务面板
 // ==========================================
 const cronListContainer = document.getElementById('cronListContainer');
 const addCronPanel = document.getElementById('addCronPanel');
 // 最近一次拉取的定时任务列表缓存，供保存时按 id 读取 enabled 等未编辑字段
 let cronTasksCache = [];
+
+function toggleAddCronPanel() {
+    const isOpening = addCronPanel.style.display === 'none';
+    addCronPanel.style.display = isOpening ? 'flex' : 'none';
+    if (isOpening) {
+        resetCronForm();
+        loadCronAgentOptions();
+    }
+}
+
+// 重置 cron 新增表单
+function resetCronForm() {
+    document.getElementById('cronName').value = '';
+    document.getElementById('cronContent').value = '';
+    document.getElementById('cronAgentId').value = '';
+    document.getElementById('cronMin').value = '0';
+    document.getElementById('cronHour').value = '9';
+    document.getElementById('cronDay').value = '*';
+    document.getElementById('cronMonth').value = '*';
+    document.getElementById('cronWeek').value = '*';
+    const display = document.getElementById('cronWorkspaceDisplay');
+    display.textContent = currentWorkdir || t('input.unset');
+    display.title = currentWorkdir || '';
+}
 
 async function loadCronAgentOptions() {
     try {
@@ -29,19 +53,30 @@ function parseCronExpr(expr) {
     };
 }
 
-// 重置 cron 新增表单
-function resetCronForm() {
-    document.getElementById('cronName').value = '';
-    document.getElementById('cronContent').value = '';
-    document.getElementById('cronAgentId').value = '';
-    document.getElementById('cronMin').value = '0';
-    document.getElementById('cronHour').value = '9';
-    document.getElementById('cronDay').value = '*';
-    document.getElementById('cronMonth').value = '*';
-    document.getElementById('cronWeek').value = '*';
-    const display = document.getElementById('cronWorkspaceDisplay');
-    display.textContent = currentWorkdir || t('input.unset');
-    display.title = currentWorkdir || '';
+// 组装定时任务提交载荷：校验必填项与 cron 字段格式，失败时提示并返回 null
+function buildCronPayload(name, content, workDir, agentIdVal, cronFieldValues, second, enabled) {
+    if (!name || !content || !workDir || !agentIdVal) {
+        showToast(t('common.requiredMissing'), 'error');
+        return null;
+    }
+    // 简单格式校验：cron 字段仅允许数字与 * , - / 符号
+    if (cronFieldValues.some(fieldValue => !/^[0-9*,\/\-]+$/.test(fieldValue.trim()))) {
+        showToast(t('cron.invalidFormat'), 'error');
+        return null;
+    }
+    return {
+        name: name,
+        content: content,
+        work_dir: workDir,
+        minute: cronFieldValues[0],
+        hour: cronFieldValues[1],
+        day: cronFieldValues[2],
+        month: cronFieldValues[3],
+        day_of_week: cronFieldValues[4],
+        second: second,
+        agent_id: parseInt(agentIdVal),
+        enabled: enabled
+    };
 }
 
 async function fetchCronTasks() {
@@ -179,68 +214,35 @@ async function loadCronDetail(scheduleId) {
     }
 }
 
-// 组装定时任务提交载荷：校验必填项与 cron 字段格式，失败时提示并返回 null
-function buildCronPayload(name, content, workDir, agentIdVal, cronFieldValues, second, enabled) {
-    if (!name || !content || !workDir || !agentIdVal) {
-        showToast(t('common.requiredMissing'), 'error');
-        return null;
+async function submitCronTask() {
+    const name = document.getElementById('cronName').value.trim();
+    const content = document.getElementById('cronContent').value.trim();
+    const workDir = document.getElementById('cronWorkspaceDisplay').title || '';
+    const agentIdVal = document.getElementById('cronAgentId').value;
+    const cronFieldValues = [
+        document.getElementById('cronMin').value,
+        document.getElementById('cronHour').value,
+        document.getElementById('cronDay').value,
+        document.getElementById('cronMonth').value,
+        document.getElementById('cronWeek').value
+    ];
+    // 新增时后端忽略 enabled 字段，默认启用，但接口要求必传
+    const payload = buildCronPayload(name, content, workDir, agentIdVal, cronFieldValues, '0', true);
+    if (!payload) {
+        return;
     }
-    // 简单格式校验：cron 字段仅允许数字与 * , - / 符号
-    if (cronFieldValues.some(fieldValue => !/^[0-9*,\/\-]+$/.test(fieldValue.trim()))) {
-        showToast(t('cron.invalidFormat'), 'error');
-        return null;
-    }
-    return {
-        name: name,
-        content: content,
-        work_dir: workDir,
-        minute: cronFieldValues[0],
-        hour: cronFieldValues[1],
-        day: cronFieldValues[2],
-        month: cronFieldValues[3],
-        day_of_week: cronFieldValues[4],
-        second: second,
-        agent_id: parseInt(agentIdVal),
-        enabled: enabled
-    };
-}
-
-function toggleAddCronPanel() {
-    const isOpening = addCronPanel.style.display === 'none';
-    addCronPanel.style.display = isOpening ? 'flex' : 'none';
-    if (isOpening) {
-        resetCronForm();
-        loadCronAgentOptions();
-    }
-}
-
-// 切换定时任务启用/禁用状态
-async function toggleCronEnabled(task) {
-    const cron = parseCronExpr(task.trigger);
-    const payload = {
-        name: task.name,
-        content: task.content,
-        work_dir: task.work_dir,
-        minute: cron.minute,
-        hour: cron.hour,
-        day: cron.day,
-        month: cron.month,
-        day_of_week: cron.day_of_week,
-        second: cron.second,
-        agent_id: task.agent_id,
-        enabled: !task.enabled,
-    };
     try {
-        const response = await fetch(`/schedule/${task.id}`, {
-            method: 'PUT',
+        const response = await fetch('/schedule', {
+            method: 'POST',
             headers: {'Content-Type': 'application/json'},
             body: JSON.stringify(payload)
         });
         if (response.ok) {
+            toggleAddCronPanel();
             await fetchCronTasks();
         }
     } catch (e) {
-        showToast(t('common.syncCrashed'), 'error');
+        showToast(t('common.creationFault'), 'error');
     }
 }
 
@@ -280,35 +282,33 @@ async function updateSingleCron(taskId) {
     }
 }
 
-async function submitCronTask() {
-    const name = document.getElementById('cronName').value.trim();
-    const content = document.getElementById('cronContent').value.trim();
-    const workDir = document.getElementById('cronWorkspaceDisplay').title || '';
-    const agentIdVal = document.getElementById('cronAgentId').value;
-    const cronFieldValues = [
-        document.getElementById('cronMin').value,
-        document.getElementById('cronHour').value,
-        document.getElementById('cronDay').value,
-        document.getElementById('cronMonth').value,
-        document.getElementById('cronWeek').value
-    ];
-    // 新增时后端忽略 enabled 字段，默认启用，但接口要求必传
-    const payload = buildCronPayload(name, content, workDir, agentIdVal, cronFieldValues, '0', true);
-    if (!payload) {
-        return;
-    }
+// 切换定时任务启用/禁用状态
+async function toggleCronEnabled(task) {
+    const cron = parseCronExpr(task.trigger);
+    const payload = {
+        name: task.name,
+        content: task.content,
+        work_dir: task.work_dir,
+        minute: cron.minute,
+        hour: cron.hour,
+        day: cron.day,
+        month: cron.month,
+        day_of_week: cron.day_of_week,
+        second: cron.second,
+        agent_id: task.agent_id,
+        enabled: !task.enabled,
+    };
     try {
-        const response = await fetch('/schedule', {
-            method: 'POST',
+        const response = await fetch(`/schedule/${task.id}`, {
+            method: 'PUT',
             headers: {'Content-Type': 'application/json'},
             body: JSON.stringify(payload)
         });
         if (response.ok) {
-            toggleAddCronPanel();
             await fetchCronTasks();
         }
     } catch (e) {
-        showToast(t('common.creationFault'), 'error');
+        showToast(t('common.syncCrashed'), 'error');
     }
 }
 
@@ -323,7 +323,7 @@ function removeCronTask(taskId, taskName) {
                     await fetchCronTasks();
                 }
             } catch (e) {
-                showToast(t('cron.purgeFailed'), 'error');
+                showToast(t('common.purgeFailure'), 'error');
             }
         }
     });

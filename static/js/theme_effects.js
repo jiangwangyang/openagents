@@ -218,9 +218,15 @@ function tick(now) {
                 // 暖光尘：缓升漂移，出界后循环
                 p.x += (p.vx + swayX * 2) * dt;
                 p.y += p.vy * dt;
-                if (p.x < -10) p.x = w + 10;
-                if (p.x > w + 10) p.x = -10;
-                if (p.y < -10) p.y = h + 10;
+                if (p.x < -10) {
+                    p.x = w + 10;
+                }
+                if (p.x > w + 10) {
+                    p.x = -10;
+                }
+                if (p.y < -10) {
+                    p.y = h + 10;
+                }
                 drawDot(ctx, p);
             }
         } else if (fx.kind === 'neon-rain') {

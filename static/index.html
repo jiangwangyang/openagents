@@ -74,7 +74,7 @@
             </div>
         </div>
 
-        <!-- ===== 视图 1: 智能会话区域 (DIALOG) ===== -->
+        <!-- ===== 视图 1: 会话 (DIALOG) ===== -->
         <div class="view-container active" id="viewDialog">
             <div class="chat-container" id="chatContainer">
                 <div class="empty-state" id="emptyState">
@@ -189,7 +189,7 @@
             <div class="info-card-list" id="cronListContainer"></div>
         </div>
 
-        <!-- ===== 视图 4: Agent 管理 (AGENT) ===== -->
+        <!-- ===== 视图 4: 智能体 (AGENT) ===== -->
         <div class="view-container" id="viewAgent">
             <div class="panel-view-header">
                 <div class="panel-view-heading">
@@ -199,7 +199,7 @@
                 <button class="btn btn-sm send-button" onclick="toggleAddAgentPanel()" data-i18n="agent.newAgent">+ New Agent</button>
             </div>
 
-            <!-- Agent 新增面板 -->
+            <!-- 智能体新增面板 -->
             <div class="add-cron-panel" id="addAgentPanel" style="display: none;">
                 <div class="form-row">
                     <div class="form-group flex-1">
@@ -243,7 +243,7 @@
             <div class="info-card-list" id="agentListContainer"></div>
         </div>
 
-        <!-- ===== 视图 5: 系统核心技能 (SKILL) ===== -->
+        <!-- ===== 视图 5: 技能 (SKILL) ===== -->
         <div class="view-container" id="viewSkill">
             <div class="panel-view-header">
                 <div class="panel-view-heading">
@@ -254,7 +254,7 @@
             <div class="info-card-list" id="skillListContainer"></div>
         </div>
 
-        <!-- ===== 视图 6: MCP 服务架构生态映射 (MCP) ===== -->
+        <!-- ===== 视图 6: MCP 服务 (MCP) ===== -->
         <div class="view-container" id="viewMcp">
             <div class="panel-view-header">
                 <div class="panel-view-heading">
@@ -264,7 +264,7 @@
                 <button class="btn btn-sm send-button" onclick="toggleAddMcpPanel()" data-i18n="mcp.newServer">+ New Server</button>
             </div>
 
-            <!-- MCP 新增注册面板 -->
+            <!-- MCP 新增面板 -->
             <div class="add-cron-panel" id="addMcpPanel" style="display: none;">
                 <div class="form-row">
                     <div class="form-group flex-1">
@@ -316,7 +316,7 @@
             <div class="info-card-list" id="mcpListContainer"></div>
         </div>
 
-        <!-- ===== 视图 7: 全局生产环境配置控制台 (CONFIG) ===== -->
+        <!-- ===== 视图 7: 系统配置 (CONFIG) ===== -->
         <div class="view-container" id="viewConfig">
             <div class="panel-view-header">
                 <div class="panel-view-heading">
@@ -327,7 +327,7 @@
             </div>
 
             <div id="configFormContainer" class="config-form-container">
-                <!-- 动态新增 Provider 表单控制卡 -->
+                <!-- 新增供应商面板 -->
                 <div class="add-cron-panel" id="addProviderPanel" style="display: none;">
                     <h3 class="panel-view-title" style="font-size: 12px; color: var(--charcoal-700); margin-bottom: 4px;" data-i18n="config.newProviderCard">+ New Model Provider</h3>
                     <div class="form-row">
@@ -361,12 +361,12 @@
                     </div>
                 </div>
 
-                <!-- 异步动态注入的供应商清单 -->
+                <!-- 供应商列表（JS 异步渲染） -->
                 <div class="info-card-list" id="providerConfigList"></div>
             </div>
         </div>
 
-        <!-- ===== 输入层组件包裹器 ===== -->
+        <!-- ===== 底部输入区 ===== -->
         <div class="input-wrapper" id="globalInputWrapper">
             <div class="input-toolbar">
                 <button class="workspace-btn flush" id="workspaceBtn" onclick="selectWorkspace()" title="Set Directory Context" data-i18n-title="input.cwdTitle">
@@ -379,7 +379,7 @@
                 <select id="agentSelect" class="form-control header-select" title="Select Agent" data-i18n-title="input.agentTitle" onchange="onAgentSelectChange()">
                     <option value="" data-i18n="common.none">NONE</option>
                 </select>
-                <!-- 模型路由选择：供应商下拉，模型输入记忆历史，思考开关，每次发送消息时生效 -->
+                <!-- 模型路由选择：供应商下拉、模型输入（聚焦时拉取模型列表）、思考开关，每次发送消息时生效 -->
                 <select id="providerSelect" class="form-control header-select" title="Select Provider" data-i18n-title="input.providerTitle"></select>
                 <div class="model-combo-wrapper" id="modelComboWrapper">
                     <input id="modelSelect" class="form-control header-select" title="Select Model" data-i18n-title="input.modelTitle" placeholder="MODEL" autocomplete="off" style="width:160px;">

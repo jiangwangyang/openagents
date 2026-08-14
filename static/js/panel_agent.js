@@ -97,7 +97,7 @@ async function fetchAgentRegistry() {
             loadAgentProviderOptions(`agent-provider-${agent.id}`, agent.model_provider_id);
         });
     } catch (e) {
-        agentListContainer.innerHTML = errorListHtml('agent.rosterCrashed');
+        agentListContainer.innerHTML = errorListHtml('common.fetchFailed');
     }
 }
 

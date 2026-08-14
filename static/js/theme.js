@@ -22,12 +22,8 @@ const THEME_META = [
     {id: 'dark', bg: '#101214', accent: '#e6e8eb'},
     {id: 'ink', divider: true, bg: '#f2ecdf', accent: '#b03a2e'},
     {id: 'sunset', bg: '#ffd6bd', accent: '#e85d3d'},
-    {id: 'botanica', bg: '#f4f2e4', accent: '#2e6b34'},
-    {id: 'draft', bg: '#eef4fd', accent: '#1a56c4'},
     {id: 'aurora', bg: '#060a18', accent: '#5ff0c0'},
-    {id: 'vaporwave', bg: '#1b1035', accent: '#ff71ce'},
     {id: 'cyberpunk', bg: '#04040c', accent: '#ff2a6d'},
-    {id: 'matrix', bg: '#000000', accent: '#00ff41'},
     {id: 'blackhole', divider: true, bg: '#000000', accent: '#ff9a3d'}
 ];
 

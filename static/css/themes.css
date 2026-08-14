@@ -106,12 +106,12 @@
     --noise-opacity: 0.06;
     --noise-filter: none;
 
-    --font-display: 'Noto Serif SC', 'Songti SC', 'STSong', Georgia, serif;
-    --font-body: 'Noto Serif SC', 'Songti SC', 'STSong', Georgia, serif;
-
     --radius-sm: 2px;
     --radius-md: 4px;
     --radius-lg: 6px;
+
+    --font-display: 'Noto Serif SC', 'Songti SC', 'STSong', Georgia, serif;
+    --font-body: 'Noto Serif SC', 'Songti SC', 'STSong', Georgia, serif;
 
     --backdrop-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='64' height='64' viewBox='0 0 64 64'%3E%3Cg transform='rotate(3 32 32)'%3E%3Crect x='8' y='8' width='48' height='48' rx='4' fill='%23b03a2e' opacity='0.85'/%3E%3Ctext x='32' y='43' font-size='26' text-anchor='middle' fill='%23faf6ec' font-family='serif'%3E%E5%A2%A8%3C/text%3E%3C/g%3E%3C/svg%3E"),
     url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='600' height='90' viewBox='0 0 600 90'%3E%3Cg fill='%231c1a17'%3E%3Cpath d='M20 40 C140 30 300 26 580 34 C500 40 300 42 60 48 Z' opacity='0.1'/%3E%3Cpath d='M40 52 C200 46 380 44 560 50 C420 54 220 56 50 60 Z' opacity='0.07'/%3E%3Cpath d='M90 62 C240 58 400 57 530 62 C400 65 240 66 100 68 Z' opacity='0.05'/%3E%3C/g%3E%3C/svg%3E"),
@@ -173,103 +173,6 @@
     --backdrop-repeat: repeat-x, repeat-x, repeat-x, no-repeat, no-repeat, no-repeat, no-repeat;
 }
 
-/* BOTANICA — 晨雾植物图鉴 理念：暖象牙纸底 + 深松绿墨色 + 陶土橙点缀，两侧蕨叶剪影与顶部晨光，衬线斜体的植物学画册排版 */
-:root[data-theme="botanica"] {
-    --charcoal-900: #1c3a24;
-    --charcoal-800: #2c5236;
-    --charcoal-700: #47724f;
-    --slate-400: #7d9a80;
-    --slate-300: #a7bda6;
-    --bg-canvas: #f4f2e4;
-    --bg-surface: #efeedd;
-    --bg-panel: #fdfcf3;
-    --border-hard: #ccd4b6;
-    --border-soft: #e0e4cc;
-
-    --accent-color: #2e6b34;
-    --danger-color: #b3402a;
-    --danger-bg: #f9ece4;
-
-    --shadow-rgb: 28, 58, 36;
-    --shadow-hard: 4px 4px 0 rgba(var(--shadow-rgb), 0.07);
-    --shadow-hard-lg: 8px 8px 0 rgba(var(--shadow-rgb), 0.09);
-
-    --hover-bg: rgba(46, 107, 52, 0.05);
-    --subtle-bg: rgba(46, 107, 52, 0.02);
-    --summary-bg: #f3f4e6;
-    --inline-code-bg: rgba(46, 107, 52, 0.08);
-    --overlay-bg: rgba(244, 242, 228, 0.9);
-    --on-accent-muted: rgba(253, 252, 243, 0.5);
-    --noise-opacity: 0.04;
-    --noise-filter: none;
-
-    --radius-sm: 8px;
-    --radius-md: 16px;
-    --radius-lg: 24px;
-
-    --font-display: Georgia, 'Palatino Linotype', 'Times New Roman', 'Noto Serif SC', 'Songti SC', serif;
-    --font-body: Georgia, 'Palatino Linotype', 'Times New Roman', 'Noto Serif SC', 'Songti SC', serif;
-
-    --backdrop-image: radial-gradient(ellipse at 50% -12%, rgba(255, 250, 214, 0.85) 0%, rgba(255, 250, 214, 0) 55%),
-    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='320' height='560' viewBox='0 0 320 560'%3E%3Cg fill='%232c5236'%3E%3Cpath d='M84 560 C96 420 120 300 176 160 C188 128 204 100 228 76 L232 82 C210 106 194 134 182 166 C128 304 104 424 94 560 Z' opacity='0.5'/%3E%3Cg opacity='0.32'%3E%3Cellipse cx='150' cy='430' rx='58' ry='10' transform='rotate(-28 150 430)'/%3E%3Cellipse cx='88' cy='404' rx='44' ry='8' transform='rotate(14 88 404)'/%3E%3Cellipse cx='168' cy='360' rx='52' ry='9' transform='rotate(-30 168 360)'/%3E%3Cellipse cx='106' cy='332' rx='40' ry='8' transform='rotate(12 106 332)'/%3E%3Cellipse cx='186' cy='292' rx='46' ry='8' transform='rotate(-32 186 292)'/%3E%3Cellipse cx='128' cy='262' rx='34' ry='7' transform='rotate(10 128 262)'/%3E%3Cellipse cx='200' cy='224' rx='38' ry='7' transform='rotate(-34 200 224)'/%3E%3Cellipse cx='148' cy='196' rx='28' ry='6' transform='rotate(8 148 196)'/%3E%3Cellipse cx='212' cy='160' rx='30' ry='6' transform='rotate(-36 212 160)'/%3E%3Cellipse cx='170' cy='130' rx='22' ry='5' transform='rotate(6 170 130)'/%3E%3Cellipse cx='222' cy='102' rx='20' ry='4' transform='rotate(-38 222 102)'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E"),
-    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='320' height='560' viewBox='0 0 320 560'%3E%3Cg transform='translate(320 0) scale(-1 1)'%3E%3Cg fill='%2347724f'%3E%3Cpath d='M84 560 C96 420 120 300 176 160 C188 128 204 100 228 76 L232 82 C210 106 194 134 182 166 C128 304 104 424 94 560 Z' opacity='0.5'/%3E%3Cg opacity='0.28'%3E%3Cellipse cx='150' cy='430' rx='58' ry='10' transform='rotate(-28 150 430)'/%3E%3Cellipse cx='88' cy='404' rx='44' ry='8' transform='rotate(14 88 404)'/%3E%3Cellipse cx='168' cy='360' rx='52' ry='9' transform='rotate(-30 168 360)'/%3E%3Cellipse cx='106' cy='332' rx='40' ry='8' transform='rotate(12 106 332)'/%3E%3Cellipse cx='186' cy='292' rx='46' ry='8' transform='rotate(-32 186 292)'/%3E%3Cellipse cx='128' cy='262' rx='34' ry='7' transform='rotate(10 128 262)'/%3E%3Cellipse cx='200' cy='224' rx='38' ry='7' transform='rotate(-34 200 224)'/%3E%3Cellipse cx='148' cy='196' rx='28' ry='6' transform='rotate(8 148 196)'/%3E%3Cellipse cx='212' cy='160' rx='30' ry='6' transform='rotate(-36 212 160)'/%3E%3Cellipse cx='170' cy='130' rx='22' ry='5' transform='rotate(6 170 130)'/%3E%3Cellipse cx='222' cy='102' rx='20' ry='4' transform='rotate(-38 222 102)'/%3E%3C/g%3E%3C/g%3E%3C/g%3E%3C/svg%3E"),
-    linear-gradient(180deg, #f7f4e6 0%, #eff0d9 55%, #e2e7c4 100%);
-    --backdrop-size: cover, auto 80%, auto 80%, cover;
-    --backdrop-position: center, left -60px bottom 0px, right -60px bottom 0px, center;
-    --backdrop-repeat: no-repeat, no-repeat, no-repeat, no-repeat;
-}
-
-/* DRAFT — 白图 · 制图室 理念：绘图纸白底 + 制图蓝墨线 + 铅笔橙批注，完整标题栏与法兰剖视图，一张正在测绘中的工程图纸 */
-:root[data-theme="draft"] {
-    --charcoal-900: #12275c;
-    --charcoal-800: #1d3d7a;
-    --charcoal-700: #3f5c9e;
-    --slate-400: #6d84b8;
-    --slate-300: #9db1d9;
-    --bg-canvas: #eef4fd;
-    --bg-surface: #f5f9ff;
-    --bg-panel: #ffffff;
-    --border-hard: #c2d2f0;
-    --border-soft: #dce7fa;
-
-    --accent-color: #1a56c4;
-    --pencil-color: #e8710a;
-    --danger-color: #d63c2f;
-    --danger-bg: #fdf0ec;
-
-    --shadow-rgb: 26, 86, 196;
-    --shadow-hard: 4px 4px 0 rgba(var(--shadow-rgb), 0.1);
-    --shadow-hard-lg: 8px 8px 0 rgba(var(--shadow-rgb), 0.12);
-
-    --hover-bg: rgba(26, 86, 196, 0.05);
-    --subtle-bg: rgba(26, 86, 196, 0.02);
-    --summary-bg: #eef4fd;
-    --inline-code-bg: rgba(26, 86, 196, 0.08);
-    --overlay-bg: rgba(238, 244, 253, 0.92);
-    --on-accent-muted: rgba(255, 255, 255, 0.5);
-    --noise-opacity: 0.02;
-    --noise-filter: none;
-
-    --radius-sm: 0px;
-    --radius-md: 0px;
-    --radius-lg: 0px;
-
-    --font-display: 'JetBrains Mono', 'SF Mono', 'Fira Code', 'Courier New', monospace;
-    --font-body: 'JetBrains Mono', 'SF Mono', 'Fira Code', 'Courier New', monospace;
-
-    --backdrop-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='300' height='300' viewBox='0 0 300 300'%3E%3Cg fill='none' stroke='%231a56c4' opacity='0.55'%3E%3Ccircle cx='150' cy='150' r='64' stroke-width='1.6'/%3E%3Ccircle cx='150' cy='150' r='47' stroke-width='1'/%3E%3Ccircle cx='150' cy='150' r='27' stroke-width='1.6'/%3E%3Ccircle cx='150' cy='150' r='37' stroke-width='0.9' stroke-dasharray='6 5'/%3E%3Cpath d='M150 42V258M42 150H258' stroke-width='0.8' stroke-dasharray='16 5 3 5'/%3E%3Ccircle cx='183' cy='117' r='5.5' stroke-width='1'/%3E%3Ccircle cx='117' cy='117' r='5.5' stroke-width='1'/%3E%3Ccircle cx='117' cy='183' r='5.5' stroke-width='1'/%3E%3Ccircle cx='183' cy='183' r='5.5' stroke-width='1'/%3E%3Cpath d='M86 92V30M214 92V30' stroke-width='0.8' opacity='0.6'/%3E%3Cpath d='M86 36H214' stroke-width='1'/%3E%3Cpath d='M81 41L91 31M209 41L219 31' stroke-width='1.5'/%3E%3Cpath d='M150 150L183 117' stroke-width='0.9'/%3E%3C/g%3E%3Cg font-family='monospace' fill='%231a56c4' opacity='0.7'%3E%3Ctext x='150' y='26' font-size='13' text-anchor='middle'%3E%E2%8C%80128%3C/text%3E%3Ctext x='172' y='108' font-size='11'%3ER47%3C/text%3E%3C/g%3E%3Cg fill='%23e8710a' opacity='0.85' font-family='monospace'%3E%3Ctext x='222' y='238' font-size='14' transform='rotate(-8 222 238)'%3E%E2%9C%93 OK%3C/text%3E%3Ctext x='34' y='70' font-size='12' transform='rotate(-6 34 70)'%3EREV-B%3C/text%3E%3C/g%3E%3Ccircle cx='117' cy='117' r='12' fill='none' stroke='%23e8710a' stroke-width='1.2' stroke-dasharray='4 3' opacity='0.8'/%3E%3C/svg%3E"),
-    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='380' height='210' viewBox='0 0 380 210'%3E%3Cg fill='%23ffffff' fill-opacity='0.55' stroke='%231a56c4' opacity='0.7'%3E%3Crect x='2' y='2' width='376' height='206' stroke-width='1.6'/%3E%3Cpath d='M2 68H378M2 134H378M240 2V134M312 68V134' fill='none' stroke-width='1'/%3E%3C/g%3E%3Cg font-family='monospace' fill='%2312275c' opacity='0.85'%3E%3Ctext x='16' y='42' font-size='14' font-weight='bold'%3EPROJECT: OPENAGENTS%3C/text%3E%3Ctext x='252' y='36' font-size='9' fill='%233f5c9e'%3ESCALE%3C/text%3E%3Ctext x='252' y='54' font-size='14'%3E1:1%3C/text%3E%3Ctext x='16' y='104' font-size='12'%3EDRAWN: DRAFT STUDIO%3C/text%3E%3Ctext x='252' y='96' font-size='9' fill='%233f5c9e'%3ESHEET%3C/text%3E%3Ctext x='326' y='110' font-size='17' font-weight='bold'%3EA-01%3C/text%3E%3Ctext x='16' y='172' font-size='10' fill='%233f5c9e'%3ETOLERANCE %C2%B10.1 UNLESS NOTED%3C/text%3E%3C/g%3E%3Ctext x='250' y='174' font-family='monospace' font-size='13' font-weight='bold' fill='%23e8710a' opacity='0.9' transform='rotate(-2 250 174)'%3E%E2%9C%93 APPROVED%3C/text%3E%3C/svg%3E"),
-    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='100%25' height='100%25' viewBox='0 0 100 100' preserveAspectRatio='none'%3E%3Cg fill='none' stroke='%231a56c4'%3E%3Crect x='1.6' y='2' width='96.8' height='96' stroke-width='2' vector-effect='non-scaling-stroke' opacity='0.28'/%3E%3Crect x='2.8' y='3.4' width='94.4' height='93.2' stroke-width='1' vector-effect='non-scaling-stroke' opacity='0.2'/%3E%3Cpath d='M2.8 1V6.2M0.6 3.4H5.4M97.2 1V6.2M94.6 3.4H99.4M2.8 93.8V99M0.6 96.6H5.4M97.2 93.8V99M94.6 96.6H99.4' stroke-width='1' vector-effect='non-scaling-stroke' opacity='0.3'/%3E%3C/g%3E%3C/svg%3E"),
-    repeating-linear-gradient(0deg, rgba(26, 86, 196, 0.045) 0px, rgba(26, 86, 196, 0.045) 1px, transparent 1px, transparent 20px),
-    repeating-linear-gradient(90deg, rgba(26, 86, 196, 0.045) 0px, rgba(26, 86, 196, 0.045) 1px, transparent 1px, transparent 20px),
-    repeating-linear-gradient(0deg, rgba(26, 86, 196, 0.11) 0px, rgba(26, 86, 196, 0.11) 1px, transparent 1px, transparent 100px),
-    repeating-linear-gradient(90deg, rgba(26, 86, 196, 0.11) 0px, rgba(26, 86, 196, 0.11) 1px, transparent 1px, transparent 100px),
-    linear-gradient(180deg, #fcfdff 0%, #f3f8fe 55%, #eaf2fc 100%);
-    --backdrop-size: 300px 300px, 380px 210px, 100% 100%, auto, auto, auto, auto, cover;
-    --backdrop-position: right 48px top 48px, right 40px bottom 40px, center, center, center, center, center, center;
-    --backdrop-repeat: no-repeat, no-repeat, no-repeat, repeat, repeat, repeat, repeat, no-repeat;
-}
-
 /* AURORA — 流动极光 理念：极夜深空 + 青绿/紫罗兰极光带与流星，玻璃拟态悬浮面板 */
 :root[data-theme="aurora"] {
     --charcoal-900: #eaf6ff;
@@ -315,46 +218,6 @@
     --backdrop-repeat: no-repeat, no-repeat, no-repeat;
 }
 
-/* VAPORWAVE — 蒸汽波 CRT 理念：粉紫蓝渐变 + 像素星与漂浮几何，CRT 扫描线与屏幕暗角，80s 复古未来美学 */
-:root[data-theme="vaporwave"] {
-    --charcoal-900: #fff3fc;
-    --charcoal-800: #ffc9ec;
-    --charcoal-700: #e08fd0;
-    --slate-400: #9a7fb8;
-    --slate-300: #6a5590;
-    --bg-canvas: #1b1035;
-    --bg-surface: #241544;
-    --bg-panel: #2c1a52;
-    --border-hard: #4a2f7a;
-    --border-soft: #38245f;
-
-    --accent-color: #ff71ce;
-    --danger-color: #ff5e78;
-    --danger-bg: #3a1524;
-
-    --shadow-rgb: 255, 113, 206;
-    --shadow-hard: 4px 4px 0 rgba(var(--shadow-rgb), 0.25);
-    --shadow-hard-lg: 8px 8px 0 rgba(var(--shadow-rgb), 0.3);
-
-    --hover-bg: rgba(255, 113, 206, 0.08);
-    --subtle-bg: rgba(255, 113, 206, 0.03);
-    --summary-bg: #331d5e;
-    --inline-code-bg: rgba(1, 205, 254, 0.14);
-    --overlay-bg: rgba(27, 16, 53, 0.88);
-    --on-accent-muted: rgba(27, 16, 53, 0.5);
-    --noise-opacity: 0.05;
-    --noise-filter: none;
-
-    --font-display: 'JetBrains Mono', 'SF Mono', 'Fira Code', 'Courier New', monospace;
-    --font-body: 'JetBrains Mono', 'SF Mono', 'Fira Code', 'Courier New', monospace;
-
-    --backdrop-image: radial-gradient(circle at 50% 68%, rgba(255, 220, 120, 0.35) 0%, rgba(255, 113, 206, 0.18) 22%, rgba(255, 113, 206, 0) 42%),
-    linear-gradient(180deg, #12082a 0%, #2a1250 45%, #5b2a86 75%, #b84aa0 100%);
-    --backdrop-size: cover, cover;
-    --backdrop-position: center, center;
-    --backdrop-repeat: no-repeat, no-repeat;
-}
-
 /* CYBERPUNK — 赛博朋克霓虹都市 理念：深空黑底 + 霓虹青/品红双色辉光，透视网格地平线 + 霓虹雨，全息终端质感 */
 :root[data-theme="cyberpunk"] {
     --charcoal-900: #6ff3ff;
@@ -385,12 +248,12 @@
     --noise-opacity: 0.05;
     --noise-filter: none;
 
-    --font-display: 'JetBrains Mono', 'SF Mono', 'Fira Code', 'Courier New', monospace;
-    --font-body: 'JetBrains Mono', 'SF Mono', 'Fira Code', 'Courier New', monospace;
-
     --radius-sm: 0px;
     --radius-md: 0px;
     --radius-lg: 0px;
+
+    --font-display: 'JetBrains Mono', 'SF Mono', 'Fira Code', 'Courier New', monospace;
+    --font-body: 'JetBrains Mono', 'SF Mono', 'Fira Code', 'Courier New', monospace;
 
     --backdrop-image: radial-gradient(ellipse at 50% 115%, rgba(255, 42, 109, 0.22) 0%, rgba(255, 42, 109, 0) 55%),
     radial-gradient(ellipse at 50% -10%, rgba(0, 240, 255, 0.1) 0%, rgba(0, 240, 255, 0) 50%),
@@ -398,49 +261,6 @@
     --backdrop-size: cover, cover, cover;
     --backdrop-position: center, center, center;
     --backdrop-repeat: no-repeat, no-repeat, no-repeat;
-}
-
-/* MATRIX — 黑客帝国代码雨 理念：纯黑底 + 磷光绿单色，全屏片假名字符雨，界面全面终端化 */
-:root[data-theme="matrix"] {
-    --charcoal-900: #00ff41;
-    --charcoal-800: #00c832;
-    --charcoal-700: #00962a;
-    --slate-400: #1f7a38;
-    --slate-300: #0f4d24;
-    --bg-canvas: #000000;
-    --bg-surface: #020a04;
-    --bg-panel: #031008;
-    --border-hard: #0f3d1e;
-    --border-soft: #092613;
-
-    --accent-color: #00ff41;
-    --danger-color: #ff4444;
-    --danger-bg: #1a0505;
-
-    --shadow-rgb: 0, 255, 65;
-    --shadow-hard: 4px 4px 0 rgba(var(--shadow-rgb), 0.12);
-    --shadow-hard-lg: 8px 8px 0 rgba(var(--shadow-rgb), 0.15);
-
-    --hover-bg: rgba(0, 255, 65, 0.06);
-    --subtle-bg: rgba(0, 255, 65, 0.02);
-    --summary-bg: #04160a;
-    --inline-code-bg: rgba(0, 255, 65, 0.12);
-    --overlay-bg: rgba(0, 0, 0, 0.9);
-    --on-accent-muted: rgba(0, 0, 0, 0.55);
-    --noise-opacity: 0.04;
-    --noise-filter: none;
-
-    --font-display: 'JetBrains Mono', 'SF Mono', 'Fira Code', 'Courier New', monospace;
-    --font-body: 'JetBrains Mono', 'SF Mono', 'Fira Code', 'Courier New', monospace;
-
-    --radius-sm: 0px;
-    --radius-md: 0px;
-    --radius-lg: 0px;
-
-    --backdrop-image: radial-gradient(ellipse at 50% 50%, rgba(0, 255, 65, 0.05) 0%, rgba(0, 255, 65, 0) 60%);
-    --backdrop-size: cover;
-    --backdrop-position: center;
-    --backdrop-repeat: no-repeat;
 }
 
 /* BLACK HOLE — 史瓦西黑洞 理念：纯黑深空 + WebGL 实时光线追踪黑洞背景（引力透镜吸积盘/光子环辉光/星空），吸积盘橙琥珀辉光，毛玻璃面板悬浮于深空之上 */
@@ -528,6 +348,33 @@
 
 :root[data-theme="ink"] .user-message {
     border-radius: 2px 14px 2px 14px;
+}
+
+:root[data-theme="ink"] .send-button {
+    background: #1c1a17;
+    color: #faf6ec;
+    letter-spacing: 4px;
+}
+
+:root[data-theme="ink"] .header-nav-btn:hover,
+:root[data-theme="ink"] .header-nav-btn.active {
+    border-color: #b03a2e;
+    color: #b03a2e;
+}
+
+:root[data-theme="ink"] .conversation-item.active {
+    border-color: #b03a2e;
+    box-shadow: inset 3px 0 0 #b03a2e;
+}
+
+:root[data-theme="ink"] .info-card:hover {
+    border-color: #b03a2e;
+    box-shadow: 3px 4px 0 rgba(28, 26, 23, 0.1);
+}
+
+:root[data-theme="ink"] .input-container:focus-within {
+    border-color: #b03a2e;
+    box-shadow: 3px 4px 0 rgba(176, 58, 46, 0.15);
 }
 
 /* SUNSET 覆写：落日圆盘 logo + 暮色渐变标题 + 胶囊按钮（面板半透明，落日余晖透过面板弥散；backdrop-filter 已移除以验证 GPU 开销） */
@@ -626,161 +473,6 @@
     box-shadow: 0 0 0 3px rgba(232, 93, 61, 0.14);
 }
 
-/* BOTANICA 覆写：衬线图鉴排版 + 叶形元素 + 陶土橙点缀 */
-:root[data-theme="botanica"] .logo-icon {
-    background: linear-gradient(135deg, #2c5236, #5a8c69);
-    color: #fdfcf3;
-    border-radius: 50% 4px 50% 4px;
-    transform: rotate(-4deg);
-    box-shadow: 0 3px 10px rgba(28, 58, 36, 0.3);
-}
-
-:root[data-theme="botanica"] .panel-view-title,
-:root[data-theme="botanica"] .empty-state-title {
-    font-style: italic;
-    letter-spacing: 1px;
-    text-transform: none;
-    color: #2c5236;
-}
-
-:root[data-theme="botanica"] .panel-view-title::after {
-    content: ' ❦';
-    color: #c25e3a;
-    font-weight: 400;
-}
-
-:root[data-theme="botanica"] .send-button {
-    background: linear-gradient(135deg, #2c5236 0%, #47724f 100%);
-    color: #fdfcf3;
-    box-shadow: 0 3px 12px rgba(28, 58, 36, 0.28);
-}
-
-:root[data-theme="botanica"] .send-button:hover:not(:disabled) {
-    background: linear-gradient(135deg, #c25e3a 0%, #d97b4f 100%);
-    box-shadow: 0 6px 18px rgba(194, 94, 58, 0.38);
-    transform: translateY(-2px);
-}
-
-:root[data-theme="botanica"] .new-chat-btn:hover {
-    background: #2c5236;
-    border-color: #2c5236;
-    color: #fdfcf3;
-}
-
-:root[data-theme="botanica"] .header-nav-btn:hover,
-:root[data-theme="botanica"] .header-nav-btn.active {
-    border-color: #47724f;
-    color: #2c5236;
-    box-shadow: 0 2px 8px rgba(71, 114, 79, 0.2);
-}
-
-:root[data-theme="botanica"] .user-message {
-    background: linear-gradient(135deg, #2c5236 0%, #5a8c69 100%);
-    color: #fdfcf3;
-    border-radius: 20px 20px 4px 20px;
-    box-shadow: 0 4px 14px rgba(28, 58, 36, 0.22);
-}
-
-:root[data-theme="botanica"] .conversation-item.active {
-    border-color: #c25e3a;
-    box-shadow: inset 3px 0 0 #c25e3a;
-}
-
-:root[data-theme="botanica"] .info-card:hover {
-    border-color: #7d9a80;
-    box-shadow: 0 8px 20px rgba(71, 114, 79, 0.18);
-    transform: translateY(-2px);
-}
-
-:root[data-theme="botanica"] .input-container:focus-within {
-    border-color: #47724f;
-    box-shadow: 0 0 0 3px rgba(71, 114, 79, 0.14);
-}
-
-:root[data-theme="botanica"] details > summary {
-    font-style: italic;
-    letter-spacing: 1px;
-}
-
-/* DRAFT 覆写：蓝图钉章 + 铅笔橙批注 + 剖面线 hover */
-:root[data-theme="draft"] .logo-icon {
-    background: #1a56c4;
-    color: #ffffff;
-    border: 2px solid #ffffff;
-    outline: 2px solid #1a56c4;
-    transform: rotate(-3deg);
-    box-shadow: 3px 3px 0 rgba(26, 86, 196, 0.3);
-}
-
-:root[data-theme="draft"] .logo-text {
-    letter-spacing: 2px;
-}
-
-:root[data-theme="draft"] .panel-view-header {
-    border-bottom: 2px solid #1a56c4;
-    box-shadow: 0 4px 0 -2px rgba(232, 113, 10, 0.45);
-}
-
-:root[data-theme="draft"] .panel-view-title,
-:root[data-theme="draft"] .empty-state-title {
-    letter-spacing: 3px;
-}
-
-:root[data-theme="draft"] .panel-view-title::after {
-    content: ' [A-01]';
-    color: var(--pencil-color);
-    font-weight: 400;
-}
-
-:root[data-theme="draft"] .send-button {
-    background: #1a56c4;
-    color: #ffffff;
-    box-shadow: 3px 3px 0 rgba(26, 86, 196, 0.25);
-}
-
-:root[data-theme="draft"] .send-button:hover:not(:disabled) {
-    background: #12275c;
-    box-shadow: 5px 5px 0 rgba(232, 113, 10, 0.4);
-}
-
-:root[data-theme="draft"] .new-chat-btn:hover {
-    background: #1a56c4;
-    border-color: #1a56c4;
-    color: #ffffff;
-}
-
-:root[data-theme="draft"] .header-nav-btn:hover,
-:root[data-theme="draft"] .header-nav-btn.active {
-    border-color: #1a56c4;
-    border-style: dashed;
-    color: #1a56c4;
-}
-
-:root[data-theme="draft"] .user-message {
-    background: #1a56c4;
-    color: #ffffff;
-    border-radius: 0;
-    box-shadow: 4px 4px 0 rgba(26, 86, 196, 0.22);
-}
-
-:root[data-theme="draft"] .conversation-item.active {
-    border-color: #1a56c4;
-    box-shadow: inset 3px 0 0 var(--pencil-color), 3px 3px 0 rgba(26, 86, 196, 0.15);
-}
-
-:root[data-theme="draft"] .info-card:hover,
-:root[data-theme="draft"] .conversation-item:hover {
-    border-color: #1a56c4;
-    border-style: dashed;
-    background-image: repeating-linear-gradient(45deg, rgba(26, 86, 196, 0.06) 0px, rgba(26, 86, 196, 0.06) 5px, transparent 5px, transparent 10px);
-}
-
-:root[data-theme="draft"] .input-container:focus-within {
-    border-color: #1a56c4;
-    border-style: dashed;
-    box-shadow: 3px 3px 0 rgba(232, 113, 10, 0.28);
-}
-
 /* AURORA 覆写：面板半透明（极光可透过面板弥散；backdrop-filter 已移除以验证 GPU 开销） */
 :root[data-theme="aurora"] .sidebar {
     background: color-mix(in srgb, var(--bg-surface) 60%, transparent);
@@ -842,45 +534,34 @@
     border-radius: 8px;
 }
 
-/* VAPORWAVE 覆写：CRT 扫描线 + 色差文字 + 渐变按钮 */
-:root[data-theme="vaporwave"] body::after {
-    content: '';
-    position: fixed;
-    inset: 0;
-    pointer-events: none;
-    z-index: 9999;
-    background: repeating-linear-gradient(0deg, rgba(0, 0, 0, 0.14) 0px, rgba(0, 0, 0, 0.14) 1px, transparent 1px, transparent 3px),
-    radial-gradient(ellipse at center, transparent 55%, rgba(10, 4, 24, 0.5) 100%);
+:root[data-theme="aurora"] .new-chat-btn:hover {
+    border-color: #5ff0c0;
+    color: #5ff0c0;
+    box-shadow: 0 0 16px rgba(95, 240, 192, 0.3);
 }
 
-:root[data-theme="vaporwave"] .logo-text,
-:root[data-theme="vaporwave"] .panel-view-title,
-:root[data-theme="vaporwave"] .empty-state-title {
-    font-style: italic;
-    letter-spacing: 4px;
-    text-shadow: 2px 0 rgba(1, 205, 254, 0.6), -2px 0 rgba(255, 113, 206, 0.6);
+:root[data-theme="aurora"] .header-nav-btn:hover,
+:root[data-theme="aurora"] .header-nav-btn.active {
+    border-color: #5ff0c0;
+    color: #5ff0c0;
+    box-shadow: 0 0 12px rgba(95, 240, 192, 0.2);
 }
 
-:root[data-theme="vaporwave"] .send-button {
-    background: linear-gradient(135deg, #ff71ce, #01cdfe);
-    color: #1b1035;
+:root[data-theme="aurora"] .conversation-item.active {
+    background: rgba(95, 240, 192, 0.08);
+    border-color: rgba(95, 240, 192, 0.35);
+    box-shadow: inset 3px 0 0 #5ff0c0;
 }
 
-:root[data-theme="vaporwave"] .logo-icon {
-    background: linear-gradient(135deg, #ff71ce, #fffb96);
-    color: #1b1035;
-    box-shadow: 3px 3px 0 #01cdfe;
+:root[data-theme="aurora"] .info-card:hover {
+    border-color: rgba(95, 240, 192, 0.35);
+    box-shadow: 0 8px 24px rgba(95, 240, 192, 0.15);
+    transform: translateY(-2px);
 }
 
-:root[data-theme="vaporwave"] .header-nav-btn:hover,
-:root[data-theme="vaporwave"] .header-nav-btn.active {
-    border-color: #ff71ce;
-    color: #ff71ce;
-}
-
-:root[data-theme="vaporwave"] .user-message {
-    background: linear-gradient(135deg, #ff71ce, #b967ff);
-    color: #1b1035;
+:root[data-theme="aurora"] .input-container:focus-within {
+    border-color: rgba(95, 240, 192, 0.5);
+    box-shadow: 0 0 20px rgba(95, 240, 192, 0.18);
 }
 
 /* CYBERPUNK 覆写：斜切角 + 双色霓虹辉光（clip-path 会裁剪 box-shadow，辉光统一改用 drop-shadow 以贴合切角轮廓） */
@@ -983,52 +664,9 @@
     background: color-mix(in srgb, var(--bg-panel) 40%, transparent);
 }
 
-/* MATRIX 覆写：终端辉光 + 提示符 */
-:root[data-theme="matrix"] .logo-icon {
-    box-shadow: 0 0 12px rgba(0, 255, 65, 0.6);
-}
-
-:root[data-theme="matrix"] .logo-text,
-:root[data-theme="matrix"] .panel-view-title,
-:root[data-theme="matrix"] .empty-state-title {
-    text-shadow: 0 0 8px rgba(0, 255, 65, 0.7);
-    letter-spacing: 1px;
-}
-
-:root[data-theme="matrix"] .send-button {
-    box-shadow: 0 0 10px rgba(0, 255, 65, 0.45);
-}
-
-:root[data-theme="matrix"] .send-button:hover:not(:disabled) {
-    background: #00c832;
-    box-shadow: 0 0 18px rgba(0, 255, 65, 0.8);
-}
-
-:root[data-theme="matrix"] .input-container::after {
-    content: 'root@openagents:~$';
-}
-
-:root[data-theme="matrix"] .header-nav-btn:hover,
-:root[data-theme="matrix"] .header-nav-btn.active {
-    border-color: #00ff41;
-    box-shadow: 0 0 8px rgba(0, 255, 65, 0.3);
-}
-
-:root[data-theme="matrix"] details > summary {
-    text-shadow: 0 0 6px rgba(0, 255, 65, 0.5);
-}
-
-:root[data-theme="matrix"] .user-message {
-    box-shadow: 0 0 14px rgba(0, 255, 65, 0.35);
-}
-
-:root[data-theme="matrix"] .info-card:hover {
-    border-color: #00ff41;
-    box-shadow: 0 0 12px rgba(0, 255, 65, 0.25);
-}
-
-:root[data-theme="matrix"] .message-input {
-    caret-color: #00ff41;
+/* 输入区上方渐隐条同步半透明，避免一条不透明色带切断玻璃质感 */
+:root[data-theme="cyberpunk"] .input-wrapper::before {
+    background: linear-gradient(to top, color-mix(in srgb, var(--bg-panel) 40%, transparent), transparent);
 }
 
 /* BLACK HOLE 覆写：毛玻璃深空面板 + 吸积盘橙辉光，黑洞透过面板隐约可见 */
@@ -1165,12 +803,8 @@
 :root[data-theme="dark"] *,
 :root[data-theme="ink"] *,
 :root[data-theme="sunset"] *,
-:root[data-theme="botanica"] *,
-:root[data-theme="draft"] *,
 :root[data-theme="aurora"] *,
-:root[data-theme="vaporwave"] *,
 :root[data-theme="cyberpunk"] *,
-:root[data-theme="matrix"] *,
 :root[data-theme="blackhole"] * {
     transition: background-color 0.3s ease, color 0.3s ease, border-color 0.3s ease, box-shadow 0.3s ease;
 }

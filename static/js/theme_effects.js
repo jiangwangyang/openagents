@@ -1,5 +1,5 @@
 // ==========================================
-// 主题动态粒子特效引擎（背景装饰由 CSS 变量驱动，此引擎负责飘叶/光尘/星尘/字符雨等）
+// 主题动态粒子特效引擎（背景装饰由 CSS 变量驱动，此引擎负责飘叶/光尘/星尘/霓虹雨等）
 // ==========================================
 // 主题特效配置表：key 为 data-theme 值，null 表示该主题无动态特效
 const THEME_EFFECTS = {
@@ -7,18 +7,11 @@ const THEME_EFFECTS = {
     'dark': null,
     'ink': {kind: 'ink', count: 14},
     'sunset': {kind: 'sunset', count: 22},
-    'botanica': {kind: 'botanica', count: 26},
-    'draft': {kind: 'draft', count: 16},
     'aurora': {kind: 'aurora', count: 90},
-    'vaporwave': {kind: 'vapor', count: 55},
     'cyberpunk': {kind: 'neon-rain', count: 42},
-    'matrix': {kind: 'matrix', count: 0},
     // 黑洞主题为独立 WebGL 渲染层（theme_blackhole.js），不走下方 2D 粒子循环
     'blackhole': {kind: 'blackhole', count: 0}
 };
-
-// 矩阵字符雨字符集：日文片假名 + 数字 + 符号
-const MATRIX_CHARS = 'アイウエオカキクケコサシスセソタチツテトナニヌネノ0123456789ABCDEFZ:\u30fb."=*+-<>'.split('');
 
 // 运行时状态（纯数据对象）
 let fx = {running: false, raf: null, parts: [], kind: null, canvas: null, ctx: null, scenery: null, sctx: null, last: 0, t: 0, meteors: [], gridOff: 0};
@@ -53,10 +46,6 @@ function initThemeEffects() {
         if (fx.scenery) {
             fx.scenery.width = window.innerWidth;
             fx.scenery.height = window.innerHeight;
-        }
-        // 矩阵字符列密度依赖画布宽度，缩放后按新宽度重建
-        if (fx.kind === 'matrix') {
-            startThemeEffects(document.documentElement.dataset.theme);
         }
     });
     startThemeEffects(document.documentElement.dataset.theme);
@@ -100,9 +89,7 @@ function startThemeEffects(theme) {
     }
     const w = fx.canvas.width;
     const h = fx.canvas.height;
-    // 矩阵特效一列即一个粒子，列数由画布宽度决定；其余主题使用配置数量
-    const count = cfg.kind === 'matrix' ? Math.ceil(w / 16) : cfg.count;
-    for (let i = 0; i < count; i++) {
+    for (let i = 0; i < cfg.count; i++) {
         fx.parts.push(makeParticle(fx.kind, w, h, i, theme));
     }
     fx.running = true;
@@ -110,35 +97,11 @@ function startThemeEffects(theme) {
     fx.raf = requestAnimationFrame(tick);
 }
 
-// 生成单个粒子对象（飘叶/光尘/星尘/字符雨等类型，按主题特效 kind 分发）
+// 生成单个粒子对象（飘叶/光尘/星尘/霓虹雨等类型，按主题特效 kind 分发）
 function makeParticle(kind, w, h, seed, theme) {
     const rand = (min, max) => min + Math.random() * (max - min);
     const p = {x: rand(0, w), y: rand(0, h), r: rand(1, 6), vx: 0, vy: 0, sway: 0, swaySpeed: rand(0.4, 1.6), phase: rand(0, Math.PI * 2), rot: rand(0, Math.PI * 2), rotSpeed: 0, color: '#ffffff', opacity: 0.4};
-    if (kind === 'botanica') {
-        // 植物图鉴：2/3 为半透明落叶剪影，1/3 为缓慢上浮的孢子光点
-        if (seed % 3 === 2) {
-            p.shape = 'spore';
-            p.r = rand(1, 2.2);
-            p.vy = -rand(8, 20);
-            p.sway = rand(16, 36);
-            p.swaySpeed = rand(0.3, 0.8);
-            p.twinkleSpeed = rand(0.8, 2);
-            p.baseOpacity = rand(0.2, 0.5);
-            p.opacity = p.baseOpacity;
-            p.color = '#d9b84f';
-        } else {
-            p.shape = 'leaf';
-            p.r = rand(6, 12);
-            p.vy = rand(14, 30);
-            p.sway = rand(30, 60);
-            p.swaySpeed = rand(0.4, 1);
-            p.rot = rand(0, Math.PI * 2);
-            p.rotSpeed = rand(-0.6, 0.6);
-            p.color = ['#2c5236', '#47724f', '#6b8f5e', '#8aa96f'][seed % 4];
-            p.opacity = rand(0.1, 0.24);
-            p.y = rand(-40, h);
-        }
-    } else if (kind === 'sunset') {
+    if (kind === 'sunset') {
         // 黄金时刻：3/4 为上升的暖光尘，1/4 为掠过天空的海鸥剪影
         if (seed % 4 === 3) {
             p.shape = 'bird';
@@ -168,16 +131,6 @@ function makeParticle(kind, w, h, seed, theme) {
         p.r = rand(0.8, 1.8);
         p.color = ['#00f0ff', '#ff2a6d', '#b967ff', '#01cdfe'][seed % 4];
         p.opacity = rand(0.25, 0.7);
-    } else if (kind === 'matrix') {
-        // 矩阵：字符雨列，预生成整列随机字符，下落途中随机突变
-        p.x = seed * 16 + 8;
-        p.y = rand(-h, 0);
-        p.vy = rand(140, 340);
-        p.trail = Math.floor(rand(10, 24));
-        p.chars = [];
-        for (let c = 0; c < p.trail; c++) {
-            p.chars.push(MATRIX_CHARS[Math.floor(Math.random() * MATRIX_CHARS.length)]);
-        }
     } else if (kind === 'aurora') {
         // 极光：闪烁星尘（极光带与流星在主循环中程序化绘制）
         p.r = rand(0.4, 1.6);
@@ -185,25 +138,6 @@ function makeParticle(kind, w, h, seed, theme) {
         p.baseOpacity = rand(0.15, 0.75);
         p.opacity = p.baseOpacity;
         p.color = '#ffffff';
-    } else if (kind === 'vapor') {
-        // 蒸汽波：2/3 为像素星，1/3 为缓慢上浮的线框几何体
-        if (seed % 3 === 2) {
-            p.shape = seed % 9 === 2 ? 'tri' : (seed % 9 === 5 ? 'sphere' : 'square');
-            p.r = rand(10, 26);
-            p.vy = -rand(6, 16);
-            p.rotSpeed = rand(-0.5, 0.5);
-            p.color = ['#ff71ce', '#01cdfe', '#fffb96'][seed % 3];
-            p.opacity = rand(0.25, 0.5);
-            p.y = rand(h * 0.2, h);
-        } else {
-            p.shape = 'star';
-            p.r = rand(1, 2.5);
-            p.twinkleSpeed = rand(1, 3);
-            p.baseOpacity = rand(0.3, 0.9);
-            p.opacity = p.baseOpacity;
-            p.color = ['#ffffff', '#fffb96', '#01cdfe'][seed % 3];
-            p.y = rand(0, h * 0.75);
-        }
     } else if (kind === 'ink') {
         // 水墨：偶数位为晕染墨滴（生长-消退-重生），奇数位为飘落竹叶
         if (seed % 2 === 0) {
@@ -231,29 +165,6 @@ function makeParticle(kind, w, h, seed, theme) {
             p.opacity = rand(0.25, 0.5);
             p.y = rand(-40, h);
         }
-    } else if (kind === 'draft') {
-        // 蓝图：十字测绘光标 + 旋转虚线圆规圆 + 飘移尺寸标注碎片，制图蓝为主，偶现铅笔橙
-        p.vx = rand(-9, 9);
-        p.vy = rand(-7, 7);
-        p.color = '#1a56c4';
-        if (seed % 4 === 0) {
-            p.shape = 'compass';
-            p.r = rand(26, 62);
-            p.rotSpeed = rand(-0.3, 0.3);
-            p.baseOpacity = rand(0.09, 0.17);
-        } else if (seed % 4 === 3) {
-            p.shape = 'dim';
-            p.text = ['\u230018', 'R47', '45\u00b0', '\u2300128', '1:1', 'A-01'][seed % 6];
-            p.r = rand(10, 14);
-            p.rot = rand(-0.14, 0.14);
-            p.color = seed % 8 === 3 ? '#e8710a' : '#1a56c4';
-            p.baseOpacity = rand(0.1, 0.2);
-        } else {
-            p.shape = 'cross';
-            p.r = rand(5, 11);
-            p.baseOpacity = rand(0.14, 0.3);
-        }
-        p.opacity = p.baseOpacity;
     }
     return p;
 }
@@ -291,29 +202,7 @@ function tick(now) {
         const p = fx.parts[i];
         p.phase += p.swaySpeed * dt;
         const swayX = Math.sin(p.phase) * p.sway;
-        if (fx.kind === 'botanica') {
-            if (p.shape === 'spore') {
-                // 孢子光点：缓慢上浮、左右摇曳、明暗呼吸，出顶后回到底部
-                p.x += Math.sin(p.phase) * p.sway * dt;
-                p.y += p.vy * dt;
-                p.opacity = p.baseOpacity * (0.55 + 0.45 * Math.sin(p.phase * p.twinkleSpeed));
-                if (p.y < -12) {
-                    p.y = h + 12;
-                    p.x = Math.random() * w;
-                }
-                drawDot(ctx, p);
-            } else {
-                // 落叶剪影：下落摆动旋转，出底后回顶部重生（复用水墨竹叶叶形绘制）
-                p.x += Math.sin(p.phase) * p.sway * dt;
-                p.y += p.vy * dt;
-                p.rot += p.rotSpeed * dt;
-                if (p.y > h + 30) {
-                    p.y = -30;
-                    p.x = Math.random() * w;
-                }
-                drawLeaf(ctx, p);
-            }
-        } else if (fx.kind === 'sunset') {
+        if (fx.kind === 'sunset') {
             if (p.shape === 'bird') {
                 // 海鸥：水平滑翔掠过天空，出屏后从另一侧重新入场
                 p.x += p.vx * dt;
@@ -342,39 +231,11 @@ function tick(now) {
                 p.x = Math.random() * w;
             }
             drawRainStreak(ctx, p);
-        } else if (fx.kind === 'matrix') {
-            // 矩阵字符雨：整列下落，途中随机突变字符，尾部出屏后整列重生
-            p.y += p.vy * dt;
-            if (Math.random() < 0.08) {
-                p.chars[Math.floor(Math.random() * p.trail)] = MATRIX_CHARS[Math.floor(Math.random() * MATRIX_CHARS.length)];
-            }
-            if (p.y - p.trail * 16 > h) {
-                p.y = -(Math.random() * 300 + 20);
-                p.vy = 140 + Math.random() * 200;
-            }
-            drawMatrixColumn(ctx, p);
         } else if (fx.kind === 'aurora') {
             // 极光盘星尘：静止闪烁
             p.opacity = p.baseOpacity * (0.5 + 0.5 * Math.sin(p.phase * p.twinkleSpeed));
             p.phase += dt;
             drawDot(ctx, p);
-        } else if (fx.kind === 'vapor') {
-            if (p.shape === 'star') {
-                // 像素星：方块闪烁
-                p.opacity = p.baseOpacity * (0.5 + 0.5 * Math.sin(p.phase * p.twinkleSpeed));
-                p.phase += dt;
-                drawPixelStar(ctx, p);
-            } else {
-                // 线框几何体：缓慢上浮旋转，出顶后回到底部
-                p.y += p.vy * dt;
-                p.rot += p.rotSpeed * dt;
-                p.x += Math.sin(p.phase) * 6 * dt;
-                if (p.y < -40) {
-                    p.y = h + 40;
-                    p.x = Math.random() * w;
-                }
-                drawVaporShape(ctx, p);
-            }
         } else if (fx.kind === 'ink') {
             if (p.shape === 'drop') {
                 // 墨滴：生长扩散随年龄消退，寿尽后在新位置重生
@@ -405,24 +266,11 @@ function tick(now) {
                 }
                 drawLeaf(ctx, p);
             }
-        } else if (fx.kind === 'draft') {
-            // 蓝图制图标记：缓慢漂移巡游 + 透明度呼吸，出界后从另一侧环绕入场
-            p.x += p.vx * dt;
-            p.y += p.vy * dt;
-            p.opacity = p.baseOpacity * (0.55 + 0.45 * Math.sin(p.phase * 1.3));
-            if (p.shape === 'compass') {
-                p.rot += p.rotSpeed * dt;
-            }
-            if (p.x < -80) p.x = w + 80;
-            if (p.x > w + 80) p.x = -80;
-            if (p.y < -80) p.y = h + 80;
-            if (p.y > h + 80) p.y = -80;
-            drawDraftMark(ctx, p);
         }
     }
 }
 
-// 绘制光点（光尘/星光/孢子通用）
+// 绘制光点（光尘/星光通用）
 function drawDot(ctx, p) {
     ctx.save();
     ctx.globalAlpha = p.opacity;
@@ -430,50 +278,6 @@ function drawDot(ctx, p) {
     ctx.beginPath();
     ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
     ctx.fill();
-    ctx.restore();
-}
-
-// 绘制蓝图制图标记：十字测绘准线 / 旋转虚线圆规圆 / 尺寸标注文字
-function drawDraftMark(ctx, p) {
-    ctx.save();
-    ctx.translate(p.x, p.y);
-    ctx.globalAlpha = Math.max(p.opacity, 0);
-    ctx.strokeStyle = p.color;
-    ctx.fillStyle = p.color;
-    ctx.lineWidth = 1.2;
-    if (p.shape === 'compass') {
-        // 圆规圆：虚线圆绕心旋转，中心带小十字定位标记
-        ctx.rotate(p.rot);
-        ctx.setLineDash([7, 6]);
-        ctx.beginPath();
-        ctx.arc(0, 0, p.r, 0, Math.PI * 2);
-        ctx.stroke();
-        ctx.setLineDash([]);
-        ctx.beginPath();
-        ctx.moveTo(-p.r * 0.16, 0);
-        ctx.lineTo(p.r * 0.16, 0);
-        ctx.moveTo(0, -p.r * 0.16);
-        ctx.lineTo(0, p.r * 0.16);
-        ctx.stroke();
-    } else if (p.shape === 'dim') {
-        // 尺寸标注碎片：等宽字体微倾斜飘移
-        ctx.rotate(p.rot);
-        ctx.font = p.r + 'px "JetBrains Mono", monospace';
-        ctx.textAlign = 'center';
-        ctx.textBaseline = 'middle';
-        ctx.fillText(p.text, 0, 0);
-    } else {
-        // 十字测绘准线：十字线 + 内圈同心圆
-        ctx.beginPath();
-        ctx.moveTo(-p.r, 0);
-        ctx.lineTo(p.r, 0);
-        ctx.moveTo(0, -p.r);
-        ctx.lineTo(0, p.r);
-        ctx.stroke();
-        ctx.beginPath();
-        ctx.arc(0, 0, p.r * 0.45, 0, Math.PI * 2);
-        ctx.stroke();
-    }
     ctx.restore();
 }
 
@@ -571,28 +375,6 @@ function drawRainStreak(ctx, p) {
     ctx.restore();
 }
 
-// 绘制矩阵字符列：头部亮白带辉光，尾部绿色渐隐
-function drawMatrixColumn(ctx, p) {
-    ctx.save();
-    ctx.font = '14px "JetBrains Mono", monospace';
-    ctx.textAlign = 'center';
-    for (let i = 0; i < p.trail; i++) {
-        const y = p.y - i * 16;
-        if (y < -16 || y > fx.canvas.height + 16) continue;
-        const fade = 1 - i / p.trail;
-        if (i === 0) {
-            ctx.fillStyle = 'rgba(220, 255, 220, 0.95)';
-            ctx.shadowColor = '#00ff41';
-            ctx.shadowBlur = 8;
-        } else {
-            ctx.fillStyle = `rgba(0, 255, 65, ${(fade * 0.75).toFixed(3)})`;
-            ctx.shadowBlur = 0;
-        }
-        ctx.fillText(p.chars[i], p.x, y);
-    }
-    ctx.restore();
-}
-
 // 绘制极光带：三条正弦扭曲的渐变光带，lighter 混合叠加发光
 function drawAuroraBands(ctx, w, h, t) {
     const bands = [
@@ -652,48 +434,6 @@ function updateMeteors(ctx, w, h, dt) {
         ctx.moveTo(m.x, m.y);
         ctx.lineTo(m.x - m.vx * 0.25, m.y - m.vy * 0.25);
         ctx.stroke();
-    }
-    ctx.restore();
-}
-
-// 绘制像素星：复古方块
-function drawPixelStar(ctx, p) {
-    ctx.save();
-    ctx.globalAlpha = p.opacity;
-    ctx.fillStyle = p.color;
-    const s = p.r * 2;
-    ctx.fillRect(p.x - s / 2, p.y - s / 2, s, s);
-    ctx.restore();
-}
-
-// 绘制蒸汽波线框几何体：三角形 / 经纬球 / 方块
-function drawVaporShape(ctx, p) {
-    ctx.save();
-    ctx.translate(p.x, p.y);
-    ctx.rotate(p.rot);
-    ctx.globalAlpha = p.opacity;
-    ctx.strokeStyle = p.color;
-    ctx.lineWidth = 1.4;
-    if (p.shape === 'tri') {
-        ctx.beginPath();
-        ctx.moveTo(0, -p.r);
-        ctx.lineTo(p.r * 0.87, p.r * 0.5);
-        ctx.lineTo(-p.r * 0.87, p.r * 0.5);
-        ctx.closePath();
-        ctx.stroke();
-    } else if (p.shape === 'sphere') {
-        ctx.beginPath();
-        ctx.arc(0, 0, p.r, 0, Math.PI * 2);
-        ctx.stroke();
-        for (let i = 1; i <= 3; i++) {
-            const yy = -p.r + (p.r * 2 * i) / 4;
-            const rr = Math.sqrt(Math.max(p.r * p.r - yy * yy, 1));
-            ctx.beginPath();
-            ctx.ellipse(0, yy, rr, rr * 0.25, 0, 0, Math.PI * 2);
-            ctx.stroke();
-        }
-    } else {
-        ctx.strokeRect(-p.r * 0.6, -p.r * 0.6, p.r * 1.2, p.r * 1.2);
     }
     ctx.restore();
 }

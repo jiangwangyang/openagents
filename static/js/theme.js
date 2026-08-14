@@ -47,6 +47,8 @@ function syncThemePicker(theme) {
     if (menu) {
         menu.querySelectorAll('.theme-picker-item').forEach(item => {
             item.classList.toggle('active', item.dataset.theme === theme);
+            // 随语言切换刷新菜单项文案（i18n.js 的 setLanguage 会调用本函数）
+            item.querySelector('.theme-picker-text').textContent = t('theme.' + item.dataset.theme);
         });
     }
 }
@@ -78,6 +80,7 @@ function initThemePicker() {
         swatchDot.style.background = meta.accent;
         swatch.appendChild(swatchDot);
         const text = document.createElement('span');
+        text.className = 'theme-picker-text';
         text.textContent = t('theme.' + meta.id);
         item.appendChild(swatch);
         item.appendChild(text);

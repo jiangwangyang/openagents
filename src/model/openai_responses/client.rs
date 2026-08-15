@@ -141,8 +141,9 @@ pub async fn create_message_stream(
         std::future::ready(match result {
             Ok(event) => match serde_json::from_str::<ResponseStreamEvent>(&event.data) {
                 Ok(evt) => Some(Ok(evt)),
+                // 走到这里说明已建模事件的字段结构与协议不符
                 Err(e) => {
-                    tracing::warn!("未知 SSE 事件: {} error={}", event.data, e);
+                    tracing::warn!("SSE 事件解析失败: {} error={}", event.data, e);
                     None
                 }
             },
@@ -254,6 +255,7 @@ pub async fn create_message_stream(
                 }
                 ResponseStreamEvent::ResponseFailed { response } => vec![Err(OpenAiResponsesError::Failed(response.error.map(|e| e.to_string()).unwrap_or_default()))],
                 ResponseStreamEvent::Error { message } => vec![Err(OpenAiResponsesError::Failed(message.unwrap_or_default()))],
+                ResponseStreamEvent::Unknown => vec![],
             },
         };
         futures_util::stream::iter(events)

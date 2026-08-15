@@ -29,7 +29,7 @@ pub struct ReasoningConfig {
 
 // ========== 流事件 ==========
 
-// 流式事件(仅建模转换所需的事件, 未知事件解析失败即跳过)
+// 流式事件(仅建模转换所需的事件, 未建模的事件归为 Unknown 直接跳过)
 #[derive(Debug, Clone, Deserialize)]
 #[serde(tag = "type")]
 pub enum ResponseStreamEvent {
@@ -53,6 +53,9 @@ pub enum ResponseStreamEvent {
     FunctionCallArgumentsDelta { item_id: String, output_index: u32, delta: String },
     #[serde(rename = "error")]
     Error { message: Option<String> },
+    // 协议中无需处理的生命周期事件(如 response.in_progress / *_part.added / *.done 等)
+    #[serde(other)]
+    Unknown,
 }
 
 // 响应对象(response.created/completed 中的 response)

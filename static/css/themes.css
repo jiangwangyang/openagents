@@ -18,6 +18,7 @@
     --accent-color: #121417;
     --danger-color: #e03131;
     --danger-bg: #fff5f5;
+    --success-color: #16a34a;
 
     --shadow-rgb: 18, 20, 23;
     --shadow-hard: 4px 4px 0 rgba(var(--shadow-rgb), 0.06);
@@ -36,7 +37,6 @@
 
     --radius-sm: 4px;
     --radius-md: 8px;
-    --radius-lg: 12px;
 
     --font-display: -apple-system, 'Segoe UI', 'PingFang SC', 'Microsoft YaHei', sans-serif;
     --font-body: -apple-system, 'Segoe UI', 'PingFang SC', 'Microsoft YaHei', sans-serif;
@@ -59,6 +59,7 @@
     --accent-color: #e6e8eb;
     --danger-color: #ff6b6b;
     --danger-bg: #2b1d1d;
+    --success-color: #4ade80;
 
     --shadow-rgb: 0, 0, 0;
     --shadow-hard: 4px 4px 0 rgba(var(--shadow-rgb), 0.3);
@@ -75,7 +76,6 @@
 
     --radius-sm: 4px;
     --radius-md: 8px;
-    --radius-lg: 12px;
 
     --font-display: -apple-system, 'Segoe UI', 'PingFang SC', 'Microsoft YaHei', sans-serif;
     --font-body: -apple-system, 'Segoe UI', 'PingFang SC', 'Microsoft YaHei', sans-serif;
@@ -99,6 +99,7 @@
     --accent-color: #b03a2e;
     --danger-color: #a02818;
     --danger-bg: #f7e3dc;
+    --success-color: #3d6b4f;
 
     --shadow-rgb: 28, 26, 23;
     --shadow-hard: 3px 4px 0 rgba(var(--shadow-rgb), 0.08);
@@ -115,7 +116,6 @@
 
     --radius-sm: 2px;
     --radius-md: 4px;
-    --radius-lg: 6px;
 
     --font-display: 'Noto Serif SC', 'Songti SC', 'STSong', Georgia, serif;
     --font-body: 'Noto Serif SC', 'Songti SC', 'STSong', Georgia, serif;
@@ -149,6 +149,7 @@
     --accent-color: #e85d3d;
     --danger-color: #c22e49;
     --danger-bg: #fdeef2;
+    --success-color: #65a30d;
 
     --shadow-rgb: 78, 35, 51;
     --shadow-hard: 4px 4px 0 rgba(var(--shadow-rgb), 0.06);
@@ -165,7 +166,6 @@
 
     --radius-sm: 10px;
     --radius-md: 16px;
-    --radius-lg: 24px;
 
     --font-display: 'Quicksand', 'Segoe UI', 'PingFang SC', 'Microsoft YaHei', sans-serif;
     --font-body: 'Quicksand', 'Segoe UI', 'PingFang SC', 'Microsoft YaHei', sans-serif;
@@ -200,6 +200,7 @@
     --accent-color: #5ff0c0;
     --danger-color: #ff7a9e;
     --danger-bg: #2b1524;
+    --success-color: #5ff0c0;
 
     --shadow-rgb: 0, 0, 0;
     --shadow-hard: 0 8px 32px rgba(var(--shadow-rgb), 0.45);
@@ -216,7 +217,6 @@
 
     --radius-sm: 8px;
     --radius-md: 14px;
-    --radius-lg: 20px;
 
     --font-display: 'Outfit', 'Segoe UI', 'PingFang SC', 'Microsoft YaHei', sans-serif;
     --font-body: 'Outfit', 'Segoe UI', 'PingFang SC', 'Microsoft YaHei', sans-serif;
@@ -247,6 +247,7 @@
     --accent-color: #ff2a6d;
     --danger-color: #ff3860;
     --danger-bg: #2a0a18;
+    --success-color: #00ff9f;
 
     --shadow-rgb: 0, 240, 255;
     --shadow-hard: 4px 4px 0 rgba(var(--shadow-rgb), 0.18);
@@ -263,7 +264,6 @@
 
     --radius-sm: 0px;
     --radius-md: 0px;
-    --radius-lg: 0px;
 
     --font-display: 'JetBrains Mono', 'SF Mono', 'Fira Code', 'Courier New', monospace;
     --font-body: 'JetBrains Mono', 'SF Mono', 'Fira Code', 'Courier New', monospace;
@@ -294,6 +294,7 @@
     --accent-color: #ff9a3d;
     --danger-color: #ff5e5e;
     --danger-bg: #2a1010;
+    --success-color: #7bd88f;
 
     --shadow-rgb: 255, 154, 61;
     --shadow-hard: 4px 4px 0 rgba(var(--shadow-rgb), 0.12);
@@ -310,7 +311,6 @@
 
     --radius-sm: 8px;
     --radius-md: 14px;
-    --radius-lg: 20px;
 
     --font-display: 'JetBrains Mono', 'SF Mono', 'Fira Code', 'Courier New', monospace;
     --font-body: 'JetBrains Mono', 'SF Mono', 'Fira Code', 'Courier New', monospace;
@@ -522,6 +522,12 @@
     border-color: rgba(255, 255, 255, 0.08);
 }
 
+/* 摘要与详情区设为透明，让卡片级半透明背景透出（基础样式中二者为不透明色，会完全盖住卡片背景）；供应商表单区保留底色以区分编辑区 */
+:root[data-theme="aurora"] .info-card-summary,
+:root[data-theme="aurora"] .info-card-details:not(.details-surface) {
+    background: transparent;
+}
+
 :root[data-theme="aurora"] .send-button {
     background: linear-gradient(135deg, #5ff0c0 0%, #7b6cf0 100%);
     color: #060a18;
@@ -724,10 +730,14 @@
 }
 
 :root[data-theme="blackhole"] .info-card {
-    backdrop-filter: blur(12px);
-    -webkit-backdrop-filter: blur(12px);
     background: color-mix(in srgb, var(--bg-panel) 70%, transparent);
     border-color: rgba(255, 255, 255, 0.08);
+}
+
+/* 摘要与详情区设为透明，让卡片级半透明背景透出；卡片不再叠加 backdrop-filter（主面板玻璃层已模糊背景，叠加无视觉效果）；供应商表单区保留底色 */
+:root[data-theme="blackhole"] .info-card-summary,
+:root[data-theme="blackhole"] .info-card-details:not(.details-surface) {
+    background: transparent;
 }
 
 :root[data-theme="blackhole"] .logo-icon {
@@ -824,5 +834,6 @@
 :root[data-theme="aurora"] *,
 :root[data-theme="cyberpunk"] *,
 :root[data-theme="blackhole"] * {
-    transition: background-color 0.3s ease, color 0.3s ease, border-color 0.3s ease, box-shadow 0.3s ease;
+    /* 该规则优先级高于组件单类规则，必须列出 transform 与 opacity，否则会静默杀死组件过渡动画（toast 渐显、箭头旋转、hover 上浮等） */
+    transition: background-color 0.3s ease, color 0.3s ease, border-color 0.3s ease, box-shadow 0.3s ease, transform 0.2s cubic-bezier(0.2, 0, 0, 1), opacity 0.25s ease;
 }

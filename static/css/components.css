@@ -230,7 +230,7 @@ details.system-details .content {
     border-radius: var(--radius-sm);
     overflow: hidden;
     transition: var(--transition-snap);
-    box-shadow: 2px 2px 0 rgba(var(--shadow-rgb), 0.01);
+    box-shadow: 2px 2px 0 rgba(var(--shadow-rgb), 0.03);
 }
 
 .info-card::before {
@@ -312,6 +312,12 @@ details.system-details .content {
     font-size: 13.5px;
     line-height: 1.6;
     animation: slideDown 0.25s ease;
+}
+
+/* 供应商卡片的详情区为表单编辑区，用底色加实线分隔与只读详情区分（原 panel_provider.js 内联样式迁移至此） */
+.info-card-details.details-surface {
+    background: var(--bg-surface);
+    border-top: 1px solid var(--border-hard);
 }
 
 .details-grid {

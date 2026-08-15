@@ -50,7 +50,7 @@ function renderProvidersFormList(providers) {
                     <button class="delete-btn always-visible" style="color:var(--danger-color); font-size:11px; font-family:var(--font-mono); font-weight:700;">${DELETE_SVG}</button>
                 </div>
             </div>
-            <div class="info-card-details" style="display: none; background: var(--bg-surface); border-top: 1px solid var(--border-hard);">
+            <div class="info-card-details details-surface" style="display: none;">
                 <div class="form-row" style="margin-bottom: 12px;">
                     <div class="form-group flex-1">
                         <label class="form-label-strong">${t('config.providerName')}</label>

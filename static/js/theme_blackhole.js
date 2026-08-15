@@ -374,6 +374,11 @@ function tickBlackhole(now) {
 // 启动黑洞渲染：初始化 WebGL 并开始 RAF 循环；系统要求减少动态时仅渲染一帧静态画面
 function startBlackhole() {
     if (!initBlackhole()) {
+        // WebGL 不可用：隐藏不透明画布层（alpha:false 的空白画布为纯黑不透明），让 body 的 --backdrop-image 降级背景透出
+        const layer = document.getElementById('themeBlackhole');
+        if (layer) {
+            layer.style.display = 'none';
+        }
         return;
     }
     resizeBlackhole();

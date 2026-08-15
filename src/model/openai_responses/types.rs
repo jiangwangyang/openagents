@@ -70,6 +70,15 @@ pub struct Response {
 pub struct ResponseUsage {
     pub input_tokens: u64,
     pub output_tokens: u64,
+    // 输入 token 明细(缓存命中量,部分供应商不返回该字段)
+    pub input_tokens_details: Option<InputTokensDetails>,
+}
+
+// 输入 token 明细
+#[derive(Debug, Clone, Deserialize)]
+pub struct InputTokensDetails {
+    #[serde(default)]
+    pub cached_tokens: u64,
 }
 
 // 输出项(output_item.added/done 中的 item,仅建模转换所需的三种)

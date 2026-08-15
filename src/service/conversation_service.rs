@@ -353,6 +353,10 @@ async fn do_run_conversation(
                         if let Some(input_tokens) = usage.input_tokens {
                             msg["usage"]["input_tokens"] = json!(input_tokens);
                         }
+                        // 缓存命中 token 一并落库,避免持久化后丢失
+                        if let Some(cache_read_input_tokens) = usage.cache_read_input_tokens {
+                            msg["usage"]["cache_read_input_tokens"] = json!(cache_read_input_tokens);
+                        }
                         publish_chunk(
                             state,
                             conversation_id,

@@ -234,14 +234,18 @@ pub async fn create_message_stream(
                 },
                 ResponseStreamEvent::ResponseCompleted { response } | ResponseStreamEvent::ResponseIncomplete { response } => {
                     let stop_reason = if response.status.as_deref() == Some("incomplete") { "max_tokens" } else { "end_turn" };
-                    let (input_tokens, output_tokens) = response.usage.map(|u| (u.input_tokens, u.output_tokens)).unwrap_or((0, 0));
+                    let (input_tokens, output_tokens, cached_tokens) = response
+                        .usage
+                        .map(|u| (u.input_tokens, u.output_tokens, u.input_tokens_details.map(|d| d.cached_tokens).unwrap_or(0)))
+                        .unwrap_or((0, 0, 0));
+                    // cached_tokens 为缓存命中的输入 token,对齐基准协议的 cache_read_input_tokens; OpenAI 无缓存创建概念,cache_creation 恒为 None
                     vec![
                         Ok(MessageStreamEvent::MessageDelta {
                             delta: MessageDelta { stop_reason: Some(stop_reason.to_string()), stop_sequence: None },
                             usage: MessageDeltaUsage {
                                 output_tokens,
                                 cache_creation_input_tokens: None,
-                                cache_read_input_tokens: None,
+                                cache_read_input_tokens: Some(cached_tokens),
                                 input_tokens: Some(input_tokens),
                             },
                         }),

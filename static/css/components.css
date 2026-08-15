@@ -14,13 +14,15 @@
 .user-message {
     align-self: flex-end;
     max-width: 70%;
-    background: var(--charcoal-900);
-    color: var(--bg-canvas);
+    background: var(--user-msg-bg);
+    color: var(--user-msg-color);
     padding: 16px 20px;
-    border-radius: 2px;
+    border-radius: var(--user-msg-radius);
+    clip-path: var(--clip-interactive);
     font-size: 15px;
     line-height: 1.6;
-    box-shadow: var(--shadow-hard);
+    box-shadow: var(--user-msg-shadow);
+    filter: var(--user-msg-filter);
     animation: slideInRight 0.3s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
@@ -48,9 +50,10 @@ details > summary {
     list-style: none;
     padding: 10px 14px;
     font-size: 12px;
-    font-weight: 600;
+    font-weight: var(--summary-weight);
+    letter-spacing: var(--summary-spacing);
     font-family: var(--font-display);
-    color: var(--charcoal-700);
+    color: var(--summary-color);
     cursor: pointer;
     display: flex;
     align-items: center;
@@ -181,7 +184,7 @@ details.system-details .content {
     justify-content: space-between;
     align-items: center;
     padding-bottom: 16px;
-    border-bottom: 2px solid var(--charcoal-900);
+    border-bottom: var(--panel-header-border);
     margin-bottom: 8px;
 }
 
@@ -190,13 +193,16 @@ details.system-details .content {
     font-size: 20px;
     font-weight: 800;
     text-transform: uppercase;
-    letter-spacing: -0.5px;
 }
 
-.panel-view-title::after {
-    content: ' //';
-    color: var(--slate-300);
-    font-weight: 400;
+/* 标题主题化：字距/颜色/渐变底/辉光统一由各主题标题令牌驱动（--title-bg 非 none 时经 background-clip 呈现渐变文字） */
+.panel-view-title, .empty-state-title {
+    letter-spacing: var(--title-spacing);
+    color: var(--title-color);
+    background: var(--title-bg);
+    -webkit-background-clip: text;
+    background-clip: text;
+    text-shadow: var(--title-shadow);
 }
 
 /* 标题与副标题说明的纵向容器，flex:1 占满标题栏剩余空间避免副标题被压缩换行 */
@@ -225,9 +231,10 @@ details.system-details .content {
 
 .info-card {
     position: relative;
-    background: var(--bg-panel);
-    border: 1px solid var(--border-hard);
+    background: var(--card-bg);
+    border: 1px solid var(--card-border-color);
     border-radius: var(--radius-sm);
+    clip-path: var(--clip-interactive);
     overflow: hidden;
     transition: var(--transition-snap);
     box-shadow: 2px 2px 0 rgba(var(--shadow-rgb), 0.03);
@@ -251,8 +258,10 @@ details.system-details .content {
 }
 
 .info-card:hover {
-    border-color: var(--charcoal-900);
-    box-shadow: 4px 4px 0 rgba(var(--shadow-rgb), 0.04);
+    border-color: var(--card-hover-border);
+    box-shadow: var(--card-hover-shadow);
+    transform: var(--card-hover-transform);
+    filter: var(--card-hover-filter);
 }
 
 .info-card-summary {
@@ -263,7 +272,7 @@ details.system-details .content {
     justify-content: space-between;
     gap: 24px;
     user-select: none;
-    background: var(--summary-bg);
+    background: var(--card-summary-bg);
 }
 
 .info-card-main {
@@ -307,7 +316,7 @@ details.system-details .content {
 
 .info-card-details {
     padding: 20px;
-    background: var(--bg-panel);
+    background: var(--card-details-bg);
     border-top: 1px dashed var(--border-hard);
     font-size: 13.5px;
     line-height: 1.6;
@@ -577,7 +586,9 @@ input.form-control {
 
 /* ===== 6. 底部输入区 ===== */
 .input-wrapper {
-    background: color-mix(in srgb, var(--bg-panel) 90%, transparent);
+    background: var(--input-wrapper-bg);
+    backdrop-filter: var(--panel-blur);
+    -webkit-backdrop-filter: var(--panel-blur);
     padding: 20px 48px 32px;
     border-top: 1px solid var(--border-hard);
     position: relative;
@@ -590,7 +601,7 @@ input.form-control {
     left: 0;
     right: 0;
     height: 30px;
-    background: linear-gradient(to top, var(--bg-panel), transparent);
+    background: linear-gradient(to top, var(--input-fade-from), transparent);
     pointer-events: none;
 }
 
@@ -643,12 +654,14 @@ input.form-control {
     padding: 8px;
     border: 1px solid var(--border-hard);
     border-radius: var(--radius-sm);
+    clip-path: var(--clip-interactive);
     transition: var(--transition-snap);
 }
 
 .input-container:focus-within {
-    border-color: var(--charcoal-900);
-    box-shadow: 4px 4px 0 rgba(var(--shadow-rgb), 0.1);
+    border-color: var(--input-focus-border);
+    box-shadow: var(--input-focus-shadow);
+    filter: var(--input-focus-filter);
 }
 
 .input-container::after {
@@ -679,6 +692,7 @@ input.form-control {
     font-size: 15px;
     font-family: var(--font-body);
     color: var(--charcoal-900);
+    caret-color: var(--input-caret);
     outline: none;
     resize: none;
     min-height: 44px;
@@ -772,14 +786,22 @@ input.form-control {
 }
 
 .send-button {
-    background: var(--charcoal-900);
-    color: var(--bg-canvas);
+    background: var(--send-bg);
+    color: var(--send-color);
+    border-radius: var(--send-radius);
+    letter-spacing: var(--send-spacing);
+    box-shadow: var(--send-shadow);
+    clip-path: var(--clip-interactive);
+    filter: var(--send-filter);
 }
 
 .send-button:hover:not(:disabled) {
-    background: var(--charcoal-700);
-    transform: translate(-1px, -1px);
-    box-shadow: 3px 3px 0 rgba(var(--shadow-rgb), 0.2);
+    background: var(--send-hover-bg);
+    color: var(--send-hover-color);
+    transform: var(--send-hover-transform);
+    box-shadow: var(--send-hover-shadow);
+    filter: var(--send-hover-filter);
+    animation: var(--send-hover-animation);
 }
 
 .send-button:active:not(:disabled) {
@@ -826,7 +848,6 @@ input.form-control {
     font-weight: 700;
     margin-bottom: 12px;
     text-transform: uppercase;
-    letter-spacing: -0.5px;
 }
 
 .empty-state-text {

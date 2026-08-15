@@ -9,6 +9,11 @@
     box-sizing: border-box;
 }
 
+/* 全局常量：所有主题取值一致，禁止在主题中覆写 */
+:root {
+    --transition-snap: all 0.2s cubic-bezier(0.2, 0, 0, 1);
+}
+
 /* 文本选中（高亮）样式 */
 ::selection {
     background: var(--charcoal-900);
@@ -48,24 +53,20 @@ body::before {
     z-index: 0;
     pointer-events: none;
     background-color: var(--bg-canvas);
-    background-image: var(--backdrop-image, none);
-    background-size: var(--backdrop-size, cover);
-    background-position: var(--backdrop-position, center);
-    background-repeat: var(--backdrop-repeat, no-repeat);
+    background-image: var(--backdrop-image);
+    background-size: var(--backdrop-size);
+    background-position: var(--backdrop-position);
+    background-repeat: var(--backdrop-repeat);
     transition: background-color 0.4s ease, background-image 0.4s ease;
 }
 
-/* 布景层（Canvas 实体背景建筑，仅 cyberpunk 等需要的主题显示，位于静态背景之上、内容之下） */
+/* 布景层（Canvas 实体背景建筑，位于静态背景之上、内容之下，由各主题的 --scenery-display 令牌控制显隐） */
 #themeScenery {
     position: fixed;
     inset: 0;
     z-index: 0;
     pointer-events: none;
-    display: none;
-}
-
-:root[data-theme="cyberpunk"] #themeScenery {
-    display: block;
+    display: var(--scenery-display);
 }
 
 #themeSceneryCanvas {
@@ -88,17 +89,13 @@ body::before {
     height: 100%;
 }
 
-/* 黑洞主题 WebGL 渲染层（仅 blackhole 主题显示，位于静态背景之上、内容之下） */
+/* 黑洞 WebGL 渲染层（位于静态背景之上、内容之下，由各主题的 --blackhole-display 令牌控制显隐） */
 #themeBlackhole {
     position: fixed;
     inset: 0;
     z-index: 0;
     pointer-events: none;
-    display: none;
-}
-
-:root[data-theme="blackhole"] #themeBlackhole {
-    display: block;
+    display: var(--blackhole-display);
 }
 
 #blackholeCanvas {
@@ -140,7 +137,9 @@ body::before {
 /* ===== 5. 侧边栏 ===== */
 .sidebar {
     width: 320px;
-    background: color-mix(in srgb, var(--bg-surface) 88%, transparent);
+    background: var(--sidebar-bg);
+    backdrop-filter: var(--panel-blur);
+    -webkit-backdrop-filter: var(--panel-blur);
     display: flex;
     flex-direction: column;
     border-right: 1px solid var(--border-hard);
@@ -151,7 +150,9 @@ body::before {
 .sidebar-header {
     padding: 24px 20px;
     border-bottom: 1px solid var(--border-hard);
-    background: color-mix(in srgb, var(--bg-panel) 86%, transparent);
+    background: var(--sidebar-header-bg);
+    backdrop-filter: var(--panel-blur);
+    -webkit-backdrop-filter: var(--panel-blur);
 }
 
 .sidebar-logo {
@@ -164,15 +165,19 @@ body::before {
 .logo-icon {
     width: 32px;
     height: 32px;
-    background: var(--charcoal-900);
-    color: var(--bg-canvas);
+    background: var(--logo-bg);
+    color: var(--logo-color);
     display: flex;
     align-items: center;
     justify-content: center;
     font-family: var(--font-display);
     font-weight: 800;
     font-size: 18px;
-    border-radius: var(--radius-sm);
+    border-radius: var(--logo-radius);
+    box-shadow: var(--logo-shadow);
+    transform: var(--logo-transform);
+    clip-path: var(--logo-clip);
+    filter: var(--logo-filter);
     transition: var(--transition-snap);
 }
 
@@ -186,7 +191,10 @@ body::before {
     font-family: var(--font-display);
     font-size: 18px;
     font-weight: 700;
-    letter-spacing: -0.5px;
+    color: var(--logo-text-color);
+    letter-spacing: var(--logo-text-spacing);
+    text-shadow: var(--logo-text-shadow);
+    animation: var(--logo-text-animation);
     text-transform: uppercase;
 }
 
@@ -197,6 +205,7 @@ body::before {
     color: var(--charcoal-900);
     border: 1px solid var(--charcoal-900);
     border-radius: var(--radius-sm);
+    clip-path: var(--clip-interactive);
     font-size: 13px;
     font-weight: 600;
     font-family: var(--font-display);
@@ -211,10 +220,12 @@ body::before {
 }
 
 .new-chat-btn:hover {
-    background: var(--charcoal-900);
-    color: var(--bg-canvas);
+    background: var(--newchat-hover-bg);
+    color: var(--newchat-hover-color);
+    border-color: var(--newchat-hover-border);
     transform: translate(-1px, -1px);
-    box-shadow: 3px 3px 0 rgba(var(--shadow-rgb), 0.15);
+    box-shadow: var(--newchat-hover-shadow);
+    filter: var(--newchat-hover-filter);
 }
 
 .new-chat-btn:active {
@@ -243,6 +254,7 @@ body::before {
     padding: 8px 10px;
     margin-bottom: 2px;
     border-radius: var(--radius-sm);
+    clip-path: var(--clip-interactive);
     cursor: pointer;
     transition: var(--transition-snap);
     color: var(--charcoal-700);
@@ -259,11 +271,12 @@ body::before {
 }
 
 .conversation-item.active {
-    background: var(--bg-panel);
+    background: var(--conv-active-bg);
     color: var(--charcoal-900);
     font-weight: 600;
-    border-color: var(--border-soft);
-    box-shadow: 2px 2px 0 rgba(var(--shadow-rgb), 0.02);
+    border-color: var(--conv-active-border);
+    box-shadow: var(--conv-active-shadow);
+    filter: var(--conv-active-filter);
 }
 
 .conversation-item.active::before {
@@ -329,13 +342,17 @@ body::before {
     display: flex;
     flex-direction: column;
     min-width: 0;
-    background: color-mix(in srgb, var(--bg-panel) 92%, transparent);
+    background: var(--main-content-bg);
+    backdrop-filter: var(--panel-blur);
+    -webkit-backdrop-filter: var(--panel-blur);
     position: relative;
     z-index: 1;
 }
 
 .header {
-    background: color-mix(in srgb, var(--bg-panel) 88%, transparent);
+    background: var(--header-bg);
+    backdrop-filter: var(--panel-blur);
+    -webkit-backdrop-filter: var(--panel-blur);
     padding: 16px 32px;
     border-bottom: 1px solid var(--border-hard);
     display: flex;
@@ -359,6 +376,8 @@ body::before {
     padding: 6px 12px;
     background: transparent;
     border: 1px solid transparent;
+    border-radius: var(--nav-radius);
+    clip-path: var(--nav-clip);
     font-size: 12px;
     font-weight: 600;
     color: var(--slate-400);
@@ -371,9 +390,12 @@ body::before {
 }
 
 .header-nav-btn:hover, .header-nav-btn.active {
-    color: var(--charcoal-900);
-    border-color: var(--border-hard);
-    background: var(--bg-surface);
+    color: var(--nav-hover-color);
+    border-color: var(--nav-hover-border);
+    background: var(--nav-hover-bg);
+    box-shadow: var(--nav-hover-shadow);
+    text-shadow: var(--nav-hover-text-shadow);
+    filter: var(--nav-hover-filter);
 }
 
 .header-right {

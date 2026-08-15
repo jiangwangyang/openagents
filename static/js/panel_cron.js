@@ -96,7 +96,7 @@ async function fetchCronTasks() {
         tasks.forEach(task => {
             const cron = parseCronExpr(task.trigger);
             const enabledText = task.enabled ? t('cron.enabled') : t('cron.disabled');
-            const enabledColor = task.enabled ? 'var(--success-color, #22c55e)' : 'var(--slate-400)';
+            const enabledColor = task.enabled ? 'var(--success-color)' : 'var(--slate-400)';
             const card = document.createElement('div');
             card.className = 'info-card';
             card.id = `cron-card-${task.id}`;

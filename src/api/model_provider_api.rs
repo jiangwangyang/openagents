@@ -9,13 +9,13 @@ use crate::repository::entity::ModelProviderEntity;
 use crate::repository::model_provider_repository;
 use crate::state::AppState;
 
-// 查询全部模型提供商，按 id 升序
+// 查询全部模型提供商, 按 id 升序
 pub async fn list_model_providers(State(state): State<AppState>) -> Result<Json<Vec<ModelProviderEntity>>, AppError> {
     let providers = model_provider_repository::list_model_providers(&state.db).await?;
     Ok(Json(providers))
 }
 
-// 按 id 查询模型提供商，不存在返回 404
+// 按 id 查询模型提供商, 不存在返回 404
 pub async fn get_model_provider(State(state): State<AppState>, Path(provider_id): Path<i64>) -> Result<Json<ModelProviderEntity>, AppError> {
     let provider = model_provider_repository::get_model_provider(&state.db, provider_id).await?;
     match provider {
@@ -39,7 +39,7 @@ pub async fn add_model_provider(State(state): State<AppState>, Json(req): Json<M
     Ok(())
 }
 
-// 按 id 更新模型提供商，不存在返回 404
+// 按 id 更新模型提供商, 不存在返回 404
 pub async fn update_model_provider(State(state): State<AppState>, Path(provider_id): Path<i64>, Json(req): Json<ModelProviderRequest>) -> Result<(), AppError> {
     let updated = model_provider_repository::update_model_provider(&state.db, provider_id, &req.name, &req.protocol_type, &req.base_url, &req.api_key).await?;
     if !updated {
@@ -48,7 +48,7 @@ pub async fn update_model_provider(State(state): State<AppState>, Path(provider_
     Ok(())
 }
 
-// 按 id 删除模型提供商，不存在返回 404，被 Agent 引用返回 409
+// 按 id 删除模型提供商, 不存在返回 404, 被 Agent 引用返回 409
 pub async fn delete_model_provider(State(state): State<AppState>, Path(provider_id): Path<i64>) -> Result<(), AppError> {
     let provider = model_provider_repository::get_model_provider(&state.db, provider_id).await?;
     if provider.is_none() {
@@ -61,7 +61,7 @@ pub async fn delete_model_provider(State(state): State<AppState>, Path(provider_
     Ok(())
 }
 
-// 查询模型提供商的可用模型列表，按 provider 协议类型路由实时获取
+// 查询模型提供商的可用模型列表, 按 provider 协议类型路由实时获取
 pub async fn list_provider_models(State(state): State<AppState>, Path(provider_id): Path<i64>) -> Result<Json<Vec<String>>, AppError> {
     let provider = model_provider_repository::get_model_provider(&state.db, provider_id).await?;
     match provider {

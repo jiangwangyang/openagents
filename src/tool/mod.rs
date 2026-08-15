@@ -1,4 +1,4 @@
-// 内置工具实现
+// 内置工具: 定义、注册与分发
 pub mod file_tool;
 pub mod mcp_tool;
 pub mod shell_tool;
@@ -7,10 +7,10 @@ pub mod task_tool;
 
 use serde_json::Value;
 use sqlx::SqlitePool;
-
-use crate::state::SkillInfo;
 #[cfg(windows)]
 use std::os::windows::process::CommandExt;
+
+use crate::state::SkillInfo;
 
 // 工具执行上下文
 #[derive(Clone)]
@@ -96,7 +96,7 @@ fn which_pwsh() -> bool {
     cmd.arg("--version")
         .stdout(std::process::Stdio::null())
         .stderr(std::process::Stdio::null());
-    // Windows 下隐藏子进程控制台窗口,避免桌面模式调用外部模型时弹出黑框
+    // Windows 下隐藏子进程控制台窗口, 避免桌面模式调用外部模型时弹出黑框
     #[cfg(windows)]
     {
         cmd.creation_flags(0x08000000);

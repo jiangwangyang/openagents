@@ -94,7 +94,7 @@ pub async fn init_skills(skills_store: &std::sync::RwLock<Vec<SkillInfo>>) {
 
     // 更新存储
     {
-        // 锁被毒化时恢复内部数据继续写入，避免 panic
+        // 锁被毒化时恢复内部数据继续写入, 避免 panic
         let mut guard = skills_store.write().unwrap_or_else(|e| e.into_inner());
         *guard = skills;
     }

@@ -13,7 +13,7 @@ pub async fn get_web_storage(pool: &SqlitePool, key: &str) -> Result<Option<WebS
     .await
 }
 
-// 按 key 写入 Web 存储，不存在则新增，存在则更新 value 与 update_time
+// 按 key 写入 Web 存储, 不存在则新增, 存在则更新 value 与 update_time
 pub async fn put_web_storage(pool: &SqlitePool, key: &str, value: &str) -> Result<(), sqlx::Error> {
     let now = chrono::Local::now().to_rfc3339();
     sqlx::query(

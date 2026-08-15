@@ -1,4 +1,4 @@
-// 表结构对应的 struct(FromRow)
+// 表结构实体(FromRow)
 use sqlx::FromRow;
 
 // 模型提供商

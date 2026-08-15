@@ -5,9 +5,9 @@ use crate::repository::{agent_repository, conversation_repository, model_provide
 use crate::service::conversation_service;
 use crate::state::AppState;
 
-// 启动任务执行循环,同一 task 同时只允许一个循环运行
+// 启动任务执行循环, 同一 task 同时只允许一个循环运行
 pub fn start_task(state: &AppState, task_id: i64, agent_id: i64) -> bool {
-    // 防重入: entry 原子检查并插入,持锁期间不 await
+    // 防重入: entry 原子检查并插入, 持锁期间不 await
     match state.task_loops.entry(task_id) {
         dashmap::mapref::entry::Entry::Occupied(mut entry) => {
             if !entry.get().is_finished() {
@@ -74,7 +74,7 @@ async fn do_run_task(state: &AppState, task_id: i64, agent_id: i64) -> anyhow::R
             None => return Ok(()),
         };
 
-        // 最新的 agent 对话有消息(说明对话没有交接，则默认交接给用户),即创建一个无 agent 的用户对话并结束循环
+        // 最新的 agent 对话有消息(说明对话没有交接, 则默认交接给用户), 即创建一个无 agent 的用户对话并结束循环
         if latest.has_messages && latest.agent_id.is_some() {
             conversation_repository::add_conversation(
                 &state.db,
@@ -89,7 +89,7 @@ async fn do_run_task(state: &AppState, task_id: i64, agent_id: i64) -> anyhow::R
             return Ok(());
         }
 
-        // 最新对话无 agent(用户审核阶段),结束循环
+        // 最新对话无 agent(用户审核阶段), 结束循环
         let latest_agent_id = match latest.agent_id {
             Some(id) => id,
             None => return Ok(()),
@@ -147,7 +147,7 @@ async fn do_run_task(state: &AppState, task_id: i64, agent_id: i64) -> anyhow::R
         if !conversation_service::start_conversation(state, latest.id, task_content, provider.id, agent.model.clone(), agent.thinking).await {
             return Ok(());
         }
-        // 等待对话完成: 订阅通知并等待,订阅后先复查 done 避免错过完成信号
+        // 等待对话完成: 订阅通知并等待, 订阅后先复查 done 避免错过完成信号
         if let Some(conv_state) = conversation_service::get_conversation_state(state, latest.id) {
             let mut receiver = {
                 let s = conv_state.read().await;

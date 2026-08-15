@@ -3,7 +3,7 @@ use sqlx::SqlitePool;
 
 use super::entity::TaskEntity;
 
-// 查询全部任务，按 id 升序
+// 查询全部任务, 按 id 升序
 pub async fn list_tasks(pool: &SqlitePool) -> Result<Vec<TaskEntity>, sqlx::Error> {
     sqlx::query_as::<_, TaskEntity>(
         "SELECT id, title, content, agent_ids, work_dir, create_time, update_time FROM t_task ORDER BY id",
@@ -22,7 +22,7 @@ pub async fn get_task(pool: &SqlitePool, task_id: i64) -> Result<Option<TaskEnti
         .await
 }
 
-// 新增任务，返回自增 id
+// 新增任务, 返回自增 id
 pub async fn add_task(pool: &SqlitePool, title: &str, content: &str, agent_ids: &[i64], work_dir: &str) -> Result<i64, sqlx::Error> {
     let now = chrono::Local::now().to_rfc3339();
     let result = sqlx::query(
@@ -39,7 +39,7 @@ pub async fn add_task(pool: &SqlitePool, title: &str, content: &str, agent_ids: 
     Ok(result.last_insert_rowid())
 }
 
-// 按 id 删除任务，不存在返回 false
+// 按 id 删除任务, 不存在返回 false
 pub async fn delete_task(pool: &SqlitePool, task_id: i64) -> Result<bool, sqlx::Error> {
     let result = sqlx::query("DELETE FROM t_task WHERE id = ?")
         .bind(task_id)

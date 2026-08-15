@@ -1,4 +1,4 @@
-// AppError 统一错误类型与 IntoResponse 实现
+// 统一错误类型与 IntoResponse 实现
 use axum::http::StatusCode;
 use axum::response::{IntoResponse, Response};
 

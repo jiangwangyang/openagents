@@ -6,7 +6,7 @@ use crate::repository::{agent_repository, conversation_repository, task_reposito
 
 // 执行
 pub async fn execute(cmd_and_args: &[String], task_id: Option<i64>, db: &SqlitePool) -> ToolResult {
-    // 任务移交: task_id 为当前对话所属任务(独立对话为空)，为该任务创建新对话
+    // 任务移交: task_id 为当前对话所属任务(独立对话为空), 为该任务创建新对话
     let task_id = match task_id {
         Some(id) => id,
         None => return ("Not in a task context, cannot hand over".to_string(), true),
@@ -16,7 +16,7 @@ pub async fn execute(cmd_and_args: &[String], task_id: Option<i64>, db: &SqliteP
         return (format!("Unknown task command: {}", cmd_and_args.join(" ")), true);
     }
 
-    // 查询任务基本字段(交接只需标题/工作目录/团队,无需全量加载对话与消息)
+    // 查询任务基本字段(交接只需标题/工作目录/团队, 无需全量加载对话与消息)
     let task = match task_repository::get_task(db, task_id).await {
         Ok(Some(t)) => t,
         Ok(None) => return (format!("Task not found: {}", task_id), true),

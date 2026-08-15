@@ -9,13 +9,13 @@ use crate::repository::mcp_server_repository;
 use crate::state::AppState;
 use crate::tool::mcp_tool;
 
-// 查询全部 MCP 服务，按 id 升序
+// 查询全部 MCP 服务, 按 id 升序
 pub async fn list_mcp_servers(State(state): State<AppState>) -> Result<Json<Vec<McpServerEntity>>, AppError> {
     let servers = mcp_server_repository::list_mcp_servers(&state.db).await?;
     Ok(Json(servers))
 }
 
-// 按 id 查询 MCP 服务，不存在返回 404
+// 按 id 查询 MCP 服务, 不存在返回 404
 pub async fn get_mcp_server(State(state): State<AppState>, Path(server_id): Path<i64>) -> Result<Json<McpServerEntity>, AppError> {
     let server = mcp_server_repository::get_mcp_server(&state.db, server_id).await?;
     match server {
@@ -54,7 +54,7 @@ pub async fn add_mcp_stdio_server(State(state): State<AppState>, Json(req): Json
     Ok(())
 }
 
-// 按 id 更新 streamable_http 类型的 MCP 服务，不存在返回 404
+// 按 id 更新 streamable_http 类型的 MCP 服务, 不存在返回 404
 pub async fn update_mcp_streamable_http_server(State(state): State<AppState>, Path(server_id): Path<i64>, Json(req): Json<McpStreamableHttpRequest>) -> Result<(), AppError> {
     let updated = mcp_server_repository::update_mcp_server(&state.db, server_id, &req.name, &req.description, "streamable_http", Some(&req.url), req.headers.as_ref(), None, None).await?;
     if !updated {
@@ -63,7 +63,7 @@ pub async fn update_mcp_streamable_http_server(State(state): State<AppState>, Pa
     Ok(())
 }
 
-// 按 id 更新 stdio 类型的 MCP 服务，不存在返回 404
+// 按 id 更新 stdio 类型的 MCP 服务, 不存在返回 404
 pub async fn update_mcp_stdio_server(State(state): State<AppState>, Path(server_id): Path<i64>, Json(req): Json<McpStdioRequest>) -> Result<(), AppError> {
     let updated = mcp_server_repository::update_mcp_server(&state.db, server_id, &req.name, &req.description, "stdio", None, None, Some(&req.command), req.args.as_ref()).await?;
     if !updated {
@@ -72,7 +72,7 @@ pub async fn update_mcp_stdio_server(State(state): State<AppState>, Path(server_
     Ok(())
 }
 
-// 按 id 删除 MCP 服务，不存在返回 404
+// 按 id 删除 MCP 服务, 不存在返回 404
 pub async fn delete_mcp_server(State(state): State<AppState>, Path(server_id): Path<i64>) -> Result<(), AppError> {
     let deleted = mcp_server_repository::delete_mcp_server(&state.db, server_id).await?;
     if !deleted {
@@ -81,9 +81,9 @@ pub async fn delete_mcp_server(State(state): State<AppState>, Path(server_id): P
     Ok(())
 }
 
-// 按 id 连接数据库中的 MCP 服务，创建会话获取工具列表返回，不存在返回 404，连接失败返回 500
+// 按 id 连接数据库中的 MCP 服务, 创建会话获取工具列表返回, 不存在返回 404, 连接失败返回 500
 pub async fn list_mcp_server_tools(State(state): State<AppState>, Path(server_id): Path<i64>) -> Result<Json<Vec<serde_json::Value>>, AppError> {
-    // 先校验服务存在，不存在返回 404(连接内部的查询不再区分该场景)
+    // 先校验服务存在, 不存在返回 404(连接内部的查询不再区分该场景)
     let server = mcp_server_repository::get_mcp_server(&state.db, server_id).await?;
     if server.is_none() {
         return Err(AppError::NotFound("MCP server not found".to_string()));
@@ -108,7 +108,7 @@ pub async fn list_mcp_server_tools(State(state): State<AppState>, Path(server_id
             })
         })
         .collect();
-    // 获取完毕，关闭连接
+    // 获取完毕, 关闭连接
     let _ = service.cancel().await;
     Ok(Json(result))
 }

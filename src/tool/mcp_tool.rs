@@ -10,7 +10,7 @@ use sqlx::SqlitePool;
 
 use crate::repository::mcp_server_repository;
 
-// 连接 MCP 服务：按 id 从数据库读取配置即时创建客户端，获取工具与调用工具由调用方执行，使用完毕后由调用方 cancel
+// 连接 MCP 服务: 按 id 从数据库读取配置即时创建客户端, 获取工具与调用工具由调用方执行, 使用完毕后由调用方 cancel
 pub async fn connect_mcp_server(db: &SqlitePool, server_id: i64) -> Result<RunningService<RoleClient, ClientInfo>, String> {
     let server = mcp_server_repository::get_mcp_server(db, server_id)
         .await
@@ -29,7 +29,7 @@ pub async fn connect_mcp_server(db: &SqlitePool, server_id: i64) -> Result<Runni
             for arg in &args {
                 cmd.arg(arg);
             }
-            // Windows 下隐藏子进程控制台窗口,避免桌面模式调用外部模型时弹出黑框
+            // Windows 下隐藏子进程控制台窗口, 避免桌面模式调用外部模型时弹出黑框
             #[cfg(windows)]
             {
                 cmd.creation_flags(0x08000000);
@@ -70,7 +70,7 @@ pub async fn connect_mcp_server(db: &SqlitePool, server_id: i64) -> Result<Runni
     Ok(service)
 }
 
-// 执行 MCP 命令，用到某个客户端时按 id 从数据库读取配置即时创建，使用完后直接 cancel
+// 执行 MCP 命令, 用到某个客户端时按 id 从数据库读取配置即时创建, 使用完后直接 cancel
 pub async fn execute(cmd_and_args: &[String], db: &SqlitePool) -> (String, bool) {
     // 1. mcp server list
     if cmd_and_args.len() == 3 && cmd_and_args[0] == "mcp" && cmd_and_args[1] == "server" && cmd_and_args[2] == "list" {
@@ -117,7 +117,7 @@ pub async fn execute(cmd_and_args: &[String], db: &SqlitePool) -> (String, bool)
                 })
             })
             .collect();
-        // 使用完毕，关闭连接
+        // 使用完毕, 关闭连接
         let _ = service.cancel().await;
         return (serde_json::to_string(&result).unwrap_or_default(), false);
     }
@@ -152,7 +152,7 @@ pub async fn execute(cmd_and_args: &[String], db: &SqlitePool) -> (String, bool)
             "description": tool.description,
             "input_schema": tool.input_schema,
         });
-        // 使用完毕，关闭连接
+        // 使用完毕, 关闭连接
         let _ = service.cancel().await;
         return (serde_json::to_string(&result).unwrap_or_default(), false);
     }
@@ -204,7 +204,7 @@ pub async fn execute(cmd_and_args: &[String], db: &SqlitePool) -> (String, bool)
             }
             Err(e) => (format!("Tool call failed: {}", e), true),
         };
-        // 使用完毕，关闭连接
+        // 使用完毕, 关闭连接
         let _ = service.cancel().await;
         return call_result;
     }

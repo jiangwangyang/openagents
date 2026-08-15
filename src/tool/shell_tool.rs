@@ -58,7 +58,7 @@ pub async fn execute(cmd_and_args: &[String], work_dir: &str) -> ToolResult {
     cmd.current_dir(work_dir);
     cmd.stdout(std::process::Stdio::piped());
     cmd.stderr(std::process::Stdio::piped());
-    // Windows 下隐藏子进程控制台窗口,避免桌面模式调用外部模型时弹出黑框
+    // Windows 下隐藏子进程控制台窗口, 避免桌面模式调用外部模型时弹出黑框
     #[cfg(windows)]
     {
         cmd.creation_flags(0x08000000);

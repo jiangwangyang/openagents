@@ -1,7 +1,7 @@
 // 路径、环境变量、常量定义
 use std::path::PathBuf;
 
-// 获取用户主目录，环境变量缺失时 panic，避免数据目录错误落到当前工作目录
+// 获取用户主目录, 环境变量缺失时 panic, 避免数据目录错误落到当前工作目录
 pub fn home_dir() -> String {
     std::env::var("HOME")
         .or_else(|_| std::env::var("USERPROFILE"))

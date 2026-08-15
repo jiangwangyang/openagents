@@ -1,5 +1,6 @@
-// AppState:数据库连接池、定时任务调度器、任务执行句柄、对话状态表、技能列表
+// AppState: 数据库连接池、定时任务调度器、任务执行句柄、对话状态表、技能列表
 use std::sync::Arc;
+
 use dashmap::DashMap;
 use sqlx::SqlitePool;
 use tokio::sync::RwLock;

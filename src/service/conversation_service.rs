@@ -1,11 +1,11 @@
+// 对话服务: 启动对话、查询状态、发布 SSE chunk、后台 agent loop
 use futures_util::{FutureExt, StreamExt};
 use serde_json::{json, Value};
-// agent loop + 流式状态发布
 use std::sync::Arc;
 use tokio::sync::RwLock;
 
-use crate::model::anthropic::types::{ContentBlock, ContentBlockDelta, CreateMessageRequest, MessageStreamEvent, RequestMessage, ThinkingConfig};
 use crate::model;
+use crate::model::anthropic::types::{ContentBlock, ContentBlockDelta, CreateMessageRequest, MessageStreamEvent, RequestMessage, ThinkingConfig};
 use crate::repository::entity::NewMessageEntity;
 use crate::repository::{conversation_repository, model_provider_repository};
 use crate::state::{AppState, ConversationState};
@@ -14,7 +14,7 @@ use crate::tool::{self, ToolContext};
 // 查询对话状态在内存中的保留时长(秒)
 const QUERY_STATE_TTL_SECS: u64 = 300;
 
-// 启动对话,同一 conversation 不允许同时运行多个
+// 启动对话, 同一 conversation 不允许同时运行多个
 pub async fn start_conversation(
     state: &AppState,
     conversation_id: i64,
@@ -29,7 +29,7 @@ pub async fn start_conversation(
         done: false,
         notify: tx,
     }));
-    // 防重入: entry 原子检查并替换,持锁期间不 await,状态锁被占用视为运行中
+    // 防重入: entry 原子检查并替换, 持锁期间不 await, 状态锁被占用视为运行中
     match state.conversation_states.entry(conversation_id) {
         dashmap::mapref::entry::Entry::Occupied(mut entry) => {
             let finished = match entry.get().try_read() {
@@ -49,7 +49,7 @@ pub async fn start_conversation(
     true
 }
 
-// 启动历史回放查询,不执行模型调用
+// 启动历史回放查询, 不执行模型调用
 pub async fn start_conversation_query(
     state: &AppState,
     conversation_id: i64,
@@ -60,7 +60,7 @@ pub async fn start_conversation_query(
         done: false,
         notify: tx,
     }));
-    // 防重入: entry 原子检查并替换,持锁期间不 await,状态锁被占用视为运行中
+    // 防重入: entry 原子检查并替换, 持锁期间不 await, 状态锁被占用视为运行中
     match state.conversation_states.entry(conversation_id) {
         dashmap::mapref::entry::Entry::Occupied(mut entry) => {
             let finished = match entry.get().try_read() {
@@ -127,7 +127,7 @@ async fn run_conversation(
     model: String,
     thinking: bool,
 ) {
-    // 捕获 panic 兜底,保证 finish_conversation 必执行,避免对话被永久锁死
+    // 捕获 panic 兜底, 保证 finish_conversation 必执行, 避免对话被永久锁死
     let result = std::panic::AssertUnwindSafe(do_run_conversation(&state, conversation_id, &task_content, model_provider_id, &model, thinking))
         .catch_unwind()
         .await
@@ -142,7 +142,7 @@ async fn run_conversation(
         tracing::error!("Conversation execution failed: {}", e);
     }
     finish_conversation(&state, conversation_id).await;
-    // 执行任务存储的 chunk 太碎立即移除,查询任务的状态则保留 5 分钟后再移除
+    // 执行任务存储的 chunk 太碎立即移除, 查询任务的状态则保留 5 分钟后再移除
     if task_content.is_empty() {
         // 仅当状态未被新启动的对话替换时才移除
         if let Some(conv_state) = state.conversation_states.get(&conversation_id).map(|r| r.clone()) {
@@ -244,7 +244,7 @@ async fn do_run_conversation(
 
     // 执行 agent loop
     loop {
-        // 1. 发送模型请求(按 provider 协议类型路由,统一返回基准协议事件流)
+        // 发送模型请求(按 provider 协议类型路由, 统一返回基准协议事件流)
         let request = CreateMessageRequest {
             model: model.to_string(),
             messages: messages.iter().map(|m| RequestMessage {
@@ -349,11 +349,11 @@ async fn do_run_conversation(
                     if let Some(ref mut msg) = assistant_msg {
                         msg["stop_reason"] = json!(delta.stop_reason);
                         msg["usage"]["output_tokens"] = json!(usage.output_tokens);
-                        // Responses 协议的 usage 仅在完成事件下发,input_tokens 在此处补齐
+                        // Responses 协议的 usage 仅在完成事件下发, input_tokens 在此处补齐
                         if let Some(input_tokens) = usage.input_tokens {
                             msg["usage"]["input_tokens"] = json!(input_tokens);
                         }
-                        // 缓存命中 token 一并落库,避免持久化后丢失
+                        // 缓存命中 token 一并落库, 避免持久化后丢失
                         if let Some(cache_read_input_tokens) = usage.cache_read_input_tokens {
                             msg["usage"]["cache_read_input_tokens"] = json!(cache_read_input_tokens);
                         }
@@ -381,7 +381,7 @@ async fn do_run_conversation(
         msg_with_time["time"] = json!(msg_time);
         messages.push(msg_with_time.clone());
 
-        // 2. 判断结束
+        // 判断结束
         let tool_use_list: Vec<&Value> = msg["content"]
             .as_array()
             .map(|arr| arr.iter().filter(|b| b["type"].as_str() == Some("tool_use")).collect())
@@ -406,7 +406,7 @@ async fn do_run_conversation(
             return Ok(());
         }
 
-        // 3. 工具调用
+        // 工具调用
         let mut tool_result_content = Vec::new();
         for tool_use in &tool_use_list {
             let tool_name = tool_use["name"].as_str().unwrap_or("");

@@ -123,7 +123,7 @@ pub struct MessageDelta {
 }
 
 // content_block_delta 事件中的 delta
-// 变体名与 Anthropic 协议字段对齐,允许统一的 Delta 后缀
+// 变体名与 Anthropic 协议字段对齐, 允许统一的 Delta 后缀
 #[allow(clippy::enum_variant_names)]
 #[derive(Debug, Clone, Deserialize)]
 #[serde(tag = "type")]

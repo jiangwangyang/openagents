@@ -21,7 +21,7 @@ pub enum ModelError {
 // 统一基准协议事件流
 pub type ModelEventStream = Pin<Box<dyn Stream<Item = Result<MessageStreamEvent, ModelError>> + Send>>;
 
-// 流式创建消息,按 provider 协议类型路由,返回统一的基准协议事件流
+// 流式创建消息, 按 provider 协议类型路由, 返回统一的基准协议事件流
 pub async fn create_message_stream(
     provider: &ModelProviderEntity,
     request: &CreateMessageRequest,
@@ -39,7 +39,7 @@ pub async fn create_message_stream(
     }
 }
 
-// 获取可用模型列表,按 provider 协议类型路由
+// 获取可用模型列表, 按 provider 协议类型路由
 pub async fn list_models(provider: &ModelProviderEntity) -> Result<Vec<String>, ModelError> {
     match provider.protocol_type.as_str() {
         "anthropic" => anthropic_client::list_models(&provider.base_url, &provider.api_key).await.map_err(ModelError::from),

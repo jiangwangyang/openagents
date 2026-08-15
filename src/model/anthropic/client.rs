@@ -1,4 +1,4 @@
-// Anthropic 流式客户端(手写,替代 Python anthropic SDK)
+// Anthropic 流式客户端(手写, 替代 Python anthropic SDK)
 use eventsource_stream::Eventsource;
 use futures_util::Stream;
 use reqwest::Client;
@@ -9,7 +9,7 @@ use super::types::{CreateMessageRequest, ListModelsResponse, MessageStreamEvent}
 // 流式响应类型
 pub type EventStream = Pin<Box<dyn Stream<Item = Result<MessageStreamEvent, AnthropicError>> + Send>>;
 
-// 共享 HTTP 客户端(内部为 Arc，克隆仅复制引用，全应用复用同一连接池)
+// 共享 HTTP 客户端(内部为 Arc, 克隆仅复制引用, 全应用复用同一连接池)
 static HTTP_CLIENT: std::sync::LazyLock<Client> = std::sync::LazyLock::new(Client::new);
 
 // Anthropic 客户端错误
@@ -25,7 +25,7 @@ pub enum AnthropicError {
     Api { status: u16, body: String },
 }
 
-// 流式创建消息,返回事件流
+// 流式创建消息, 返回事件流
 pub async fn create_message_stream(
     base_url: &str,
     api_key: &str,
@@ -70,7 +70,7 @@ pub async fn create_message_stream(
     Ok(Box::pin(stream))
 }
 
-// 获取可用模型列表,返回模型 id 列表
+// 获取可用模型列表, 返回模型 id 列表
 pub async fn list_models(base_url: &str, api_key: &str) -> Result<Vec<String>, AnthropicError> {
     let url = format!("{}/v1/models?limit=100", base_url.trim_end_matches('/'));
     let response = HTTP_CLIENT

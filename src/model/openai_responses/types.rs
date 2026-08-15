@@ -3,7 +3,7 @@ use serde::{Deserialize, Serialize};
 
 // ========== 请求体 ==========
 
-// 创建响应请求(input/tools 由基准协议消息转换而来,直接用 Value 承载)
+// 创建响应请求(input/tools 由基准协议消息转换而来, 直接用 Value 承载)
 #[derive(Debug, Serialize)]
 pub struct CreateResponseRequest {
     pub model: String,
@@ -29,7 +29,7 @@ pub struct ReasoningConfig {
 
 // ========== 流事件 ==========
 
-// 流式事件(仅建模转换所需的事件,未知事件解析失败即跳过)
+// 流式事件(仅建模转换所需的事件, 未知事件解析失败即跳过)
 #[derive(Debug, Clone, Deserialize)]
 #[serde(tag = "type")]
 pub enum ResponseStreamEvent {
@@ -70,7 +70,7 @@ pub struct Response {
 pub struct ResponseUsage {
     pub input_tokens: u64,
     pub output_tokens: u64,
-    // 输入 token 明细(缓存命中量,部分供应商不返回该字段)
+    // 输入 token 明细(缓存命中量, 部分供应商不返回该字段)
     pub input_tokens_details: Option<InputTokensDetails>,
 }
 
@@ -81,7 +81,7 @@ pub struct InputTokensDetails {
     pub cached_tokens: u64,
 }
 
-// 输出项(output_item.added/done 中的 item,仅建模转换所需的三种)
+// 输出项(output_item.added/done 中的 item, 仅建模转换所需的三种)
 #[derive(Debug, Clone, Deserialize)]
 #[serde(tag = "type")]
 pub enum OutputItem {

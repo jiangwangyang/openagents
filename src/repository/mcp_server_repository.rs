@@ -3,7 +3,7 @@ use sqlx::SqlitePool;
 
 use super::entity::McpServerEntity;
 
-// 查询全部 MCP 服务，按 id 升序
+// 查询全部 MCP 服务, 按 id 升序
 pub async fn list_mcp_servers(pool: &SqlitePool) -> Result<Vec<McpServerEntity>, sqlx::Error> {
     sqlx::query_as::<_, McpServerEntity>(
         "SELECT id, name, description, protocol_type, url, headers, command, args, create_time, update_time FROM t_mcp_server ORDER BY id",
@@ -22,7 +22,7 @@ pub async fn get_mcp_server(pool: &SqlitePool, server_id: i64) -> Result<Option<
     .await
 }
 
-// 新增 MCP 服务，成功返回自增 id
+// 新增 MCP 服务, 成功返回自增 id
 pub async fn add_mcp_server(pool: &SqlitePool, name: &str, description: &str, protocol_type: &str, url: Option<&str>, headers: Option<&serde_json::Value>, command: Option<&str>, args: Option<&serde_json::Value>) -> Result<i64, sqlx::Error> {
     let now = chrono::Local::now().to_rfc3339();
     let result = sqlx::query(
@@ -42,7 +42,7 @@ pub async fn add_mcp_server(pool: &SqlitePool, name: &str, description: &str, pr
     Ok(result.last_insert_rowid())
 }
 
-// 按 id 更新 MCP 服务，id 不存在返回 false
+// 按 id 更新 MCP 服务, id 不存在返回 false
 pub async fn update_mcp_server(pool: &SqlitePool, server_id: i64, name: &str, description: &str, protocol_type: &str, url: Option<&str>, headers: Option<&serde_json::Value>, command: Option<&str>, args: Option<&serde_json::Value>) -> Result<bool, sqlx::Error> {
     let now = chrono::Local::now().to_rfc3339();
     let result = sqlx::query(
@@ -62,7 +62,7 @@ pub async fn update_mcp_server(pool: &SqlitePool, server_id: i64, name: &str, de
     Ok(result.rows_affected() > 0)
 }
 
-// 按 id 删除 MCP 服务，不存在返回 false
+// 按 id 删除 MCP 服务, 不存在返回 false
 pub async fn delete_mcp_server(pool: &SqlitePool, server_id: i64) -> Result<bool, sqlx::Error> {
     let result = sqlx::query("DELETE FROM t_mcp_server WHERE id = ?")
         .bind(server_id)

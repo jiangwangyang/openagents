@@ -60,7 +60,8 @@ function renderProvidersFormList(providers) {
                         <label class="form-label-strong">${t('config.protocolType')}</label>
                         <select id="provider-type-${index}" class="form-control">
                             <option value="anthropic">anthropic</option>
-                            ${provider.protocol_type && provider.protocol_type !== 'anthropic' ? `<option value="${escapeHtml(provider.protocol_type)}" selected>${escapeHtml(provider.protocol_type)}</option>` : ''}
+                            <option value="openai-responses" ${provider.protocol_type === 'openai-responses' ? 'selected' : ''}>openai-responses</option>
+                            ${provider.protocol_type && provider.protocol_type !== 'anthropic' && provider.protocol_type !== 'openai-responses' ? `<option value="${escapeHtml(provider.protocol_type)}" selected>${escapeHtml(provider.protocol_type)}</option>` : ''}
                         </select>
                     </div>
                 </div>

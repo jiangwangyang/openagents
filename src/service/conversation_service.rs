@@ -4,8 +4,8 @@ use serde_json::{json, Value};
 use std::sync::Arc;
 use tokio::sync::RwLock;
 
-use crate::anthropic::client::AnthropicClient;
-use crate::anthropic::types::{ContentBlock, ContentBlockDelta, CreateMessageRequest, MessageStreamEvent, RequestMessage, ThinkingConfig};
+use crate::model::anthropic::types::{ContentBlock, ContentBlockDelta, CreateMessageRequest, MessageStreamEvent, RequestMessage, ThinkingConfig};
+use crate::model;
 use crate::repository::entity::NewMessageEntity;
 use crate::repository::{conversation_repository, model_provider_repository};
 use crate::state::{AppState, ConversationState};
@@ -225,8 +225,6 @@ async fn do_run_conversation(
     let provider = model_provider_repository::get_model_provider(&state.db, model_provider_id)
         .await?
         .ok_or_else(|| anyhow::anyhow!("model provider not found"))?;
-    let base_url = provider.base_url.as_str();
-    let api_key = provider.api_key.as_str();
     let thinking_config = if thinking {
         ThinkingConfig::Enabled { display: "summarized".to_string() }
     } else {
@@ -245,9 +243,8 @@ async fn do_run_conversation(
     messages.push(json!({"role": "user", "content": task_content, "time": chrono::Local::now().to_rfc3339()}));
 
     // 执行 agent loop
-    let anthropic_client = AnthropicClient::new(base_url, api_key);
     loop {
-        // 1. 发送 anthropic 请求
+        // 1. 发送模型请求(按 provider 协议类型路由,统一返回基准协议事件流)
         let request = CreateMessageRequest {
             model: model.to_string(),
             messages: messages.iter().map(|m| RequestMessage {
@@ -260,7 +257,7 @@ async fn do_run_conversation(
             max_tokens: 16000,
             stream: true,
         };
-        let mut stream = anthropic_client.create_message_stream(&request).await?;
+        let mut stream = model::client::create_message_stream(&provider, &request).await?;
 
         // 累积完整 assistant message
         let mut assistant_msg: Option<Value> = None;
@@ -352,6 +349,10 @@ async fn do_run_conversation(
                     if let Some(ref mut msg) = assistant_msg {
                         msg["stop_reason"] = json!(delta.stop_reason);
                         msg["usage"]["output_tokens"] = json!(usage.output_tokens);
+                        // Responses 协议的 usage 仅在完成事件下发,input_tokens 在此处补齐
+                        if let Some(input_tokens) = usage.input_tokens {
+                            msg["usage"]["input_tokens"] = json!(input_tokens);
+                        }
                         publish_chunk(
                             state,
                             conversation_id,

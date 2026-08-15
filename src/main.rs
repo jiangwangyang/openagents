@@ -1,9 +1,9 @@
 #![cfg_attr(target_os = "windows", windows_subsystem = "windows")]
 
-mod anthropic;
 mod api;
 mod config;
 mod error;
+mod model;
 mod repository;
 mod service;
 mod state;

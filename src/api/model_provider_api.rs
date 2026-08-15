@@ -3,8 +3,8 @@ use axum::extract::{Path, State};
 use axum::Json;
 use serde::Deserialize;
 
-use crate::anthropic::client::AnthropicClient;
 use crate::error::AppError;
+use crate::model;
 use crate::repository::entity::ModelProviderEntity;
 use crate::repository::model_provider_repository;
 use crate::state::AppState;
@@ -61,13 +61,12 @@ pub async fn delete_model_provider(State(state): State<AppState>, Path(provider_
     Ok(())
 }
 
-// 查询模型提供商的可用模型列表，通过 Anthropic 模型接口实时获取
+// 查询模型提供商的可用模型列表，按 provider 协议类型路由实时获取
 pub async fn list_provider_models(State(state): State<AppState>, Path(provider_id): Path<i64>) -> Result<Json<Vec<String>>, AppError> {
     let provider = model_provider_repository::get_model_provider(&state.db, provider_id).await?;
     match provider {
         Some(p) => {
-            let client = AnthropicClient::new(&p.base_url, &p.api_key);
-            let models = client.list_models().await.map_err(|e| AppError::Internal(anyhow::anyhow!(e.to_string())))?;
+            let models = model::client::list_models(&p).await.map_err(|e| AppError::Internal(anyhow::anyhow!(e.to_string())))?;
             Ok(Json(models))
         }
         None => Err(AppError::NotFound("Model provider not found".to_string())),

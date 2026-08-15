@@ -6,6 +6,7 @@ use serde_json::{json, Value};
 use std::pin::Pin;
 
 use crate::model::anthropic::types::{ContentBlock, ContentBlockDelta, CreateMessageRequest, ListModelsResponse, Message, MessageDelta, MessageDeltaUsage, MessageStreamEvent, ThinkingConfig, Usage};
+use crate::model::truncate_str;
 
 use super::types::{CreateResponseRequest, OutputItem, ReasoningConfig, ResponseStreamEvent};
 
@@ -120,6 +121,7 @@ pub async fn create_message_stream(
     };
 
     let url = format!("{}/responses", base_url.trim_end_matches('/'));
+    tracing::info!("Model request: POST {} model={} messages={}", url, responses_request.model, request.messages.len());
     let response = HTTP_CLIENT
         .post(&url)
         .header("authorization", format!("Bearer {}", api_key))
@@ -131,6 +133,8 @@ pub async fn create_message_stream(
     let status = response.status();
     if !status.is_success() {
         let body = response.text().await.unwrap_or_default();
+        // 日志中的 body 截断至 500 字符, 错误对象保留完整内容
+        tracing::error!("Model API error: status={} body={}", status.as_u16(), truncate_str(&body, 500));
         return Err(OpenAiResponsesError::Api { status: status.as_u16(), body });
     }
 
@@ -143,7 +147,7 @@ pub async fn create_message_stream(
                 Ok(evt) => Some(Ok(evt)),
                 // 走到这里说明已建模事件的字段结构与协议不符
                 Err(e) => {
-                    tracing::warn!("SSE 事件解析失败: {} error={}", event.data, e);
+                    tracing::warn!("Failed to parse SSE event: {} error={}", event.data, e);
                     None
                 }
             },
@@ -267,6 +271,7 @@ pub async fn create_message_stream(
 // 获取可用模型列表(GET {base_url}/models), 返回模型 id 列表
 pub async fn list_models(base_url: &str, api_key: &str) -> Result<Vec<String>, OpenAiResponsesError> {
     let url = format!("{}/models", base_url.trim_end_matches('/'));
+    tracing::info!("Model request: GET {}", url);
     let response = HTTP_CLIENT
         .get(&url)
         .header("authorization", format!("Bearer {}", api_key))
@@ -276,6 +281,8 @@ pub async fn list_models(base_url: &str, api_key: &str) -> Result<Vec<String>, O
     let status = response.status();
     if !status.is_success() {
         let body = response.text().await.unwrap_or_default();
+        // 日志中的 body 截断至 500 字符, 错误对象保留完整内容
+        tracing::error!("Model API error: status={} body={}", status.as_u16(), truncate_str(&body, 500));
         return Err(OpenAiResponsesError::Api { status: status.as_u16(), body });
     }
 

@@ -28,6 +28,7 @@ pub async fn init_db() -> anyhow::Result<SqlitePool> {
     // 建表
     create_tables(&pool).await?;
 
+    tracing::info!("Database initialized: path={}", db_file.display());
     Ok(pool)
 }
 

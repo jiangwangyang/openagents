@@ -5,6 +5,7 @@ use reqwest::Client;
 use std::pin::Pin;
 
 use super::types::{CreateMessageRequest, ListModelsResponse, MessageStreamEvent};
+use crate::model::truncate_str;
 
 // 流式响应类型
 pub type EventStream = Pin<Box<dyn Stream<Item = Result<MessageStreamEvent, AnthropicError>> + Send>>;
@@ -32,6 +33,7 @@ pub async fn create_message_stream(
     request: &CreateMessageRequest,
 ) -> Result<EventStream, AnthropicError> {
     let url = format!("{}/v1/messages", base_url.trim_end_matches('/'));
+    tracing::info!("Model request: POST {} model={} messages={}", url, request.model, request.messages.len());
     let response = HTTP_CLIENT
         .post(&url)
         .header("x-api-key", api_key)
@@ -44,6 +46,8 @@ pub async fn create_message_stream(
     let status = response.status();
     if !status.is_success() {
         let body = response.text().await.unwrap_or_default();
+        // 日志中的 body 截断至 500 字符, 错误对象保留完整内容
+        tracing::error!("Model API error: status={} body={}", status.as_u16(), truncate_str(&body, 500));
         return Err(AnthropicError::Api { status: status.as_u16(), body });
     }
 
@@ -58,7 +62,7 @@ pub async fn create_message_stream(
                 match serde_json::from_str::<MessageStreamEvent>(&event.data) {
                     Ok(evt) => Some(Ok(evt)),
                     Err(e) => {
-                        tracing::warn!("未知 SSE 事件: {} error={}", event.data, e);
+                        tracing::warn!("Unknown SSE event: {} error={}", event.data, e);
                         None
                     }
                 }
@@ -73,6 +77,7 @@ pub async fn create_message_stream(
 // 获取可用模型列表, 返回模型 id 列表
 pub async fn list_models(base_url: &str, api_key: &str) -> Result<Vec<String>, AnthropicError> {
     let url = format!("{}/v1/models?limit=100", base_url.trim_end_matches('/'));
+    tracing::info!("Model request: GET {}", url);
     let response = HTTP_CLIENT
         .get(&url)
         .header("x-api-key", api_key)
@@ -83,6 +88,8 @@ pub async fn list_models(base_url: &str, api_key: &str) -> Result<Vec<String>, A
     let status = response.status();
     if !status.is_success() {
         let body = response.text().await.unwrap_or_default();
+        // 日志中的 body 截断至 500 字符, 错误对象保留完整内容
+        tracing::error!("Model API error: status={} body={}", status.as_u16(), truncate_str(&body, 500));
         return Err(AnthropicError::Api { status: status.as_u16(), body });
     }
 

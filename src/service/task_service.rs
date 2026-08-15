@@ -36,13 +36,14 @@ pub fn is_task_running(state: &AppState, task_id: i64) -> bool {
 async fn run_task(state: AppState, task_id: i64, agent_id: i64) {
     let result = do_run_task(&state, task_id, agent_id).await;
     if let Err(e) = result {
-        tracing::error!("Task execution failed: {}", e);
+        tracing::error!("Task execution failed: task_id={} error={}", task_id, e);
     }
     state.task_loops.remove(&task_id);
 }
 
 // 实际任务循环逻辑
 async fn do_run_task(state: &AppState, task_id: i64, agent_id: i64) -> anyhow::Result<()> {
+    tracing::info!("Task loop started: task_id={} agent_id={}", task_id, agent_id);
     // 为第一个执行的 agent 创建阶段对话
     let task = task_repository::get_task(&state.db, task_id).await?;
     let agent = agent_repository::get_agent(&state.db, agent_id).await?;
@@ -76,6 +77,7 @@ async fn do_run_task(state: &AppState, task_id: i64, agent_id: i64) -> anyhow::R
 
         // 最新的 agent 对话有消息(说明对话没有交接, 则默认交接给用户), 即创建一个无 agent 的用户对话并结束循环
         if latest.has_messages && latest.agent_id.is_some() {
+            tracing::info!("Task handed over to user: task_id={}", task_id);
             conversation_repository::add_conversation(
                 &state.db,
                 &format!("{}-User", task.title),
@@ -92,7 +94,10 @@ async fn do_run_task(state: &AppState, task_id: i64, agent_id: i64) -> anyhow::R
         // 最新对话无 agent(用户审核阶段), 结束循环
         let latest_agent_id = match latest.agent_id {
             Some(id) => id,
-            None => return Ok(()),
+            None => {
+                tracing::info!("Task loop ended: task_id={} reason=user_review", task_id);
+                return Ok(());
+            }
         };
 
         // 模型配置从当前对话的 Agent 读取
@@ -144,7 +149,9 @@ async fn do_run_task(state: &AppState, task_id: i64, agent_id: i64) -> anyhow::R
         let task_content = task_content_list.join("\n\n");
 
         // 触发对话执行并等待完成
+        tracing::info!("Task triggering conversation: task_id={} conversation_id={} agent={} model={}", task_id, latest.id, agent.name, agent.model);
         if !conversation_service::start_conversation(state, latest.id, task_content, provider.id, agent.model.clone(), agent.thinking).await {
+            tracing::warn!("Task loop ended: task_id={} conversation_id={} already running", task_id, latest.id);
             return Ok(());
         }
         // 等待对话完成: 订阅通知并等待, 订阅后先复查 done 避免错过完成信号

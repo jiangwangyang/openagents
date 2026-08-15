@@ -106,29 +106,43 @@ fn which_pwsh() -> bool {
         .unwrap_or(false)
 }
 
+// 日志内容截断: 超过 max 字符时截断并追加省略号, 避免长内容刷爆日志
+fn truncate_str(s: &str, max: usize) -> String {
+    if s.chars().count() > max {
+        format!("{}...", s.chars().take(max).collect::<String>())
+    } else {
+        s.to_string()
+    }
+}
+
 // 执行选择的工具
 pub async fn execute_tool(name: &str, tool_input: &Value, ctx: &ToolContext) -> ToolResult {
-    if name != "command" {
-        return (format!("Unknown tool: {}", name), true);
-    }
+    let cmd_and_args: Vec<String> = tool_input
+        .get("cmd_and_args")
+        .and_then(Value::as_array)
+        .map(|arr| arr.iter().filter_map(|v| v.as_str().map(|s| s.to_string())).collect())
+        .unwrap_or_default();
 
-    let cmd_and_args: Vec<String> = match tool_input.get("cmd_and_args") {
-        Some(Value::Array(arr)) => arr
-            .iter()
-            .filter_map(|v| v.as_str().map(|s| s.to_string()))
-            .collect(),
-        _ => return ("No cmd_and_args".to_string(), true),
+    // 调用摘要: 工具名 + 完整命令, 截断至 200 字符
+    let summary = truncate_str(&format!("{} {}", name, cmd_and_args.join(" ")), 200);
+    tracing::info!("Tool call: cmd={}", summary);
+
+    let result: ToolResult = if name != "command" {
+        (format!("Unknown tool: {}", name), true)
+    } else if cmd_and_args.is_empty() {
+        ("No cmd_and_args".to_string(), true)
+    } else {
+        match cmd_and_args[0].as_str() {
+            "file" => file_tool::execute(&cmd_and_args, &ctx.work_dir).await,
+            "skill" => skill_tool::execute(&cmd_and_args, &ctx.skills),
+            "mcp" => mcp_tool::execute(&cmd_and_args, &ctx.db).await,
+            "task" => task_tool::execute(&cmd_and_args, ctx.task_id, &ctx.db).await,
+            _ => shell_tool::execute(&cmd_and_args, &ctx.work_dir).await,
+        }
     };
 
-    if cmd_and_args.is_empty() {
-        return ("No cmd_and_args".to_string(), true);
+    if result.1 {
+        tracing::warn!("Tool call failed: cmd={} error={}", summary, truncate_str(&result.0, 500));
     }
-
-    match cmd_and_args[0].as_str() {
-        "file" => file_tool::execute(&cmd_and_args, &ctx.work_dir).await,
-        "skill" => skill_tool::execute(&cmd_and_args, &ctx.skills),
-        "mcp" => mcp_tool::execute(&cmd_and_args, &ctx.db).await,
-        "task" => task_tool::execute(&cmd_and_args, ctx.task_id, &ctx.db).await,
-        _ => shell_tool::execute(&cmd_and_args, &ctx.work_dir).await,
-    }
+    result
 }

@@ -29,6 +29,12 @@ impl IntoResponse for AppError {
             AppError::Db(e) => (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()),
             AppError::Internal(e) => (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()),
         };
+        // 5xx 为服务端故障记 ERROR, 4xx 为客户端问题记 WARN
+        if status.is_server_error() {
+            tracing::error!("Request failed: status={} error={}", status.as_u16(), message);
+        } else {
+            tracing::warn!("Request rejected: status={} error={}", status.as_u16(), message);
+        }
         (status, message).into_response()
     }
 }

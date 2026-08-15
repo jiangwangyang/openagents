@@ -37,6 +37,7 @@ pub async fn start_conversation(
                 Err(_) => false,
             };
             if !finished {
+                tracing::warn!("Conversation start rejected: conversation_id={} already running", conversation_id);
                 return false;
             }
             entry.insert(conv_state);
@@ -45,6 +46,7 @@ pub async fn start_conversation(
             entry.insert(conv_state);
         }
     }
+    tracing::info!("Conversation started: conversation_id={} model={} thinking={}", conversation_id, model, thinking);
     tokio::spawn(run_conversation(state.clone(), conversation_id, task_content, model_provider_id, model, thinking));
     true
 }
@@ -68,6 +70,7 @@ pub async fn start_conversation_query(
                 Err(_) => false,
             };
             if !finished {
+                tracing::warn!("Conversation query rejected: conversation_id={} already running", conversation_id);
                 return false;
             }
             entry.insert(conv_state);
@@ -76,6 +79,7 @@ pub async fn start_conversation_query(
             entry.insert(conv_state);
         }
     }
+    tracing::info!("Conversation query started: conversation_id={}", conversation_id);
     tokio::spawn(run_conversation(state.clone(), conversation_id, String::new(), 0, String::new(), false));
     true
 }
@@ -139,7 +143,7 @@ async fn run_conversation(
         });
     if let Err(e) = result {
         publish_chunk(&state, conversation_id, "error", &format!("Conversation execution failed: {}", e), json!({})).await;
-        tracing::error!("Conversation execution failed: {}", e);
+        tracing::error!("Conversation execution failed: conversation_id={} error={}", conversation_id, e);
     }
     finish_conversation(&state, conversation_id).await;
     // 执行任务存储的 chunk 太碎立即移除, 查询任务的状态则保留 5 分钟后再移除
@@ -376,6 +380,14 @@ async fn do_run_conversation(
         }
 
         let msg = assistant_msg.ok_or_else(|| anyhow::anyhow!("no assistant message received"))?;
+        tracing::info!(
+            "Model round completed: conversation_id={} stop_reason={} input_tokens={} output_tokens={} cache_read_input_tokens={}",
+            conversation_id,
+            msg["stop_reason"].as_str().unwrap_or(""),
+            msg["usage"]["input_tokens"].as_i64().unwrap_or(0),
+            msg["usage"]["output_tokens"].as_i64().unwrap_or(0),
+            msg["usage"]["cache_read_input_tokens"].as_i64().unwrap_or(0),
+        );
         let msg_time = chrono::Local::now().to_rfc3339();
         let mut msg_with_time = msg.clone();
         msg_with_time["time"] = json!(msg_time);
@@ -403,6 +415,7 @@ async fn do_run_conversation(
                 })
                 .collect();
             conversation_repository::add_conversation_messages(&state.db, conversation_id, &messages_to_save).await?;
+            tracing::info!("Conversation finished: conversation_id={}", conversation_id);
             return Ok(());
         }
 

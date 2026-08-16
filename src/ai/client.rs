@@ -41,7 +41,7 @@ pub fn stream(
         max_tokens,
     };
     match provider.protocol_type.as_str() {
-        "anthropic" => {
+        "anthropic-messages" => {
             // 对齐 pi adjustMaxTokensForThinking: thinking 开启时请求 max_tokens 叠加思考预算,
             // 保证 max_tokens > budget_tokens(否则 Anthropic 返回 400); 本项目无模型上限目录, 省略 pi 的模型上限 clamp
             let request_max_tokens = if thinking { max_tokens.saturating_add(THINKING_BUDGET_TOKENS) } else { max_tokens };
@@ -73,7 +73,7 @@ pub fn stream(
 // 获取可用模型列表, 按 provider 协议类型路由
 pub async fn list_models(provider: &ModelProviderEntity) -> Result<Vec<String>, ModelError> {
     match provider.protocol_type.as_str() {
-        "anthropic" => anthropic_client::list_models(&provider.base_url, &provider.api_key).await.map_err(ModelError::from),
+        "anthropic-messages" => anthropic_client::list_models(&provider.base_url, &provider.api_key).await.map_err(ModelError::from),
         "openai-responses" => responses_client::list_models(&provider.base_url, &provider.api_key).await.map_err(ModelError::from),
         other => Err(ModelError::UnsupportedProtocol(other.to_string())),
     }

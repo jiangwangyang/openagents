@@ -1,9 +1,11 @@
 // ==========================================
 // I18N 国际化引擎（中英文切换，与主题方案同构）
 // ==========================================
+
+// ===== 1. 文案字典 =====
+// en/zh 两组，key 按模块分组，支持 {name} 占位符替换
 const I18N_STORAGE_KEY = 'openagents_lang';
 
-// 文案字典：en/zh 两组，key 按模块分组，支持 {name} 占位符替换
 const I18N = {
     en: {
         lang: {toggleTitle: 'Switch Language'},
@@ -45,6 +47,7 @@ const I18N = {
     }
 };
 
+// ===== 2. 语言状态与文案查询 =====
 // 当前语言（初始化函数中赋值）
 let currentLang = 'en';
 
@@ -70,6 +73,7 @@ function t(key, params) {
     return text;
 }
 
+// ===== 3. 文案应用与刷新 =====
 // 批量刷新静态 DOM：data-i18n 文本 / data-i18n-placeholder 占位 / data-i18n-title 悬停提示
 function applyStaticI18n() {
     document.querySelectorAll('[data-i18n]').forEach(el => {
@@ -112,6 +116,7 @@ function refreshActiveViewI18n() {
     }
 }
 
+// ===== 4. 语言设置与初始化 =====
 // 设置语言：持久化到后端 Web 存储并全量刷新页面文案
 function setLanguage(lang) {
     if (lang !== 'zh' && lang !== 'en') {

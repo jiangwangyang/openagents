@@ -372,7 +372,8 @@ details.system-details .content {
 }
 
 /* ===== 3. 表单与配置面板 ===== */
-.add-cron-panel {
+/* 新增面板（任务/定时/智能体/MCP/供应商通用） */
+.add-panel {
     background: var(--bg-surface);
     border: 1px dashed var(--charcoal-900);
     padding: 20px;
@@ -950,6 +951,16 @@ input.form-control {
     text-transform: uppercase;
 }
 
+/* 目录弹窗标题复用 confirm-title 排版，去除默认下外边距 */
+.dir-modal-header .confirm-title {
+    margin-bottom: 0;
+}
+
+/* 目录弹窗关闭按钮使用主文字色常驻可见 */
+.dir-modal-header .delete-btn {
+    color: var(--charcoal-900);
+}
+
 .dir-modal-content {
     flex: 1;
     overflow-y: auto;
@@ -1189,6 +1200,11 @@ input.form-control {
 /* ===== 11. 模型输入组合框（可输入 + 下拉选择） ===== */
 .model-combo-wrapper {
     position: relative;
+}
+
+/* 模型输入框固定宽度（其余头部下拉为自适应宽度） */
+#modelSelect {
+    width: 160px;
 }
 
 .model-combo-list {
@@ -1523,6 +1539,16 @@ input.form-control {
     display: flex;
     flex-direction: column;
     gap: 24px;
+}
+
+/* 新增面板内的子标题（配置页新增供应商卡片） */
+.panel-sub-title {
+    font-family: var(--font-display);
+    font-size: 12px;
+    font-weight: 800;
+    text-transform: uppercase;
+    color: var(--charcoal-700);
+    margin-bottom: 4px;
 }
 
 /* ===== 14. 动画定义 ===== */

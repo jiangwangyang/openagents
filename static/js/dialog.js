@@ -1,6 +1,8 @@
 // ==========================================
-// 会话历史/交互流控与 SSE 流式模块 (DIALOG)
+// 会话模块：会话历史、模型路由与 SSE 流式交互 (DIALOG)
 // ==========================================
+
+// ===== 1. 会话状态与持久化缓存 =====
 // 当前已加载会话的系统提示词来源状态（loadConversation 时赋值，startNewChat 时清空）
 let currentSystemPrompt = '';
 let currentConvAgentName = '';
@@ -15,7 +17,8 @@ let lastAgentIdCache = '';
 // 供应商模型列表缓存：key 为供应商 id，值为 Promise（并发去重），避免聚焦时重复请求
 const providerModelsCache = {};
 
-// 系统提示词来源提示：已建会话按快照判断（智能体 > 工作目录 AGENTS.md > 无），新会话按当前控件状态预判
+// ===== 2. 提示词来源提示 =====
+// 已建会话按快照判断（智能体 > 工作目录 AGENTS.md > 无），新会话按当前控件状态预判
 function updatePromptSourceHint() {
     const hint = document.getElementById('promptSourceHint');
     let text;
@@ -55,6 +58,7 @@ function updatePromptSourceHint() {
     hint.style.display = '';
 }
 
+// ===== 3. 输入区状态控制 =====
 function autoResize() {
     messageInput.style.height = 'auto';
     messageInput.style.height = Math.min(messageInput.scrollHeight, 160) + 'px';
@@ -71,6 +75,38 @@ function autoResize() {
     }
 }
 
+function enableInput() {
+    messageInput.disabled = false;
+    sendButton.disabled = false;
+    messageInput.focus();
+}
+
+function setTyping(typing) {
+    isTyping = typing;
+    // 只读会话（任务/定时来源）保持禁用，不随流式结束恢复输入
+    sendButton.disabled = typing || currentConvReadonly;
+    messageInput.disabled = typing || currentConvReadonly;
+}
+
+// 只读会话切换：任务/定时来源的对话仅供查看，禁用输入框与发送按钮；恢复启用时需尊重流式输出中的禁用状态
+function setConversationReadonly(readonly) {
+    currentConvReadonly = readonly;
+    messageInput.disabled = readonly || isTyping;
+    sendButton.disabled = readonly || isTyping;
+    messageInput.placeholder = readonly ? t('input.readonlyPlaceholder') : t('input.placeholder');
+}
+
+// 锁定/解锁会话上下文：对话创建后工作目录与智能体不允许修改，锁定期间展示说明文字避免误解
+function setContextLocked(locked) {
+    const workspaceBtn = document.getElementById('workspaceBtn');
+    const agentSelect = document.getElementById('agentSelect');
+    // 禁用态视觉统一由 CSS :disabled 规则（透明度 0.4 + 禁止光标）承担
+    workspaceBtn.disabled = locked;
+    agentSelect.disabled = locked;
+    document.getElementById('contextLockHint').style.display = locked ? '' : 'none';
+}
+
+// ===== 4. 会话列表与会话加载 =====
 async function loadConversationList() {
     try {
         const response = await fetch('/conversation/list');
@@ -227,74 +263,7 @@ async function startNewChat() {
     switchView('dialog');
 }
 
-// 锁定/解锁会话上下文：对话创建后工作目录与智能体不允许修改，锁定期间展示说明文字避免误解
-function setContextLocked(locked) {
-    const workspaceBtn = document.getElementById('workspaceBtn');
-    const agentSelect = document.getElementById('agentSelect');
-    // 禁用态视觉统一由 CSS :disabled 规则（透明度 0.4 + 禁止光标）承担
-    workspaceBtn.disabled = locked;
-    agentSelect.disabled = locked;
-    document.getElementById('contextLockHint').style.display = locked ? '' : 'none';
-}
-
-// 加载智能体下拉框，首项为默认（不选智能体），选择结果仅在新会话首次发送时生效
-async function loadAgentSelect() {
-    const select = document.getElementById('agentSelect');
-    try {
-        const response = await fetch('/agent/list');
-        const agents = await response.json();
-        select.innerHTML = `<option value="" data-i18n="common.none">${t('common.none')}</option>`;
-        agents.forEach(agent => {
-            const opt = document.createElement('option');
-            opt.value = agent.id;
-            opt.textContent = agent.name;
-            select.appendChild(opt);
-        });
-        // 恢复上次选择的智能体（若仍存在）
-        const lastAgentId = getLastAgentId();
-        if (lastAgentId && agents.some(a => String(a.id) === String(lastAgentId))) {
-            select.value = lastAgentId;
-        }
-        // 触发选择逻辑：填入对应模型配置或解禁手动模型
-        onAgentSelectChange();
-    } catch (e) {
-        // 静默处理错误
-    }
-}
-
-// 选择智能体后填入其模型配置并禁止修改，取消选择（NONE）后解除禁用
-async function onAgentSelectChange() {
-    const agentId = document.getElementById('agentSelect').value;
-    // 智能体选择变化会影响新会话的提示词来源预判
-    updatePromptSourceHint();
-    // 记录智能体选择，供下次新对话自动填入
-    saveLastAgentId(agentId);
-    const providerSelect = document.getElementById('providerSelect');
-    const modelInput = document.getElementById('modelSelect');
-    const thinkingSelect = document.getElementById('thinkingSelect');
-    if (!agentId) {
-        providerSelect.disabled = false;
-        modelInput.disabled = false;
-        thinkingSelect.disabled = false;
-        return;
-    }
-    try {
-        const response = await fetch('/agent/list');
-        const agents = await response.json();
-        const agent = agents.find(a => String(a.id) === String(agentId));
-        if (agent) {
-            providerSelect.value = String(agent.model_provider_id);
-            modelInput.value = agent.model || '';
-            thinkingSelect.value = String(agent.thinking);
-            providerSelect.disabled = true;
-            modelInput.disabled = true;
-            thinkingSelect.disabled = true;
-        }
-    } catch (e) {
-        // 静默处理错误
-    }
-}
-
+// ===== 5. 模型路由偏好（后端 Web 存储持久化） =====
 // 从后端加载会话页持久化偏好到内存缓存（上次模型配置/上次智能体）
 async function loadDialogPrefs() {
     const [configRaw, agentIdRaw] = await Promise.all([
@@ -362,6 +331,65 @@ function restoreLastModelConfig() {
     }
 }
 
+// ===== 6. 模型路由控件 =====
+// 加载智能体下拉框，首项为默认（不选智能体），选择结果仅在新会话首次发送时生效
+async function loadAgentSelect() {
+    const select = document.getElementById('agentSelect');
+    try {
+        const response = await fetch('/agent/list');
+        const agents = await response.json();
+        select.innerHTML = `<option value="" data-i18n="common.none">${t('common.none')}</option>`;
+        agents.forEach(agent => {
+            const opt = document.createElement('option');
+            opt.value = agent.id;
+            opt.textContent = agent.name;
+            select.appendChild(opt);
+        });
+        // 恢复上次选择的智能体（若仍存在）
+        const lastAgentId = getLastAgentId();
+        if (lastAgentId && agents.some(a => String(a.id) === String(lastAgentId))) {
+            select.value = lastAgentId;
+        }
+        // 触发选择逻辑：填入对应模型配置或解禁手动模型
+        onAgentSelectChange();
+    } catch (e) {
+        // 静默处理错误
+    }
+}
+
+// 选择智能体后填入其模型配置并禁止修改，取消选择（NONE）后解除禁用
+async function onAgentSelectChange() {
+    const agentId = document.getElementById('agentSelect').value;
+    // 智能体选择变化会影响新会话的提示词来源预判
+    updatePromptSourceHint();
+    // 记录智能体选择，供下次新对话自动填入
+    saveLastAgentId(agentId);
+    const providerSelect = document.getElementById('providerSelect');
+    const modelInput = document.getElementById('modelSelect');
+    const thinkingSelect = document.getElementById('thinkingSelect');
+    if (!agentId) {
+        providerSelect.disabled = false;
+        modelInput.disabled = false;
+        thinkingSelect.disabled = false;
+        return;
+    }
+    try {
+        const response = await fetch('/agent/list');
+        const agents = await response.json();
+        const agent = agents.find(a => String(a.id) === String(agentId));
+        if (agent) {
+            providerSelect.value = String(agent.model_provider_id);
+            modelInput.value = agent.model || '';
+            thinkingSelect.value = String(agent.thinking);
+            providerSelect.disabled = true;
+            modelInput.disabled = true;
+            thinkingSelect.disabled = true;
+        }
+    } catch (e) {
+        // 静默处理错误
+    }
+}
+
 // 加载对话输入区的供应商下拉框
 async function loadModelSelect() {
     const providerSelect = document.getElementById('providerSelect');
@@ -378,7 +406,7 @@ async function loadModelSelect() {
     }
 }
 
-// 渲染模型下拉列表：聚焦时调用 Anthropic 模型接口拉取当前供应商全部模型并全量展示
+// 渲染模型下拉列表：聚焦时调用模型列表接口拉取当前供应商全部模型并全量展示
 async function renderModelComboList() {
     const comboList = document.getElementById('modelComboList');
     const input = document.getElementById('modelSelect');
@@ -436,35 +464,7 @@ async function renderModelComboList() {
     comboList.classList.add('open');
 }
 
-function enableInput() {
-    messageInput.disabled = false;
-    sendButton.disabled = false;
-    messageInput.focus();
-}
-
-// 只读会话切换：任务/定时来源的对话仅供查看，禁用输入框与发送按钮；恢复启用时需尊重流式输出中的禁用状态
-function setConversationReadonly(readonly) {
-    currentConvReadonly = readonly;
-    messageInput.disabled = readonly || isTyping;
-    sendButton.disabled = readonly || isTyping;
-    messageInput.placeholder = readonly ? t('input.readonlyPlaceholder') : t('input.placeholder');
-}
-
-function addUserMessage(content, time) {
-    emptyState.style.display = 'none';
-    const div = document.createElement('div');
-    div.className = 'user-message';
-    div.innerHTML = `${formatMarkdown(content.trim())}<div class="message-time">${time}</div>`;
-    chatContainer.appendChild(div);
-}
-
-function setTyping(typing) {
-    isTyping = typing;
-    // 只读会话（任务/定时来源）保持禁用，不随流式结束恢复输入
-    sendButton.disabled = typing || currentConvReadonly;
-    messageInput.disabled = typing || currentConvReadonly;
-}
-
+// ===== 7. 消息发送 =====
 async function sendMessage() {
     const message = messageInput.value.trim();
     // 只读会话（任务/定时来源）禁止发送，作为禁用控件之外的防御性校验
@@ -534,6 +534,15 @@ async function sendMessage() {
     emptyState.style.display = 'none';
     connectStream(currentConversationId);
     scrollToBottom();
+}
+
+// ===== 8. SSE 流式渲染 =====
+function addUserMessage(content, time) {
+    emptyState.style.display = 'none';
+    const div = document.createElement('div');
+    div.className = 'user-message';
+    div.innerHTML = `${formatMarkdown(content.trim())}<div class="message-time">${time}</div>`;
+    chatContainer.appendChild(div);
 }
 
 // 结束当前流式块：移除光标样式并折叠详情
@@ -653,7 +662,7 @@ function connectStream(conversationId) {
             usageInputTokens += data.input_tokens || 0;
             usageOutputTokens += data.output_tokens || 0;
             usageCacheTokens += data.cache_read_input_tokens || 0;
-            // 取当次发送的三项用量之和，表示当前对话的总 token 量
+            // 当次 usage 事件三项之和，表示本轮对话的总 token 量
             usageTotalTokens = (data.input_tokens || 0) + (data.output_tokens || 0) + (data.cache_read_input_tokens || 0);
             const formatTokens = (count) => count >= 1000 ? (count / 1000).toFixed(1) + 'k' : String(count);
             let usageText = `↑ ${formatTokens(usageInputTokens)} ${t('stream.usageIn')} · ${formatTokens(usageOutputTokens)} ${t('stream.usageOut')}`;

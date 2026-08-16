@@ -1,6 +1,8 @@
 // ==========================================
-// 1. 全局 DOM 节点缓存与核心状态管理
+// 核心模块：全局状态、生命周期初始化、公共工具与视图路由
 // ==========================================
+
+// ===== 1. 全局 DOM 节点缓存 =====
 const viewDialog = document.getElementById('viewDialog');
 const chatContainer = document.getElementById('chatContainer');
 const messageInput = document.getElementById('messageInput');
@@ -9,11 +11,10 @@ const conversationList = document.getElementById('conversationList');
 const conversationInfo = document.getElementById('conversationInfo');
 const usageInfo = document.getElementById('usageInfo');
 const emptyState = document.getElementById('emptyState');
-const manualPathInput = document.getElementById('manualPathInput');
-
 const globalInputWrapper = document.getElementById('globalInputWrapper');
 
-// 运行时会话/流控状态变量
+// ===== 2. 运行时状态 =====
+// 会话与流控状态
 let currentConversationId = null;
 let isTyping = false;
 // 当前会话是否为任务/定时来源的只读会话（仅供查看，禁止发送消息）
@@ -21,7 +22,7 @@ let currentConvReadonly = false;
 let currentEventSource = null;
 let currentWorkdir = '';
 
-// 流式渲染状态变量
+// 流式渲染状态
 let streamWrapper = null;
 let streamContentNode = null;
 let streamRawText = '';
@@ -30,21 +31,22 @@ let streamChunkCount = 0;
 let usageInputTokens = 0;
 let usageOutputTokens = 0;
 let usageCacheTokens = 0;
-// 最后一次 usage 事件三项之和，表示当前对话的总 token 量
+// 当次 usage 事件三项之和，表示本轮对话的总 token 量
 let usageTotalTokens = 0;
 
-// 运行时会话滚动控制变量
+// 会话滚动控制状态
 let isAtBottom = true;
 let userScroll = false;
 let programScroll = false;
 
-// SVG 图标核心资产定义
+// ===== 3. SVG 图标与骨架屏资产 =====
 const FOLD_SVG = `<svg viewBox="0 0 24 24" class="fold-icon" width="14" height="14" stroke="currentColor" stroke-width="2.5" fill="none" stroke-linecap="square" stroke-linejoin="miter"><polyline points="6 9 12 15 18 9"></polyline></svg>`;
 const ARROW_SVG = `<svg viewBox="0 0 24 24" class="info-card-arrow" width="14" height="14" stroke="currentColor" stroke-width="2.5" fill="none"><polyline points="9 18 15 12 9 6"></polyline></svg>`;
 const DELETE_SVG = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>`;
 const SKELETON_HTML = '<div class="skeleton-loader"><span></span><span></span><span></span></div>';
 
-// 视图路由配置表：key 为视图名，load 为对应面板的数据加载函数名（调用时按名解析，避免加载顺序依赖）
+// ===== 4. 视图路由配置 =====
+// key 为视图名，load 为对应面板的数据加载函数名（调用时按名解析，避免加载顺序依赖）
 const VIEW_CONFIG = {
     dialog: {nav: 'navDialogBtn', view: 'viewDialog', infoKey: null, load: null},
     task: {nav: 'navTaskBtn', view: 'viewTask', infoKey: 'header.coreTask', load: 'fetchTaskList'},
@@ -55,9 +57,7 @@ const VIEW_CONFIG = {
     config: {nav: 'navConfigBtn', view: 'viewConfig', infoKey: 'header.coreConfig', load: 'fetchGlobalSettings'}
 };
 
-// ==========================================
-// 2. 生命周期与核心监听初始化
-// ==========================================
+// ===== 5. 生命周期与监听初始化 =====
 document.addEventListener('DOMContentLoaded', () => {
     // 初始化主题动态特效层
     initThemeEffects();
@@ -78,7 +78,7 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     // 监听用户选择目录
-    manualPathInput.addEventListener('keydown', (e) => {
+    document.getElementById('manualPathInput').addEventListener('keydown', (e) => {
         if (e.key === 'Enter') {
             handleManualJump();
         }
@@ -115,9 +115,7 @@ document.addEventListener('DOMContentLoaded', () => {
     startNewChat();
 });
 
-// ==========================================
-// 3. 通用公共工具
-// ==========================================
+// ===== 6. 通用公共工具 =====
 // textContent 转义仅覆盖 & < >，需额外转义引号以兼容 value="..." 等属性插值场景
 function escapeHtml(text) {
     if (!text) {
@@ -277,9 +275,7 @@ function showToast(text, type) {
     }, 2200);
 }
 
-// ==========================================
-// 4. 视图路由导航
-// ==========================================
+// ===== 7. 视图路由导航 =====
 function switchView(viewName) {
     const cfg = VIEW_CONFIG[viewName];
     if (!cfg) {

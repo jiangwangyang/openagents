@@ -1,13 +1,17 @@
 // ==========================================
 // MCP (Model Context Protocol) 服务注册面板
 // ==========================================
+
+// ===== 1. DOM 节点缓存 =====
 const mcpListContainer = document.getElementById('mcpListContainer');
 const addMcpPanel = document.getElementById('addMcpPanel');
 
+// ===== 2. 新增面板与表单辅助 =====
 function toggleAddMcpPanel() {
     addMcpPanel.style.display = addMcpPanel.style.display === 'none' ? 'flex' : 'none';
 }
 
+// 切换新增面板内 stdio / 网络 字段区域显示（协议类型下拉联动）
 function adaptMcpFormFields() {
     const type = document.getElementById('mcpType').value;
     const isStdio = type === 'stdio';
@@ -25,6 +29,7 @@ function adaptMcpCardFields(index) {
     document.getElementById(`mcp-local-zone-${index}`).style.display = isStdio ? 'flex' : 'none';
 }
 
+// ===== 3. 服务列表 =====
 async function fetchMcpRegistry() {
     mcpListContainer.innerHTML = SKELETON_HTML;
     try {
@@ -56,7 +61,7 @@ async function fetchMcpRegistry() {
                     </div>
                     <div class="card-actions" onclick="event.stopPropagation();">
                         <button class="btn btn-sm send-button mcp-save-btn btn-card-sm">${t('common.save')}</button>
-                        <button class="btn btn-sm send-button mcp-test-btn" style="height:28px;">${t('mcp.testProbe')}</button>
+                        <button class="btn btn-sm send-button mcp-test-btn btn-card-sm">${t('mcp.testProbe')}</button>
                         <button class="delete-btn always-visible">${DELETE_SVG}</button>
                     </div>
                 </div>
@@ -78,7 +83,7 @@ async function fetchMcpRegistry() {
                             </select>
                         </div>
                     </div>
-                    <div id="mcp-network-zone-${index}" class="mcp-zone" style="display:${isStdio ? 'none' : 'flex'};">
+                    <div id="mcp-network-zone-${index}" class="mcp-zone" style="display: ${isStdio ? 'none' : 'flex'};">
                         <div class="form-row">
                             <div class="form-group">
                                 <label>${t('mcp.targetUrl')}</label>
@@ -92,7 +97,7 @@ async function fetchMcpRegistry() {
                             </div>
                         </div>
                     </div>
-                    <div id="mcp-local-zone-${index}" class="mcp-zone" style="display:${isStdio ? 'flex' : 'none'};">
+                    <div id="mcp-local-zone-${index}" class="mcp-zone" style="display: ${isStdio ? 'flex' : 'none'};">
                         <div class="form-row">
                             <div class="form-group">
                                 <label>${t('mcp.cmdExec')}</label>
@@ -106,15 +111,14 @@ async function fetchMcpRegistry() {
                             </div>
                         </div>
                     </div>
-
-                    <div class="details-block-container" id="mcp-tools-zone-${index}" style="display:none;">
+                    <div class="details-block-container" id="mcp-tools-zone-${index}" style="display: none;">
                         <div class="details-label" style="margin-bottom: 6px;">${t('mcp.exposedCaps')}</div>
                         <div class="mcp-tool-badge-list" id="mcp-tools-list-${index}"></div>
                     </div>
                 </div>
             `;
             // 按钮通过闭包绑定，避免服务名中的引号破坏内联 onclick 字符串
-            card.querySelector('.mcp-save-btn').onclick = () => updateSingleMcp(server.id, server.name, index);
+            card.querySelector('.mcp-save-btn').onclick = () => updateSingleMcp(server.id, index);
             card.querySelector('.mcp-test-btn').onclick = () => testMcpServerTools(server, index);
             const deleteBtn = card.querySelector('.delete-btn');
             deleteBtn.title = t('common.purge');
@@ -126,6 +130,7 @@ async function fetchMcpRegistry() {
     }
 }
 
+// ===== 4. 新增服务 =====
 async function submitMcpServer() {
     const name = document.getElementById('mcpKey').value.trim();
     const description = document.getElementById('mcpDesc').value.trim();
@@ -176,10 +181,10 @@ async function submitMcpServer() {
     }
 }
 
-async function updateSingleMcp(id, name, index) {
+// ===== 5. 编辑服务 =====
+async function updateSingleMcp(id, index) {
     const type = document.getElementById(`mcp-type-${index}`).value;
-    const nameInput = document.getElementById(`mcp-name-${index}`);
-    name = nameInput ? nameInput.value.trim() : name;
+    const name = document.getElementById(`mcp-name-${index}`).value.trim();
     if (!name) {
         showToast(t('mcp.nameRequired'), 'error');
         return;
@@ -222,6 +227,7 @@ async function updateSingleMcp(id, name, index) {
     }
 }
 
+// ===== 6. 删除服务 =====
 function removeMcpServer(id, name) {
     showConfirmDialog({
         title: t('mcp.purgeTitle'),
@@ -239,6 +245,7 @@ function removeMcpServer(id, name) {
     });
 }
 
+// ===== 7. 连接测试 =====
 async function testMcpServerTools(targetServer, index) {
     const card = document.getElementById(`mcp-card-${index}`);
     const detailsZone = document.getElementById(`mcp-tools-zone-${index}`);
@@ -271,4 +278,3 @@ async function testMcpServerTools(targetServer, index) {
         listContainer.innerHTML = `<div class="text-error-mono">${t('mcp.sessionCrashed')}</div>`;
     }
 }
-

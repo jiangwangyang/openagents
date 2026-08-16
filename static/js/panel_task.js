@@ -1,9 +1,12 @@
 // ==========================================
 // TASK 任务流水线管理面板
 // ==========================================
+
+// ===== 1. DOM 节点缓存 =====
 const taskListContainer = document.getElementById('taskListContainer');
 const addTaskPanel = document.getElementById('addTaskPanel');
 
+// ===== 2. 新增面板与表单辅助 =====
 function toggleAddTaskPanel() {
     const isOpening = addTaskPanel.style.display === 'none';
     addTaskPanel.style.display = isOpening ? 'flex' : 'none';
@@ -35,6 +38,7 @@ function getCheckedAgentIds(container) {
     return Array.from(container.querySelectorAll('input[type=checkbox]:checked')).map(input => parseInt(input.value));
 }
 
+// ===== 3. 任务列表 =====
 async function fetchTaskList() {
     taskListContainer.innerHTML = SKELETON_HTML;
     try {
@@ -58,7 +62,6 @@ async function fetchTaskList() {
             }).join(', ');
             const card = document.createElement('div');
             card.className = 'info-card';
-            card.id = `task-card-${task.id}`;
             card.innerHTML = `
                 <div class="info-card-summary" onclick="toggleTaskCard(this.parentNode, ${task.id})">
                     <div class="info-card-main">
@@ -77,7 +80,7 @@ async function fetchTaskList() {
                         <div class="details-label">${t('task.title')}</div>
                         <div class="details-value">${escapeHtml(task.title)}</div>
                         <div class="details-label">${t('task.content')}</div>
-                        <div class="details-value" style="white-space:pre-wrap;">${escapeHtml(task.content)}</div>
+                        <div class="details-value" style="white-space: pre-wrap;">${escapeHtml(task.content)}</div>
                         <div class="details-label">${t('task.workDir')}</div>
                         <div class="details-value">${escapeHtml(task.work_dir || t('common.inheritedEnv'))}</div>
                         <div class="details-label">${t('task.candidateAgents')}</div>
@@ -123,6 +126,7 @@ async function fetchTaskList() {
     }
 }
 
+// ===== 4. 任务详情 =====
 // 展开任务卡片时加载任务详情（阶段对话进展）
 function toggleTaskCard(cardElement, taskId) {
     toggleCardOpen(cardElement);
@@ -196,6 +200,7 @@ async function submitTaskReview(taskId, conversationId) {
     }
 }
 
+// ===== 5. 新增任务 =====
 async function submitTask() {
     const title = document.getElementById('taskTitle').value.trim();
     const content = document.getElementById('taskContent').value.trim();
@@ -224,23 +229,7 @@ async function submitTask() {
     }
 }
 
-function removeTask(taskId, taskTitle) {
-    showConfirmDialog({
-        title: t('task.purgeTitle'),
-        text: t('task.purgeText', {name: taskTitle}),
-        onConfirm: async () => {
-            try {
-                const response = await fetch(`/task/${taskId}`, {method: 'DELETE'});
-                if (response.ok) {
-                    await fetchTaskList();
-                }
-            } catch (e) {
-                showToast(t('common.purgeFailure'), 'error');
-            }
-        }
-    });
-}
-
+// ===== 6. 启动任务 =====
 async function startTask(taskId) {
     const agentId = document.getElementById(`task-start-agent-${taskId}`).value;
     if (!agentId) {
@@ -267,3 +256,20 @@ async function startTask(taskId) {
     }
 }
 
+// ===== 7. 删除任务 =====
+function removeTask(taskId, taskTitle) {
+    showConfirmDialog({
+        title: t('task.purgeTitle'),
+        text: t('task.purgeText', {name: taskTitle}),
+        onConfirm: async () => {
+            try {
+                const response = await fetch(`/task/${taskId}`, {method: 'DELETE'});
+                if (response.ok) {
+                    await fetchTaskList();
+                }
+            } catch (e) {
+                showToast(t('common.purgeFailure'), 'error');
+            }
+        }
+    });
+}

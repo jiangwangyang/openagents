@@ -1,12 +1,16 @@
 // ==========================================
 // CONFIG 系统配置面板（模型供应商）
 // ==========================================
+
+// ===== 1. DOM 节点缓存 =====
 const addProviderPanel = document.getElementById('addProviderPanel');
 
+// ===== 2. 新增面板 =====
 function toggleAddProviderPanel() {
     addProviderPanel.style.display = addProviderPanel.style.display === 'none' ? 'flex' : 'none';
 }
 
+// ===== 3. 供应商列表 =====
 async function fetchGlobalSettings() {
     const providerList = document.getElementById('providerConfigList');
     providerList.innerHTML = SKELETON_HTML;
@@ -33,8 +37,6 @@ function renderProvidersFormList(providers) {
     providers.forEach((provider, index) => {
         const card = document.createElement('div');
         card.className = 'info-card';
-        // 元素 id 使用列表索引生成（供应商名可能包含引号等特殊字符）
-        card.id = `provider-card-${index}`;
 
         const snippet = provider.base_url || t('config.endpointMissing');
 
@@ -45,9 +47,9 @@ function renderProvidersFormList(providers) {
                     <span class="info-card-name card-name-fixed">${escapeHtml(provider.name)}</span>
                     <span class="info-card-snippet">${escapeHtml(snippet)}</span>
                 </div>
-                <div class="card-actions" style="gap:12px;" onclick="event.stopPropagation();">
+                <div class="card-actions" onclick="event.stopPropagation();">
                     <button class="btn btn-sm send-button provider-save-btn btn-card-sm">${t('common.save')}</button>
-                    <button class="delete-btn always-visible" style="color:var(--danger-color); font-size:11px; font-family:var(--font-mono); font-weight:700;">${DELETE_SVG}</button>
+                    <button class="delete-btn always-visible">${DELETE_SVG}</button>
                 </div>
             </div>
             <div class="info-card-details details-surface" style="display: none;">
@@ -89,6 +91,7 @@ function renderProvidersFormList(providers) {
     });
 }
 
+// ===== 4. 新增供应商 =====
 async function submitNewProvider() {
     const name = document.getElementById('newProviderName').value.trim();
     if (!name) {
@@ -121,6 +124,7 @@ async function submitNewProvider() {
     }
 }
 
+// ===== 5. 编辑供应商 =====
 async function updateSingleProvider(id, index) {
     const name = document.getElementById(`provider-name-${index}`).value.trim();
     if (!name) {
@@ -149,6 +153,7 @@ async function updateSingleProvider(id, index) {
     }
 }
 
+// ===== 6. 删除供应商 =====
 function removeModelProvider(id, name) {
     showConfirmDialog({
         title: t('config.purgeTitle'),
@@ -166,7 +171,7 @@ function removeModelProvider(id, name) {
     });
 }
 
-// 密钥显示/隐藏切换（新增卡片与编辑卡片通用）
+// ===== 7. 密钥显隐切换（新增卡片与编辑卡片通用） =====
 function toggleKeyVisibility(inputId, btn) {
     const input = document.getElementById(inputId);
     if (!input) {

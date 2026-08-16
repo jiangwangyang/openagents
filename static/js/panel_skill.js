@@ -1,8 +1,11 @@
 // ==========================================
 // SKILL 技能展示面板（只读）
 // ==========================================
+
+// ===== 1. DOM 节点缓存 =====
 const skillListContainer = document.getElementById('skillListContainer');
 
+// ===== 2. 技能列表 =====
 async function fetchSkillData() {
     skillListContainer.innerHTML = SKELETON_HTML;
     try {
@@ -45,4 +48,3 @@ async function fetchSkillData() {
         skillListContainer.innerHTML = errorListHtml('common.fetchFailed');
     }
 }
-

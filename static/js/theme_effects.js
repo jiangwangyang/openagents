@@ -1,6 +1,8 @@
 // ==========================================
 // 主题动态粒子特效引擎（背景装饰由 CSS 变量驱动，此引擎负责飘叶/光尘/星尘/霓虹雨等）
 // ==========================================
+
+// ===== 1. 特效配置与运行时状态 =====
 // 主题特效配置表：key 为 data-theme 值，null 表示该主题无动态特效
 const THEME_EFFECTS = {
     'light': null,
@@ -19,9 +21,10 @@ let fx = {running: false, raf: null, parts: [], kind: null, canvas: null, ctx: n
 const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 // 帧间隔上限：全部主题特效限制 30fps，降低 GPU/CPU 常驻开销（dt 按真实流逝时间计算，运动速度不受影响）
 const FX_FRAME_MS = 1000 / 30;
-// 初始化标记：防止 script 顶部 setTheme 与 DOMContentLoaded 重复绑定
+// 初始化标记：防止重复绑定画布与监听
 let fxBound = false;
 
+// ===== 2. 初始化与启动 =====
 // 初始化特效层：绑定画布、响应窗口缩放、启动当前主题特效
 function initThemeEffects() {
     const canvas = document.getElementById('themeEffectsCanvas');
@@ -97,6 +100,7 @@ function startThemeEffects(theme) {
     fx.raf = requestAnimationFrame(tick);
 }
 
+// ===== 3. 粒子生成与主循环 =====
 // 生成单个粒子对象（飘叶/光尘/星尘/霓虹雨等类型，按主题特效 kind 分发）
 function makeParticle(kind, w, h, seed, theme) {
     const rand = (min, max) => min + Math.random() * (max - min);
@@ -276,6 +280,7 @@ function tick(now) {
     }
 }
 
+// ===== 4. 绘制函数 =====
 // 绘制光点（光尘/星光通用）
 function drawDot(ctx, p) {
     ctx.save();
@@ -476,4 +481,3 @@ function drawLeaf(ctx, p) {
     ctx.fill();
     ctx.restore();
 }
-

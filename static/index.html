@@ -96,7 +96,8 @@
                 <button class="btn btn-sm send-button" onclick="toggleAddTaskPanel()" data-i18n="task.newTask">+ New Task</button>
             </div>
 
-            <div class="add-cron-panel" id="addTaskPanel" style="display: none;">
+            <!-- 任务新增面板 -->
+            <div class="add-panel" id="addTaskPanel" style="display: none;">
                 <div class="form-row">
                     <div class="form-group flex-1">
                         <label data-i18n="task.title">Task Title</label>
@@ -145,7 +146,8 @@
                 <button class="btn btn-sm send-button" onclick="toggleAddCronPanel()" data-i18n="cron.newCron">+ New Cron</button>
             </div>
 
-            <div class="add-cron-panel" id="addCronPanel" style="display: none;">
+            <!-- 定时任务新增面板 -->
+            <div class="add-panel" id="addCronPanel" style="display: none;">
                 <div class="form-row">
                     <div class="form-group">
                         <label data-i18n="cron.name">Task Name</label>
@@ -167,11 +169,26 @@
                         <label data-i18n="cron.agent">Agent</label>
                         <select id="cronAgentId" class="form-control"></select>
                     </div>
-                    <div class="form-group"><label data-i18n="cron.minute">Min</label><input type="text" id="cronMin" class="form-control mono" value="0"></div>
-                    <div class="form-group"><label data-i18n="cron.hour">Hour</label><input type="text" id="cronHour" class="form-control mono" value="9"></div>
-                    <div class="form-group"><label data-i18n="cron.day">Day</label><input type="text" id="cronDay" class="form-control mono" value="*"></div>
-                    <div class="form-group"><label data-i18n="cron.month">Month</label><input type="text" id="cronMonth" class="form-control mono" value="*"></div>
-                    <div class="form-group"><label data-i18n="cron.week">Week</label><input type="text" id="cronWeek" class="form-control mono" value="*"></div>
+                    <div class="form-group">
+                        <label data-i18n="cron.minute">Min</label>
+                        <input type="text" id="cronMin" class="form-control mono" value="0">
+                    </div>
+                    <div class="form-group">
+                        <label data-i18n="cron.hour">Hour</label>
+                        <input type="text" id="cronHour" class="form-control mono" value="9">
+                    </div>
+                    <div class="form-group">
+                        <label data-i18n="cron.day">Day</label>
+                        <input type="text" id="cronDay" class="form-control mono" value="*">
+                    </div>
+                    <div class="form-group">
+                        <label data-i18n="cron.month">Month</label>
+                        <input type="text" id="cronMonth" class="form-control mono" value="*">
+                    </div>
+                    <div class="form-group">
+                        <label data-i18n="cron.week">Week</label>
+                        <input type="text" id="cronWeek" class="form-control mono" value="*">
+                    </div>
                 </div>
                 <div class="form-hint" data-i18n="cron.formatHint"></div>
                 <div class="form-row">
@@ -200,7 +217,7 @@
             </div>
 
             <!-- 智能体新增面板 -->
-            <div class="add-cron-panel" id="addAgentPanel" style="display: none;">
+            <div class="add-panel" id="addAgentPanel" style="display: none;">
                 <div class="form-row">
                     <div class="form-group flex-1">
                         <label data-i18n="agent.name">Agent Name</label>
@@ -265,7 +282,7 @@
             </div>
 
             <!-- MCP 新增面板 -->
-            <div class="add-cron-panel" id="addMcpPanel" style="display: none;">
+            <div class="add-panel" id="addMcpPanel" style="display: none;">
                 <div class="form-row">
                     <div class="form-group flex-1">
                         <label data-i18n="mcp.keyName">Server Name</label>
@@ -328,8 +345,8 @@
 
             <div id="configFormContainer" class="config-form-container">
                 <!-- 新增供应商面板 -->
-                <div class="add-cron-panel" id="addProviderPanel" style="display: none;">
-                    <h3 class="panel-view-title" style="font-size: 12px; color: var(--charcoal-700); margin-bottom: 4px;" data-i18n="config.newProviderCard">+ New Model Provider</h3>
+                <div class="add-panel" id="addProviderPanel" style="display: none;">
+                    <h3 class="panel-sub-title" data-i18n="config.newProviderCard">+ New Model Provider</h3>
                     <div class="form-row">
                         <div class="form-group flex-1">
                             <label data-i18n="config.providerName">Provider Name</label>
@@ -383,7 +400,7 @@
                 <!-- 模型路由选择：供应商下拉、模型输入（聚焦时拉取模型列表）、思考开关，每次发送消息时生效 -->
                 <select id="providerSelect" class="form-control header-select" title="Select Provider" data-i18n-title="input.providerTitle"></select>
                 <div class="model-combo-wrapper" id="modelComboWrapper">
-                    <input id="modelSelect" class="form-control header-select" title="Select Model" data-i18n-title="input.modelTitle" placeholder="MODEL" autocomplete="off" style="width:160px;">
+                    <input id="modelSelect" class="form-control header-select" title="Select Model" data-i18n-title="input.modelTitle" placeholder="MODEL" autocomplete="off">
                     <div class="model-combo-list" id="modelComboList"></div>
                 </div>
                 <select id="thinkingSelect" class="form-control header-select" title="Thinking Mode" data-i18n-title="input.thinkingTitle">
@@ -391,9 +408,9 @@
                     <option value="false">NO THINK</option>
                 </select>
                 <!-- 会话创建后锁定目录与智能体的说明文字，默认隐藏，由 setContextLocked 控制显隐 -->
-                <span class="context-lock-hint" id="contextLockHint" style="display:none;" data-i18n="input.contextLocked"></span>
+                <span class="context-lock-hint" id="contextLockHint" style="display: none;" data-i18n="input.contextLocked"></span>
                 <!-- 系统提示词来源提示，由 updatePromptSourceHint 维护内容与显隐 -->
-                <span class="prompt-source-hint" id="promptSourceHint" style="display:none;"></span>
+                <span class="prompt-source-hint" id="promptSourceHint" style="display: none;"></span>
             </div>
             <div class="input-container">
                 <textarea class="message-input" id="messageInput" placeholder="Enter instructions..." data-i18n-placeholder="input.placeholder" maxlength="20000" disabled rows="1"></textarea>
@@ -407,8 +424,8 @@
     <div id="dirModalOverlay" class="dir-modal-overlay">
         <div class="dir-modal">
             <div class="dir-modal-header">
-                <h3 class="confirm-title" style="margin-bottom:0" data-i18n="modal.workspaceContext">Workspace Context</h3>
-                <button class="delete-btn" onclick="closeDirModal()" style="opacity:1; color:var(--charcoal-900)">✕</button>
+                <h3 class="confirm-title" data-i18n="modal.workspaceContext">Workspace Context</h3>
+                <button class="delete-btn always-visible" onclick="closeDirModal()">✕</button>
             </div>
             <div class="dir-modal-toolbar">
                 <input type="text" id="manualPathInput" class="dir-path-input" placeholder="Input path..." data-i18n-placeholder="modal.pathPlaceholder">
@@ -416,7 +433,7 @@
             </div>
             <div class="dir-modal-pathbar" id="currentPathDisplay"></div>
 
-            <div class="dir-history-section" id="dirHistorySection" style="display:none;">
+            <div class="dir-history-section" id="dirHistorySection" style="display: none;">
                 <div class="dir-history-header" data-i18n="modal.recentWorkdirs">Recent Workdirs</div>
                 <div class="dir-history-list" id="dirHistoryList"></div>
             </div>

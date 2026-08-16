@@ -1,11 +1,14 @@
 // ==========================================
 // CRON 定时任务面板
 // ==========================================
+
+// ===== 1. DOM 节点缓存与状态 =====
 const cronListContainer = document.getElementById('cronListContainer');
 const addCronPanel = document.getElementById('addCronPanel');
 // 最近一次拉取的定时任务列表缓存，供保存时按 id 读取 enabled 等未编辑字段
 let cronTasksCache = [];
 
+// ===== 2. 新增面板与表单辅助 =====
 function toggleAddCronPanel() {
     const isOpening = addCronPanel.style.display === 'none';
     addCronPanel.style.display = isOpening ? 'flex' : 'none';
@@ -49,7 +52,7 @@ function parseCronExpr(expr) {
         hour: parts[2] || '*',
         day: parts[3] || '*',
         month: parts[4] || '*',
-        day_of_week: parts[5] || '*',
+        day_of_week: parts[5] || '*'
     };
 }
 
@@ -79,6 +82,7 @@ function buildCronPayload(name, content, workDir, agentIdVal, cronFieldValues, s
     };
 }
 
+// ===== 3. 任务列表 =====
 async function fetchCronTasks() {
     cronListContainer.innerHTML = SKELETON_HTML;
     try {
@@ -99,18 +103,17 @@ async function fetchCronTasks() {
             const enabledColor = task.enabled ? 'var(--success-color)' : 'var(--slate-400)';
             const card = document.createElement('div');
             card.className = 'info-card';
-            card.id = `cron-card-${task.id}`;
             card.innerHTML = `
                 <div class="info-card-summary" onclick="toggleCronCard(this.parentNode, ${task.id})">
                     <div class="info-card-main">
                         ${ARROW_SVG}
                         <span class="info-card-name card-name-fixed">${escapeHtml(task.name || t('cron.unnamed'))}</span>
                         <span class="info-card-snippet">${escapeHtml(task.content || '')}</span>
-                        <span class="card-meta card-meta-gap" style="color:${enabledColor};">${enabledText}</span>
+                        <span class="card-meta card-meta-gap" style="color: ${enabledColor};">${enabledText}</span>
                         <span class="card-meta card-meta-gap" title="${t('cron.triggerSpec')}">${escapeHtml(`${cron.minute} ${cron.hour} ${cron.day} ${cron.month} ${cron.day_of_week}`)}</span>
                         <span class="card-meta">${t('cron.nextFire')}: ${escapeHtml(task.next_fire_time || t('cron.suspended'))}</span>
                     </div>
-                    <div class="card-actions" style="gap:4px;" onclick="event.stopPropagation();">
+                    <div class="card-actions" onclick="event.stopPropagation();">
                         <button class="btn btn-sm btn-secondary cron-toggle-btn btn-card-sm">${task.enabled ? t('cron.disable') : t('cron.enable')}</button>
                         <button class="btn btn-sm send-button cron-save-btn btn-card-sm">${t('common.save')}</button>
                         <button class="delete-btn always-visible">${DELETE_SVG}</button>
@@ -134,12 +137,30 @@ async function fetchCronTasks() {
                         </div>
                     </div>
                     <div class="form-row">
-                        <div class="form-group"><label>${t('cron.agent')}</label><select id="cron-agent-${task.id}" class="form-control"></select></div>
-                        <div class="form-group"><label>${t('cron.minute')}</label><input type="text" id="cron-min-${task.id}" class="form-control mono" value="${escapeHtml(cron.minute)}"></div>
-                        <div class="form-group"><label>${t('cron.hour')}</label><input type="text" id="cron-hour-${task.id}" class="form-control mono" value="${escapeHtml(cron.hour)}"></div>
-                        <div class="form-group"><label>${t('cron.day')}</label><input type="text" id="cron-day-${task.id}" class="form-control mono" value="${escapeHtml(cron.day)}"></div>
-                        <div class="form-group"><label>${t('cron.month')}</label><input type="text" id="cron-month-${task.id}" class="form-control mono" value="${escapeHtml(cron.month)}"></div>
-                        <div class="form-group"><label>${t('cron.week')}</label><input type="text" id="cron-week-${task.id}" class="form-control mono" value="${escapeHtml(cron.day_of_week)}"></div>
+                        <div class="form-group">
+                            <label>${t('cron.agent')}</label>
+                            <select id="cron-agent-${task.id}" class="form-control"></select>
+                        </div>
+                        <div class="form-group">
+                            <label>${t('cron.minute')}</label>
+                            <input type="text" id="cron-min-${task.id}" class="form-control mono" value="${escapeHtml(cron.minute)}">
+                        </div>
+                        <div class="form-group">
+                            <label>${t('cron.hour')}</label>
+                            <input type="text" id="cron-hour-${task.id}" class="form-control mono" value="${escapeHtml(cron.hour)}">
+                        </div>
+                        <div class="form-group">
+                            <label>${t('cron.day')}</label>
+                            <input type="text" id="cron-day-${task.id}" class="form-control mono" value="${escapeHtml(cron.day)}">
+                        </div>
+                        <div class="form-group">
+                            <label>${t('cron.month')}</label>
+                            <input type="text" id="cron-month-${task.id}" class="form-control mono" value="${escapeHtml(cron.month)}">
+                        </div>
+                        <div class="form-group">
+                            <label>${t('cron.week')}</label>
+                            <input type="text" id="cron-week-${task.id}" class="form-control mono" value="${escapeHtml(cron.day_of_week)}">
+                        </div>
                     </div>
                     <div class="form-hint">${t('cron.formatHint')}</div>
                     <div class="form-row">
@@ -152,7 +173,7 @@ async function fetchCronTasks() {
                         <label class="nextfire-label">${t('cron.nextFire')}</label>
                         <div class="nextfire-value">${escapeHtml(task.next_fire_time || t('cron.suspended'))}</div>
                     </div>
-                    <div class="details-block-container" style="margin-top:12px;">
+                    <div class="details-block-container" style="margin-top: 12px;">
                         <div class="details-block-header">
                             <div class="details-label">${t('cron.execHistory')}</div>
                             <button class="btn btn-sm btn-secondary btn-card-xs" onclick="loadCronDetail(${task.id})">${t('common.refresh')}</button>
@@ -181,6 +202,7 @@ async function fetchCronTasks() {
     }
 }
 
+// ===== 4. 执行记录 =====
 // 展开 cron 卡片时加载定时任务详情（执行对话记录）
 function toggleCronCard(cardElement, scheduleId) {
     toggleCardOpen(cardElement);
@@ -214,6 +236,7 @@ async function loadCronDetail(scheduleId) {
     }
 }
 
+// ===== 5. 新增任务 =====
 async function submitCronTask() {
     const name = document.getElementById('cronName').value.trim();
     const content = document.getElementById('cronContent').value.trim();
@@ -246,6 +269,7 @@ async function submitCronTask() {
     }
 }
 
+// ===== 6. 编辑任务 =====
 // 保存单个定时任务的编辑
 async function updateSingleCron(taskId) {
     const name = document.getElementById(`cron-name-${taskId}`).value.trim();
@@ -296,7 +320,7 @@ async function toggleCronEnabled(task) {
         day_of_week: cron.day_of_week,
         second: cron.second,
         agent_id: task.agent_id,
-        enabled: !task.enabled,
+        enabled: !task.enabled
     };
     try {
         const response = await fetch(`/schedule/${task.id}`, {
@@ -312,6 +336,7 @@ async function toggleCronEnabled(task) {
     }
 }
 
+// ===== 7. 删除任务 =====
 function removeCronTask(taskId, taskName) {
     showConfirmDialog({
         title: t('cron.purgeTitle'),

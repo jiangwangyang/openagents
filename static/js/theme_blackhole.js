@@ -4,6 +4,7 @@
 // 渲染分辨率为 0.5 x devicePixelRatio(上限 2) 倍窗口尺寸，半分辨率渲染兼顾性能与清晰度
 // ==========================================
 
+// ===== 1. 着色器源码 =====
 // 顶点着色器：全屏三角形
 const BH_VERT = `
 attribute vec2 aPos;
@@ -223,7 +224,7 @@ void main(){
 }
 `;
 
-// 固定渲染参数（不提供任何可调节项）
+// ===== 2. 固定渲染参数（不提供任何可调节项） =====
 const BH_MASS = 0.5;                             // 黑洞质量 M, r_s = 2M
 const BH_TILT_DEG = 20;                          // 吸积盘倾角（度）
 const BH_EXPOSURE = 1.3;                         // 曝光
@@ -234,9 +235,10 @@ const BH_ORBIT_SPEED = 0.05;                     // 自动环绕角速度（弧�
 const BH_TAN_FOV = Math.tan(50 * Math.PI / 360); // 视场角 50 度
 const BH_FRAME_MS = 1000 / 30;                   // 帧间隔上限：限制 30fps 降低 GPU 常驻开销（dt 按真实流逝时间计算，环绕速度不受影响）
 
-// 渲染器运行时状态（纯数据对象）
+// ===== 3. 运行时状态（纯数据对象） =====
 let bh = {running: false, raf: null, canvas: null, gl: null, U: null, simT: 0, prevT: 0, yaw: BH_YAW0, ready: false, failed: false};
 
+// ===== 4. 初始化与分辨率 =====
 // 初始化黑洞渲染器：编译链接着色器、建立全屏三角形、解析 uniform 位置、绑定窗口缩放；WebGL 不可用或着色器编译失败时静默降级返回 false
 function initBlackhole() {
     if (bh.ready || bh.failed) {
@@ -310,6 +312,7 @@ function resizeBlackhole() {
     }
 }
 
+// ===== 5. 帧渲染与循环 =====
 // 绘制当前帧：按固定参数计算相机基向量与吸积盘姿态，上传 uniform 并渲染
 function drawBlackholeFrame() {
     const gl = bh.gl;
@@ -371,6 +374,7 @@ function tickBlackhole(now) {
     drawBlackholeFrame();
 }
 
+// ===== 6. 启动与停止 =====
 // 启动黑洞渲染：初始化 WebGL 并开始 RAF 循环；系统要求减少动态时仅渲染一帧静态画面
 function startBlackhole() {
     if (!initBlackhole()) {

@@ -1,6 +1,8 @@
 // ==========================================
 // 主题切换引擎（多套主题，未手动选择时默认浅色，非法值回退浅色）
 // ==========================================
+
+// ===== 1. 主题元数据 =====
 const THEME_STORAGE_KEY = 'openagents_theme';
 
 // 主题选择器元数据：菜单顺序即数组顺序，分 3 组（基础 light/dark → 其它主题 → 黑洞），divider 标记该项前插入分组分割线，bg/accent 用于色板预览，名称取自 i18n theme 组
@@ -14,6 +16,7 @@ const THEME_META = [
     {id: 'blackhole', divider: true, bg: '#000000', accent: '#ff9a3d'}
 ];
 
+// ===== 2. 主题切换 =====
 function setTheme(theme) {
     // 校验主题合法性（已删除主题/非法值回退浅色），THEME_EFFECTS 的 key 即有效主题白名单
     if (!Object.prototype.hasOwnProperty.call(THEME_EFFECTS, theme)) {
@@ -27,6 +30,7 @@ function setTheme(theme) {
     startThemeEffects(theme);
 }
 
+// ===== 3. 主题选择器 =====
 // 同步主题选择器显示：按钮色板与标签 + 菜单项高亮
 function syncThemePicker(theme) {
     const meta = THEME_META.find(item => item.id === theme) || THEME_META[0];
@@ -99,7 +103,8 @@ function initThemePicker() {
     syncThemePicker(document.documentElement.dataset.theme);
 }
 
-// 初始化：先应用内联脚本预设的主题（不触发持久化），再异步加载后端持久化主题并应用
+// ===== 4. 初始化 =====
+// 先应用当前 data-theme（未设置时默认浅色，不触发持久化），再异步加载后端持久化主题并应用
 (function initTheme() {
     const preset = document.documentElement.dataset.theme || 'light';
     document.documentElement.dataset.theme = preset;

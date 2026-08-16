@@ -1,9 +1,12 @@
 // ==========================================
 // AGENT 注册管理面板
 // ==========================================
+
+// ===== 1. DOM 节点缓存 =====
 const agentListContainer = document.getElementById('agentListContainer');
 const addAgentPanel = document.getElementById('addAgentPanel');
 
+// ===== 2. 新增面板与表单辅助 =====
 function toggleAddAgentPanel() {
     addAgentPanel.style.display = addAgentPanel.style.display === 'none' ? 'flex' : 'none';
     // 打开面板时刷新供应商下拉
@@ -23,6 +26,7 @@ async function loadAgentProviderOptions(elementId, selectedId) {
     }
 }
 
+// ===== 3. 智能体列表 =====
 async function fetchAgentRegistry() {
     agentListContainer.innerHTML = SKELETON_HTML;
     try {
@@ -38,8 +42,6 @@ async function fetchAgentRegistry() {
         agents.forEach(agent => {
             const card = document.createElement('div');
             card.className = 'info-card';
-            card.id = `agent-card-${agent.id}`;
-
             card.innerHTML = `
                 <div class="info-card-summary" onclick="toggleCardOpen(this.parentNode)">
                     <div class="info-card-main">
@@ -101,6 +103,7 @@ async function fetchAgentRegistry() {
     }
 }
 
+// ===== 4. 新增智能体 =====
 async function submitAgent() {
     const name = document.getElementById('agentName').value.trim();
     const description = document.getElementById('agentDesc').value.trim();
@@ -141,6 +144,7 @@ async function submitAgent() {
     }
 }
 
+// ===== 5. 编辑智能体 =====
 async function updateSingleAgent(id) {
     const name = document.getElementById(`agent-name-${id}`).value.trim();
     const description = document.getElementById(`agent-desc-${id}`).value.trim();
@@ -177,6 +181,7 @@ async function updateSingleAgent(id) {
     }
 }
 
+// ===== 6. 删除智能体 =====
 function removeAgent(id, name) {
     showConfirmDialog({
         title: t('agent.purgeTitle'),

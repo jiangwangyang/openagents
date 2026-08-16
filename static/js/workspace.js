@@ -1,6 +1,8 @@
 // ==========================================
-// 工作空间 (CWD) 及目录层级导航
+// 工作空间模块：工作目录 (CWD) 状态与目录选择弹窗
 // ==========================================
+
+// ===== 1. 弹窗状态与历史缓存 =====
 // 目录选择弹窗暂存路径与确认回调（回调为空则写入对话工作目录，默认行为）
 let tempSelectedPath = '';
 let dirConfirmCallback = null;
@@ -12,6 +14,7 @@ const WORKDIR_HISTORY_LIMIT = 10;
 // 工作目录历史内存缓存（打开目录弹窗时从后端拉取）
 let workdirHistoryCache = [];
 
+// ===== 2. 工作目录历史 =====
 // 从后端加载工作目录历史到内存缓存
 async function loadWorkdirHistory() {
     const raw = await getWebStorage(WORKDIR_HISTORY_KEY);
@@ -88,6 +91,7 @@ function confirmHistorySelection(path) {
     closeDirModal();
 }
 
+// ===== 3. 目录列表导航 =====
 async function loadDirList(path) {
     const dirListContainer = document.getElementById('dirList');
     const pathDisplay = document.getElementById('currentPathDisplay');
@@ -129,6 +133,7 @@ async function initDefaultWorkspace() {
     }
 }
 
+// ===== 4. 目录选择弹窗 =====
 // 打开目录选择弹窗：callback 为空时确认后写入对话工作目录（默认行为），否则回调处理选中路径
 async function openDirModal(callback, currentPath) {
     dirConfirmCallback = callback || null;
@@ -154,7 +159,7 @@ function selectPanelWorkspace(displayId) {
 }
 
 function handleManualJump() {
-    const targetPath = manualPathInput.value.trim();
+    const targetPath = document.getElementById('manualPathInput').value.trim();
     if (targetPath) {
         loadDirList(targetPath);
     }
@@ -170,6 +175,11 @@ function confirmDirSelection() {
     closeDirModal();
 }
 
+function closeDirModal() {
+    document.getElementById('dirModalOverlay').style.display = 'none';
+}
+
+// ===== 5. 工作目录显示 =====
 function updateWorkspaceUI(path) {
     currentWorkdir = path;
     // 仅刷新对话页的工作目录显示；任务/定时面板各自维护独立目录状态，避免互相覆盖
@@ -178,8 +188,4 @@ function updateWorkspaceUI(path) {
     display.title = path;
     // 工作目录变化会影响系统提示词来源提示
     updatePromptSourceHint();
-}
-
-function closeDirModal() {
-    document.getElementById('dirModalOverlay').style.display = 'none';
 }

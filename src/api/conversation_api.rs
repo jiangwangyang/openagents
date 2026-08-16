@@ -47,23 +47,10 @@ pub async fn get_conversation(
             "thinking": a.thinking,
         })
     });
-    // 对话基本字段由实体序列化展开, messages 与原接口保持一致(不含 conversation_id), 追加 agent 字段;
-    // role/stop_reason/token/time 等字段从 content(pi 消息 JSON)派生
-    let messages: Vec<serde_json::Value> = conversation.messages.iter().map(|msg| {
-        json!({
-            "id": msg.id,
-            "role": msg.content["role"].as_str().unwrap_or(""),
-            "content": msg.content,
-            "stop_reason": msg.content["stopReason"].as_str().unwrap_or(""),
-            "cache_read_input_tokens": msg.content["usage"]["cacheRead"].as_i64().unwrap_or(0),
-            "input_tokens": msg.content["usage"]["input"].as_i64().unwrap_or(0),
-            "output_tokens": msg.content["usage"]["output"].as_i64().unwrap_or(0),
-            "time": crate::repository::entity::timestamp_to_rfc3339(msg.content["timestamp"].as_u64().unwrap_or(0)),
-        })
-    }).collect();
+    // 对话基本字段由实体序列化展开, messages 直接返回数据库字段(id/conversation_id/content), 追加 agent 字段
     let mut result = serde_json::to_value(&conversation.conversation)
         .map_err(|e| AppError::Internal(e.into()))?;
-    result["messages"] = json!(messages);
+    result["messages"] = json!(conversation.messages);
     result["agent"] = agent_json.unwrap_or(serde_json::Value::Null);
     Ok(Json(result))
 }

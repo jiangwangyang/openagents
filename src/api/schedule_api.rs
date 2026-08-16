@@ -82,28 +82,23 @@ pub async fn get_schedule(
         }
     }
 
-    let conversations: Vec<serde_json::Value> = conversations.into_iter().map(|c| {
-        let messages = message_map.remove(&c.id).unwrap_or_default();
-        // role/time 从 content(pi 消息 JSON)派生
-        let messages: Vec<serde_json::Value> = messages.iter().map(|msg| {
+    let conversations: Vec<serde_json::Value> = conversations
+        .into_iter()
+        .map(|c| {
+            // messages 直接返回数据库字段(id/conversation_id/content)
+            let messages = message_map.remove(&c.id).unwrap_or_default();
             json!({
-                "id": msg.id,
-                "role": msg.content["role"].as_str().unwrap_or(""),
-                "content": msg.content,
-                "time": crate::repository::entity::timestamp_to_rfc3339(msg.content["timestamp"].as_u64().unwrap_or(0)),
+                "id": c.id,
+                "schedule_id": c.schedule_id,
+                "agent_id": c.agent_id,
+                "title": c.title,
+                "work_dir": c.work_dir,
+                "create_time": c.create_time,
+                "update_time": c.update_time,
+                "messages": messages,
             })
-        }).collect();
-        json!({
-            "id": c.id,
-            "schedule_id": c.schedule_id,
-            "agent_id": c.agent_id,
-            "title": c.title,
-            "work_dir": c.work_dir,
-            "create_time": c.create_time,
-            "update_time": c.update_time,
-            "messages": messages,
         })
-    }).collect();
+        .collect();
 
     Ok(Json(json!({
         "id": s.id,

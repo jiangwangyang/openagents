@@ -75,13 +75,6 @@ pub struct MessageEntity {
     pub content: serde_json::Value,
 }
 
-// pi 消息 timestamp(Unix 毫秒) 转 RFC3339 字符串
-pub fn timestamp_to_rfc3339(timestamp: u64) -> String {
-    chrono::DateTime::from_timestamp_millis(timestamp as i64)
-        .map(|dt| dt.with_timezone(&chrono::Local).to_rfc3339())
-        .unwrap_or_default()
-}
-
 // MCP 服务
 #[derive(Debug, Clone, FromRow, serde::Serialize)]
 pub struct McpServerEntity {

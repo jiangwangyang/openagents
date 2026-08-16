@@ -173,12 +173,13 @@ function fillSelectOptions(select, items, selectedId) {
     });
 }
 
-// 取对话最后一条消息的展示文本：content 为数组时取最后一个 block 的 text
+// 取对话最后一条消息的展示文本：msg.content 为 pi 消息 JSON，其内部 content 为字符串时直取，为 block 数组时取最后一个 block 的 text
 function getLastMessageText(messages) {
     if (!messages || messages.length === 0) {
         return t('task.noMessages');
     }
-    const content = messages[messages.length - 1].content;
+    const piMessage = messages[messages.length - 1].content;
+    const content = piMessage ? piMessage.content : null;
     if (typeof content === 'string') {
         return content;
     }

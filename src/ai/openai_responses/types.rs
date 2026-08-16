@@ -92,9 +92,12 @@ pub struct IncompleteDetails {
 }
 
 // Token 使用量
+// 对齐 pi 的 || 0 容错: 字段缺省回退 0(部分代理在终态响应中省略 usage 字段)
 #[derive(Debug, Clone, Deserialize)]
 pub struct ResponseUsage {
+    #[serde(default)]
     pub input_tokens: u64,
+    #[serde(default)]
     pub output_tokens: u64,
     pub total_tokens: Option<u64>,
     pub input_tokens_details: Option<InputTokensDetails>,

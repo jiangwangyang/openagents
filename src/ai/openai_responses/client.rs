@@ -1,8 +1,6 @@
 // OpenAI Responses 流式客户端 + pi 基准协议双向适配
 // (移植自 pi/packages/ai/src/api/openai-responses.ts 与 openai-responses-shared.ts)
 // 裁剪说明: 不迁移 grammar 自定义工具、deferred tools、serviceTier 计费、prompt cache、compat 选项
-use std::collections::HashSet;
-
 use eventsource_stream::Eventsource;
 use futures_util::{Stream, StreamExt};
 use reqwest::Client;
@@ -130,12 +128,9 @@ pub struct ConvertResponsesMessagesOptions {
 }
 
 // pi 消息列表 -> Responses input(对齐 pi convertResponsesMessages 的裁剪版: 无 grammar/deferred tools)
-pub fn convert_responses_messages(
-    model: &Model,
-    context: &Context,
-    allowed_tool_call_providers: &HashSet<String>,
-    options: &ConvertResponsesMessagesOptions,
-) -> Vec<Value> {
+// 对齐说明: pi 以固定供应商集合判断是否允许 "callId|itemId" 拆分; 本项目 toolCall id 均由本客户端
+// 按本协议格式生成(provider 为用户配置的实体 id, 非 pi KnownApi), 恒允许拆分, 故裁剪该参数
+pub fn convert_responses_messages(model: &Model, context: &Context, options: &ConvertResponsesMessagesOptions) -> Vec<Value> {
     let mut messages: Vec<Value> = Vec::new();
 
     // id 片段规范化: 非法字符替换为 '_', 截断 64, 去掉尾部 '_'
@@ -155,9 +150,6 @@ pub fn convert_responses_messages(
     };
 
     let normalize_tool_call_id = |id: &str, _target_model: &Model, source: &AssistantMessage| -> String {
-        if !allowed_tool_call_providers.contains(&model.provider) {
-            return normalize_id_part(id);
-        }
         if !id.contains('|') {
             return normalize_id_part(id);
         }
@@ -672,9 +664,7 @@ const MIN_OUTPUT_TOKENS: u32 = 16;
 
 // 请求参数构建(对齐 pi openai-responses.ts buildParams 的裁剪版)
 fn build_params(model: &Model, context: &Context, options: &OpenAIResponsesOptions) -> CreateResponseRequest {
-    // 本供应商的 toolCall id 均按本协议格式生成, 允许 "callId|itemId" 拆分规范化
-    let allowed_tool_call_providers: HashSet<String> = HashSet::from([model.provider.clone()]);
-    let input = convert_responses_messages(model, context, &allowed_tool_call_providers, &ConvertResponsesMessagesOptions::default());
+    let input = convert_responses_messages(model, context, &ConvertResponsesMessagesOptions::default());
     let mut include: Vec<String> = Vec::new();
     let reasoning = if model.reasoning {
         if options.reasoning_effort.is_some() || options.reasoning_summary.is_some() {

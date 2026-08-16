@@ -163,6 +163,14 @@ pub struct MessageDeltaUsage {
     pub cache_creation_input_tokens: Option<u64>,
     pub cache_read_input_tokens: Option<u64>,
     pub input_tokens: Option<u64>,
+    // 输出 token 明细(对齐 pi: Anthropic 在终态 message_delta 上报 thinking_tokens, 为 output 的子集)
+    pub output_tokens_details: Option<OutputTokensDetails>,
+}
+
+// 输出 token 明细
+#[derive(Debug, Clone, Deserialize)]
+pub struct OutputTokensDetails {
+    pub thinking_tokens: Option<u64>,
 }
 
 // ========== 流事件 ==========

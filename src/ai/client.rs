@@ -41,16 +41,21 @@ pub fn stream(
         max_tokens,
     };
     match provider.protocol_type.as_str() {
-        "anthropic" => Ok(anthropic_client::stream(
-            &model("anthropic-messages"),
-            context,
-            &AnthropicOptions {
-                api_key: Some(provider.api_key.clone()),
-                max_tokens: Some(max_tokens),
-                thinking_enabled: Some(thinking),
-                thinking_budget_tokens: if thinking { Some(THINKING_BUDGET_TOKENS) } else { None },
-            },
-        )),
+        "anthropic" => {
+            // 对齐 pi adjustMaxTokensForThinking: thinking 开启时请求 max_tokens 叠加思考预算,
+            // 保证 max_tokens > budget_tokens(否则 Anthropic 返回 400); 本项目无模型上限目录, 省略 pi 的模型上限 clamp
+            let request_max_tokens = if thinking { max_tokens.saturating_add(THINKING_BUDGET_TOKENS) } else { max_tokens };
+            Ok(anthropic_client::stream(
+                &model("anthropic-messages"),
+                context,
+                &AnthropicOptions {
+                    api_key: Some(provider.api_key.clone()),
+                    max_tokens: Some(request_max_tokens),
+                    thinking_enabled: Some(thinking),
+                    thinking_budget_tokens: if thinking { Some(THINKING_BUDGET_TOKENS) } else { None },
+                },
+            ))
+        }
         "openai-responses" => Ok(responses_client::stream(
             &model("openai-responses"),
             context,

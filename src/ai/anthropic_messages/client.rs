@@ -475,6 +475,10 @@ pub fn stream(model: &Model, context: &Context, options: &AnthropicOptions) -> A
                         if let Some(cache_write) = usage.cache_creation_input_tokens {
                             output.usage.cache_write = cache_write;
                         }
+                        // 对齐 pi: 终态 message_delta 上报的 thinking_tokens 计入 reasoning(output 的子集)
+                        if let Some(thinking_tokens) = usage.output_tokens_details.as_ref().and_then(|d| d.thinking_tokens) {
+                            output.usage.reasoning = Some(thinking_tokens);
+                        }
                     }
                     // Anthropic 不提供 total_tokens, 由各分量计算
                     output.usage.total_tokens =

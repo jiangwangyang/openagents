@@ -100,7 +100,7 @@ pub async fn delete_schedule(state: &AppState, schedule_id: i64) -> anyhow::Resu
     Ok(deleted)
 }
 
-// 计算 cron 表达式的下次触发时间(UTC 转本地)
+// 计算 cron 表达式的下次触发时间(与调度器一致按本地时区解析)
 pub fn next_fire_time(cron_expr: &str) -> Option<String> {
     let schedule = cron::Schedule::from_str(cron_expr).ok()?;
     schedule
@@ -117,7 +117,8 @@ async fn add_job_to_scheduler(
 ) -> Result<(), JobSchedulerError> {
     let job_state = state.clone();
     let cron = cron_expr.to_string();
-    let job = Job::new_async(cron.as_str(), move |_uuid, _lock| {
+    // 显式指定本地时区, 与 next_fire_time 的展示口径一致(默认 UTC 会差一个时区偏移)
+    let job = Job::new_async_tz(cron.as_str(), chrono::Local, move |_uuid, _lock| {
         let state = job_state.clone();
         Box::pin(async move {
             if let Err(e) = execute_schedule(&state, schedule_id).await {

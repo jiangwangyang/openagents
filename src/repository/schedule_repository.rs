@@ -78,11 +78,18 @@ pub async fn update_schedule(
     Ok(result.rows_affected() > 0)
 }
 
-// 按 id 删除定时任务, 不存在返回 false
+// 按 id 删除定时任务, 关联执行对话一并删除(消息由外键 ON DELETE CASCADE 级联), 不存在返回 false
 pub async fn delete_schedule(pool: &SqlitePool, schedule_id: i64) -> Result<bool, sqlx::Error> {
+    // 对话与定时任务在同一事务中删除, 避免半截状态
+    let mut tx = pool.begin().await?;
+    sqlx::query("DELETE FROM t_conversation WHERE schedule_id = ?")
+        .bind(schedule_id)
+        .execute(&mut *tx)
+        .await?;
     let result = sqlx::query("DELETE FROM t_schedule WHERE id = ?")
         .bind(schedule_id)
-        .execute(pool)
+        .execute(&mut *tx)
         .await?;
+    tx.commit().await?;
     Ok(result.rows_affected() > 0)
 }

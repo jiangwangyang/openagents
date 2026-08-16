@@ -1,7 +1,8 @@
 // 对话服务: 启动对话、查询状态、发布 SSE chunk、后台 agent loop
+use std::sync::Arc;
+
 use futures_util::{FutureExt, StreamExt};
 use serde_json::{json, Value};
-use std::sync::Arc;
 use tokio::sync::RwLock;
 
 use crate::ai;

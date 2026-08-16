@@ -158,7 +158,6 @@ pub async fn list_mcp_server_tools(
     let service = mcp_tool::connect_mcp_server(&state.db, server_id)
         .await
         .map_err(|e| AppError::Internal(anyhow::anyhow!("MCP connect failed: {}", e)))?;
-    // 获取工具列表
     let tools = match service.peer().list_all_tools().await {
         Ok(t) => t,
         Err(e) => {

@@ -67,15 +67,14 @@ pub async fn get_task(
         })
         .collect();
 
-    let t = &task;
     Ok(Json(json!({
-        "id": t.id,
-        "title": t.title,
-        "content": t.content,
-        "agent_ids": t.agent_ids,
-        "work_dir": t.work_dir,
-        "create_time": t.create_time,
-        "update_time": t.update_time,
+        "id": task.id,
+        "title": task.title,
+        "content": task.content,
+        "agent_ids": task.agent_ids,
+        "work_dir": task.work_dir,
+        "create_time": task.create_time,
+        "update_time": task.update_time,
         "conversations": conversations,
     })))
 }

@@ -111,7 +111,6 @@ async fn do_run_task(state: &AppState, task_id: i64, agent_id: i64) -> anyhow::R
         let agent = agent_repository::get_agent(&state.db, latest_agent_id)
             .await?
             .ok_or_else(|| anyhow::anyhow!("agent not found"))?;
-        // 模型提供方由上层按需查询
         let provider =
             model_provider_repository::get_model_provider(&state.db, agent.model_provider_id)
                 .await?

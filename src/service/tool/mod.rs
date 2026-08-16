@@ -5,11 +5,13 @@ pub mod shell_tool;
 pub mod skill_tool;
 pub mod task_tool;
 
-use serde_json::Value;
-use sqlx::SqlitePool;
 #[cfg(windows)]
 use std::os::windows::process::CommandExt;
 
+use serde_json::Value;
+use sqlx::SqlitePool;
+
+use crate::ai::truncate_str;
 use crate::state::SkillInfo;
 
 // 工具执行上下文
@@ -133,15 +135,6 @@ fn which_pwsh() -> bool {
         cmd.creation_flags(0x08000000);
     }
     cmd.status().map(|s| s.success()).unwrap_or(false)
-}
-
-// 日志内容截断: 超过 max 字符时截断并追加省略号, 避免长内容刷爆日志
-fn truncate_str(s: &str, max: usize) -> String {
-    if s.chars().count() > max {
-        format!("{}...", s.chars().take(max).collect::<String>())
-    } else {
-        s.to_string()
-    }
 }
 
 // 执行选择的工具

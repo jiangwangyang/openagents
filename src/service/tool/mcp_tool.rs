@@ -131,7 +131,6 @@ pub async fn execute(cmd_and_args: &[String], db: &SqlitePool) -> (String, bool)
                 )
             }
         };
-        // 获取工具列表
         let tools = match service.peer().list_all_tools().await {
             Ok(t) => t,
             Err(e) => {
@@ -176,7 +175,6 @@ pub async fn execute(cmd_and_args: &[String], db: &SqlitePool) -> (String, bool)
                 )
             }
         };
-        // 获取工具列表并查找目标工具
         let tools = match service.peer().list_all_tools().await {
             Ok(t) => t,
             Err(e) => {
@@ -240,7 +238,6 @@ pub async fn execute(cmd_and_args: &[String], db: &SqlitePool) -> (String, bool)
         if let Some(args) = arguments {
             params = params.with_arguments(args);
         }
-        // 调用工具
         let call_result = match service.peer().call_tool(params).await {
             Ok(tool_result) => {
                 let tool_content_list: Vec<String> = tool_result

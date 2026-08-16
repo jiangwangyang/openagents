@@ -1,7 +1,8 @@
 // 连接池、建表
+use std::str::FromStr;
+
 use sqlx::sqlite::{SqliteConnectOptions, SqlitePoolOptions};
 use sqlx::SqlitePool;
-use std::str::FromStr;
 
 use crate::config;
 

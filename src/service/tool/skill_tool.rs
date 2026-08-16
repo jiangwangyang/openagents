@@ -115,7 +115,7 @@ pub fn list_skills(skills_store: &std::sync::RwLock<Vec<SkillInfo>>) -> Vec<Skil
         .clone()
 }
 
-// 执行
+// 执行技能命令
 pub fn execute(
     cmd_and_args: &[String],
     skills_store: &std::sync::RwLock<Vec<SkillInfo>>,

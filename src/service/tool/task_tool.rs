@@ -4,7 +4,7 @@ use sqlx::SqlitePool;
 use super::ToolResult;
 use crate::repository::{agent_repository, conversation_repository, task_repository};
 
-// 执行
+// 执行任务交接命令
 pub async fn execute(cmd_and_args: &[String], task_id: Option<i64>, db: &SqlitePool) -> ToolResult {
     // 任务移交: task_id 为当前对话所属任务(独立对话为空), 为该任务创建新对话
     let task_id = match task_id {
@@ -62,7 +62,6 @@ pub async fn execute(cmd_and_args: &[String], task_id: Option<i64>, db: &SqliteP
             Err(e) => return (format!("Database error: {}", e), true),
         };
 
-        // 检查 agent 是否在任务团队中
         if !task.agent_ids.0.contains(&agent_id) {
             return (format!("Agent not found in task team: {}", agent_id), true);
         }

@@ -271,7 +271,7 @@ fn map_stop_reason(
                     .unwrap_or_else(|| "The model refused to complete the request".to_string()),
             ),
         )),
-        // Stop is good enough -> resubmit
+        // pause_turn 视为正常停止(对齐 pi 注释: Stop is good enough -> resubmit)
         "pause_turn" => Ok((StopReason::Stop, None)),
         // 本项目不提供 stop sequences, 理论上不会触发
         "stop_sequence" => Ok((StopReason::Stop, None)),

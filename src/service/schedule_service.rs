@@ -1,5 +1,6 @@
 // 定时任务调度服务
 use std::str::FromStr;
+
 use tokio_cron_scheduler::{Job, JobSchedulerError};
 
 use crate::repository::{
@@ -148,7 +149,6 @@ async fn execute_schedule(state: &AppState, schedule_id: i64) -> anyhow::Result<
     let agent = agent_repository::get_agent(&state.db, schedule.agent_id)
         .await?
         .ok_or_else(|| anyhow::anyhow!("agent not found"))?;
-    // 模型提供方由上层按需查询
     let provider =
         model_provider_repository::get_model_provider(&state.db, agent.model_provider_id)
             .await?

@@ -1,11 +1,12 @@
 // 对话 API: 列表 / 删除 / 追加消息 / 启动对话 / 历史回放 / SSE 流式订阅
+use std::convert::Infallible;
+use std::sync::Arc;
+
 use axum::extract::{Path, State};
 use axum::response::sse::{Event, Sse};
 use axum::Json;
 use serde::Deserialize;
 use serde_json::json;
-use std::convert::Infallible;
-use std::sync::Arc;
 use tokio::sync::RwLock;
 
 use crate::error::AppError;

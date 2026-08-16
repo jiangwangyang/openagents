@@ -41,7 +41,7 @@ pub async fn list_conversations_by_task_id(
         .await
 }
 
-// 按对话 id 列表批量查询消息(IN 查询), 按 id 升序；ids 为空时由调用方跳过
+// 按对话 id 列表批量查询消息(IN 查询), 按 id 升序, ids 为空时由调用方跳过
 pub async fn list_messages_by_conversation_ids(
     pool: &SqlitePool,
     conversation_ids: &[i64],

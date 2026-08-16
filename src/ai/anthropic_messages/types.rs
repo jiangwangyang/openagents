@@ -93,53 +93,73 @@ pub enum ThinkingConfig {
 // ========== 响应消息 ==========
 
 // 完整消息(message_start 事件中的 message)
+// 对齐 pi 的容错: 仅读取 id/usage, 其余字段容忍缺省(部分代理返回非标准 message_start)
 #[allow(dead_code)]
 #[derive(Debug, Clone, Deserialize)]
 pub struct Message {
+    #[serde(default)]
     pub id: String,
-    #[serde(rename = "type")]
+    #[serde(rename = "type", default)]
     pub msg_type: String,
+    #[serde(default)]
     pub role: String,
+    #[serde(default)]
     pub model: String,
+    #[serde(default)]
     pub content: Vec<ContentBlock>,
     pub stop_reason: Option<String>,
     pub stop_sequence: Option<String>,
+    #[serde(default)]
     pub usage: Usage,
 }
 
 // 内容块(响应中的 content block)
+// 对齐 pi 的 ?? "" 容错: 文本/思考/签名字段容忍缺省, input 缺省回退空对象
 #[derive(Debug, Clone, Deserialize)]
 #[serde(tag = "type")]
 pub enum ContentBlock {
     #[serde(rename = "thinking")]
-    Thinking { thinking: String, signature: String },
+    Thinking {
+        #[serde(default)]
+        thinking: String,
+        #[serde(default)]
+        signature: String,
+    },
     #[serde(rename = "redacted_thinking")]
     RedactedThinking { data: String },
     #[serde(rename = "text")]
-    Text { text: String },
+    Text {
+        #[serde(default)]
+        text: String,
+    },
     #[serde(rename = "tool_use")]
     ToolUse {
         id: String,
         name: String,
+        #[serde(default)]
         input: serde_json::Value,
     },
 }
 
 // Token 使用量(message_start 中的 usage)
+// 对齐 pi 的 || 0 容错: 字段缺省回退 0
 #[allow(dead_code)]
-#[derive(Debug, Clone, Deserialize)]
+#[derive(Debug, Clone, Default, Deserialize)]
 pub struct Usage {
+    #[serde(default)]
     pub input_tokens: u64,
+    #[serde(default)]
     pub output_tokens: u64,
     pub cache_creation_input_tokens: Option<u64>,
     pub cache_read_input_tokens: Option<u64>,
 }
 
 // message_delta 中的 usage
+// 对齐 pi 的 != null 容错: 所有字段可选(部分代理在 message_delta 中省略字段)
 #[allow(dead_code)]
 #[derive(Debug, Clone, Deserialize)]
 pub struct MessageDeltaUsage {
-    pub output_tokens: u64,
+    pub output_tokens: Option<u64>,
     pub cache_creation_input_tokens: Option<u64>,
     pub cache_read_input_tokens: Option<u64>,
     pub input_tokens: Option<u64>,
@@ -155,7 +175,7 @@ pub enum MessageStreamEvent {
     #[serde(rename = "message_start")]
     MessageStart { message: Message },
     #[serde(rename = "message_delta")]
-    MessageDelta { delta: MessageDelta, usage: MessageDeltaUsage },
+    MessageDelta { delta: MessageDelta, usage: Option<MessageDeltaUsage> },
     #[serde(rename = "message_stop")]
     MessageStop,
     #[serde(rename = "content_block_start")]

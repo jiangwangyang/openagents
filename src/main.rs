@@ -7,7 +7,6 @@ mod ai;
 mod repository;
 mod service;
 mod state;
-mod tool;
 
 use std::sync::mpsc::Sender;
 use std::sync::Arc;
@@ -18,7 +17,7 @@ use tracing_subscriber::util::SubscriberInitExt;
 
 use crate::repository::database;
 use crate::state::{AppState, SkillInfo};
-use crate::tool::skill_tool;
+use crate::service::tool::skill_tool;
 
 fn main() -> anyhow::Result<()> {
     // 解析启动模式: 默认桌面模式, --web 为纯 HTTP 服务模式
@@ -93,7 +92,7 @@ async fn run_server(port_tx: Option<Sender<u16>>, bind_addr: String) -> anyhow::
     tracing::info!("Logging initialized: log_file={}", log_file.display());
 
     // Windows 下配置 PowerShell UTF-8
-    tool::shell_tool::setup_powershell_utf8().await;
+    service::tool::shell_tool::setup_powershell_utf8().await;
 
     // 初始化技能列表
     let skills: Arc<std::sync::RwLock<Vec<SkillInfo>>> = Arc::new(std::sync::RwLock::new(Vec::new()));

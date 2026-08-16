@@ -12,7 +12,7 @@ use crate::ai::pi::types::{
 use crate::repository::entity::NewMessageEntity;
 use crate::repository::{conversation_repository, model_provider_repository};
 use crate::state::{AppState, ConversationState};
-use crate::tool::{self, ToolContext};
+use crate::service::tool::{self, ToolContext};
 
 // 查询对话状态在内存中的保留时长(秒)
 const QUERY_STATE_TTL_SECS: u64 = 300;

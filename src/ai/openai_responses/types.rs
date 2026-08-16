@@ -131,8 +131,11 @@ pub enum OutputItem {
 }
 
 // reasoning 项(thinkingSignature 以其 JSON 序列化形式存储用于跨轮回放)
+// 对齐 pi 的 JSON.stringify(item) 全量存储: 未建模字段经 extra 原样保留, 回放不丢失;
+// id 容忍缺省(对齐 pi 不做校验, 缺省时回填/查找按空串处理)
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct ResponseReasoningItem {
+    #[serde(default)]
     pub id: String,
     #[serde(default)]
     pub summary: Vec<ReasoningTextPart>,
@@ -140,6 +143,9 @@ pub struct ResponseReasoningItem {
     pub content: Vec<ReasoningTextPart>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub encrypted_content: Option<String>,
+    // 未建模字段原样保留(如 status 等)
+    #[serde(flatten)]
+    pub extra: serde_json::Map<String, serde_json::Value>,
 }
 
 // reasoning 摘要/文本部分

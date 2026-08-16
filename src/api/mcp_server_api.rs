@@ -7,7 +7,7 @@ use crate::error::AppError;
 use crate::repository::entity::McpServerEntity;
 use crate::repository::mcp_server_repository;
 use crate::state::AppState;
-use crate::tool::mcp_tool;
+use crate::service::tool::mcp_tool;
 
 // 查询全部 MCP 服务, 按 id 升序
 pub async fn list_mcp_servers(State(state): State<AppState>) -> Result<Json<Vec<McpServerEntity>>, AppError> {

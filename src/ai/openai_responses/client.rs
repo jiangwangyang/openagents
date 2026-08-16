@@ -667,6 +667,9 @@ async fn process_responses_stream(
     Ok(())
 }
 
+// OpenAI Responses 拒绝 max_output_tokens 低于 16(对齐 pi OPENAI_RESPONSES_MIN_OUTPUT_TOKENS, pi issue #6265)
+const MIN_OUTPUT_TOKENS: u32 = 16;
+
 // 请求参数构建(对齐 pi openai-responses.ts buildParams 的裁剪版)
 fn build_params(model: &Model, context: &Context, options: &OpenAIResponsesOptions) -> CreateResponseRequest {
     // 本供应商的 toolCall id 均按本协议格式生成, 允许 "callId|itemId" 拆分规范化
@@ -691,7 +694,7 @@ fn build_params(model: &Model, context: &Context, options: &OpenAIResponsesOptio
         input,
         tools: context.tools.as_ref().filter(|t| !t.is_empty()).map(|t| convert_responses_tools(t)),
         reasoning,
-        max_output_tokens: options.max_tokens,
+        max_output_tokens: options.max_tokens.map(|t| t.max(MIN_OUTPUT_TOKENS)),
         stream: true,
         // stateless 模式: 历史由本地管理, 每次全量发送; encrypted_content 用于思考内容跨轮回传
         store: false,

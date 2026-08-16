@@ -461,16 +461,20 @@ pub fn stream(model: &Model, context: &Context, options: &AnthropicOptions) -> A
                             Err(e) => fail!(e),
                         }
                     }
-                    // 仅更新存在的字段(部分代理在 message_delta 中省略 input_tokens)
-                    if let Some(input_tokens) = usage.input_tokens {
-                        output.usage.input = input_tokens;
-                    }
-                    output.usage.output = usage.output_tokens;
-                    if let Some(cache_read) = usage.cache_read_input_tokens {
-                        output.usage.cache_read = cache_read;
-                    }
-                    if let Some(cache_write) = usage.cache_creation_input_tokens {
-                        output.usage.cache_write = cache_write;
+                    // 仅更新存在的字段(对齐 pi 的 != null 检查: 部分代理在 message_delta 中省略字段)
+                    if let Some(usage) = usage {
+                        if let Some(input_tokens) = usage.input_tokens {
+                            output.usage.input = input_tokens;
+                        }
+                        if let Some(output_tokens) = usage.output_tokens {
+                            output.usage.output = output_tokens;
+                        }
+                        if let Some(cache_read) = usage.cache_read_input_tokens {
+                            output.usage.cache_read = cache_read;
+                        }
+                        if let Some(cache_write) = usage.cache_creation_input_tokens {
+                            output.usage.cache_write = cache_write;
+                        }
                     }
                     // Anthropic 不提供 total_tokens, 由各分量计算
                     output.usage.total_tokens =

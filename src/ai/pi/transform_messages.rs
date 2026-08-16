@@ -65,8 +65,16 @@ pub fn transform_messages(messages: &[Message], model: &Model, normalize_tool_ca
                                 text_signature: None,
                             }));
                         }
-                        AssistantContent::Text(_) => {
-                            transformed_content.push(block.clone());
+                        AssistantContent::Text(t) => {
+                            // 对齐 pi: 同模型原样保留, 跨模型重建文本块丢弃 textSignature(旧模型的 msg id 不回放)
+                            if is_same_model {
+                                transformed_content.push(block.clone());
+                            } else {
+                                transformed_content.push(AssistantContent::Text(TextContent {
+                                    text: t.text.clone(),
+                                    text_signature: None,
+                                }));
+                            }
                         }
                         AssistantContent::ToolCall(tool_call) => {
                             let mut normalized_tool_call = tool_call.clone();

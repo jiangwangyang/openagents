@@ -23,7 +23,13 @@ pub async fn get_task(pool: &SqlitePool, task_id: i64) -> Result<Option<TaskEnti
 }
 
 // 新增任务, 返回自增 id
-pub async fn add_task(pool: &SqlitePool, title: &str, content: &str, agent_ids: &[i64], work_dir: &str) -> Result<i64, sqlx::Error> {
+pub async fn add_task(
+    pool: &SqlitePool,
+    title: &str,
+    content: &str,
+    agent_ids: &[i64],
+    work_dir: &str,
+) -> Result<i64, sqlx::Error> {
     let now = chrono::Local::now().to_rfc3339();
     let result = sqlx::query(
         "INSERT INTO t_task (title, content, agent_ids, work_dir, create_time, update_time) VALUES (?, ?, ?, ?, ?, ?)",

@@ -15,14 +15,20 @@ use crate::service::conversation_service;
 use crate::state::{AppState, ConversationState};
 
 // 对话列表接口, 按更新时间倒序返回独立对话(不含任务中的阶段对话)
-pub async fn list_conversations(State(state): State<AppState>) -> Result<Json<Vec<ConversationEntity>>, AppError> {
+pub async fn list_conversations(
+    State(state): State<AppState>,
+) -> Result<Json<Vec<ConversationEntity>>, AppError> {
     let conversations = conversation_repository::list_conversations(&state.db).await?;
     Ok(Json(conversations))
 }
 
 // 查询对话详情接口: 返回对话基本字段、消息列表及执行 Agent 配置(含模型提供方), 对话不存在返回 404
-pub async fn get_conversation(State(state): State<AppState>, Path(conversation_id): Path<i64>) -> Result<Json<serde_json::Value>, AppError> {
-    let conversation = conversation_repository::get_conversation(&state.db, conversation_id).await?;
+pub async fn get_conversation(
+    State(state): State<AppState>,
+    Path(conversation_id): Path<i64>,
+) -> Result<Json<serde_json::Value>, AppError> {
+    let conversation =
+        conversation_repository::get_conversation(&state.db, conversation_id).await?;
     let conversation = match conversation {
         Some(c) => c,
         None => return Err(AppError::NotFound("Conversation not found".to_string())),
@@ -55,16 +61,21 @@ pub async fn get_conversation(State(state): State<AppState>, Path(conversation_i
             "time": crate::repository::entity::timestamp_to_rfc3339(msg.content["timestamp"].as_u64().unwrap_or(0)),
         })
     }).collect();
-    let mut result = serde_json::to_value(&conversation.conversation).map_err(|e| AppError::Internal(e.into()))?;
+    let mut result = serde_json::to_value(&conversation.conversation)
+        .map_err(|e| AppError::Internal(e.into()))?;
     result["messages"] = json!(messages);
     result["agent"] = agent_json.unwrap_or(serde_json::Value::Null);
     Ok(Json(result))
 }
 
 // 删除对话接口, 消息由数据库外键 ON DELETE CASCADE 级联删除, 对话不存在返回 404, 正在运行返回 409
-pub async fn delete_conversation(State(state): State<AppState>, Path(conversation_id): Path<i64>) -> Result<(), AppError> {
+pub async fn delete_conversation(
+    State(state): State<AppState>,
+    Path(conversation_id): Path<i64>,
+) -> Result<(), AppError> {
     // 运行中的对话不允许删除, 避免后台任务存消息时外键失败
-    if let Some(conv_state) = conversation_service::get_conversation_state(&state, conversation_id) {
+    if let Some(conv_state) = conversation_service::get_conversation_state(&state, conversation_id)
+    {
         if !conv_state.read().await.done {
             return Err(AppError::Conflict("Conversation is running".to_string()));
         }
@@ -83,8 +94,13 @@ pub struct AddMessageRequest {
 }
 
 // 追加用户消息接口, 向指定对话追加一条 role 为 user 的消息并刷新对话更新时间, 对话不存在返回 404
-pub async fn add_conversation_message(State(state): State<AppState>, Path(conversation_id): Path<i64>, Json(req): Json<AddMessageRequest>) -> Result<(), AppError> {
-    let conversation = conversation_repository::get_conversation(&state.db, conversation_id).await?;
+pub async fn add_conversation_message(
+    State(state): State<AppState>,
+    Path(conversation_id): Path<i64>,
+    Json(req): Json<AddMessageRequest>,
+) -> Result<(), AppError> {
+    let conversation =
+        conversation_repository::get_conversation(&state.db, conversation_id).await?;
     if conversation.is_none() {
         return Err(AppError::NotFound("Conversation not found".to_string()));
     }
@@ -96,7 +112,8 @@ pub async fn add_conversation_message(State(state): State<AppState>, Path(conver
     let messages = vec![NewMessageEntity {
         content: serde_json::to_value(&message).map_err(|e| AppError::Internal(e.into()))?,
     }];
-    conversation_repository::add_conversation_messages(&state.db, conversation_id, &messages).await?;
+    conversation_repository::add_conversation_messages(&state.db, conversation_id, &messages)
+        .await?;
     Ok(())
 }
 
@@ -112,7 +129,10 @@ pub struct CreateWorkRequest {
 }
 
 // POST /conversation/start 创建对话并启动 work
-pub async fn create_conversation_work(State(state): State<AppState>, Json(req): Json<CreateWorkRequest>) -> Result<Json<i64>, AppError> {
+pub async fn create_conversation_work(
+    State(state): State<AppState>,
+    Json(req): Json<CreateWorkRequest>,
+) -> Result<Json<i64>, AppError> {
     let mut system_prompt = String::new();
     let model_provider_id;
     let model;
@@ -137,7 +157,11 @@ pub async fn create_conversation_work(State(state): State<AppState>, Json(req): 
                 model = m;
                 thinking = t;
             }
-            _ => return Err(AppError::BadRequest("Model config is required when agent_id is not provided".to_string())),
+            _ => {
+                return Err(AppError::BadRequest(
+                    "Model config is required when agent_id is not provided".to_string(),
+                ))
+            }
         }
         // 未指定 agent 时只从工作目录读取 AGENTS.md 作为系统提示词
         let agents_file = std::path::PathBuf::from(&req.work_dir).join("AGENTS.md");
@@ -149,8 +173,26 @@ pub async fn create_conversation_work(State(state): State<AppState>, Json(req): 
     }
 
     // 先创建对话, 再根据对话ID开始任务
-    let conversation_id = conversation_repository::add_conversation(&state.db, &req.task_content, &req.work_dir, &system_prompt, None, req.agent_id, None).await?;
-    if !conversation_service::start_conversation(&state, conversation_id, req.task_content.clone(), model_provider_id, model, thinking).await {
+    let conversation_id = conversation_repository::add_conversation(
+        &state.db,
+        &req.task_content,
+        &req.work_dir,
+        &system_prompt,
+        None,
+        req.agent_id,
+        None,
+    )
+    .await?;
+    if !conversation_service::start_conversation(
+        &state,
+        conversation_id,
+        req.task_content.clone(),
+        model_provider_id,
+        model,
+        thinking,
+    )
+    .await
+    {
         // 启动失败时清理刚创建的对话, 避免产生孤儿数据
         let _ = conversation_repository::delete_conversation(&state.db, conversation_id).await;
         return Err(AppError::Conflict("Work already running".to_string()));
@@ -168,16 +210,33 @@ pub struct StartWorkRequest {
 }
 
 // POST /conversation/{conversation_id}/start 启动历史回放
-pub async fn start_conversation_work(State(state): State<AppState>, Path(conversation_id): Path<i64>, Json(req): Json<StartWorkRequest>) -> Result<(), AppError> {
-    if !conversation_service::start_conversation(&state, conversation_id, req.task_content, req.model_provider_id, req.model, req.thinking).await {
+pub async fn start_conversation_work(
+    State(state): State<AppState>,
+    Path(conversation_id): Path<i64>,
+    Json(req): Json<StartWorkRequest>,
+) -> Result<(), AppError> {
+    if !conversation_service::start_conversation(
+        &state,
+        conversation_id,
+        req.task_content,
+        req.model_provider_id,
+        req.model,
+        req.thinking,
+    )
+    .await
+    {
         return Err(AppError::Conflict("Work already running".to_string()));
     }
     Ok(())
 }
 
 // GET /conversation/{conversation_id}/stream SSE 流式订阅
-pub async fn stream_conversation_work(State(state): State<AppState>, Path(conversation_id): Path<i64>) -> Result<Sse<impl futures_util::Stream<Item=Result<Event, Infallible>>>, AppError> {
-    let conversation = conversation_repository::get_conversation(&state.db, conversation_id).await?;
+pub async fn stream_conversation_work(
+    State(state): State<AppState>,
+    Path(conversation_id): Path<i64>,
+) -> Result<Sse<impl futures_util::Stream<Item = Result<Event, Infallible>>>, AppError> {
+    let conversation =
+        conversation_repository::get_conversation(&state.db, conversation_id).await?;
     if conversation.is_none() {
         return Err(AppError::NotFound("Conversation not found".to_string()));
     }
@@ -196,42 +255,53 @@ pub async fn stream_conversation_work(State(state): State<AppState>, Path(conver
 }
 
 // 创建 SSE 流: 先回放历史 chunks, 再实时跟随新数据
-fn create_sse_stream(conversation_state: Arc<RwLock<ConversationState>>) -> impl futures_util::Stream<Item=Result<Event, Infallible>> {
+fn create_sse_stream(
+    conversation_state: Arc<RwLock<ConversationState>>,
+) -> impl futures_util::Stream<Item = Result<Event, Infallible>> {
     let init_state = (0usize, None::<tokio::sync::watch::Receiver<u64>>);
-    futures_util::stream::unfold((conversation_state, init_state), |(conversation_state, (mut index, mut rx))| async move {
-        loop {
-            // 单次读锁取当前 chunk 数据与完成标记, 多个 SSE 读者可并发
-            let (data, done) = {
-                let s = conversation_state.read().await;
-                let data = s.chunks.get(index).map(|chunk| serde_json::to_string(chunk).unwrap_or_default());
-                (data, s.done)
-            };
+    futures_util::stream::unfold(
+        (conversation_state, init_state),
+        |(conversation_state, (mut index, mut rx))| async move {
+            loop {
+                // 单次读锁取当前 chunk 数据与完成标记, 多个 SSE 读者可并发
+                let (data, done) = {
+                    let s = conversation_state.read().await;
+                    let data = s
+                        .chunks
+                        .get(index)
+                        .map(|chunk| serde_json::to_string(chunk).unwrap_or_default());
+                    (data, s.done)
+                };
 
-            // 回放/输出新 chunks
-            if let Some(data) = data {
-                index += 1;
-                return Some((Ok(Event::default().data(data)), (conversation_state, (index, rx))));
-            }
+                // 回放/输出新 chunks
+                if let Some(data) = data {
+                    index += 1;
+                    return Some((
+                        Ok(Event::default().data(data)),
+                        (conversation_state, (index, rx)),
+                    ));
+                }
 
-            if done {
-                return None;
-            }
+                if done {
+                    return None;
+                }
 
-            // 初始化 watch receiver 后立即重查状态, 避免订阅发生在最后一次通知之后导致永久等待
-            if rx.is_none() {
-                let s = conversation_state.read().await;
-                rx = Some(s.notify.subscribe());
-                continue;
-            }
+                // 初始化 watch receiver 后立即重查状态, 避免订阅发生在最后一次通知之后导致永久等待
+                if rx.is_none() {
+                    let s = conversation_state.read().await;
+                    rx = Some(s.notify.subscribe());
+                    continue;
+                }
 
-            // 异步等待新数据通知
-            let receiver = match rx.as_mut() {
-                Some(r) => r,
-                None => return None,
-            };
-            if receiver.changed().await.is_err() {
-                return None;
+                // 异步等待新数据通知
+                let receiver = match rx.as_mut() {
+                    Some(r) => r,
+                    None => return None,
+                };
+                if receiver.changed().await.is_err() {
+                    return None;
+                }
             }
-        }
-    })
+        },
+    )
 }

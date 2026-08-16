@@ -4,7 +4,10 @@ use sqlx::SqlitePool;
 use super::entity::WebStorageEntity;
 
 // 按 key 查询 Web 存储
-pub async fn get_web_storage(pool: &SqlitePool, key: &str) -> Result<Option<WebStorageEntity>, sqlx::Error> {
+pub async fn get_web_storage(
+    pool: &SqlitePool,
+    key: &str,
+) -> Result<Option<WebStorageEntity>, sqlx::Error> {
     sqlx::query_as::<_, WebStorageEntity>(
         "SELECT key, value, create_time, update_time FROM t_web_storage WHERE key = ?",
     )

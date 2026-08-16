@@ -27,25 +27,33 @@ pub struct ScheduleResponse {
 }
 
 // 定时任务列表接口, 按 id 升序返回全部任务, 含下次触发时间
-pub async fn list_schedules(State(state): State<AppState>) -> Result<Json<Vec<ScheduleResponse>>, AppError> {
+pub async fn list_schedules(
+    State(state): State<AppState>,
+) -> Result<Json<Vec<ScheduleResponse>>, AppError> {
     let schedules = schedule_repository::list_schedules(&state.db).await?;
-    let result: Vec<ScheduleResponse> = schedules.into_iter().map(|s| ScheduleResponse {
-        id: s.id,
-        name: s.name,
-        content: s.content,
-        work_dir: s.work_dir,
-        trigger: s.cron_expr.clone(),
-        agent_id: s.agent_id,
-        enabled: s.enabled,
-        next_fire_time: schedule_service::next_fire_time(&s.cron_expr),
-        create_time: s.create_time,
-        update_time: s.update_time,
-    }).collect();
+    let result: Vec<ScheduleResponse> = schedules
+        .into_iter()
+        .map(|s| ScheduleResponse {
+            id: s.id,
+            name: s.name,
+            content: s.content,
+            work_dir: s.work_dir,
+            trigger: s.cron_expr.clone(),
+            agent_id: s.agent_id,
+            enabled: s.enabled,
+            next_fire_time: schedule_service::next_fire_time(&s.cron_expr),
+            create_time: s.create_time,
+            update_time: s.update_time,
+        })
+        .collect();
     Ok(Json(result))
 }
 
 // 定时任务详情接口, 包含全部执行对话(对话按 id 升序, 每条对话含全部按 id 升序的消息), 不存在返回 404
-pub async fn get_schedule(State(state): State<AppState>, Path(schedule_id): Path<i64>) -> Result<Json<serde_json::Value>, AppError> {
+pub async fn get_schedule(
+    State(state): State<AppState>,
+    Path(schedule_id): Path<i64>,
+) -> Result<Json<serde_json::Value>, AppError> {
     let schedule = schedule_repository::get_schedule(&state.db, schedule_id).await?;
     let s = match schedule {
         Some(s) => s,
@@ -53,15 +61,24 @@ pub async fn get_schedule(State(state): State<AppState>, Path(schedule_id): Path
     };
 
     // 查询定时任务的全部执行对话, 按 id 升序
-    let conversations = conversation_repository::list_conversations_by_schedule_id(&state.db, schedule_id).await?;
+    let conversations =
+        conversation_repository::list_conversations_by_schedule_id(&state.db, schedule_id).await?;
 
     // 批量查询全部执行对话的消息(一次 IN 查询 + 内存分组, 避免 N+1), 按 id 升序
-    let mut message_map: std::collections::HashMap<i64, Vec<MessageEntity>> = std::collections::HashMap::new();
+    let mut message_map: std::collections::HashMap<i64, Vec<MessageEntity>> =
+        std::collections::HashMap::new();
     if !conversations.is_empty() {
         let conversation_ids: Vec<i64> = conversations.iter().map(|c| c.id).collect();
-        let messages = conversation_repository::list_messages_by_conversation_ids(&state.db, &conversation_ids).await?;
+        let messages = conversation_repository::list_messages_by_conversation_ids(
+            &state.db,
+            &conversation_ids,
+        )
+        .await?;
         for message in messages {
-            message_map.entry(message.conversation_id).or_default().push(message);
+            message_map
+                .entry(message.conversation_id)
+                .or_default()
+                .push(message);
         }
     }
 
@@ -120,24 +137,55 @@ pub struct ScheduleRequest {
 }
 
 // 新增定时任务接口, 返回自增 id
-pub async fn add_schedule(State(state): State<AppState>, Json(req): Json<ScheduleRequest>) -> Result<Json<i64>, AppError> {
-    let cron_expr = format!("{} {} {} {} {} {}", req.second, req.minute, req.hour, req.day, req.month, req.day_of_week);
+pub async fn add_schedule(
+    State(state): State<AppState>,
+    Json(req): Json<ScheduleRequest>,
+) -> Result<Json<i64>, AppError> {
+    let cron_expr = format!(
+        "{} {} {} {} {} {}",
+        req.second, req.minute, req.hour, req.day, req.month, req.day_of_week
+    );
     // 校验 cron 表达式合法性(与调度器使用同一 cron 解析器)
     if cron::Schedule::from_str(&cron_expr).is_err() {
         return Err(AppError::BadRequest("Invalid cron expression".to_string()));
     }
-    let id = schedule_service::add_schedule(&state, &req.name, &req.content, &req.work_dir, &cron_expr, req.agent_id).await?;
+    let id = schedule_service::add_schedule(
+        &state,
+        &req.name,
+        &req.content,
+        &req.work_dir,
+        &cron_expr,
+        req.agent_id,
+    )
+    .await?;
     Ok(Json(id))
 }
 
 // 按 id 更新定时任务, 不存在返回 404
-pub async fn update_schedule(State(state): State<AppState>, Path(schedule_id): Path<i64>, Json(req): Json<ScheduleRequest>) -> Result<(), AppError> {
-    let cron_expr = format!("{} {} {} {} {} {}", req.second, req.minute, req.hour, req.day, req.month, req.day_of_week);
+pub async fn update_schedule(
+    State(state): State<AppState>,
+    Path(schedule_id): Path<i64>,
+    Json(req): Json<ScheduleRequest>,
+) -> Result<(), AppError> {
+    let cron_expr = format!(
+        "{} {} {} {} {} {}",
+        req.second, req.minute, req.hour, req.day, req.month, req.day_of_week
+    );
     // 校验 cron 表达式合法性(与调度器使用同一 cron 解析器)
     if cron::Schedule::from_str(&cron_expr).is_err() {
         return Err(AppError::BadRequest("Invalid cron expression".to_string()));
     }
-    let updated = schedule_service::update_schedule(&state, schedule_id, &req.name, &req.content, &req.work_dir, &cron_expr, req.agent_id, req.enabled).await?;
+    let updated = schedule_service::update_schedule(
+        &state,
+        schedule_id,
+        &req.name,
+        &req.content,
+        &req.work_dir,
+        &cron_expr,
+        req.agent_id,
+        req.enabled,
+    )
+    .await?;
     if !updated {
         return Err(AppError::NotFound("Schedule not found".to_string()));
     }
@@ -145,7 +193,10 @@ pub async fn update_schedule(State(state): State<AppState>, Path(schedule_id): P
 }
 
 // 按 id 删除定时任务, 不存在返回 404
-pub async fn delete_schedule(State(state): State<AppState>, Path(schedule_id): Path<i64>) -> Result<(), AppError> {
+pub async fn delete_schedule(
+    State(state): State<AppState>,
+    Path(schedule_id): Path<i64>,
+) -> Result<(), AppError> {
     let deleted = schedule_service::delete_schedule(&state, schedule_id).await?;
     if !deleted {
         return Err(AppError::NotFound("Schedule not found".to_string()));

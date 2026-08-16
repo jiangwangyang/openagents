@@ -13,7 +13,10 @@ pub async fn list_mcp_servers(pool: &SqlitePool) -> Result<Vec<McpServerEntity>,
 }
 
 // 按 id 查询 MCP 服务
-pub async fn get_mcp_server(pool: &SqlitePool, server_id: i64) -> Result<Option<McpServerEntity>, sqlx::Error> {
+pub async fn get_mcp_server(
+    pool: &SqlitePool,
+    server_id: i64,
+) -> Result<Option<McpServerEntity>, sqlx::Error> {
     sqlx::query_as::<_, McpServerEntity>(
         "SELECT id, name, description, protocol_type, url, headers, command, args, create_time, update_time FROM t_mcp_server WHERE id = ?",
     )
@@ -23,7 +26,16 @@ pub async fn get_mcp_server(pool: &SqlitePool, server_id: i64) -> Result<Option<
 }
 
 // 新增 MCP 服务, 成功返回自增 id
-pub async fn add_mcp_server(pool: &SqlitePool, name: &str, description: &str, protocol_type: &str, url: Option<&str>, headers: Option<&serde_json::Value>, command: Option<&str>, args: Option<&serde_json::Value>) -> Result<i64, sqlx::Error> {
+pub async fn add_mcp_server(
+    pool: &SqlitePool,
+    name: &str,
+    description: &str,
+    protocol_type: &str,
+    url: Option<&str>,
+    headers: Option<&serde_json::Value>,
+    command: Option<&str>,
+    args: Option<&serde_json::Value>,
+) -> Result<i64, sqlx::Error> {
     let now = chrono::Local::now().to_rfc3339();
     let result = sqlx::query(
         "INSERT INTO t_mcp_server (name, description, protocol_type, url, headers, command, args, create_time, update_time) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
@@ -43,7 +55,17 @@ pub async fn add_mcp_server(pool: &SqlitePool, name: &str, description: &str, pr
 }
 
 // 按 id 更新 MCP 服务, id 不存在返回 false
-pub async fn update_mcp_server(pool: &SqlitePool, server_id: i64, name: &str, description: &str, protocol_type: &str, url: Option<&str>, headers: Option<&serde_json::Value>, command: Option<&str>, args: Option<&serde_json::Value>) -> Result<bool, sqlx::Error> {
+pub async fn update_mcp_server(
+    pool: &SqlitePool,
+    server_id: i64,
+    name: &str,
+    description: &str,
+    protocol_type: &str,
+    url: Option<&str>,
+    headers: Option<&serde_json::Value>,
+    command: Option<&str>,
+    args: Option<&serde_json::Value>,
+) -> Result<bool, sqlx::Error> {
     let now = chrono::Local::now().to_rfc3339();
     let result = sqlx::query(
         "UPDATE t_mcp_server SET name = ?, description = ?, protocol_type = ?, url = ?, headers = ?, command = ?, args = ?, update_time = ? WHERE id = ?",

@@ -80,7 +80,11 @@ pub async fn init_skills(skills_store: &std::sync::RwLock<Vec<SkillInfo>>) {
                     None => String::new(),
                 };
 
-                let path = skill_file.canonicalize().unwrap_or(skill_file).to_string_lossy().to_string();
+                let path = skill_file
+                    .canonicalize()
+                    .unwrap_or(skill_file)
+                    .to_string_lossy()
+                    .to_string();
                 skills.push(SkillInfo {
                     name,
                     description,
@@ -105,11 +109,17 @@ pub async fn init_skills(skills_store: &std::sync::RwLock<Vec<SkillInfo>>) {
 
 // 获取技能列表
 pub fn list_skills(skills_store: &std::sync::RwLock<Vec<SkillInfo>>) -> Vec<SkillInfo> {
-    skills_store.read().unwrap_or_else(|e| e.into_inner()).clone()
+    skills_store
+        .read()
+        .unwrap_or_else(|e| e.into_inner())
+        .clone()
 }
 
 // 执行
-pub fn execute(cmd_and_args: &[String], skills_store: &std::sync::RwLock<Vec<SkillInfo>>) -> ToolResult {
+pub fn execute(
+    cmd_and_args: &[String],
+    skills_store: &std::sync::RwLock<Vec<SkillInfo>>,
+) -> ToolResult {
     // 1. skill list
     if cmd_and_args.len() == 2 && cmd_and_args[0] == "skill" && cmd_and_args[1] == "list" {
         let skills = skills_store.read().unwrap_or_else(|e| e.into_inner());

@@ -1,7 +1,9 @@
 // 多 Agent 执行循环
 use serde_json::{json, Value};
 
-use crate::repository::{agent_repository, conversation_repository, model_provider_repository, task_repository};
+use crate::repository::{
+    agent_repository, conversation_repository, model_provider_repository, task_repository,
+};
 use crate::service::conversation_service;
 use crate::state::AppState;
 
@@ -43,7 +45,11 @@ async fn run_task(state: AppState, task_id: i64, agent_id: i64) {
 
 // 实际任务循环逻辑
 async fn do_run_task(state: &AppState, task_id: i64, agent_id: i64) -> anyhow::Result<()> {
-    tracing::info!("Task loop started: task_id={} agent_id={}", task_id, agent_id);
+    tracing::info!(
+        "Task loop started: task_id={} agent_id={}",
+        task_id,
+        agent_id
+    );
     // 为第一个执行的 agent 创建阶段对话
     let task = task_repository::get_task(&state.db, task_id).await?;
     let agent = agent_repository::get_agent(&state.db, agent_id).await?;
@@ -60,7 +66,7 @@ async fn do_run_task(state: &AppState, task_id: i64, agent_id: i64) -> anyhow::R
         Some(agent_id),
         None,
     )
-        .await?;
+    .await?;
 
     loop {
         // 每轮重新查询任务基本字段与最新阶段对话状态
@@ -69,7 +75,8 @@ async fn do_run_task(state: &AppState, task_id: i64, agent_id: i64) -> anyhow::R
             Some(t) => t,
             None => return Ok(()),
         };
-        let latest = conversation_repository::get_latest_task_conversation_state(&state.db, task_id).await?;
+        let latest =
+            conversation_repository::get_latest_task_conversation_state(&state.db, task_id).await?;
         let latest = match latest {
             Some(l) => l,
             None => return Ok(()),
@@ -87,7 +94,7 @@ async fn do_run_task(state: &AppState, task_id: i64, agent_id: i64) -> anyhow::R
                 None,
                 None,
             )
-                .await?;
+            .await?;
             return Ok(());
         }
 
@@ -105,9 +112,10 @@ async fn do_run_task(state: &AppState, task_id: i64, agent_id: i64) -> anyhow::R
             .await?
             .ok_or_else(|| anyhow::anyhow!("agent not found"))?;
         // 模型提供方由上层按需查询
-        let provider = model_provider_repository::get_model_provider(&state.db, agent.model_provider_id)
-            .await?
-            .ok_or_else(|| anyhow::anyhow!("model provider not configured"))?;
+        let provider =
+            model_provider_repository::get_model_provider(&state.db, agent.model_provider_id)
+                .await?
+                .ok_or_else(|| anyhow::anyhow!("model provider not configured"))?;
         if agent.model.is_empty() {
             anyhow::bail!("model not configured");
         }
@@ -121,12 +129,19 @@ async fn do_run_task(state: &AppState, task_id: i64, agent_id: i64) -> anyhow::R
 
         // 团队成员为 agent_ids 候选池对应的 Agent
         let all_agents = agent_repository::list_agents(&state.db).await?;
-        let team_agents: Vec<_> = all_agents.iter().filter(|a| task.agent_ids.0.contains(&a.id)).collect();
-        let team_json: Vec<Value> = team_agents.iter().map(|a| json!({"id": a.id, "name": a.name, "description": a.description})).collect();
+        let team_agents: Vec<_> = all_agents
+            .iter()
+            .filter(|a| task.agent_ids.0.contains(&a.id))
+            .collect();
+        let team_json: Vec<Value> = team_agents
+            .iter()
+            .map(|a| json!({"id": a.id, "name": a.name, "description": a.description}))
+            .collect();
         task_content_list.push(format!("# Team\n{}", serde_json::to_string(&team_json)?));
 
         task_content_list.push("# History".to_string());
-        let history = conversation_repository::list_task_conversation_history(&state.db, task_id).await?;
+        let history =
+            conversation_repository::list_task_conversation_history(&state.db, task_id).await?;
         for item in &history {
             // 无消息的阶段对话不参与历史
             let last_content = match &item.last_content {
@@ -135,37 +150,58 @@ async fn do_run_task(state: &AppState, task_id: i64, agent_id: i64) -> anyhow::R
             };
             let name = item.agent_name.as_deref().unwrap_or("User");
             // content 列为 pi 消息协议 JSON: 取用户文本或 assistant 最后一个文本块
-            let text = match serde_json::from_value::<crate::ai::pi::types::Message>(last_content.clone()) {
-                Ok(crate::ai::pi::types::Message::User(u)) => match &u.content {
-                    crate::ai::pi::types::UserMessageContent::Text(s) => s.clone(),
-                    crate::ai::pi::types::UserMessageContent::Blocks(blocks) => blocks
+            let text =
+                match serde_json::from_value::<crate::ai::pi::types::Message>(last_content.clone())
+                {
+                    Ok(crate::ai::pi::types::Message::User(u)) => match &u.content {
+                        crate::ai::pi::types::UserMessageContent::Text(s) => s.clone(),
+                        crate::ai::pi::types::UserMessageContent::Blocks(blocks) => blocks
+                            .iter()
+                            .filter_map(|b| match b {
+                                crate::ai::pi::types::UserContent::Text(t) => Some(t.text.as_str()),
+                                _ => None,
+                            })
+                            .collect::<Vec<_>>()
+                            .join("\n"),
+                    },
+                    Ok(crate::ai::pi::types::Message::Assistant(a)) => a
+                        .content
                         .iter()
-                        .filter_map(|b| match b {
-                            crate::ai::pi::types::UserContent::Text(t) => Some(t.text.as_str()),
+                        .rev()
+                        .find_map(|b| match b {
+                            crate::ai::pi::types::AssistantContent::Text(t) => Some(t.text.clone()),
                             _ => None,
                         })
-                        .collect::<Vec<_>>()
-                        .join("\n"),
-                },
-                Ok(crate::ai::pi::types::Message::Assistant(a)) => a
-                    .content
-                    .iter()
-                    .rev()
-                    .find_map(|b| match b {
-                        crate::ai::pi::types::AssistantContent::Text(t) => Some(t.text.clone()),
-                        _ => None,
-                    })
-                    .unwrap_or_default(),
-                _ => String::new(),
-            };
+                        .unwrap_or_default(),
+                    _ => String::new(),
+                };
             task_content_list.push(format!("## {}\n{}", name, serde_json::to_string(&text)?));
         }
         let task_content = task_content_list.join("\n\n");
 
         // 触发对话执行并等待完成
-        tracing::info!("Task triggering conversation: task_id={} conversation_id={} agent={} model={}", task_id, latest.id, agent.name, agent.model);
-        if !conversation_service::start_conversation(state, latest.id, task_content, provider.id, agent.model.clone(), agent.thinking).await {
-            tracing::warn!("Task loop ended: task_id={} conversation_id={} already running", task_id, latest.id);
+        tracing::info!(
+            "Task triggering conversation: task_id={} conversation_id={} agent={} model={}",
+            task_id,
+            latest.id,
+            agent.name,
+            agent.model
+        );
+        if !conversation_service::start_conversation(
+            state,
+            latest.id,
+            task_content,
+            provider.id,
+            agent.model.clone(),
+            agent.thinking,
+        )
+        .await
+        {
+            tracing::warn!(
+                "Task loop ended: task_id={} conversation_id={} already running",
+                task_id,
+                latest.id
+            );
             return Ok(());
         }
         // 等待对话完成: 订阅通知并等待, 订阅后先复查 done 避免错过完成信号

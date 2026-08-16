@@ -45,8 +45,8 @@ async fn create_tables(pool: &SqlitePool) -> anyhow::Result<()> {
             update_time TEXT NOT NULL
         )",
     )
-        .execute(pool)
-        .await?;
+    .execute(pool)
+    .await?;
 
     sqlx::query(
         "CREATE TABLE IF NOT EXISTS t_agent (
@@ -61,8 +61,8 @@ async fn create_tables(pool: &SqlitePool) -> anyhow::Result<()> {
             update_time TEXT NOT NULL
         )",
     )
-        .execute(pool)
-        .await?;
+    .execute(pool)
+    .await?;
 
     sqlx::query(
         "CREATE TABLE IF NOT EXISTS t_task (
@@ -75,8 +75,8 @@ async fn create_tables(pool: &SqlitePool) -> anyhow::Result<()> {
             update_time TEXT NOT NULL
         )",
     )
-        .execute(pool)
-        .await?;
+    .execute(pool)
+    .await?;
 
     sqlx::query(
         "CREATE TABLE IF NOT EXISTS t_schedule (
@@ -91,8 +91,8 @@ async fn create_tables(pool: &SqlitePool) -> anyhow::Result<()> {
             update_time TEXT NOT NULL
         )",
     )
-        .execute(pool)
-        .await?;
+    .execute(pool)
+    .await?;
 
     sqlx::query(
         "CREATE TABLE IF NOT EXISTS t_conversation (
@@ -107,8 +107,8 @@ async fn create_tables(pool: &SqlitePool) -> anyhow::Result<()> {
             update_time TEXT NOT NULL
         )",
     )
-        .execute(pool)
-        .await?;
+    .execute(pool)
+    .await?;
 
     // content 列存整条 pi 消息 JSON(含 role/usage/stopReason/timestamp), 不再单独物化
     sqlx::query(
@@ -118,8 +118,8 @@ async fn create_tables(pool: &SqlitePool) -> anyhow::Result<()> {
             content TEXT NOT NULL
         )",
     )
-        .execute(pool)
-        .await?;
+    .execute(pool)
+    .await?;
 
     sqlx::query(
         "CREATE TABLE IF NOT EXISTS t_mcp_server (
@@ -135,8 +135,8 @@ async fn create_tables(pool: &SqlitePool) -> anyhow::Result<()> {
             update_time TEXT NOT NULL
         )",
     )
-        .execute(pool)
-        .await?;
+    .execute(pool)
+    .await?;
 
     sqlx::query(
         "CREATE TABLE IF NOT EXISTS t_web_storage (
@@ -146,13 +146,15 @@ async fn create_tables(pool: &SqlitePool) -> anyhow::Result<()> {
             update_time TEXT NOT NULL
         )",
     )
-        .execute(pool)
-        .await?;
+    .execute(pool)
+    .await?;
 
     // 创建索引
-    sqlx::query("CREATE INDEX IF NOT EXISTS idx_message_conversation ON t_message(conversation_id)")
-        .execute(pool)
-        .await?;
+    sqlx::query(
+        "CREATE INDEX IF NOT EXISTS idx_message_conversation ON t_message(conversation_id)",
+    )
+    .execute(pool)
+    .await?;
 
     sqlx::query("CREATE INDEX IF NOT EXISTS idx_conversation_task ON t_conversation(task_id)")
         .execute(pool)

@@ -1,9 +1,9 @@
 #![cfg_attr(target_os = "windows", windows_subsystem = "windows")]
 
+mod ai;
 mod api;
 mod config;
 mod error;
-mod ai;
 mod repository;
 mod service;
 mod state;
@@ -16,8 +16,8 @@ use tracing_subscriber::layer::SubscriberExt;
 use tracing_subscriber::util::SubscriberInitExt;
 
 use crate::repository::database;
-use crate::state::{AppState, SkillInfo};
 use crate::service::tool::skill_tool;
+use crate::state::{AppState, SkillInfo};
 
 fn main() -> anyhow::Result<()> {
     // 解析启动模式: 默认桌面模式, --web 为纯 HTTP 服务模式
@@ -85,9 +85,16 @@ async fn run_server(port_tx: Option<Sender<u16>>, bind_addr: String) -> anyhow::
     let (non_blocking, _guard) = tracing_appender::non_blocking(file_appender);
     tracing_subscriber::registry()
         // 文件层禁用 ANSI, 避免日志文件混入颜色转义码
-        .with(tracing_subscriber::fmt::layer().with_ansi(false).with_writer(non_blocking))
+        .with(
+            tracing_subscriber::fmt::layer()
+                .with_ansi(false)
+                .with_writer(non_blocking),
+        )
         .with(tracing_subscriber::fmt::layer().with_writer(std::io::stdout))
-        .with(tracing_subscriber::EnvFilter::from_default_env().add_directive(tracing::Level::INFO.into()))
+        .with(
+            tracing_subscriber::EnvFilter::from_default_env()
+                .add_directive(tracing::Level::INFO.into()),
+        )
         .init();
     tracing::info!("Logging initialized: log_file={}", log_file.display());
 
@@ -95,7 +102,8 @@ async fn run_server(port_tx: Option<Sender<u16>>, bind_addr: String) -> anyhow::
     service::tool::shell_tool::setup_powershell_utf8().await;
 
     // 初始化技能列表
-    let skills: Arc<std::sync::RwLock<Vec<SkillInfo>>> = Arc::new(std::sync::RwLock::new(Vec::new()));
+    let skills: Arc<std::sync::RwLock<Vec<SkillInfo>>> =
+        Arc::new(std::sync::RwLock::new(Vec::new()));
     skill_tool::init_skills(&skills).await;
 
     // 初始化数据库
@@ -126,7 +134,11 @@ async fn run_server(port_tx: Option<Sender<u16>>, bind_addr: String) -> anyhow::
     let port: u16 = listener.local_addr()?.port();
     // 端口回传通道存在即为桌面模式
     let mode: &str = if port_tx.is_some() { "desktop" } else { "web" };
-    tracing::info!("Application started: mode={} listening=127.0.0.1:{}", mode, port);
+    tracing::info!(
+        "Application started: mode={} listening=127.0.0.1:{}",
+        mode,
+        port
+    );
 
     // 桌面模式回传端口给主线程用于加载页面
     if let Some(tx) = port_tx {

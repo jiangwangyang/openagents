@@ -56,7 +56,10 @@ pub async fn execute(cmd_and_args: &[String], work_dir: &str) -> ToolResult {
         };
         // 应用替换逻辑
         if !content.contains(old_str.as_str()) {
-            return (format!("Target string not found in file:\n{}", old_str), true);
+            return (
+                format!("Target string not found in file:\n{}", old_str),
+                true,
+            );
         }
         let new_content = content.replace(old_str.as_str(), new_str);
         // 写文件

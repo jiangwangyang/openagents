@@ -13,7 +13,10 @@ pub async fn execute(cmd_and_args: &[String], task_id: Option<i64>, db: &SqliteP
     };
 
     if cmd_and_args.len() < 3 || cmd_and_args[1] != "handover" {
-        return (format!("Unknown task command: {}", cmd_and_args.join(" ")), true);
+        return (
+            format!("Unknown task command: {}", cmd_and_args.join(" ")),
+            true,
+        );
     }
 
     // 查询任务基本字段(交接只需标题/工作目录/团队, 无需全量加载对话与消息)
@@ -29,8 +32,21 @@ pub async fn execute(cmd_and_args: &[String], task_id: Option<i64>, db: &SqliteP
     // 移交给用户: 创建 agent_id 为 None 的用户审核对话
     if cmd_and_args[2] == "user" {
         let title = format!("{}-User", task.title);
-        match conversation_repository::add_conversation(db, &title, work_dir, "", Some(task_id), None, None).await {
-            Ok(_) => ("Task handed over to the user, please summarize the current progress".to_string(), false),
+        match conversation_repository::add_conversation(
+            db,
+            &title,
+            work_dir,
+            "",
+            Some(task_id),
+            None,
+            None,
+        )
+        .await
+        {
+            Ok(_) => (
+                "Task handed over to the user, please summarize the current progress".to_string(),
+                false,
+            ),
             Err(e) => (format!("Failed to create conversation: {}", e), true),
         }
     } else {
@@ -52,8 +68,24 @@ pub async fn execute(cmd_and_args: &[String], task_id: Option<i64>, db: &SqliteP
         }
 
         let title = format!("{}-{}", task.title, agent.name);
-        match conversation_repository::add_conversation(db, &title, work_dir, &agent.prompt, Some(task_id), Some(agent_id), None).await {
-            Ok(_) => (format!("Task handed over to agent {}, please summarize the current progress", agent.name), false),
+        match conversation_repository::add_conversation(
+            db,
+            &title,
+            work_dir,
+            &agent.prompt,
+            Some(task_id),
+            Some(agent_id),
+            None,
+        )
+        .await
+        {
+            Ok(_) => (
+                format!(
+                    "Task handed over to agent {}, please summarize the current progress",
+                    agent.name
+                ),
+                false,
+            ),
             Err(e) => (format!("Failed to create conversation: {}", e), true),
         }
     }

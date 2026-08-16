@@ -17,7 +17,10 @@ pub async fn list_tasks(State(state): State<AppState>) -> Result<Json<Vec<TaskEn
 }
 
 // 任务详情接口, 包含各阶段对话(对话按 id 升序, 每条对话含全部按 id 升序的消息), 任务不存在返回 404
-pub async fn get_task(State(state): State<AppState>, Path(task_id): Path<i64>) -> Result<Json<serde_json::Value>, AppError> {
+pub async fn get_task(
+    State(state): State<AppState>,
+    Path(task_id): Path<i64>,
+) -> Result<Json<serde_json::Value>, AppError> {
     let task = task_repository::get_task(&state.db, task_id).await?;
     let task = match task {
         Some(t) => t,
@@ -25,15 +28,24 @@ pub async fn get_task(State(state): State<AppState>, Path(task_id): Path<i64>) -
     };
 
     // 查询任务的全部阶段对话, 按 id 升序
-    let conversations = conversation_repository::list_conversations_by_task_id(&state.db, task_id).await?;
+    let conversations =
+        conversation_repository::list_conversations_by_task_id(&state.db, task_id).await?;
 
     // 批量查询全部阶段对话的消息(一次 IN 查询 + 内存分组, 避免 N+1), 按 id 升序
-    let mut message_map: std::collections::HashMap<i64, Vec<MessageEntity>> = std::collections::HashMap::new();
+    let mut message_map: std::collections::HashMap<i64, Vec<MessageEntity>> =
+        std::collections::HashMap::new();
     if !conversations.is_empty() {
         let conversation_ids: Vec<i64> = conversations.iter().map(|c| c.id).collect();
-        let messages = conversation_repository::list_messages_by_conversation_ids(&state.db, &conversation_ids).await?;
+        let messages = conversation_repository::list_messages_by_conversation_ids(
+            &state.db,
+            &conversation_ids,
+        )
+        .await?;
         for message in messages {
-            message_map.entry(message.conversation_id).or_default().push(message);
+            message_map
+                .entry(message.conversation_id)
+                .or_default()
+                .push(message);
         }
     }
 
@@ -83,13 +95,26 @@ pub struct AddTaskRequest {
 }
 
 // 新增任务接口, agent_ids 为可供 Agent 选择下一个执行者的候选池, work_dir 为任务阶段对话的工作目录, 返回自增 id
-pub async fn add_task(State(state): State<AppState>, Json(req): Json<AddTaskRequest>) -> Result<Json<i64>, AppError> {
-    let id = task_repository::add_task(&state.db, &req.title, &req.content, &req.agent_ids, &req.work_dir).await?;
+pub async fn add_task(
+    State(state): State<AppState>,
+    Json(req): Json<AddTaskRequest>,
+) -> Result<Json<i64>, AppError> {
+    let id = task_repository::add_task(
+        &state.db,
+        &req.title,
+        &req.content,
+        &req.agent_ids,
+        &req.work_dir,
+    )
+    .await?;
     Ok(Json(id))
 }
 
 // 删除任务接口, 关联对话由数据库外键 ON DELETE CASCADE 级联删除, 任务不存在返回 404, 正在运行返回 409
-pub async fn delete_task(State(state): State<AppState>, Path(task_id): Path<i64>) -> Result<(), AppError> {
+pub async fn delete_task(
+    State(state): State<AppState>,
+    Path(task_id): Path<i64>,
+) -> Result<(), AppError> {
     // 运行中的任务不允许删除, 避免级联删除阶段对话导致后台循环写消息失败
     if task_service::is_task_running(&state, task_id) {
         return Err(AppError::Conflict("Task is running".to_string()));
@@ -109,7 +134,11 @@ pub struct StartTaskRequest {
 
 // 启动任务执行循环接口, agent_id 为首个执行的 Agent, 阶段对话的工作目录取任务的 work_dir
 // 任务/agent 不存在返回 404, 执行循环已在运行返回 409
-pub async fn start_task(State(state): State<AppState>, Path(task_id): Path<i64>, Json(req): Json<StartTaskRequest>) -> Result<(), AppError> {
+pub async fn start_task(
+    State(state): State<AppState>,
+    Path(task_id): Path<i64>,
+    Json(req): Json<StartTaskRequest>,
+) -> Result<(), AppError> {
     let task = task_repository::get_task(&state.db, task_id).await?;
     if task.is_none() {
         return Err(AppError::NotFound("Task not found".to_string()));

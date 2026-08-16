@@ -6,13 +6,13 @@ use tokio::sync::RwLock;
 
 use crate::ai;
 use crate::ai::pi::types::{
-    now_timestamp, AssistantContent, AssistantMessage, AssistantMessageEvent, Context, Message, TextContent, ToolCall,
-    ToolResultMessage, UserContent, UserMessage, UserMessageContent,
+    now_timestamp, AssistantContent, AssistantMessage, AssistantMessageEvent, Context, Message,
+    TextContent, ToolCall, ToolResultMessage, UserContent, UserMessage, UserMessageContent,
 };
 use crate::repository::entity::NewMessageEntity;
 use crate::repository::{conversation_repository, model_provider_repository};
-use crate::state::{AppState, ConversationState};
 use crate::service::tool::{self, ToolContext};
+use crate::state::{AppState, ConversationState};
 
 // 查询对话状态在内存中的保留时长(秒)
 const QUERY_STATE_TTL_SECS: u64 = 300;
@@ -40,7 +40,10 @@ pub async fn start_conversation(
                 Err(_) => false,
             };
             if !finished {
-                tracing::warn!("Conversation start rejected: conversation_id={} already running", conversation_id);
+                tracing::warn!(
+                    "Conversation start rejected: conversation_id={} already running",
+                    conversation_id
+                );
                 return false;
             }
             entry.insert(conv_state);
@@ -49,16 +52,25 @@ pub async fn start_conversation(
             entry.insert(conv_state);
         }
     }
-    tracing::info!("Conversation started: conversation_id={} model={} thinking={}", conversation_id, model, thinking);
-    tokio::spawn(run_conversation(state.clone(), conversation_id, task_content, model_provider_id, model, thinking));
+    tracing::info!(
+        "Conversation started: conversation_id={} model={} thinking={}",
+        conversation_id,
+        model,
+        thinking
+    );
+    tokio::spawn(run_conversation(
+        state.clone(),
+        conversation_id,
+        task_content,
+        model_provider_id,
+        model,
+        thinking,
+    ));
     true
 }
 
 // 启动历史回放查询, 不执行模型调用
-pub async fn start_conversation_query(
-    state: &AppState,
-    conversation_id: i64,
-) -> bool {
+pub async fn start_conversation_query(state: &AppState, conversation_id: i64) -> bool {
     let (tx, _) = tokio::sync::watch::channel(0u64);
     let conv_state = Arc::new(RwLock::new(ConversationState {
         chunks: Vec::new(),
@@ -73,7 +85,10 @@ pub async fn start_conversation_query(
                 Err(_) => false,
             };
             if !finished {
-                tracing::warn!("Conversation query rejected: conversation_id={} already running", conversation_id);
+                tracing::warn!(
+                    "Conversation query rejected: conversation_id={} already running",
+                    conversation_id
+                );
                 return false;
             }
             entry.insert(conv_state);
@@ -82,8 +97,18 @@ pub async fn start_conversation_query(
             entry.insert(conv_state);
         }
     }
-    tracing::info!("Conversation query started: conversation_id={}", conversation_id);
-    tokio::spawn(run_conversation(state.clone(), conversation_id, String::new(), 0, String::new(), false));
+    tracing::info!(
+        "Conversation query started: conversation_id={}",
+        conversation_id
+    );
+    tokio::spawn(run_conversation(
+        state.clone(),
+        conversation_id,
+        String::new(),
+        0,
+        String::new(),
+        false,
+    ));
     true
 }
 
@@ -92,7 +117,10 @@ pub fn get_conversation_state(
     state: &AppState,
     conversation_id: i64,
 ) -> Option<Arc<RwLock<ConversationState>>> {
-    state.conversation_states.get(&conversation_id).map(|r| r.clone())
+    state
+        .conversation_states
+        .get(&conversation_id)
+        .map(|r| r.clone())
 }
 
 // 发布 SSE chunk
@@ -135,28 +163,54 @@ async fn run_conversation(
     thinking: bool,
 ) {
     // 捕获 panic 兜底, 保证 finish_conversation 必执行, 避免对话被永久锁死
-    let result = std::panic::AssertUnwindSafe(do_run_conversation(&state, conversation_id, &task_content, model_provider_id, &model, thinking))
-        .catch_unwind()
-        .await
-        .unwrap_or_else(|e| {
-            let msg = e.downcast_ref::<String>().cloned()
-                .or_else(|| e.downcast_ref::<&str>().map(|s| s.to_string()))
-                .unwrap_or_else(|| "unknown".to_string());
-            Err(anyhow::anyhow!("conversation panicked: {}", msg))
-        });
+    let result = std::panic::AssertUnwindSafe(do_run_conversation(
+        &state,
+        conversation_id,
+        &task_content,
+        model_provider_id,
+        &model,
+        thinking,
+    ))
+    .catch_unwind()
+    .await
+    .unwrap_or_else(|e| {
+        let msg = e
+            .downcast_ref::<String>()
+            .cloned()
+            .or_else(|| e.downcast_ref::<&str>().map(|s| s.to_string()))
+            .unwrap_or_else(|| "unknown".to_string());
+        Err(anyhow::anyhow!("conversation panicked: {}", msg))
+    });
     if let Err(e) = result {
-        publish_chunk(&state, conversation_id, "error", &format!("Conversation execution failed: {}", e), json!({})).await;
-        tracing::error!("Conversation execution failed: conversation_id={} error={}", conversation_id, e);
+        publish_chunk(
+            &state,
+            conversation_id,
+            "error",
+            &format!("Conversation execution failed: {}", e),
+            json!({}),
+        )
+        .await;
+        tracing::error!(
+            "Conversation execution failed: conversation_id={} error={}",
+            conversation_id,
+            e
+        );
     }
     finish_conversation(&state, conversation_id).await;
     // 执行任务存储的 chunk 太碎立即移除, 查询任务的状态则保留 5 分钟后再移除
     if task_content.is_empty() {
         // 仅当状态未被新启动的对话替换时才移除
-        if let Some(conv_state) = state.conversation_states.get(&conversation_id).map(|r| r.clone()) {
+        if let Some(conv_state) = state
+            .conversation_states
+            .get(&conversation_id)
+            .map(|r| r.clone())
+        {
             let conversations = state.conversation_states.clone();
             tokio::spawn(async move {
                 tokio::time::sleep(std::time::Duration::from_secs(QUERY_STATE_TTL_SECS)).await;
-                conversations.remove_if(&conversation_id, |_, current| Arc::ptr_eq(current, &conv_state));
+                conversations.remove_if(&conversation_id, |_, current| {
+                    Arc::ptr_eq(current, &conv_state)
+                });
             });
         }
     } else {
@@ -179,7 +233,14 @@ async fn do_run_conversation(
         .ok_or_else(|| anyhow::anyhow!("conversation not found"))?;
 
     // 流式数据开头发布系统提示词
-    publish_chunk(state, conversation_id, "system", &conversation.conversation.system_prompt, json!({})).await;
+    publish_chunk(
+        state,
+        conversation_id,
+        "system",
+        &conversation.conversation.system_prompt,
+        json!({}),
+    )
+    .await;
 
     // 发布历史消息(content 列为 pi 消息协议 JSON)
     for msg in &conversation.messages {
@@ -202,14 +263,29 @@ async fn do_run_conversation(
                 for block in &assistant.content {
                     match block {
                         AssistantContent::Thinking(t) => {
-                            publish_chunk(state, conversation_id, "thinking", &t.thinking, json!({})).await;
+                            publish_chunk(
+                                state,
+                                conversation_id,
+                                "thinking",
+                                &t.thinking,
+                                json!({}),
+                            )
+                            .await;
                         }
                         AssistantContent::Text(t) => {
                             publish_chunk(state, conversation_id, "text", &t.text, json!({})).await;
                         }
                         AssistantContent::ToolCall(tc) => {
-                            let input_str = serde_json::to_string(&tc.arguments).unwrap_or_default();
-                            publish_chunk(state, conversation_id, "tool_use", &input_str, json!({"_id": tc.id, "name": tc.name})).await;
+                            let input_str =
+                                serde_json::to_string(&tc.arguments).unwrap_or_default();
+                            publish_chunk(
+                                state,
+                                conversation_id,
+                                "tool_use",
+                                &input_str,
+                                json!({"_id": tc.id, "name": tc.name}),
+                            )
+                            .await;
                         }
                     }
                 }
@@ -225,7 +301,7 @@ async fn do_run_conversation(
                         "output_tokens": assistant.usage.output,
                     }),
                 )
-                    .await;
+                .await;
             }
             Ok(Message::ToolResult(tool_result)) => {
                 let text = tool_result
@@ -237,7 +313,14 @@ async fn do_run_conversation(
                     })
                     .collect::<Vec<_>>()
                     .join("\n");
-                publish_chunk(state, conversation_id, "tool_result", &text, json!({"_id": tool_result.tool_call_id, "is_error": tool_result.is_error})).await;
+                publish_chunk(
+                    state,
+                    conversation_id,
+                    "tool_result",
+                    &text,
+                    json!({"_id": tool_result.tool_call_id, "is_error": tool_result.is_error}),
+                )
+                .await;
             }
             Err(e) => {
                 tracing::warn!("Skip unparsable history message: id={} error={}", msg.id, e);
@@ -271,13 +354,15 @@ async fn do_run_conversation(
     let mut messages: Vec<Message> = conversation
         .messages
         .iter()
-        .filter_map(|msg| match serde_json::from_value::<Message>(msg.content.clone()) {
-            Ok(m) => Some(m),
-            Err(e) => {
-                tracing::warn!("Skip unparsable history message: id={} error={}", msg.id, e);
-                None
-            }
-        })
+        .filter_map(
+            |msg| match serde_json::from_value::<Message>(msg.content.clone()) {
+                Ok(m) => Some(m),
+                Err(e) => {
+                    tracing::warn!("Skip unparsable history message: id={} error={}", msg.id, e);
+                    None
+                }
+            },
+        )
         .collect();
     let task_message = Message::User(UserMessage {
         content: UserMessageContent::Text(task_content.to_string()),
@@ -316,9 +401,20 @@ async fn do_run_conversation(
                     publish_chunk(state, conversation_id, "delta", &delta, json!({})).await;
                 }
                 AssistantMessageEvent::TextEnd { .. } => {}
-                AssistantMessageEvent::ToolcallStart { content_index, partial } => {
-                    if let Some(AssistantContent::ToolCall(tc)) = partial.content.get(content_index) {
-                        publish_chunk(state, conversation_id, "tool_use", "", json!({"_id": tc.id, "name": tc.name})).await;
+                AssistantMessageEvent::ToolcallStart {
+                    content_index,
+                    partial,
+                } => {
+                    if let Some(AssistantContent::ToolCall(tc)) = partial.content.get(content_index)
+                    {
+                        publish_chunk(
+                            state,
+                            conversation_id,
+                            "tool_use",
+                            "",
+                            json!({"_id": tc.id, "name": tc.name}),
+                        )
+                        .await;
                     }
                 }
                 AssistantMessageEvent::ToolcallDelta { delta, .. } => {
@@ -330,7 +426,10 @@ async fn do_run_conversation(
                 }
                 AssistantMessageEvent::Error { error, .. } => {
                     // 错误 chunk 由外层 run_conversation 统一发布
-                    let message = error.error_message.clone().unwrap_or_else(|| "unknown error".to_string());
+                    let message = error
+                        .error_message
+                        .clone()
+                        .unwrap_or_else(|| "unknown error".to_string());
                     return Err(anyhow::anyhow!("model stream error: {}", message));
                 }
             }
@@ -356,7 +455,7 @@ async fn do_run_conversation(
                 "output_tokens": msg.usage.output,
             }),
         )
-            .await;
+        .await;
         let assistant_message = Message::Assistant(msg);
         messages.push(assistant_message.clone());
         new_messages.push(assistant_message);
@@ -378,9 +477,16 @@ async fn do_run_conversation(
             // 本轮新增消息持久化(content 列存整条 pi 消息 JSON)
             let messages_to_save: Vec<NewMessageEntity> = new_messages
                 .iter()
-                .map(|m| NewMessageEntity { content: serde_json::to_value(m).unwrap_or_default() })
+                .map(|m| NewMessageEntity {
+                    content: serde_json::to_value(m).unwrap_or_default(),
+                })
                 .collect();
-            conversation_repository::add_conversation_messages(&state.db, conversation_id, &messages_to_save).await?;
+            conversation_repository::add_conversation_messages(
+                &state.db,
+                conversation_id,
+                &messages_to_save,
+            )
+            .await?;
             tracing::info!("Conversation finished: conversation_id={}", conversation_id);
             return Ok(());
         }
@@ -393,12 +499,23 @@ async fn do_run_conversation(
                 task_id: conversation.conversation.task_id,
                 skills: state.skills.clone(),
             };
-            let (tool_content, is_error) = tool::execute_tool(&tool_call.name, &tool_call.arguments, &ctx).await;
-            publish_chunk(state, conversation_id, "tool_result", &tool_content, json!({"_id": tool_call.id, "is_error": is_error})).await;
+            let (tool_content, is_error) =
+                tool::execute_tool(&tool_call.name, &tool_call.arguments, &ctx).await;
+            publish_chunk(
+                state,
+                conversation_id,
+                "tool_result",
+                &tool_content,
+                json!({"_id": tool_call.id, "is_error": is_error}),
+            )
+            .await;
             let tool_result = Message::ToolResult(ToolResultMessage {
                 tool_call_id: tool_call.id.clone(),
                 tool_name: tool_call.name.clone(),
-                content: vec![UserContent::Text(TextContent { text: tool_content, text_signature: None })],
+                content: vec![UserContent::Text(TextContent {
+                    text: tool_content,
+                    text_signature: None,
+                })],
                 is_error,
                 timestamp: now_timestamp(),
             });

@@ -52,7 +52,11 @@ pub enum ContentBlockParam {
     #[serde(rename = "redacted_thinking")]
     RedactedThinking { data: String },
     #[serde(rename = "tool_use")]
-    ToolUse { id: String, name: String, input: serde_json::Value },
+    ToolUse {
+        id: String,
+        name: String,
+        input: serde_json::Value,
+    },
     #[serde(rename = "tool_result")]
     ToolResult {
         tool_use_id: String,
@@ -183,7 +187,10 @@ pub enum MessageStreamEvent {
     #[serde(rename = "message_start")]
     MessageStart { message: Message },
     #[serde(rename = "message_delta")]
-    MessageDelta { delta: MessageDelta, usage: Option<MessageDeltaUsage> },
+    MessageDelta {
+        delta: MessageDelta,
+        usage: Option<MessageDeltaUsage>,
+    },
     #[serde(rename = "message_stop")]
     MessageStop,
     #[serde(rename = "content_block_start")]
@@ -192,7 +199,10 @@ pub enum MessageStreamEvent {
         content_block: ContentBlock,
     },
     #[serde(rename = "content_block_delta")]
-    ContentBlockDelta { index: u32, delta: ContentBlockDelta },
+    ContentBlockDelta {
+        index: u32,
+        delta: ContentBlockDelta,
+    },
     #[serde(rename = "content_block_stop")]
     ContentBlockStop { index: u32 },
 }

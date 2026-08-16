@@ -3,15 +3,19 @@
 use std::collections::{HashMap, HashSet};
 
 use super::types::{
-    now_timestamp, AssistantContent, AssistantMessage, Message, Model, StopReason, TextContent, ToolCall,
-    ToolResultMessage, UserContent,
+    now_timestamp, AssistantContent, AssistantMessage, Message, Model, StopReason, TextContent,
+    ToolCall, ToolResultMessage, UserContent,
 };
 
 // toolCallId 规范化回调(由各协议适配器注入, 对齐 pi 的 normalizeToolCallId 参数)
 pub type NormalizeToolCallId<'a> = Option<&'a dyn Fn(&str, &Model, &AssistantMessage) -> String>;
 
 // 跨模型重放转换: thinking 降级/丢弃、toolCallId 规范化、孤儿 toolCall 补合成 toolResult、跳过失败消息
-pub fn transform_messages(messages: &[Message], model: &Model, normalize_tool_call_id: NormalizeToolCallId) -> Vec<Message> {
+pub fn transform_messages(
+    messages: &[Message],
+    model: &Model,
+    normalize_tool_call_id: NormalizeToolCallId,
+) -> Vec<Message> {
     // 原始 toolCallId -> 规范化 id 的映射
     let mut tool_call_id_map: HashMap<String, String> = HashMap::new();
 
@@ -83,14 +87,17 @@ pub fn transform_messages(messages: &[Message], model: &Model, normalize_tool_ca
                             }
                             if !is_same_model {
                                 if let Some(normalize) = normalize_tool_call_id {
-                                    let normalized_id = normalize(&tool_call.id, model, assistant_msg);
+                                    let normalized_id =
+                                        normalize(&tool_call.id, model, assistant_msg);
                                     if normalized_id != tool_call.id {
-                                        tool_call_id_map.insert(tool_call.id.clone(), normalized_id.clone());
+                                        tool_call_id_map
+                                            .insert(tool_call.id.clone(), normalized_id.clone());
                                         normalized_tool_call.id = normalized_id;
                                     }
                                 }
                             }
-                            transformed_content.push(AssistantContent::ToolCall(normalized_tool_call));
+                            transformed_content
+                                .push(AssistantContent::ToolCall(normalized_tool_call));
                         }
                     }
                 }
@@ -135,7 +142,9 @@ pub fn transform_messages(messages: &[Message], model: &Model, normalize_tool_ca
                 // 前一条 assistant 遗留孤儿 toolCall 时先补合成结果
                 insert_synthetic_tool_results!();
                 // 跳过 error/aborted 的 assistant 消息: 不完整轮次不应重放(可能含半截内容导致 API 报错)
-                if assistant_msg.stop_reason == StopReason::Error || assistant_msg.stop_reason == StopReason::Aborted {
+                if assistant_msg.stop_reason == StopReason::Error
+                    || assistant_msg.stop_reason == StopReason::Aborted
+                {
                     continue;
                 }
                 // 跟踪该 assistant 消息的 toolCall

@@ -643,6 +643,12 @@ pub fn stream(
                         + output.usage.cache_write;
                 }
                 MessageStreamEvent::MessageStop => {}
+                // ping 保活与未知事件静默忽略(对齐 pi: 未知事件不中断流)
+                MessageStreamEvent::Ping | MessageStreamEvent::Unknown => {}
+                // 流中途 error 事件: 以真实错误信息终止, 避免笼统的 stop reason 缺失报错
+                MessageStreamEvent::Error { error } => {
+                    fail!(format!("{}: {}", error.error_type, error.message));
+                }
             }
         }
 

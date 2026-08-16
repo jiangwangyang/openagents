@@ -34,13 +34,14 @@ pub fn stream(
     context: &Context,
 ) -> Result<AssistantMessageEventStream, ModelError> {
     // pi Model: provider 取实体 id(稳定, 用于跨供应商重放比较), api 对齐 pi 的 KnownApi 命名
-    // reasoning 取对话的 thinking 开关: 关闭时不下发 thinking/reasoning 参数(对齐 pi 以 model.reasoning 为门)
+    // reasoning 为模型能力门(对齐 pi model.reasoning): thinking 开关经 options 传递,
+    // 关闭时由各协议显式下发禁用参数(OpenAI effort: "none", Anthropic thinking: disabled)
     let model = |api: &str| Model {
         id: model_id.to_string(),
         api: api.to_string(),
         provider: provider.id.to_string(),
         base_url: provider.base_url.clone(),
-        reasoning: thinking,
+        reasoning: true,
         input: vec!["text".to_string()],
         max_tokens,
     };

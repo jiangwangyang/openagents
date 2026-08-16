@@ -205,6 +205,21 @@ pub enum MessageStreamEvent {
     },
     #[serde(rename = "content_block_stop")]
     ContentBlockStop { index: u32 },
+    #[serde(rename = "ping")]
+    Ping,
+    #[serde(rename = "error")]
+    Error { error: MessageStreamError },
+    // 未知事件兜底: 容忍 API 新增事件类型, 静默跳过
+    #[serde(other)]
+    Unknown,
+}
+
+// error 事件中的错误明细
+#[derive(Debug, Clone, Deserialize)]
+pub struct MessageStreamError {
+    #[serde(rename = "type")]
+    pub error_type: String,
+    pub message: String,
 }
 
 // message_delta 事件中的 delta

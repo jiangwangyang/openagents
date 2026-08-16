@@ -4,8 +4,11 @@ use serde_json::{json, Value};
 use std::sync::Arc;
 use tokio::sync::RwLock;
 
-use crate::model;
-use crate::model::anthropic::types::{ContentBlock, ContentBlockDelta, CreateMessageRequest, MessageStreamEvent, RequestMessage, ThinkingConfig};
+use crate::ai;
+use crate::ai::pi::types::{
+    now_timestamp, AssistantContent, AssistantMessage, AssistantMessageEvent, Context, Message, TextContent, ToolCall,
+    ToolResultMessage, UserContent, UserMessage, UserMessageContent,
+};
 use crate::repository::entity::NewMessageEntity;
 use crate::repository::{conversation_repository, model_provider_repository};
 use crate::state::{AppState, ConversationState};
@@ -178,43 +181,68 @@ async fn do_run_conversation(
     // 流式数据开头发布系统提示词
     publish_chunk(state, conversation_id, "system", &conversation.conversation.system_prompt, json!({})).await;
 
-    // 发布历史消息
+    // 发布历史消息(content 列为 pi 消息协议 JSON)
     for msg in &conversation.messages {
-        if let Value::String(s) = &msg.content {
-            publish_chunk(state, conversation_id, "user", s, json!({})).await;
-        } else if let Value::Array(blocks) = &msg.content {
-            for block in blocks {
-                match block["type"].as_str() {
-                    Some("thinking") => {
-                        publish_chunk(state, conversation_id, "thinking", block["thinking"].as_str().unwrap_or(""), json!({})).await;
+        match serde_json::from_value::<Message>(msg.content.clone()) {
+            Ok(Message::User(user)) => {
+                let text = match &user.content {
+                    UserMessageContent::Text(s) => s.clone(),
+                    UserMessageContent::Blocks(blocks) => blocks
+                        .iter()
+                        .filter_map(|b| match b {
+                            UserContent::Text(t) => Some(t.text.as_str()),
+                            _ => None,
+                        })
+                        .collect::<Vec<_>>()
+                        .join("\n"),
+                };
+                publish_chunk(state, conversation_id, "user", &text, json!({})).await;
+            }
+            Ok(Message::Assistant(assistant)) => {
+                for block in &assistant.content {
+                    match block {
+                        AssistantContent::Thinking(t) => {
+                            publish_chunk(state, conversation_id, "thinking", &t.thinking, json!({})).await;
+                        }
+                        AssistantContent::Text(t) => {
+                            publish_chunk(state, conversation_id, "text", &t.text, json!({})).await;
+                        }
+                        AssistantContent::ToolCall(tc) => {
+                            let input_str = serde_json::to_string(&tc.arguments).unwrap_or_default();
+                            publish_chunk(state, conversation_id, "tool_use", &input_str, json!({"_id": tc.id, "name": tc.name})).await;
+                        }
                     }
-                    Some("text") => {
-                        publish_chunk(state, conversation_id, "text", block["text"].as_str().unwrap_or(""), json!({})).await;
-                    }
-                    Some("tool_use") => {
-                        let input_str = serde_json::to_string(&block["input"]).unwrap_or_default();
-                        publish_chunk(state, conversation_id, "tool_use", &input_str, json!({"_id": block["id"], "name": block["name"]})).await;
-                    }
-                    Some("tool_result") => {
-                        publish_chunk(state, conversation_id, "tool_result", block["content"].as_str().unwrap_or(""), json!({"_id": block["tool_use_id"], "is_error": block["is_error"]})).await;
-                    }
-                    _ => {}
                 }
+                // 发布使用量消息(usage 在 pi 消息内, 仅 assistant 消息携带)
+                publish_chunk(
+                    state,
+                    conversation_id,
+                    "usage",
+                    "",
+                    json!({
+                        "cache_read_input_tokens": assistant.usage.cache_read,
+                        "input_tokens": assistant.usage.input,
+                        "output_tokens": assistant.usage.output,
+                    }),
+                )
+                    .await;
+            }
+            Ok(Message::ToolResult(tool_result)) => {
+                let text = tool_result
+                    .content
+                    .iter()
+                    .filter_map(|b| match b {
+                        UserContent::Text(t) => Some(t.text.as_str()),
+                        _ => None,
+                    })
+                    .collect::<Vec<_>>()
+                    .join("\n");
+                publish_chunk(state, conversation_id, "tool_result", &text, json!({"_id": tool_result.tool_call_id, "is_error": tool_result.is_error})).await;
+            }
+            Err(e) => {
+                tracing::warn!("Skip unparsable history message: id={} error={}", msg.id, e);
             }
         }
-        // 发布使用量消息
-        publish_chunk(
-            state,
-            conversation_id,
-            "usage",
-            "",
-            json!({
-                "cache_read_input_tokens": msg.cache_read_input_tokens,
-                "input_tokens": msg.input_tokens,
-                "output_tokens": msg.output_tokens,
-            }),
-        )
-            .await;
     }
     if !task_content.is_empty() {
         publish_chunk(state, conversation_id, "user", task_content, json!({})).await;
@@ -229,222 +257,153 @@ async fn do_run_conversation(
     let provider = model_provider_repository::get_model_provider(&state.db, model_provider_id)
         .await?
         .ok_or_else(|| anyhow::anyhow!("model provider not found"))?;
-    let thinking_config = if thinking {
-        ThinkingConfig::Enabled { display: "summarized".to_string() }
-    } else {
-        ThinkingConfig::Disabled
-    };
     let system_prompt = conversation.conversation.system_prompt.clone();
-    let tools = tool::list_tools();
-    let tools_json: Vec<Value> = tools.iter().map(|t| serde_json::to_value(t).unwrap_or_default()).collect();
+    let tools: Vec<crate::ai::pi::types::Tool> = tool::list_tools()
+        .iter()
+        .map(|t| crate::ai::pi::types::Tool {
+            name: t.name.clone(),
+            description: t.description.clone(),
+            parameters: t.input_schema.clone(),
+        })
+        .collect();
 
-    // 构造初始消息列表
-    let mut messages: Vec<Value> = conversation
+    // 构造初始消息列表(content 列为 pi 消息协议 JSON, 无法解析的历史消息跳过)
+    let mut messages: Vec<Message> = conversation
         .messages
         .iter()
-        .map(|msg| json!({"role": msg.role, "content": msg.content}))
+        .filter_map(|msg| match serde_json::from_value::<Message>(msg.content.clone()) {
+            Ok(m) => Some(m),
+            Err(e) => {
+                tracing::warn!("Skip unparsable history message: id={} error={}", msg.id, e);
+                None
+            }
+        })
         .collect();
-    messages.push(json!({"role": "user", "content": task_content, "time": chrono::Local::now().to_rfc3339()}));
+    let task_message = Message::User(UserMessage {
+        content: UserMessageContent::Text(task_content.to_string()),
+        timestamp: now_timestamp(),
+    });
+    messages.push(task_message.clone());
+    // 本轮新增的消息(结束后统一持久化)
+    let mut new_messages: Vec<Message> = vec![task_message];
 
     // 执行 agent loop
     loop {
-        // 发送模型请求(按 provider 协议类型路由, 统一返回基准协议事件流)
-        let request = CreateMessageRequest {
-            model: model.to_string(),
-            messages: messages.iter().map(|m| RequestMessage {
-                role: m["role"].as_str().unwrap_or("").to_string(),
-                content: m["content"].clone(),
-            }).collect(),
-            system: Some(system_prompt.clone()),
-            tools: Some(tools_json.clone()),
-            thinking: Some(thinking_config.clone()),
-            max_tokens: 16000,
-            stream: true,
+        // 发送模型请求(按 provider 协议类型路由, 统一返回 pi 基准协议事件流)
+        let context = Context {
+            system_prompt: Some(system_prompt.clone()),
+            messages: messages.clone(),
+            tools: Some(tools.clone()),
         };
-        let mut stream = model::client::create_message_stream(&provider, &request).await?;
+        let mut stream = ai::client::stream(&provider, model, thinking, 16000, &context)?;
 
-        // 累积完整 assistant message
-        let mut assistant_msg: Option<Value> = None;
-        let mut input_json = String::new();
-
-        while let Some(event_result) = stream.next().await {
-            let event = event_result.map_err(|e| anyhow::anyhow!("stream error: {}", e))?;
+        // pi 事件流: 每个事件携带完整 partial 消息, done/error 事件携带最终 assistant message
+        let mut assistant_msg: Option<AssistantMessage> = None;
+        while let Some(event) = stream.next().await {
             match event {
-                MessageStreamEvent::MessageStart { message } => {
-                    assistant_msg = Some(json!({
-                        "id": message.id,
-                        "type": message.msg_type,
-                        "role": message.role,
-                        "model": message.model,
-                        "content": [],
-                        "stop_reason": Value::Null,
-                        "stop_sequence": Value::Null,
-                        "usage": {
-                            "input_tokens": message.usage.input_tokens,
-                            "output_tokens": message.usage.output_tokens,
-                            "cache_creation_input_tokens": message.usage.cache_creation_input_tokens,
-                            "cache_read_input_tokens": message.usage.cache_read_input_tokens,
-                        }
-                    }));
+                AssistantMessageEvent::Start { .. } => {}
+                AssistantMessageEvent::ThinkingStart { .. } => {
+                    publish_chunk(state, conversation_id, "thinking", "", json!({})).await;
                 }
-                MessageStreamEvent::ContentBlockStart { content_block, .. } => {
-                    if let Some(ref mut msg) = assistant_msg {
-                        let block_json = match &content_block {
-                            ContentBlock::Thinking { thinking, signature } => {
-                                publish_chunk(state, conversation_id, "thinking", "", json!({})).await;
-                                json!({"type": "thinking", "thinking": thinking, "signature": signature})
-                            }
-                            ContentBlock::Text { text } => {
-                                publish_chunk(state, conversation_id, "text", "", json!({})).await;
-                                json!({"type": "text", "text": text})
-                            }
-                            ContentBlock::ToolUse { id, name, input } => {
-                                publish_chunk(state, conversation_id, "tool_use", "", json!({"_id": id, "name": name})).await;
-                                json!({"type": "tool_use", "id": id, "name": name, "input": input})
-                            }
-                            ContentBlock::RedactedThinking { data } => {
-                                json!({"type": "redacted_thinking", "data": data})
-                            }
-                        };
-                        if let Some(content) = msg["content"].as_array_mut() {
-                            content.push(block_json);
-                        }
+                AssistantMessageEvent::ThinkingDelta { delta, .. } => {
+                    publish_chunk(state, conversation_id, "delta", &delta, json!({})).await;
+                }
+                AssistantMessageEvent::ThinkingEnd { .. } => {}
+                AssistantMessageEvent::TextStart { .. } => {
+                    publish_chunk(state, conversation_id, "text", "", json!({})).await;
+                }
+                AssistantMessageEvent::TextDelta { delta, .. } => {
+                    publish_chunk(state, conversation_id, "delta", &delta, json!({})).await;
+                }
+                AssistantMessageEvent::TextEnd { .. } => {}
+                AssistantMessageEvent::ToolcallStart { content_index, partial } => {
+                    if let Some(AssistantContent::ToolCall(tc)) = partial.content.get(content_index) {
+                        publish_chunk(state, conversation_id, "tool_use", "", json!({"_id": tc.id, "name": tc.name})).await;
                     }
                 }
-                MessageStreamEvent::ContentBlockDelta { delta, .. } => {
-                    if let Some(ref mut msg) = assistant_msg {
-                        let content = msg["content"].as_array_mut();
-                        if let Some(last) = content.and_then(|c| c.last_mut()) {
-                            match delta {
-                                ContentBlockDelta::ThinkingDelta { thinking } => {
-                                    last["thinking"] = json!(last["thinking"].as_str().unwrap_or("").to_string() + &thinking);
-                                    publish_chunk(state, conversation_id, "delta", &thinking, json!({})).await;
-                                }
-                                ContentBlockDelta::SignatureDelta { signature } => {
-                                    last["signature"] = json!(last["signature"].as_str().unwrap_or("").to_string() + &signature);
-                                }
-                                ContentBlockDelta::TextDelta { text } => {
-                                    last["text"] = json!(last["text"].as_str().unwrap_or("").to_string() + &text);
-                                    publish_chunk(state, conversation_id, "delta", &text, json!({})).await;
-                                }
-                                ContentBlockDelta::InputJsonDelta { partial_json } => {
-                                    input_json.push_str(&partial_json);
-                                    publish_chunk(state, conversation_id, "delta", &partial_json, json!({})).await;
-                                }
-                            }
-                        }
-                    }
+                AssistantMessageEvent::ToolcallDelta { delta, .. } => {
+                    publish_chunk(state, conversation_id, "delta", &delta, json!({})).await;
                 }
-                MessageStreamEvent::ContentBlockStop { .. } => {
-                    if let Some(ref mut msg) = assistant_msg {
-                        let content = msg["content"].as_array_mut();
-                        if let Some(last) = content.and_then(|c| c.last_mut()) {
-                            if last["type"].as_str() == Some("tool_use") {
-                                match serde_json::from_str::<Value>(&input_json) {
-                                    Ok(parsed) => last["input"] = parsed,
-                                    Err(e) => last["input"] = json!({"error": e.to_string()}),
-                                }
-                                input_json.clear();
-                            }
-                        }
-                    }
+                AssistantMessageEvent::ToolcallEnd { .. } => {}
+                AssistantMessageEvent::Done { message, .. } => {
+                    assistant_msg = Some(message);
                 }
-                MessageStreamEvent::MessageDelta { delta, usage } => {
-                    if let Some(ref mut msg) = assistant_msg {
-                        msg["stop_reason"] = json!(delta.stop_reason);
-                        msg["usage"]["output_tokens"] = json!(usage.output_tokens);
-                        // Responses 协议的 usage 仅在完成事件下发, input_tokens 在此处补齐
-                        if let Some(input_tokens) = usage.input_tokens {
-                            msg["usage"]["input_tokens"] = json!(input_tokens);
-                        }
-                        // 缓存命中 token 一并落库, 避免持久化后丢失
-                        if let Some(cache_read_input_tokens) = usage.cache_read_input_tokens {
-                            msg["usage"]["cache_read_input_tokens"] = json!(cache_read_input_tokens);
-                        }
-                        publish_chunk(
-                            state,
-                            conversation_id,
-                            "usage",
-                            "",
-                            json!({
-                                "cache_read_input_tokens": usage.cache_read_input_tokens,
-                                "input_tokens": usage.input_tokens,
-                                "output_tokens": usage.output_tokens,
-                            }),
-                        )
-                            .await;
-                    }
+                AssistantMessageEvent::Error { error, .. } => {
+                    // 错误 chunk 由外层 run_conversation 统一发布
+                    let message = error.error_message.clone().unwrap_or_else(|| "unknown error".to_string());
+                    return Err(anyhow::anyhow!("model stream error: {}", message));
                 }
-                MessageStreamEvent::MessageStop => {}
             }
         }
 
         let msg = assistant_msg.ok_or_else(|| anyhow::anyhow!("no assistant message received"))?;
         tracing::info!(
-            "Model round completed: conversation_id={} stop_reason={} input_tokens={} output_tokens={} cache_read_input_tokens={}",
+            "Model round completed: conversation_id={} stop_reason={:?} input_tokens={} output_tokens={} cache_read_input_tokens={}",
             conversation_id,
-            msg["stop_reason"].as_str().unwrap_or(""),
-            msg["usage"]["input_tokens"].as_i64().unwrap_or(0),
-            msg["usage"]["output_tokens"].as_i64().unwrap_or(0),
-            msg["usage"]["cache_read_input_tokens"].as_i64().unwrap_or(0),
+            msg.stop_reason,
+            msg.usage.input,
+            msg.usage.output,
+            msg.usage.cache_read,
         );
-        let msg_time = chrono::Local::now().to_rfc3339();
-        let mut msg_with_time = msg.clone();
-        msg_with_time["time"] = json!(msg_time);
-        messages.push(msg_with_time.clone());
+        publish_chunk(
+            state,
+            conversation_id,
+            "usage",
+            "",
+            json!({
+                "cache_read_input_tokens": msg.usage.cache_read,
+                "input_tokens": msg.usage.input,
+                "output_tokens": msg.usage.output,
+            }),
+        )
+            .await;
+        let assistant_message = Message::Assistant(msg);
+        messages.push(assistant_message.clone());
+        new_messages.push(assistant_message);
 
         // 判断结束
-        let tool_use_list: Vec<&Value> = msg["content"]
-            .as_array()
-            .map(|arr| arr.iter().filter(|b| b["type"].as_str() == Some("tool_use")).collect())
-            .unwrap_or_default();
-
-        if tool_use_list.is_empty() {
-            // assistant 消息持久化
-            let messages_to_save: Vec<NewMessageEntity> = messages
+        let tool_calls: Vec<ToolCall> = match messages.last() {
+            Some(Message::Assistant(a)) => a
+                .content
                 .iter()
-                .filter(|m| m.get("time").is_some())
-                .map(|m| NewMessageEntity {
-                    role: m["role"].as_str().unwrap_or("").to_string(),
-                    content: m["content"].clone(),
-                    stop_reason: m["stop_reason"].as_str().unwrap_or("").to_string(),
-                    cache_read_input_tokens: m["usage"]["cache_read_input_tokens"].as_i64().unwrap_or(0),
-                    input_tokens: m["usage"]["input_tokens"].as_i64().unwrap_or(0),
-                    output_tokens: m["usage"]["output_tokens"].as_i64().unwrap_or(0),
-                    time: m["time"].as_str().unwrap_or("").to_string(),
+                .filter_map(|b| match b {
+                    AssistantContent::ToolCall(tc) => Some(tc.clone()),
+                    _ => None,
                 })
+                .collect(),
+            _ => Vec::new(),
+        };
+
+        if tool_calls.is_empty() {
+            // 本轮新增消息持久化(content 列存整条 pi 消息 JSON)
+            let messages_to_save: Vec<NewMessageEntity> = new_messages
+                .iter()
+                .map(|m| NewMessageEntity { content: serde_json::to_value(m).unwrap_or_default() })
                 .collect();
             conversation_repository::add_conversation_messages(&state.db, conversation_id, &messages_to_save).await?;
             tracing::info!("Conversation finished: conversation_id={}", conversation_id);
             return Ok(());
         }
 
-        // 工具调用
-        let mut tool_result_content = Vec::new();
-        for tool_use in &tool_use_list {
-            let tool_name = tool_use["name"].as_str().unwrap_or("");
-            let tool_input = &tool_use["input"];
-            let tool_use_id = tool_use["id"].as_str().unwrap_or("");
+        // 工具调用(每个 toolCall 对应一条独立的 toolResult 消息, 对齐 pi)
+        for tool_call in &tool_calls {
             let ctx = ToolContext {
                 db: state.db.clone(),
                 work_dir: conversation.conversation.work_dir.clone(),
                 task_id: conversation.conversation.task_id,
                 skills: state.skills.clone(),
             };
-            let (tool_content, is_error) = tool::execute_tool(tool_name, tool_input, &ctx).await;
-            tool_result_content.push(json!({
-                "type": "tool_result",
-                "tool_use_id": tool_use_id,
-                "content": tool_content,
-                "is_error": is_error,
-            }));
-            publish_chunk(state, conversation_id, "tool_result", &tool_content, json!({"_id": tool_use_id, "is_error": is_error})).await;
+            let (tool_content, is_error) = tool::execute_tool(&tool_call.name, &tool_call.arguments, &ctx).await;
+            publish_chunk(state, conversation_id, "tool_result", &tool_content, json!({"_id": tool_call.id, "is_error": is_error})).await;
+            let tool_result = Message::ToolResult(ToolResultMessage {
+                tool_call_id: tool_call.id.clone(),
+                tool_name: tool_call.name.clone(),
+                content: vec![UserContent::Text(TextContent { text: tool_content, text_signature: None })],
+                is_error,
+                timestamp: now_timestamp(),
+            });
+            messages.push(tool_result.clone());
+            new_messages.push(tool_result);
         }
-        let tool_result_time = chrono::Local::now().to_rfc3339();
-        messages.push(json!({
-            "role": "user",
-            "content": tool_result_content,
-            "time": tool_result_time,
-        }));
     }
 }

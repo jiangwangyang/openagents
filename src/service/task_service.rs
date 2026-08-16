@@ -134,14 +134,28 @@ async fn do_run_task(state: &AppState, task_id: i64, agent_id: i64) -> anyhow::R
                 None => continue,
             };
             let name = item.agent_name.as_deref().unwrap_or("User");
-            let text = match last_content {
-                Value::String(s) => s.clone(),
-                Value::Array(arr) => {
-                    arr.last()
-                        .and_then(|b| b["text"].as_str())
-                        .unwrap_or("")
-                        .to_string()
-                }
+            // content 列为 pi 消息协议 JSON: 取用户文本或 assistant 最后一个文本块
+            let text = match serde_json::from_value::<crate::ai::pi::types::Message>(last_content.clone()) {
+                Ok(crate::ai::pi::types::Message::User(u)) => match &u.content {
+                    crate::ai::pi::types::UserMessageContent::Text(s) => s.clone(),
+                    crate::ai::pi::types::UserMessageContent::Blocks(blocks) => blocks
+                        .iter()
+                        .filter_map(|b| match b {
+                            crate::ai::pi::types::UserContent::Text(t) => Some(t.text.as_str()),
+                            _ => None,
+                        })
+                        .collect::<Vec<_>>()
+                        .join("\n"),
+                },
+                Ok(crate::ai::pi::types::Message::Assistant(a)) => a
+                    .content
+                    .iter()
+                    .rev()
+                    .find_map(|b| match b {
+                        crate::ai::pi::types::AssistantContent::Text(t) => Some(t.text.clone()),
+                        _ => None,
+                    })
+                    .unwrap_or_default(),
                 _ => String::new(),
             };
             task_content_list.push(format!("## {}\n{}", name, serde_json::to_string(&text)?));

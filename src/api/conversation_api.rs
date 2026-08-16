@@ -41,17 +41,18 @@ pub async fn get_conversation(State(state): State<AppState>, Path(conversation_i
             "thinking": a.thinking,
         })
     });
-    // 对话基本字段由实体序列化展开, messages 与原接口保持一致(不含 conversation_id), 追加 agent 字段
+    // 对话基本字段由实体序列化展开, messages 与原接口保持一致(不含 conversation_id), 追加 agent 字段;
+    // role/stop_reason/token/time 等字段从 content(pi 消息 JSON)派生
     let messages: Vec<serde_json::Value> = conversation.messages.iter().map(|msg| {
         json!({
             "id": msg.id,
-            "role": msg.role,
+            "role": msg.content["role"].as_str().unwrap_or(""),
             "content": msg.content,
-            "stop_reason": msg.stop_reason,
-            "cache_read_input_tokens": msg.cache_read_input_tokens,
-            "input_tokens": msg.input_tokens,
-            "output_tokens": msg.output_tokens,
-            "time": msg.time,
+            "stop_reason": msg.content["stopReason"].as_str().unwrap_or(""),
+            "cache_read_input_tokens": msg.content["usage"]["cacheRead"].as_i64().unwrap_or(0),
+            "input_tokens": msg.content["usage"]["input"].as_i64().unwrap_or(0),
+            "output_tokens": msg.content["usage"]["output"].as_i64().unwrap_or(0),
+            "time": crate::repository::entity::timestamp_to_rfc3339(msg.content["timestamp"].as_u64().unwrap_or(0)),
         })
     }).collect();
     let mut result = serde_json::to_value(&conversation.conversation).map_err(|e| AppError::Internal(e.into()))?;
@@ -87,14 +88,13 @@ pub async fn add_conversation_message(State(state): State<AppState>, Path(conver
     if conversation.is_none() {
         return Err(AppError::NotFound("Conversation not found".to_string()));
     }
+    // content 列存整条 pi 消息 JSON
+    let message = crate::ai::pi::types::Message::User(crate::ai::pi::types::UserMessage {
+        content: crate::ai::pi::types::UserMessageContent::Text(req.content),
+        timestamp: crate::ai::pi::types::now_timestamp(),
+    });
     let messages = vec![NewMessageEntity {
-        role: "user".to_string(),
-        content: serde_json::Value::String(req.content),
-        stop_reason: String::new(),
-        cache_read_input_tokens: 0,
-        input_tokens: 0,
-        output_tokens: 0,
-        time: chrono::Local::now().to_rfc3339(),
+        content: serde_json::to_value(&message).map_err(|e| AppError::Internal(e.into()))?,
     }];
     conversation_repository::add_conversation_messages(&state.db, conversation_id, &messages).await?;
     Ok(())

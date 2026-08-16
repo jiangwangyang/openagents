@@ -4,7 +4,7 @@ use axum::Json;
 use serde::Deserialize;
 
 use crate::error::AppError;
-use crate::model;
+use crate::ai;
 use crate::repository::entity::ModelProviderEntity;
 use crate::repository::model_provider_repository;
 use crate::state::AppState;
@@ -66,7 +66,7 @@ pub async fn list_provider_models(State(state): State<AppState>, Path(provider_i
     let provider = model_provider_repository::get_model_provider(&state.db, provider_id).await?;
     match provider {
         Some(p) => {
-            let models = model::client::list_models(&p).await.map_err(|e| AppError::Internal(anyhow::anyhow!(e.to_string())))?;
+            let models = ai::client::list_models(&p).await.map_err(|e| AppError::Internal(anyhow::anyhow!(e.to_string())))?;
             Ok(Json(models))
         }
         None => Err(AppError::NotFound("Model provider not found".to_string())),

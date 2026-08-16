@@ -67,18 +67,19 @@ pub struct ConversationEntity {
     pub update_time: String,
 }
 
-// 消息
+// 消息(content 列存整条 pi 消息 JSON, 含 role/usage/stopReason/timestamp)
 #[derive(Debug, Clone, FromRow, serde::Serialize)]
 pub struct MessageEntity {
     pub id: i64,
     pub conversation_id: i64,
-    pub role: String,
     pub content: serde_json::Value,
-    pub stop_reason: String,
-    pub cache_read_input_tokens: i64,
-    pub input_tokens: i64,
-    pub output_tokens: i64,
-    pub time: String,
+}
+
+// pi 消息 timestamp(Unix 毫秒) 转 RFC3339 字符串
+pub fn timestamp_to_rfc3339(timestamp: u64) -> String {
+    chrono::DateTime::from_timestamp_millis(timestamp as i64)
+        .map(|dt| dt.with_timezone(&chrono::Local).to_rfc3339())
+        .unwrap_or_default()
 }
 
 // MCP 服务
@@ -108,13 +109,7 @@ pub struct WebStorageEntity {
 // 待写入的消息(add_conversation_messages 参数)
 #[derive(Debug, Clone)]
 pub struct NewMessageEntity {
-    pub role: String,
     pub content: serde_json::Value,
-    pub stop_reason: String,
-    pub cache_read_input_tokens: i64,
-    pub input_tokens: i64,
-    pub output_tokens: i64,
-    pub time: String,
 }
 
 // 对话查询结果(含消息列表)

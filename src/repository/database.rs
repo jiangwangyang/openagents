@@ -110,17 +110,12 @@ async fn create_tables(pool: &SqlitePool) -> anyhow::Result<()> {
         .execute(pool)
         .await?;
 
+    // content 列存整条 pi 消息 JSON(含 role/usage/stopReason/timestamp), 不再单独物化
     sqlx::query(
         "CREATE TABLE IF NOT EXISTS t_message (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             conversation_id INTEGER NOT NULL REFERENCES t_conversation(id) ON DELETE CASCADE,
-            role TEXT NOT NULL,
-            content TEXT NOT NULL,
-            stop_reason TEXT NOT NULL,
-            cache_read_input_tokens INTEGER NOT NULL,
-            input_tokens INTEGER NOT NULL,
-            output_tokens INTEGER NOT NULL,
-            time TEXT NOT NULL
+            content TEXT NOT NULL
         )",
     )
         .execute(pool)

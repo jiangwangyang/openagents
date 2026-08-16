@@ -39,7 +39,7 @@ pub async fn list_conversations_by_task_id(pool: &SqlitePool, task_id: i64) -> R
 pub async fn list_messages_by_conversation_ids(pool: &SqlitePool, conversation_ids: &[i64]) -> Result<Vec<MessageEntity>, sqlx::Error> {
     let placeholders = vec!["?"; conversation_ids.len()].join(", ");
     let sql = format!(
-        "SELECT id, conversation_id, role, content, stop_reason, cache_read_input_tokens, input_tokens, output_tokens, time FROM t_message WHERE conversation_id IN ({}) ORDER BY id",
+        "SELECT id, conversation_id, content FROM t_message WHERE conversation_id IN ({}) ORDER BY id",
         placeholders
     );
     let mut query = sqlx::query_as::<_, MessageEntity>(&sql);
@@ -61,7 +61,7 @@ pub async fn get_conversation(pool: &SqlitePool, conversation_id: i64) -> Result
     match conv {
         Some(c) => {
             let messages = sqlx::query_as::<_, MessageEntity>(
-                "SELECT id, conversation_id, role, content, stop_reason, cache_read_input_tokens, input_tokens, output_tokens, time FROM t_message WHERE conversation_id = ? ORDER BY id",
+                "SELECT id, conversation_id, content FROM t_message WHERE conversation_id = ? ORDER BY id",
             )
                 .bind(conversation_id)
                 .fetch_all(pool)
@@ -98,17 +98,9 @@ pub async fn add_conversation(pool: &SqlitePool, title: &str, work_dir: &str, sy
 pub async fn add_conversation_messages(pool: &SqlitePool, conversation_id: i64, messages: &[NewMessageEntity]) -> Result<(), sqlx::Error> {
     let mut tx = pool.begin().await?;
     for msg in messages {
-        sqlx::query(
-            "INSERT INTO t_message (conversation_id, role, content, stop_reason, cache_read_input_tokens, input_tokens, output_tokens, time) VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
-        )
+        sqlx::query("INSERT INTO t_message (conversation_id, content) VALUES (?, ?)")
             .bind(conversation_id)
-            .bind(&msg.role)
             .bind(&msg.content)
-            .bind(&msg.stop_reason)
-            .bind(msg.cache_read_input_tokens)
-            .bind(msg.input_tokens)
-            .bind(msg.output_tokens)
-            .bind(&msg.time)
             .execute(&mut *tx)
             .await?;
     }

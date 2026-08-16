@@ -1,4 +1,4 @@
-// Anthropic 流式 API 类型建模
+// Anthropic 流式 API 类型建模(请求侧对齐 pi/packages/ai/src/api/anthropic-messages.ts 的 convertMessages/convertTools 输出)
 use serde::{Deserialize, Serialize};
 
 // ========== 请求体 ==========
@@ -7,22 +7,77 @@ use serde::{Deserialize, Serialize};
 #[derive(Debug, Serialize)]
 pub struct CreateMessageRequest {
     pub model: String,
-    pub messages: Vec<RequestMessage>,
+    pub messages: Vec<MessageParam>,
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub system: Option<String>,
+    pub system: Option<Vec<SystemBlock>>,
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub tools: Option<Vec<serde_json::Value>>,
+    pub tools: Option<Vec<ToolParam>>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub thinking: Option<ThinkingConfig>,
     pub max_tokens: u32,
     pub stream: bool,
 }
 
+// 系统提示块
+#[derive(Debug, Serialize)]
+pub struct SystemBlock {
+    #[serde(rename = "type")]
+    pub block_type: String, // 固定 "text"
+    pub text: String,
+}
+
 // 请求消息
 #[derive(Debug, Serialize)]
-pub struct RequestMessage {
+pub struct MessageParam {
     pub role: String,
-    pub content: serde_json::Value,
+    pub content: MessageParamContent,
+}
+
+// 请求消息内容(纯文本或内容块数组)
+#[derive(Debug, Serialize)]
+#[serde(untagged)]
+pub enum MessageParamContent {
+    Text(String),
+    Blocks(Vec<ContentBlockParam>),
+}
+
+// 请求内容块
+#[derive(Debug, Serialize)]
+#[serde(tag = "type")]
+pub enum ContentBlockParam {
+    #[serde(rename = "text")]
+    Text { text: String },
+    #[serde(rename = "thinking")]
+    Thinking { thinking: String, signature: String },
+    #[serde(rename = "redacted_thinking")]
+    RedactedThinking { data: String },
+    #[serde(rename = "tool_use")]
+    ToolUse { id: String, name: String, input: serde_json::Value },
+    #[serde(rename = "tool_result")]
+    ToolResult {
+        tool_use_id: String,
+        content: MessageParamContent,
+        is_error: bool,
+    },
+    #[serde(rename = "image")]
+    Image { source: ImageSource },
+}
+
+// 图片来源
+#[derive(Debug, Serialize)]
+pub struct ImageSource {
+    #[serde(rename = "type")]
+    pub source_type: String, // 固定 "base64"
+    pub media_type: String,
+    pub data: String,
+}
+
+// 工具定义
+#[derive(Debug, Serialize)]
+pub struct ToolParam {
+    pub name: String,
+    pub description: String,
+    pub input_schema: serde_json::Value,
 }
 
 // Thinking 配置
@@ -30,7 +85,7 @@ pub struct RequestMessage {
 #[serde(tag = "type")]
 pub enum ThinkingConfig {
     #[serde(rename = "enabled")]
-    Enabled { display: String },
+    Enabled { budget_tokens: u32, display: String },
     #[serde(rename = "disabled")]
     Disabled,
 }
@@ -92,7 +147,7 @@ pub struct MessageDeltaUsage {
 
 // ========== 流事件 ==========
 
-// 流式事件(对应 Python RawMessageStreamEvent)
+// 流式事件(对应 pi 中的 RawMessageStreamEvent)
 #[allow(dead_code)]
 #[derive(Debug, Clone, Deserialize)]
 #[serde(tag = "type")]
@@ -120,6 +175,16 @@ pub enum MessageStreamEvent {
 pub struct MessageDelta {
     pub stop_reason: Option<String>,
     pub stop_sequence: Option<String>,
+    pub stop_details: Option<RefusalStopDetails>,
+}
+
+// refusal 停止明细
+#[allow(dead_code)]
+#[derive(Debug, Clone, Deserialize)]
+pub struct RefusalStopDetails {
+    #[serde(rename = "type")]
+    pub details_type: String,
+    pub explanation: Option<String>,
 }
 
 // content_block_delta 事件中的 delta

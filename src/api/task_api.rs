@@ -39,12 +39,13 @@ pub async fn get_task(State(state): State<AppState>, Path(task_id): Path<i64>) -
 
     let conversations: Vec<serde_json::Value> = conversations.into_iter().map(|c| {
         let messages = message_map.remove(&c.id).unwrap_or_default();
+        // role/time 从 content(pi 消息 JSON)派生
         let messages: Vec<serde_json::Value> = messages.iter().map(|msg| {
             json!({
                 "id": msg.id,
-                "role": msg.role,
+                "role": msg.content["role"].as_str().unwrap_or(""),
                 "content": msg.content,
-                "time": msg.time,
+                "time": crate::repository::entity::timestamp_to_rfc3339(msg.content["timestamp"].as_u64().unwrap_or(0)),
             })
         }).collect();
         json!({

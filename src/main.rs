@@ -3,7 +3,7 @@
 mod api;
 mod config;
 mod error;
-mod model;
+mod ai;
 mod repository;
 mod service;
 mod state;

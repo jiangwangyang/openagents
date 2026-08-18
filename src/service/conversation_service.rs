@@ -513,7 +513,22 @@ async fn do_run_conversation(
             break 'agent_loop;
         }
 
-        let msg = assistant_msg.ok_or_else(|| anyhow::anyhow!("no assistant message received"))?;
+        let mut msg =
+            assistant_msg.ok_or_else(|| anyhow::anyhow!("no assistant message received"))?;
+        // 工具参数归一化: 模型可能返回非对象 arguments(数组/字符串等), 回放给 API 会被拒绝且入库后永久毒化历史, 统一回退空对象
+        for block in &mut msg.content {
+            if let AssistantContent::ToolCall(tc) = block {
+                if !tc.arguments.is_object() {
+                    tracing::warn!(
+                        "Tool call arguments normalized to object: conversation_id={} tool={} raw_arguments={}",
+                        conversation_id,
+                        tc.name,
+                        tc.arguments
+                    );
+                    tc.arguments = json!({});
+                }
+            }
+        }
         tracing::info!(
             "Model round completed: conversation_id={} stop_reason={:?} input_tokens={} output_tokens={} cache_read_input_tokens={}",
             conversation_id,

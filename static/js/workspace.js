@@ -121,6 +121,20 @@ function createDirItem(name, path) {
     return div;
 }
 
+// 获取默认工作目录：优先对话页当前目录，未设置时从后端拉取 home 目录（任务/定时添加面板的初值来源）
+async function resolveDefaultWorkdir() {
+    if (currentWorkdir) {
+        return currentWorkdir;
+    }
+    try {
+        const response = await fetch('/dir/list?path=');
+        const data = await response.json();
+        return data.current_path || '';
+    } catch (e) {
+        return '';
+    }
+}
+
 async function initDefaultWorkspace() {
     try {
         const response = await fetch(`/dir/list?path=`);

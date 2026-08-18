@@ -9,17 +9,17 @@ const addCronPanel = document.getElementById('addCronPanel');
 let cronTasksCache = [];
 
 // ===== 2. 新增面板与表单辅助 =====
-function toggleAddCronPanel() {
+async function toggleAddCronPanel() {
     const isOpening = addCronPanel.style.display === 'none';
     addCronPanel.style.display = isOpening ? 'flex' : 'none';
     if (isOpening) {
-        resetCronForm();
+        await resetCronForm();
         loadCronAgentOptions();
     }
 }
 
 // 重置 cron 新增表单
-function resetCronForm() {
+async function resetCronForm() {
     document.getElementById('cronName').value = '';
     document.getElementById('cronContent').value = '';
     document.getElementById('cronAgentId').value = '';
@@ -28,9 +28,11 @@ function resetCronForm() {
     document.getElementById('cronDay').value = '*';
     document.getElementById('cronMonth').value = '*';
     document.getElementById('cronWeek').value = '*';
+    // 工作目录默认填入对话页当前目录，未设置时从后端拉取默认目录
+    const workdir = await resolveDefaultWorkdir();
     const display = document.getElementById('cronWorkspaceDisplay');
-    display.textContent = currentWorkdir || t('input.unset');
-    display.title = currentWorkdir || '';
+    display.textContent = workdir || t('input.unset');
+    display.title = workdir || '';
 }
 
 async function loadCronAgentOptions() {

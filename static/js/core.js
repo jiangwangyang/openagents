@@ -49,7 +49,7 @@ const SKELETON_HTML = '<div class="skeleton-loader"><span></span><span></span><s
 // key 为视图名，load 为对应面板的数据加载函数名（调用时按名解析，避免加载顺序依赖）
 const VIEW_CONFIG = {
     dialog: {nav: 'navDialogBtn', view: 'viewDialog', infoKey: null, load: null},
-    task: {nav: 'navTaskBtn', view: 'viewTask', infoKey: 'header.coreTask', load: 'fetchTaskList'},
+    task: {nav: 'navTaskBtn', view: 'viewTask', infoKey: 'header.coreTask', load: 'fetchTaskList', unload: 'cleanupTaskView'},
     cron: {nav: 'navCronBtn', view: 'viewCron', infoKey: 'header.coreCron', load: 'fetchCronTasks'},
     agent: {nav: 'navAgentBtn', view: 'viewAgent', infoKey: 'header.coreAgent', load: 'fetchAgentRegistry'},
     skill: {nav: 'navSkillBtn', view: 'viewSkill', infoKey: 'header.coreSkill', load: 'fetchSkillData'},
@@ -187,13 +187,14 @@ function getLastMessageText(messages) {
     return '';
 }
 
-// 渲染执行记录项（任务阶段/定时执行记录通用）：执行中的 agent 对话高亮提示，点击进入对话页只读流式回放
+// 渲染执行记录项（任务阶段/定时执行记录通用）：执行中的 agent 对话高亮提示，点击打开覆盖式弹窗查看对话内容
 function createStageRecordItem(conversation) {
     // agent 对话且无消息说明正在执行中，提示点击查看实时流式内容；用户对话由用户自己处理，不在执行
     const isRunning = conversation.agent_id != null && (!conversation.messages || conversation.messages.length === 0);
     const snippet = isRunning ? t('task.generating') : getLastMessageText(conversation.messages);
     const item = document.createElement('div');
     item.className = 'task-stage-item';
+    item.id = `stage-item-${conversation.id}`;
     item.innerHTML = `
         <div class="task-stage-title">
             <span>${escapeHtml(conversation.title)}</span>
@@ -201,10 +202,8 @@ function createStageRecordItem(conversation) {
         </div>
         <div class="task-stage-snippet${isRunning ? ' stage-running' : ''}">${escapeHtml(snippet)}</div>
     `;
-    item.onclick = () => {
-        switchView('dialog');
-        loadConversation(conversation.id, true);
-    };
+    // 点击打开覆盖式弹窗展示阶段对话，避免跳转对话页丢失任务上下文
+    item.onclick = () => showStageDialog(conversation);
     return item;
 }
 
@@ -279,11 +278,22 @@ function showToast(text, type) {
 }
 
 // ===== 7. 视图路由导航 =====
+// 当前激活视图名：离开视图时按配置调用清理钩子
+let currentViewName = 'dialog';
+
 function switchView(viewName) {
     const cfg = VIEW_CONFIG[viewName];
     if (!cfg) {
         return;
     }
+    // 离开旧视图前执行清理钩子（任务面板借此停止轮询与 SSE 跟随）
+    if (currentViewName !== viewName) {
+        const prevCfg = VIEW_CONFIG[currentViewName];
+        if (prevCfg && prevCfg.unload && typeof window[prevCfg.unload] === 'function') {
+            window[prevCfg.unload]();
+        }
+    }
+    currentViewName = viewName;
     document.querySelectorAll('.header-nav-btn').forEach(btn => btn.classList.remove('active'));
     document.querySelectorAll('.view-container').forEach(view => view.classList.remove('active'));
     document.getElementById(cfg.nav).classList.add('active');
@@ -297,4 +307,175 @@ function switchView(viewName) {
         conversationInfo.textContent = t(cfg.infoKey);
         window[cfg.load]();
     }
+}
+
+// ===== 8. 阶段对话弹窗与消息渲染（任务/定时面板共用） =====
+// 当前打开的阶段弹窗状态：持有弹窗独立的 SSE 连接与流式渲染器
+let stageDialogState = null;
+
+// 流式渲染器工厂：handleChunk 处理 SSE chunk 并往容器追加块，delta 合并入当前块；渲染规则与对话页一致
+function createStreamRenderer(container) {
+    let wrapper = null;
+    let contentNode = null;
+    let rawText = '';
+    // 结束当前块：移除流式光标并折叠详情块
+    const finalize = () => {
+        if (contentNode) {
+            contentNode.classList.remove('streaming-active');
+            const prevDetails = contentNode.closest('details');
+            if (prevDetails) {
+                prevDetails.open = false;
+            }
+            contentNode = null;
+        }
+    };
+    const handleChunk = (data) => {
+        if (!data || !data.type) {
+            return;
+        }
+        // 系统提示词：可折叠块，展示在消息流开头
+        if (data.type === 'system') {
+            if (data.text) {
+                const details = document.createElement('details');
+                details.className = 'system-details';
+                details.innerHTML = `<summary>${FOLD_SVG} ${t('stream.systemPrompt')}</summary><div class="content"></div>`;
+                details.querySelector('.content').innerHTML = formatMarkdown(data.text);
+                container.appendChild(details);
+            }
+            return;
+        }
+        // 错误/手动停止提示条
+        if (data.type === 'error' || data.type === 'stopped') {
+            finalize();
+            wrapper = null;
+            const div = document.createElement('div');
+            div.className = data.type === 'error' ? 'user-message stream-error' : 'user-message stream-stopped';
+            div.textContent = data.type === 'error' ? `⚠ ${data.text || t('stream.unknownError')}` : t('stream.stopped');
+            container.appendChild(div);
+            return;
+        }
+        // 用户消息气泡
+        if (data.type === 'user') {
+            finalize();
+            wrapper = null;
+            const div = document.createElement('div');
+            div.className = 'user-message';
+            div.innerHTML = `${formatMarkdown((data.text || '').trim())}<div class="message-time"></div>`;
+            container.appendChild(div);
+            return;
+        }
+        // 助手消息块：thinking / text / tool_use / tool_result
+        if (data.type === 'thinking' || data.type === 'text' || data.type === 'tool_use' || data.type === 'tool_result') {
+            finalize();
+            if (!wrapper) {
+                wrapper = document.createElement('div');
+                wrapper.className = 'assistant-message';
+                container.appendChild(wrapper);
+            }
+            rawText = data.text || '';
+            if (data.type === 'thinking') {
+                const details = document.createElement('details');
+                details.className = 'think-details';
+                details.open = true;
+                details.innerHTML = `<summary>${FOLD_SVG} ${t('stream.thoughtProcess')}</summary><div class="content streaming-active"></div>`;
+                wrapper.appendChild(details);
+                contentNode = details.querySelector('.content');
+            } else if (data.type === 'text') {
+                const div = document.createElement('div');
+                div.className = 'reply-content streaming-active';
+                wrapper.appendChild(div);
+                contentNode = div;
+            } else if (data.type === 'tool_use') {
+                const details = document.createElement('details');
+                details.className = 'tool-details';
+                details.open = true;
+                details.innerHTML = `<summary>${FOLD_SVG} ${t('stream.callPrefix')}: ${escapeHtml(data.name || t('stream.tool'))}</summary><div class="content streaming-active"></div>`;
+                wrapper.appendChild(details);
+                contentNode = details.querySelector('.content');
+            } else {
+                const details = document.createElement('details');
+                details.className = 'tool-details';
+                const status = data.is_error ? t('stream.toolError') : t('stream.toolResult');
+                details.innerHTML = `<summary>${FOLD_SVG} ${t('stream.tool')} ${status} [${escapeHtml(String(data.id || ''))}]</summary><div class="content streaming-active"></div>`;
+                wrapper.appendChild(details);
+                contentNode = details.querySelector('.content');
+            }
+            if (rawText && contentNode) {
+                contentNode.innerHTML = formatMarkdown(rawText);
+            }
+            container.scrollTop = container.scrollHeight;
+            return;
+        }
+        // 追加消息文本
+        if (data.type === 'delta') {
+            rawText += data.text || '';
+            if (contentNode) {
+                contentNode.innerHTML = formatMarkdown(rawText);
+            }
+            container.scrollTop = container.scrollHeight;
+        }
+    };
+    return {handleChunk, finalize};
+}
+
+// 打开阶段对话弹窗：遮罩+窗口卡片覆盖页面，右上角关闭、页脚提供对话页入口；弹窗独立建立 SSE 连接回放历史并实时跟随
+function showStageDialog(conversation) {
+    closeStageDialog();
+    const overlay = document.createElement('div');
+    overlay.className = 'confirm-overlay stage-dialog-overlay';
+    overlay.style.display = 'flex';
+    overlay.innerHTML = `
+        <div class="dir-modal stage-dialog">
+            <div class="dir-modal-header">
+                <div class="confirm-title">${escapeHtml(conversation.title)}</div>
+                <button class="delete-btn always-visible" id="stageDialogCloseBtn">${DELETE_SVG}</button>
+            </div>
+            <div class="dir-modal-content stage-dialog-body" id="stageDialogBody"></div>
+            <div class="dir-modal-footer stage-dialog-footer">
+                <button class="stage-dialog-link" id="stageDialogOpenLink">${t('task.openInDialog')}</button>
+            </div>
+        </div>
+    `;
+    document.body.appendChild(overlay);
+    const body = document.getElementById('stageDialogBody');
+    // 弹窗独立建立 SSE 连接：服务端先回放全部历史 chunks 再实时跟随新数据，不依赖任务跟随链的既有流
+    const renderer = createStreamRenderer(body);
+    const source = new EventSource(`/conversation/${conversation.id}/stream`);
+    stageDialogState = {conversationId: conversation.id, renderer: renderer, eventSource: source};
+    source.onmessage = (event) => {
+        renderer.handleChunk(JSON.parse(event.data));
+    };
+    source.onerror = () => {
+        // 流结束（回放完毕或对话完成）：关闭连接阻止浏览器自动重连，并收尾当前流式块
+        source.close();
+        if (stageDialogState && stageDialogState.eventSource === source) {
+            stageDialogState.eventSource = null;
+        }
+        renderer.finalize();
+    };
+    document.getElementById('stageDialogCloseBtn').onclick = closeStageDialog;
+    // 次级入口：跳转对话页完整回放（只读）
+    document.getElementById('stageDialogOpenLink').onclick = () => {
+        closeStageDialog();
+        switchView('dialog');
+        loadConversation(conversation.id, true);
+    };
+    // 点击遮罩层关闭弹窗
+    overlay.addEventListener('click', (e) => {
+        if (e.target === overlay) {
+            closeStageDialog();
+        }
+    });
+}
+
+function closeStageDialog() {
+    const overlay = document.querySelector('.stage-dialog-overlay');
+    if (overlay) {
+        overlay.remove();
+    }
+    // 关闭弹窗独立的 SSE 连接，避免后台持续占用流
+    if (stageDialogState && stageDialogState.eventSource) {
+        stageDialogState.eventSource.close();
+    }
+    stageDialogState = null;
 }

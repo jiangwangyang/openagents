@@ -1637,3 +1637,121 @@ input.form-control {
         background-position: -200% 0;
     }
 }
+
+/* ===== 9. 任务状态徽章与操作区 ===== */
+/* 状态徽章：五色区分 待启动/运行中/待审核/已完成/异常中断 */
+.task-status-badge {
+    flex-shrink: 0;
+    font-family: var(--font-display);
+    font-size: 10px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    padding: 3px 8px;
+    border-radius: var(--radius-sm);
+    border: 1px solid currentColor;
+    white-space: nowrap;
+}
+
+.task-status-badge.status-idle {
+    color: var(--slate-400);
+}
+
+.task-status-badge.status-running {
+    color: var(--success-color);
+    animation: taskPulse 1.6s ease-in-out infinite;
+}
+
+.task-status-badge.status-review {
+    color: #d97706;
+}
+
+.task-status-badge.status-done {
+    color: #2563eb;
+}
+
+.task-status-badge.status-failed {
+    color: var(--danger-color);
+}
+
+@keyframes taskPulse {
+    0%, 100% {
+        opacity: 1;
+    }
+    50% {
+        opacity: 0.45;
+    }
+}
+
+/* 待审核卡片高亮：琥珀色边框提示需要人工介入 */
+.info-card.task-card-review {
+    border-color: #d97706;
+    box-shadow: 2px 2px 0 rgba(217, 119, 6, 0.15);
+}
+
+/* 卡片摘要行的阶段计数与更新时间 */
+.task-stage-count {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    color: var(--slate-300);
+    white-space: nowrap;
+}
+
+/* 实况行：运行中流式滚动最新文本，保持单行截断 */
+.task-live-line {
+    font-size: 12px;
+}
+
+/* 统一操作区：展开区顶部，承载各状态的启动/停止/审核/继续动作 */
+.task-action-area {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    margin-bottom: 16px;
+    padding: 12px;
+    background: var(--bg-surface);
+    border: 1px dashed var(--border-hard);
+    border-radius: var(--radius-sm);
+}
+
+.task-action-row {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+}
+
+/* 阶段对话弹窗：覆盖式窗口，复用目录弹窗骨架加宽加高（背景已被遮罩虚化，接近满屏展示） */
+.dir-modal.stage-dialog {
+    width: 96%;
+    max-width: 1400px;
+    height: 92vh;
+}
+
+/* 弹窗页脚：「在对话页打开」入口靠左放置，与头部关闭按钮上下分离避免误触 */
+.stage-dialog-footer {
+    justify-content: flex-start;
+}
+
+/* 弹窗主体即消息流容器，样式类与对话页一致 */
+.stage-dialog-body {
+    display: flex;
+    flex-direction: column;
+}
+
+/* 弹窗头部的次级入口（在对话页打开） */
+.stage-dialog-link {
+    font-family: var(--font-display);
+    font-size: 10px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--slate-400);
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: 4px 8px;
+}
+
+.stage-dialog-link:hover {
+    color: var(--charcoal-900);
+}

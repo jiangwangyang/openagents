@@ -224,13 +224,16 @@ function showConfirmDialog({title, text, onConfirm}) {
     // 先清理已有弹窗，避免叠加
     closeConfirmDialog();
 
+    // 内容超长时截断并追加省略号，避免弹窗高度超出屏幕导致按钮无法点击
+    const displayText = text.length > 100 ? text.slice(0, 100) + '...' : text;
+
     const overlay = document.createElement('div');
     overlay.className = 'confirm-overlay';
     overlay.style.display = 'flex';
     overlay.innerHTML = `
         <div class="confirm-dialog">
             <div class="confirm-title">${escapeHtml(title)}</div>
-            <div class="confirm-text">${escapeHtml(text)}</div>
+            <div class="confirm-text">${escapeHtml(displayText)}</div>
             <div class="confirm-buttons">
                 <button class="confirm-btn cancel" onclick="closeConfirmDialog()">${t('common.abort')}</button>
                 <button class="confirm-btn danger" id="globalConfirmExecuteBtn">${t('common.purge')}</button>

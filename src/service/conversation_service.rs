@@ -403,6 +403,9 @@ async fn do_run_conversation(
         None => tokio::sync::watch::channel(false).1,
     };
 
+    // 流错误记录: 报错时不直接返回, 跳出循环走统一收尾, 已完整消息入库后再返回错误
+    let mut stream_error: Option<anyhow::Error> = None;
+
     // 执行 agent loop
     'agent_loop: loop {
         // 每轮开头检测停止信号, 覆盖工具执行期间触发暂停的场景(当前工具执行完入库后再退出, 不强制杀工具子进程)
@@ -418,7 +421,14 @@ async fn do_run_conversation(
             messages: messages.clone(),
             tools: Some(tools.clone()),
         };
-        let mut stream = ai::client::stream(&provider, model, thinking, 16000, &context)?;
+        let mut stream = match ai::client::stream(&provider, model, thinking, 16000, &context) {
+            Ok(s) => s,
+            Err(e) => {
+                // 流发起失败同样走统一收尾, 已完整消息入库后再返回错误
+                stream_error = Some(e.into());
+                break 'agent_loop;
+            }
+        };
 
         // pi 事件流: 每个事件携带完整 partial 消息, done/error 事件携带最终 assistant message
         let mut assistant_msg: Option<AssistantMessage> = None;
@@ -472,12 +482,13 @@ async fn do_run_conversation(
                             assistant_msg = Some(message);
                         }
                         AssistantMessageEvent::Error { error, .. } => {
-                            // 错误 chunk 由外层 run_conversation 统一发布
+                            // 记录流错误并跳出流读取循环, 错误 chunk 由外层 run_conversation 统一发布
                             let message = error
                                 .error_message
                                 .clone()
                                 .unwrap_or_else(|| "unknown error".to_string());
-                            return Err(anyhow::anyhow!("model stream error: {}", message));
+                            stream_error = Some(anyhow::anyhow!("model stream error: {}", message));
+                            break;
                         }
                     }
                 }
@@ -494,6 +505,11 @@ async fn do_run_conversation(
         if stopped {
             publish_chunk(state, conversation_id, "stopped", "", json!({})).await;
             tracing::info!("Conversation stopped: conversation_id={}", conversation_id);
+            break 'agent_loop;
+        }
+
+        // 流中途报错: 跳出 agent loop 走统一收尾, 本轮未完成的 partial assistant 消息丢弃不入库
+        if stream_error.is_some() {
             break 'agent_loop;
         }
 
@@ -571,8 +587,8 @@ async fn do_run_conversation(
         }
     }
 
-    // 对话结束(正常结束或手动停止)统一持久化本轮新增的完整消息(content 列存整条 pi 消息 JSON)
-    // 停止时未完成的 partial assistant 消息不入库, 避免半截 tool_call 破坏 pi 消息协议导致续跑上下文损坏
+    // 对话结束(正常结束/手动停止/模型报错)统一持久化本轮新增的完整消息(content 列存整条 pi 消息 JSON)
+    // 停止或报错时未完成的 partial assistant 消息不入库, 避免半截 tool_call 破坏 pi 消息协议导致续跑上下文损坏
     let messages_to_save: Vec<NewMessageEntity> = new_messages
         .iter()
         .map(|m| NewMessageEntity {
@@ -585,6 +601,10 @@ async fn do_run_conversation(
         &messages_to_save,
     )
     .await?;
+    // 已完整消息入库后再返回流错误, 由 run_conversation 统一发布 error chunk 并收尾
+    if let Some(e) = stream_error {
+        return Err(e);
+    }
     tracing::info!("Conversation finished: conversation_id={}", conversation_id);
     Ok(())
 }

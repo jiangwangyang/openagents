@@ -12,6 +12,7 @@ pub struct ConversationState {
     pub chunks: Vec<serde_json::Value>,
     pub done: bool,
     pub notify: tokio::sync::watch::Sender<u64>,
+    pub stop: tokio::sync::watch::Sender<bool>,
 }
 
 // Skill 信息

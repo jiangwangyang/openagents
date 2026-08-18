@@ -178,6 +178,15 @@ details.system-details .content {
     max-width: 80%;
 }
 
+/* 手动停止提示条（居中中性样式） */
+.stream-stopped {
+    background: var(--subtle-bg);
+    color: var(--slate-400);
+    border: 1px solid var(--border-hard);
+    align-self: center;
+    max-width: 80%;
+}
+
 /* ===== 2. 卡片公共排版 ===== */
 .panel-view-header {
     display: flex;

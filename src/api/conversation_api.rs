@@ -218,6 +218,19 @@ pub async fn start_conversation_work(
     Ok(())
 }
 
+// POST /conversation/{conversation_id}/stop 停止运行中的对话, 对话未在运行返回 409
+pub async fn stop_conversation_work(
+    State(state): State<AppState>,
+    Path(conversation_id): Path<i64>,
+) -> Result<(), AppError> {
+    if !conversation_service::stop_conversation(&state, conversation_id).await {
+        return Err(AppError::Conflict(
+            "Conversation is not running".to_string(),
+        ));
+    }
+    Ok(())
+}
+
 // GET /conversation/{conversation_id}/stream SSE 流式订阅
 pub async fn stream_conversation_work(
     State(state): State<AppState>,

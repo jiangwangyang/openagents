@@ -28,10 +28,12 @@ pub async fn start_conversation(
     thinking: bool,
 ) -> bool {
     let (tx, _) = tokio::sync::watch::channel(0u64);
+    let (stop_tx, _) = tokio::sync::watch::channel(false);
     let conv_state = Arc::new(RwLock::new(ConversationState {
         chunks: Vec::new(),
         done: false,
         notify: tx,
+        stop: stop_tx,
     }));
     // 防重入: entry 原子检查并替换, 持锁期间不 await, 状态锁被占用视为运行中
     match state.conversation_states.entry(conversation_id) {
@@ -73,10 +75,12 @@ pub async fn start_conversation(
 // 启动历史回放查询, 不执行模型调用
 pub async fn start_conversation_query(state: &AppState, conversation_id: i64) -> bool {
     let (tx, _) = tokio::sync::watch::channel(0u64);
+    let (stop_tx, _) = tokio::sync::watch::channel(false);
     let conv_state = Arc::new(RwLock::new(ConversationState {
         chunks: Vec::new(),
         done: false,
         notify: tx,
+        stop: stop_tx,
     }));
     // 防重入: entry 原子检查并替换, 持锁期间不 await, 状态锁被占用视为运行中
     match state.conversation_states.entry(conversation_id) {
@@ -122,6 +126,23 @@ pub fn get_conversation_state(
         .conversation_states
         .get(&conversation_id)
         .map(|r| r.clone())
+}
+
+// 停止对话: 发送停止信号, 对话未在运行(无内存状态或已结束)返回 false, 幂等无副作用
+pub async fn stop_conversation(state: &AppState, conversation_id: i64) -> bool {
+    if let Some(conv_state) = state.conversation_states.get(&conversation_id) {
+        let s = conv_state.read().await;
+        if s.done {
+            return false;
+        }
+        let _ = s.stop.send(true);
+        tracing::info!(
+            "Conversation stop requested: conversation_id={}",
+            conversation_id
+        );
+        return true;
+    }
+    false
 }
 
 // 发布 SSE chunk
@@ -376,8 +397,21 @@ async fn do_run_conversation(
     // 本轮新增的消息(结束后统一持久化)
     let mut new_messages: Vec<Message> = vec![task_message];
 
+    // 订阅停止信号(内存状态必存在, 取不到时退化为永不停机的空信号)
+    let mut stop_rx = match state.conversation_states.get(&conversation_id) {
+        Some(conv_state) => conv_state.read().await.stop.subscribe(),
+        None => tokio::sync::watch::channel(false).1,
+    };
+
     // 执行 agent loop
-    loop {
+    'agent_loop: loop {
+        // 每轮开头检测停止信号, 覆盖工具执行期间触发暂停的场景(当前工具执行完入库后再退出, 不强制杀工具子进程)
+        if *stop_rx.borrow() {
+            publish_chunk(state, conversation_id, "stopped", "", json!({})).await;
+            tracing::info!("Conversation stopped: conversation_id={}", conversation_id);
+            break 'agent_loop;
+        }
+
         // 发送模型请求(按 provider 协议类型路由, 统一返回 pi 基准协议事件流)
         let context = Context {
             system_prompt: Some(system_prompt.clone()),
@@ -388,55 +422,79 @@ async fn do_run_conversation(
 
         // pi 事件流: 每个事件携带完整 partial 消息, done/error 事件携带最终 assistant message
         let mut assistant_msg: Option<AssistantMessage> = None;
-        while let Some(event) = stream.next().await {
-            match event {
-                AssistantMessageEvent::Start { .. } => {}
-                AssistantMessageEvent::ThinkingStart { .. } => {
-                    publish_chunk(state, conversation_id, "thinking", "", json!({})).await;
-                }
-                AssistantMessageEvent::ThinkingDelta { delta, .. } => {
-                    publish_chunk(state, conversation_id, "delta", &delta, json!({})).await;
-                }
-                AssistantMessageEvent::ThinkingEnd { .. } => {}
-                AssistantMessageEvent::TextStart { .. } => {
-                    publish_chunk(state, conversation_id, "text", "", json!({})).await;
-                }
-                AssistantMessageEvent::TextDelta { delta, .. } => {
-                    publish_chunk(state, conversation_id, "delta", &delta, json!({})).await;
-                }
-                AssistantMessageEvent::TextEnd { .. } => {}
-                AssistantMessageEvent::ToolcallStart {
-                    content_index,
-                    partial,
-                } => {
-                    if let Some(AssistantContent::ToolCall(tc)) = partial.content.get(content_index)
-                    {
-                        publish_chunk(
-                            state,
-                            conversation_id,
-                            "tool_use",
-                            "",
-                            json!({"_id": tc.id, "name": tc.name}),
-                        )
-                        .await;
+        // 停止标记: 流读取中被停止信号打断时置位
+        let mut stopped = false;
+        loop {
+            // 同时监听模型流事件与停止信号, 停止信号触发时跳出循环优雅收尾
+            tokio::select! {
+                event = stream.next() => {
+                    let event = match event {
+                        Some(e) => e,
+                        None => break,
+                    };
+                    match event {
+                        AssistantMessageEvent::Start { .. } => {}
+                        AssistantMessageEvent::ThinkingStart { .. } => {
+                            publish_chunk(state, conversation_id, "thinking", "", json!({})).await;
+                        }
+                        AssistantMessageEvent::ThinkingDelta { delta, .. } => {
+                            publish_chunk(state, conversation_id, "delta", &delta, json!({})).await;
+                        }
+                        AssistantMessageEvent::ThinkingEnd { .. } => {}
+                        AssistantMessageEvent::TextStart { .. } => {
+                            publish_chunk(state, conversation_id, "text", "", json!({})).await;
+                        }
+                        AssistantMessageEvent::TextDelta { delta, .. } => {
+                            publish_chunk(state, conversation_id, "delta", &delta, json!({})).await;
+                        }
+                        AssistantMessageEvent::TextEnd { .. } => {}
+                        AssistantMessageEvent::ToolcallStart {
+                            content_index,
+                            partial,
+                        } => {
+                            if let Some(AssistantContent::ToolCall(tc)) = partial.content.get(content_index)
+                            {
+                                publish_chunk(
+                                    state,
+                                    conversation_id,
+                                    "tool_use",
+                                    "",
+                                    json!({"_id": tc.id, "name": tc.name}),
+                                )
+                                .await;
+                            }
+                        }
+                        AssistantMessageEvent::ToolcallDelta { delta, .. } => {
+                            publish_chunk(state, conversation_id, "delta", &delta, json!({})).await;
+                        }
+                        AssistantMessageEvent::ToolcallEnd { .. } => {}
+                        AssistantMessageEvent::Done { message, .. } => {
+                            assistant_msg = Some(message);
+                        }
+                        AssistantMessageEvent::Error { error, .. } => {
+                            // 错误 chunk 由外层 run_conversation 统一发布
+                            let message = error
+                                .error_message
+                                .clone()
+                                .unwrap_or_else(|| "unknown error".to_string());
+                            return Err(anyhow::anyhow!("model stream error: {}", message));
+                        }
                     }
                 }
-                AssistantMessageEvent::ToolcallDelta { delta, .. } => {
-                    publish_chunk(state, conversation_id, "delta", &delta, json!({})).await;
-                }
-                AssistantMessageEvent::ToolcallEnd { .. } => {}
-                AssistantMessageEvent::Done { message, .. } => {
-                    assistant_msg = Some(message);
-                }
-                AssistantMessageEvent::Error { error, .. } => {
-                    // 错误 chunk 由外层 run_conversation 统一发布
-                    let message = error
-                        .error_message
-                        .clone()
-                        .unwrap_or_else(|| "unknown error".to_string());
-                    return Err(anyhow::anyhow!("model stream error: {}", message));
+                _ = stop_rx.changed() => {
+                    // 停止信号触发, 跳出流读取循环优雅收尾
+                    stopped = true;
+                    break;
                 }
             }
+        }
+        // 停止时 drop stream, reqwest 的 HTTP 连接随流 drop 自动取消, 即真正中断模型 API 调用
+        drop(stream);
+
+        if stopped {
+            publish_chunk(state, conversation_id, "stopped", "", json!({})).await;
+            tracing::info!("Conversation stopped: conversation_id={}", conversation_id);
+            break 'agent_loop;
         }
 
         let msg = assistant_msg.ok_or_else(|| anyhow::anyhow!("no assistant message received"))?;
@@ -478,21 +536,7 @@ async fn do_run_conversation(
         };
 
         if tool_calls.is_empty() {
-            // 本轮新增消息持久化(content 列存整条 pi 消息 JSON)
-            let messages_to_save: Vec<NewMessageEntity> = new_messages
-                .iter()
-                .map(|m| NewMessageEntity {
-                    content: serde_json::to_value(m).unwrap_or_default(),
-                })
-                .collect();
-            conversation_repository::add_conversation_messages(
-                &state.db,
-                conversation_id,
-                &messages_to_save,
-            )
-            .await?;
-            tracing::info!("Conversation finished: conversation_id={}", conversation_id);
-            return Ok(());
+            break 'agent_loop;
         }
 
         // 工具调用(每个 toolCall 对应一条独立的 toolResult 消息, 对齐 pi)
@@ -526,4 +570,21 @@ async fn do_run_conversation(
             new_messages.push(tool_result);
         }
     }
+
+    // 对话结束(正常结束或手动停止)统一持久化本轮新增的完整消息(content 列存整条 pi 消息 JSON)
+    // 停止时未完成的 partial assistant 消息不入库, 避免半截 tool_call 破坏 pi 消息协议导致续跑上下文损坏
+    let messages_to_save: Vec<NewMessageEntity> = new_messages
+        .iter()
+        .map(|m| NewMessageEntity {
+            content: serde_json::to_value(m).unwrap_or_default(),
+        })
+        .collect();
+    conversation_repository::add_conversation_messages(
+        &state.db,
+        conversation_id,
+        &messages_to_save,
+    )
+    .await?;
+    tracing::info!("Conversation finished: conversation_id={}", conversation_id);
+    Ok(())
 }

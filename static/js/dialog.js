@@ -83,8 +83,9 @@ function enableInput() {
 
 function setTyping(typing) {
     isTyping = typing;
-    // 只读会话（任务/定时来源）保持禁用，不随流式结束恢复输入
-    sendButton.disabled = typing || currentConvReadonly;
+    // 流式期间发送按钮切换为停止按钮（含只读会话），非流式时恢复发送；只读会话非流式时禁用发送
+    sendButton.textContent = typing ? t('input.stop') : t('input.execute');
+    sendButton.disabled = currentConvReadonly && !typing;
     messageInput.disabled = typing || currentConvReadonly;
 }
 
@@ -92,7 +93,8 @@ function setTyping(typing) {
 function setConversationReadonly(readonly) {
     currentConvReadonly = readonly;
     messageInput.disabled = readonly || isTyping;
-    sendButton.disabled = readonly || isTyping;
+    // 只读会话仅流式期间允许点击（此时按钮为停止），与 setTyping 的按钮禁用逻辑保持一致
+    sendButton.disabled = readonly && !isTyping;
     messageInput.placeholder = readonly ? t('input.readonlyPlaceholder') : t('input.placeholder');
 }
 
@@ -465,6 +467,30 @@ async function renderModelComboList() {
 }
 
 // ===== 7. 消息发送 =====
+// 发送按钮统一入口：流式输出中按钮为停止，否则发送消息（Enter 键走 sendMessage，不受停止逻辑影响）
+function sendButtonClick() {
+    if (isTyping) {
+        stopConversation();
+        return;
+    }
+    sendMessage();
+}
+
+// 停止当前对话：调用后端停止接口，409（未在运行/已停止）幂等静默忽略
+async function stopConversation() {
+    if (!currentConversationId) {
+        return;
+    }
+    try {
+        const response = await fetch(`/conversation/${currentConversationId}/stop`, {method: 'POST'});
+        if (!response.ok && response.status !== 409) {
+            showToast(t('stream.stopFailed'), 'error');
+        }
+    } catch (e) {
+        showToast(t('stream.stopFailed'), 'error');
+    }
+}
+
 async function sendMessage() {
     const message = messageInput.value.trim();
     // 只读会话（任务/定时来源）禁止发送，作为禁用控件之外的防御性校验
@@ -602,6 +628,16 @@ function connectStream(conversationId) {
             errorDiv.className = 'user-message stream-error';
             errorDiv.innerHTML = `\u26a0 ${escapeHtml(data.text || t('stream.unknownError'))}`;
             chatContainer.appendChild(errorDiv);
+        }
+
+        // 手动停止提示条：结束当前流式块，展示中性提示
+        if (data.type === 'stopped') {
+            finalizeStreamBlock();
+            streamWrapper = null;
+            const stoppedDiv = document.createElement('div');
+            stoppedDiv.className = 'user-message stream-stopped';
+            stoppedDiv.textContent = t('stream.stopped');
+            chatContainer.appendChild(stoppedDiv);
         }
 
         // 用户消息：结束当前助手消息组，渲染用户气泡

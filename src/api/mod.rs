@@ -53,6 +53,10 @@ pub fn create_router(state: AppState) -> Router {
             post(conversation_api::start_conversation_work),
         )
         .route(
+            "/conversation/{conversation_id}/stop",
+            post(conversation_api::stop_conversation_work),
+        )
+        .route(
             "/conversation/{conversation_id}/stream",
             get(conversation_api::stream_conversation_work),
         )

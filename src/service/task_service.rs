@@ -7,6 +7,9 @@ use crate::repository::{
 use crate::service::conversation_service;
 use crate::state::AppState;
 
+// 同一对话连续交接提醒的最大次数, 超过后结束任务循环, 防止 agent 始终不交接导致死循环
+const MAX_HANDOVER_REMINDERS: u32 = 3;
+
 // 启动任务执行循环, 同一 task 同时只允许一个循环运行
 pub fn start_task(state: &AppState, task_id: i64, agent_id: i64) -> bool {
     // 防重入: entry 原子检查并插入, 持锁期间不 await
@@ -68,6 +71,10 @@ async fn do_run_task(state: &AppState, task_id: i64, agent_id: i64) -> anyhow::R
     )
     .await?;
 
+    // 上一轮对话 id 与连续提醒计数, 对话切换(发生交接)时清零
+    let mut prev_conversation_id: Option<i64> = None;
+    let mut consecutive_reminders = 0u32;
+
     loop {
         // 每轮重新查询任务基本字段与最新阶段对话状态
         let task = task_repository::get_task(&state.db, task_id).await?;
@@ -82,13 +89,31 @@ async fn do_run_task(state: &AppState, task_id: i64, agent_id: i64) -> anyhow::R
             None => return Ok(()),
         };
 
+        // 对话切换(发生交接)时清零连续提醒计数
+        if prev_conversation_id != Some(latest.id) {
+            prev_conversation_id = Some(latest.id);
+            consecutive_reminders = 0;
+        }
+
         // 最新的 agent 对话有消息(说明上一轮没有交接), 不自动交接给用户, 本轮改为向当前对话追加提醒 user 消息
         let need_handover_reminder = latest.has_messages && latest.agent_id.is_some();
         if need_handover_reminder {
+            // 同一对话连续提醒达到上限仍未交接, 结束循环防止死循环
+            consecutive_reminders += 1;
+            if consecutive_reminders > MAX_HANDOVER_REMINDERS {
+                tracing::warn!(
+                    "Task loop ended: task_id={} conversation_id={} reason=handover_reminder_limit",
+                    task_id,
+                    latest.id
+                );
+                return Ok(());
+            }
             tracing::info!(
-                "Task round ended without handover, reminding agent: task_id={} conversation_id={}",
+                "Task round ended without handover, reminding agent: task_id={} conversation_id={} reminder={}/{}",
                 task_id,
-                latest.id
+                latest.id,
+                consecutive_reminders,
+                MAX_HANDOVER_REMINDERS
             );
         }
 

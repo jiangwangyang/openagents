@@ -565,8 +565,9 @@ input.form-control {
     font-size: 12px;
     color: var(--slate-400);
     overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
+    display: -webkit-box;
+    -webkit-line-clamp: 3;
+    -webkit-box-orient: vertical;
 }
 
 .agent-check-list {

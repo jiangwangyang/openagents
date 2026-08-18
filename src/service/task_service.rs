@@ -82,20 +82,14 @@ async fn do_run_task(state: &AppState, task_id: i64, agent_id: i64) -> anyhow::R
             None => return Ok(()),
         };
 
-        // 最新的 agent 对话有消息(说明对话没有交接, 则默认交接给用户), 即创建一个无 agent 的用户对话并结束循环
-        if latest.has_messages && latest.agent_id.is_some() {
-            tracing::info!("Task handed over to user: task_id={}", task_id);
-            conversation_repository::add_conversation(
-                &state.db,
-                &format!("{}-User", task.title),
-                &task.work_dir,
-                "",
-                Some(task_id),
-                None,
-                None,
-            )
-            .await?;
-            return Ok(());
+        // 最新的 agent 对话有消息(说明上一轮没有交接), 不自动交接给用户, 本轮改为向当前对话追加提醒 user 消息
+        let need_handover_reminder = latest.has_messages && latest.agent_id.is_some();
+        if need_handover_reminder {
+            tracing::info!(
+                "Task round ended without handover, reminding agent: task_id={} conversation_id={}",
+                task_id,
+                latest.id
+            );
         }
 
         // 最新对话无 agent(用户审核阶段), 结束循环
@@ -119,39 +113,42 @@ async fn do_run_task(state: &AppState, task_id: i64, agent_id: i64) -> anyhow::R
             anyhow::bail!("model not configured");
         }
 
-        // 拼接各阶段对话的最后一条消息
-        let mut task_content_list = Vec::new();
-        task_content_list.push(format!(
-            "# Task\n{}",
-            serde_json::to_string(&json!({"title": task.title, "content": task.content}))?
-        ));
+        // 提醒轮仅发送交接提醒消息, 正常轮拼接任务与各阶段对话的最后一条消息
+        let task_content = if need_handover_reminder {
+            "[System] Your previous turn ended without handing over the task. You must call the handover tool now: use `task handover <agent_id>` to hand over to a teammate, or `task handover user` to hand over to the user for review.".to_string()
+        } else {
+            let mut task_content_list = Vec::new();
+            task_content_list.push(format!(
+                "# Task\n{}",
+                serde_json::to_string(&json!({"title": task.title, "content": task.content}))?
+            ));
 
-        // 团队成员为 agent_ids 候选池对应的 Agent
-        let all_agents = agent_repository::list_agents(&state.db).await?;
-        let team_agents: Vec<_> = all_agents
-            .iter()
-            .filter(|a| task.agent_ids.0.contains(&a.id))
-            .collect();
-        let team_json: Vec<Value> = team_agents
-            .iter()
-            .map(|a| json!({"id": a.id, "name": a.name, "description": a.description}))
-            .collect();
-        task_content_list.push(format!("# Team\n{}", serde_json::to_string(&team_json)?));
+            // 团队成员为 agent_ids 候选池对应的 Agent
+            let all_agents = agent_repository::list_agents(&state.db).await?;
+            let team_agents: Vec<_> = all_agents
+                .iter()
+                .filter(|a| task.agent_ids.0.contains(&a.id))
+                .collect();
+            let team_json: Vec<Value> = team_agents
+                .iter()
+                .map(|a| json!({"id": a.id, "name": a.name, "description": a.description}))
+                .collect();
+            task_content_list.push(format!("# Team\n{}", serde_json::to_string(&team_json)?));
 
-        task_content_list.push("# History".to_string());
-        let history =
-            conversation_repository::list_task_conversation_history(&state.db, task_id).await?;
-        for item in &history {
-            // 无消息的阶段对话不参与历史
-            let last_content = match &item.last_content {
-                Some(c) => c,
-                None => continue,
-            };
-            let name = item.agent_name.as_deref().unwrap_or("User");
-            // content 列为 pi 消息协议 JSON: 取用户文本或 assistant 最后一个文本块
-            let text =
-                match serde_json::from_value::<crate::ai::pi::types::Message>(last_content.clone())
-                {
+            task_content_list.push("# History".to_string());
+            let history =
+                conversation_repository::list_task_conversation_history(&state.db, task_id).await?;
+            for item in &history {
+                // 无消息的阶段对话不参与历史
+                let last_content = match &item.last_content {
+                    Some(c) => c,
+                    None => continue,
+                };
+                let name = item.agent_name.as_deref().unwrap_or("User");
+                // content 列为 pi 消息协议 JSON: 取用户文本或 assistant 最后一个文本块
+                let text = match serde_json::from_value::<crate::ai::pi::types::Message>(
+                    last_content.clone(),
+                ) {
                     Ok(crate::ai::pi::types::Message::User(u)) => match &u.content {
                         crate::ai::pi::types::UserMessageContent::Text(s) => s.clone(),
                         crate::ai::pi::types::UserMessageContent::Blocks(blocks) => blocks
@@ -174,9 +171,12 @@ async fn do_run_task(state: &AppState, task_id: i64, agent_id: i64) -> anyhow::R
                         .unwrap_or_default(),
                     _ => String::new(),
                 };
-            task_content_list.push(format!("## {}\n{}", name, serde_json::to_string(&text)?));
-        }
-        let task_content = task_content_list.join("\n\n");
+                task_content_list.push(format!("## {}\n{}", name, serde_json::to_string(&text)?));
+            }
+            // 交接提示: 要求 agent 完成工作后必须调用交接工具, 避免未交接直接结束
+            task_content_list.push("# Handover\nWhen your work is done, you must call the handover tool: use `task handover <agent_id>` to hand over to a teammate, or `task handover user` to hand over to the user for review. Do not end your turn without handing over.".to_string());
+            task_content_list.join("\n\n")
+        };
 
         // 触发对话执行并等待完成
         tracing::info!(

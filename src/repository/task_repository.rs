@@ -45,6 +45,30 @@ pub async fn add_task(
     Ok(result.last_insert_rowid())
 }
 
+// 按 id 更新任务, 不存在返回 false
+pub async fn update_task(
+    pool: &SqlitePool,
+    task_id: i64,
+    title: &str,
+    content: &str,
+    agent_ids: &[i64],
+    work_dir: &str,
+) -> Result<bool, sqlx::Error> {
+    let now = chrono::Local::now().to_rfc3339();
+    let result = sqlx::query(
+        "UPDATE t_task SET title = ?, content = ?, agent_ids = ?, work_dir = ?, update_time = ? WHERE id = ?",
+    )
+        .bind(title)
+        .bind(content)
+        .bind(sqlx::types::Json(agent_ids))
+        .bind(work_dir)
+        .bind(&now)
+        .bind(task_id)
+        .execute(pool)
+        .await?;
+    Ok(result.rows_affected() > 0)
+}
+
 // 按 id 删除任务, 不存在返回 false
 pub async fn delete_task(pool: &SqlitePool, task_id: i64) -> Result<bool, sqlx::Error> {
     let result = sqlx::query("DELETE FROM t_task WHERE id = ?")

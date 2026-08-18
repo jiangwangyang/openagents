@@ -1,6 +1,9 @@
 // 内置工具: 定义、注册与分发
+pub mod agent_tool;
 pub mod file_tool;
 pub mod mcp_tool;
+pub mod model_provider_tool;
+pub mod schedule_tool;
 pub mod shell_tool;
 pub mod skill_tool;
 pub mod task_tool;
@@ -9,18 +12,16 @@ pub mod task_tool;
 use std::os::windows::process::CommandExt;
 
 use serde_json::Value;
-use sqlx::SqlitePool;
 
 use crate::ai::truncate_str;
-use crate::state::SkillInfo;
+use crate::state::AppState;
 
 // 工具执行上下文
 #[derive(Clone)]
 pub struct ToolContext {
-    pub db: SqlitePool,
+    pub state: AppState,
     pub work_dir: String,
     pub task_id: Option<i64>,
-    pub skills: std::sync::Arc<std::sync::RwLock<Vec<SkillInfo>>>,
 }
 
 // 工具执行结果: (内容, 是否错误)
@@ -34,7 +35,7 @@ pub struct ToolDefinition {
     pub input_schema: Value,
 }
 
-// 内置命令帮助: (命令用法, 说明)
+// 内置命令帮助(所有对话可用): (命令用法, 说明)
 const COMMAND_HELP: &[(&str, &str)] = &[
     ("file read <path>", "Read file content from <path>."),
     (
@@ -59,6 +60,10 @@ const COMMAND_HELP: &[(&str, &str)] = &[
         "mcp server <server_id> tool <tool_name> call <tool_json_args>",
         "Call a specific tool with JSON arguments.",
     ),
+];
+
+// 任务交接命令帮助(仅任务阶段对话可用)
+const HANDOVER_COMMAND_HELP: &[(&str, &str)] = &[
     (
         "task handover <agent_id>",
         "Hand over the task to the specified agent.",
@@ -66,17 +71,77 @@ const COMMAND_HELP: &[(&str, &str)] = &[
     ("task handover user", "Hand over the task to the user."),
 ];
 
-// 工具描述列表缓存, 进程内只生成一次
-static TOOL_DEFINITIONS: std::sync::LazyLock<Vec<ToolDefinition>> =
-    std::sync::LazyLock::new(build_tool_definitions);
+// 管理命令帮助(仅独立对话可用, 任务/定时执行对话不可用)
+const MANAGE_COMMAND_HELP: &[(&str, &str)] = &[
+    ("agent list", "List all agents."),
+    ("agent get <agent_id>", "Show details of a specific agent."),
+    (
+        "agent add <name> <description> <prompt> <model_provider_id> <model> <thinking>",
+        "Add a new agent. <thinking> is true or false.",
+    ),
+    (
+        "agent update <agent_id> <name> <description> <prompt> <model_provider_id> <model> <thinking>",
+        "Update an existing agent. <thinking> is true or false.",
+    ),
+    (
+        "agent delete <agent_id>",
+        "Delete an agent. Fails if the agent is referenced by conversations or schedules.",
+    ),
+    ("task list", "List all tasks."),
+    ("task get <task_id>", "Show details of a specific task."),
+    (
+        "task add <title> <content> <agent_ids> <work_dir>",
+        "Add a new task. <agent_ids> is a JSON array of agent ids, e.g. [1,2].",
+    ),
+    (
+        "task update <task_id> <title> <content> <agent_ids> <work_dir>",
+        "Update an existing task. <agent_ids> is a JSON array of agent ids, e.g. [1,2].",
+    ),
+    (
+        "task delete <task_id>",
+        "Delete a task. Fails if the task is running.",
+    ),
+    ("schedule list", "List all schedules."),
+    (
+        "schedule get <schedule_id>",
+        "Show details of a specific schedule.",
+    ),
+    (
+        "schedule add <name> <content> <work_dir> <cron_expr> <agent_id>",
+        "Add a new schedule. <cron_expr> has 6 fields: second minute hour day month day_of_week, e.g. \"0 0 9 * * *\".",
+    ),
+    (
+        "schedule update <schedule_id> <name> <content> <work_dir> <cron_expr> <agent_id> <enabled>",
+        "Update an existing schedule. <enabled> is true or false.",
+    ),
+    ("schedule delete <schedule_id>", "Delete a schedule."),
+    (
+        "model_provider list",
+        "List all model providers (id, name, protocol_type, base_url) without api_key.",
+    ),
+];
 
-// 获取工具描述列表
-pub fn list_tools() -> &'static [ToolDefinition] {
-    &TOOL_DEFINITIONS
+// 工具描述列表缓存, 按对话上下文(独立/任务/定时)各生成一次
+static TOOL_DEFINITIONS_STANDALONE: std::sync::LazyLock<Vec<ToolDefinition>> =
+    std::sync::LazyLock::new(|| build_tool_definitions(false, false));
+static TOOL_DEFINITIONS_TASK: std::sync::LazyLock<Vec<ToolDefinition>> =
+    std::sync::LazyLock::new(|| build_tool_definitions(true, false));
+static TOOL_DEFINITIONS_SCHEDULE: std::sync::LazyLock<Vec<ToolDefinition>> =
+    std::sync::LazyLock::new(|| build_tool_definitions(false, true));
+
+// 获取工具描述列表, has_task 为 true 时包含任务交接命令, has_task 与 has_schedule 均为 false 时包含管理命令
+pub fn list_tools(has_task: bool, has_schedule: bool) -> &'static [ToolDefinition] {
+    if has_task {
+        &TOOL_DEFINITIONS_TASK
+    } else if has_schedule {
+        &TOOL_DEFINITIONS_SCHEDULE
+    } else {
+        &TOOL_DEFINITIONS_STANDALONE
+    }
 }
 
 // 构建工具描述列表
-fn build_tool_definitions() -> Vec<ToolDefinition> {
+fn build_tool_definitions(has_task: bool, has_schedule: bool) -> Vec<ToolDefinition> {
     let (shell_cmd, shell_desc): (&str, &str) = if cfg!(windows) {
         if which_pwsh() {
             (
@@ -97,12 +162,22 @@ fn build_tool_definitions() -> Vec<ToolDefinition> {
     };
 
     let mut description = String::from("Execute a built-in command. Available commands:\n");
-    for &(cmd, desc) in COMMAND_HELP
-        .iter()
-        .chain(std::iter::once(&(shell_cmd, shell_desc)))
-    {
+    for &(cmd, desc) in COMMAND_HELP {
         description.push_str(&format!("{cmd} # {desc}\n"));
     }
+    // 任务阶段对话追加任务交接命令
+    if has_task {
+        for &(cmd, desc) in HANDOVER_COMMAND_HELP {
+            description.push_str(&format!("{cmd} # {desc}\n"));
+        }
+    }
+    // 独立对话追加管理命令
+    if !has_task && !has_schedule {
+        for &(cmd, desc) in MANAGE_COMMAND_HELP {
+            description.push_str(&format!("{cmd} # {desc}\n"));
+        }
+    }
+    description.push_str(&format!("{shell_cmd} # {shell_desc}\n"));
 
     vec![ToolDefinition {
         name: "command".to_string(),
@@ -160,9 +235,12 @@ pub async fn execute_tool(name: &str, tool_input: &Value, ctx: &ToolContext) -> 
     } else {
         match cmd_and_args[0].as_str() {
             "file" => file_tool::execute(&cmd_and_args, &ctx.work_dir).await,
-            "skill" => skill_tool::execute(&cmd_and_args, &ctx.skills),
-            "mcp" => mcp_tool::execute(&cmd_and_args, &ctx.db).await,
-            "task" => task_tool::execute(&cmd_and_args, ctx.task_id, &ctx.db).await,
+            "skill" => skill_tool::execute(&cmd_and_args, &ctx.state.skills),
+            "mcp" => mcp_tool::execute(&cmd_and_args, &ctx.state.db).await,
+            "task" => task_tool::execute(&cmd_and_args, ctx).await,
+            "schedule" => schedule_tool::execute(&cmd_and_args, &ctx.state).await,
+            "agent" => agent_tool::execute(&cmd_and_args, &ctx.state.db).await,
+            "model_provider" => model_provider_tool::execute(&cmd_and_args, &ctx.state.db).await,
             _ => shell_tool::execute(&cmd_and_args, &ctx.work_dir).await,
         }
     };

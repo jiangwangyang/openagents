@@ -342,14 +342,17 @@ async fn do_run_conversation(
         .await?
         .ok_or_else(|| anyhow::anyhow!("model provider not found"))?;
     let system_prompt = conversation.conversation.system_prompt.clone();
-    let tools: Vec<crate::ai::pi::types::Tool> = tool::list_tools()
-        .iter()
-        .map(|t| crate::ai::pi::types::Tool {
-            name: t.name.clone(),
-            description: t.description.clone(),
-            parameters: t.input_schema.clone(),
-        })
-        .collect();
+    let tools: Vec<crate::ai::pi::types::Tool> = tool::list_tools(
+        conversation.conversation.task_id.is_some(),
+        conversation.conversation.schedule_id.is_some(),
+    )
+    .iter()
+    .map(|t| crate::ai::pi::types::Tool {
+        name: t.name.clone(),
+        description: t.description.clone(),
+        parameters: t.input_schema.clone(),
+    })
+    .collect();
 
     // 构造初始消息列表(content 列为 pi 消息协议 JSON, 无法解析的历史消息跳过)
     let mut messages: Vec<Message> = conversation
@@ -495,10 +498,9 @@ async fn do_run_conversation(
         // 工具调用(每个 toolCall 对应一条独立的 toolResult 消息, 对齐 pi)
         for tool_call in &tool_calls {
             let ctx = ToolContext {
-                db: state.db.clone(),
+                state: state.clone(),
                 work_dir: conversation.conversation.work_dir.clone(),
                 task_id: conversation.conversation.task_id,
-                skills: state.skills.clone(),
             };
             let (tool_content, is_error) =
                 tool::execute_tool(&tool_call.name, &tool_call.arguments, &ctx).await;

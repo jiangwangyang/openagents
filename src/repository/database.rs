@@ -72,6 +72,7 @@ async fn create_tables(pool: &SqlitePool) -> anyhow::Result<()> {
             content TEXT NOT NULL,
             agent_ids TEXT NOT NULL,
             work_dir TEXT NOT NULL,
+            status TEXT NOT NULL,
             create_time TEXT NOT NULL,
             update_time TEXT NOT NULL
         )",
@@ -87,7 +88,7 @@ async fn create_tables(pool: &SqlitePool) -> anyhow::Result<()> {
             work_dir TEXT NOT NULL,
             cron_expr TEXT NOT NULL,
             agent_id INTEGER REFERENCES t_agent(id) ON DELETE RESTRICT,
-            enabled INTEGER NOT NULL DEFAULT 1,
+            enabled INTEGER NOT NULL,
             create_time TEXT NOT NULL,
             update_time TEXT NOT NULL
         )",

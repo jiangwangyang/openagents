@@ -27,6 +27,13 @@ pub struct AgentEntity {
     pub update_time: String,
 }
 
+// 任务状态: 待启动/运行中/待审核/已完成/运行失败, 与前端 TASK_STATUS 常量对齐
+pub const TASK_STATUS_IDLE: &str = "idle";
+pub const TASK_STATUS_RUNNING: &str = "running";
+pub const TASK_STATUS_REVIEW: &str = "review";
+pub const TASK_STATUS_DONE: &str = "done";
+pub const TASK_STATUS_FAILED: &str = "failed";
+
 // 任务
 #[derive(Debug, Clone, FromRow, serde::Serialize)]
 pub struct TaskEntity {
@@ -35,6 +42,7 @@ pub struct TaskEntity {
     pub content: String,
     pub agent_ids: sqlx::types::Json<Vec<i64>>,
     pub work_dir: String,
+    pub status: String,
     pub create_time: String,
     pub update_time: String,
 }

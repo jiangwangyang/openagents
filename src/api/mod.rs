@@ -41,10 +41,6 @@ pub fn create_router(state: AppState) -> Router {
             delete(conversation_api::delete_conversation),
         )
         .route(
-            "/conversation/{conversation_id}/message",
-            post(conversation_api::add_conversation_message),
-        )
-        .route(
             "/conversation/start",
             post(conversation_api::create_conversation_work),
         )
@@ -136,6 +132,7 @@ pub fn create_router(state: AppState) -> Router {
         .route("/task/{task_id}", delete(task_api::delete_task))
         .route("/task/{task_id}/start", post(task_api::start_task))
         .route("/task/{task_id}/stop", post(task_api::stop_task))
+        .route("/task/{task_id}/complete", post(task_api::complete_task))
         // Web 存储
         .route("/web-storage/{key}", get(web_storage_api::get_web_storage))
         .route("/web-storage/{key}", put(web_storage_api::put_web_storage))

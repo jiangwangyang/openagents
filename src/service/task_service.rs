@@ -1,6 +1,7 @@
 // 多 Agent 执行循环
 use serde_json::{json, Value};
 
+use crate::repository::entity::{TASK_STATUS_FAILED, TASK_STATUS_REVIEW};
 use crate::repository::{
     agent_repository, conversation_repository, model_provider_repository, task_repository,
 };
@@ -62,6 +63,16 @@ async fn run_task(
     let result = do_run_task(&state, task_id, agent_id, stop_rx).await;
     if let Err(e) = result {
         tracing::error!("Task execution failed: task_id={} error={}", task_id, e);
+        // 循环异常退出: 置为运行失败(任务已删除时更新 0 行, 无副作用)
+        if let Err(err) =
+            task_repository::update_task_status(&state.db, task_id, TASK_STATUS_FAILED).await
+        {
+            tracing::error!(
+                "Task status update failed: task_id={} error={}",
+                task_id,
+                err
+            );
+        }
     }
     state.task_loops.remove(&task_id);
 }
@@ -104,6 +115,8 @@ async fn do_run_task(
         // 每轮开头检测任务停止信号, 覆盖交接间隙触发停止的场景
         if *stop_rx.borrow() {
             tracing::info!("Task loop stopped: task_id={} reason=user_stop", task_id);
+            // 手动停止: 循环停在 Agent 对话, 与前端推导一致置为运行失败
+            task_repository::update_task_status(&state.db, task_id, TASK_STATUS_FAILED).await?;
             return Ok(());
         }
 
@@ -137,6 +150,8 @@ async fn do_run_task(
                     task_id,
                     latest.id
                 );
+                // 连续不交接超限: 置为运行失败
+                task_repository::update_task_status(&state.db, task_id, TASK_STATUS_FAILED).await?;
                 return Ok(());
             }
             tracing::info!(
@@ -153,6 +168,8 @@ async fn do_run_task(
             Some(id) => id,
             None => {
                 tracing::info!("Task loop ended: task_id={} reason=user_review", task_id);
+                // 最新对话无 agent: 交接给用户, 置为待审核
+                task_repository::update_task_status(&state.db, task_id, TASK_STATUS_REVIEW).await?;
                 return Ok(());
             }
         };
@@ -283,6 +300,9 @@ async fn do_run_task(
                     _ = stop_rx.changed() => {
                         conversation_service::stop_conversation(state, latest.id).await;
                         tracing::info!("Task loop stopped: task_id={} reason=user_stop", task_id);
+                        // 手动停止: 置为运行失败
+                        task_repository::update_task_status(&state.db, task_id, TASK_STATUS_FAILED)
+                            .await?;
                         return Ok(());
                     }
                 }

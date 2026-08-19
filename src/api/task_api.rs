@@ -5,7 +5,9 @@ use serde::Deserialize;
 use serde_json::json;
 
 use crate::error::AppError;
-use crate::repository::entity::{MessageEntity, NewMessageEntity, TaskEntity};
+use crate::repository::entity::{
+    MessageEntity, NewMessageEntity, TaskEntity, TASK_STATUS_DONE, TASK_STATUS_RUNNING,
+};
 use crate::repository::{agent_repository, conversation_repository, task_repository};
 use crate::service::task_service;
 use crate::state::AppState;
@@ -73,10 +75,12 @@ pub async fn get_task(
         "content": task.content,
         "agent_ids": task.agent_ids,
         "work_dir": task.work_dir,
+        // 任务状态: 由后端各流转点持久化维护, 前端直接采用
+        "status": task.status,
         "create_time": task.create_time,
         "update_time": task.update_time,
         "conversations": conversations,
-        // 执行循环是否存活: 前端据此区分运行中(含长轮次执行/阶段交接间隙)与异常中断, 替代 SSE 活跃性探针
+        // 执行循环是否存活: 前端据此区分运行中(含长轮次执行/阶段交接间隙)与运行失败, 替代 SSE 活跃性探针
         "running": task_service::is_task_running(&state, task_id),
     })))
 }
@@ -130,7 +134,7 @@ pub struct StartTaskRequest {
 }
 
 // 启动任务执行循环接口: agent_id 为首个执行的 Agent, message 为启动前附加的用户消息(必填)
-// 消息落库规则: 最新对话为用户对话(待审核/已完成)时直接追加, 否则(待启动/异常中断)新建用户对话承载
+// 消息落库规则: 最新对话为用户对话(待审核/已完成)时直接追加, 否则(待启动/运行失败)新建用户对话承载
 // 任务/agent 不存在返回 404, message 为空返回 400, 执行循环已在运行返回 409
 pub async fn start_task(
     State(state): State<AppState>,
@@ -184,6 +188,8 @@ pub async fn start_task(
     if !task_service::start_task(&state, task_id, req.agent_id) {
         return Err(AppError::Conflict("Task already running".to_string()));
     }
+    // 执行循环启动成功: 任务状态置为运行中
+    task_repository::update_task_status(&state.db, task_id, TASK_STATUS_RUNNING).await?;
     Ok(())
 }
 
@@ -195,5 +201,52 @@ pub async fn stop_task(
     if !task_service::stop_task(&state, task_id) {
         return Err(AppError::Conflict("Task is not running".to_string()));
     }
+    Ok(())
+}
+
+// 完成任务请求体, message 为用户的完成意见(必填)
+#[derive(Debug, Deserialize)]
+pub struct CompleteTaskRequest {
+    pub message: String,
+}
+
+// 完成任务接口: 向最新阶段对话(须为用户审核对话)追加一条用户消息并将任务状态置为已完成, 不启动流水线
+// 任务不存在返回 404, message 为空返回 400, 任务运行中或最新对话不是用户审核对话返回 409
+pub async fn complete_task(
+    State(state): State<AppState>,
+    Path(task_id): Path<i64>,
+    Json(req): Json<CompleteTaskRequest>,
+) -> Result<(), AppError> {
+    let task = task_repository::get_task(&state.db, task_id).await?;
+    if task.is_none() {
+        return Err(AppError::NotFound("Task not found".to_string()));
+    }
+    let message = req.message.trim();
+    if message.is_empty() {
+        return Err(AppError::BadRequest("Message is required".to_string()));
+    }
+    // 运行中的任务不允许完成, 避免与执行循环的状态流转冲突
+    if task_service::is_task_running(&state, task_id) {
+        return Err(AppError::Conflict("Task is running".to_string()));
+    }
+    // 最新阶段对话须为用户审核对话(agent_id 为空), 否则任务不在待审核状态
+    let latest =
+        conversation_repository::get_latest_task_conversation_state(&state.db, task_id).await?;
+    let conversation_id = match latest {
+        Some(l) if l.agent_id.is_none() => l.id,
+        _ => return Err(AppError::Conflict("Task is not in review".to_string())),
+    };
+    // content 列存整条 pi 消息 JSON
+    let user_message = crate::ai::pi::types::Message::User(crate::ai::pi::types::UserMessage {
+        content: crate::ai::pi::types::UserMessageContent::Text(message.to_string()),
+        timestamp: crate::ai::pi::types::now_timestamp(),
+    });
+    let messages = vec![NewMessageEntity {
+        content: serde_json::to_value(&user_message).map_err(|e| AppError::Internal(e.into()))?,
+    }];
+    conversation_repository::add_conversation_messages(&state.db, conversation_id, &messages)
+        .await?;
+    // 用户已提交完成意见: 任务状态置为已完成
+    task_repository::update_task_status(&state.db, task_id, TASK_STATUS_DONE).await?;
     Ok(())
 }

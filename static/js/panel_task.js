@@ -7,7 +7,7 @@ const taskListContainer = document.getElementById('taskListContainer');
 const addTaskPanel = document.getElementById('addTaskPanel');
 
 // ===== 2. 运行时状态 =====
-// 任务状态常量：待启动/运行中/待审核/已完成/异常中断
+// 任务状态常量：待启动/运行中/待审核/已完成/运行失败
 const TASK_STATUS = {IDLE: 'idle', RUNNING: 'running', REVIEW: 'review', DONE: 'done', FAILED: 'failed'};
 // 每个任务的跟随控制器：状态推导、双模式更新（收起轮询/展开 SSE）与渲染载体
 const taskControllers = {};
@@ -172,13 +172,22 @@ function createTaskCard(task) {
 }
 
 // ===== 6. 状态推导与摘要渲染 =====
-// 由控制器数据推导五状态：以后端返回的执行循环存活标记（detail.running）为准，辅以最新阶段对话的类型/消息
+// 由控制器数据推导五状态：执行循环存活标记（detail.running）优先，其余以后端持久化的 status 字段为准
 function deriveTaskStatus(controller) {
     const detail = controller.detail;
     // 执行循环存活一律视为运行中（覆盖启动间隙/长轮次执行/阶段交接间隙）
     if (detail && detail.running) {
         return TASK_STATUS.RUNNING;
     }
+    // 后端持久化状态为权威来源（由后端循环退出分支与审核提交处维护）
+    if (detail && Object.values(TASK_STATUS).includes(detail.status)) {
+        // 持久化状态残留运行中但执行循环已消亡（如应用被异常杀掉）：视为运行失败
+        if (detail.status === TASK_STATUS.RUNNING) {
+            return TASK_STATUS.FAILED;
+        }
+        return detail.status;
+    }
+    // 兜底：详情缺失或旧数据无 status 时按最新阶段对话本地推导
     const latest = latestConversation(detail);
     if (!latest) {
         return TASK_STATUS.IDLE;
@@ -186,7 +195,7 @@ function deriveTaskStatus(controller) {
     if (latest.agent_id == null) {
         return (latest.messages || []).length > 0 ? TASK_STATUS.DONE : TASK_STATUS.REVIEW;
     }
-    // 循环已停但最新仍是 Agent 对话：异常中断
+    // 循环已停但最新仍是 Agent 对话：运行失败
     return TASK_STATUS.FAILED;
 }
 
@@ -601,21 +610,16 @@ async function stopTask(taskId) {
     }
 }
 
-// 完成任务：仅向待审核对话追加一条用户消息（空输入时提交占位文本「完成」），不启动流水线
+// 完成任务：调用任务完成接口（后端向待审核对话追加用户消息并将状态置为已完成，空输入时提交占位文本「完成」），不启动流水线
 async function submitTaskComplete(taskId) {
-    const controller = getTaskController(taskId);
-    const latest = latestConversation(controller.detail);
-    if (!latest) {
-        return;
-    }
     const input = document.getElementById(`task-review-input-${taskId}`);
     const typed = input ? input.value.trim() : '';
     const content = typed || t('task.completePlaceholder');
     try {
-        const response = await fetch(`/conversation/${latest.id}/message`, {
+        const response = await fetch(`/task/${taskId}/complete`, {
             method: 'POST',
             headers: {'Content-Type': 'application/json'},
-            body: JSON.stringify({content: content})
+            body: JSON.stringify({message: content})
         });
         if (response.ok) {
             await loadTaskState(taskId);

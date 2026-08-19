@@ -1,4 +1,4 @@
-// 对话 API: 列表 / 删除 / 追加消息 / 启动对话 / 历史回放 / SSE 流式订阅
+// 对话 API: 列表 / 删除 / 启动对话 / 历史回放 / SSE 流式订阅
 use std::convert::Infallible;
 use std::sync::Arc;
 
@@ -10,7 +10,7 @@ use serde_json::json;
 use tokio::sync::RwLock;
 
 use crate::error::AppError;
-use crate::repository::entity::{ConversationEntity, NewMessageEntity};
+use crate::repository::entity::ConversationEntity;
 use crate::repository::{agent_repository, conversation_repository};
 use crate::service::conversation_service;
 use crate::state::{AppState, ConversationState};
@@ -72,36 +72,6 @@ pub async fn delete_conversation(
     if !deleted {
         return Err(AppError::NotFound("Conversation not found".to_string()));
     }
-    Ok(())
-}
-
-// 追加用户消息请求体
-#[derive(Debug, Deserialize)]
-pub struct AddMessageRequest {
-    pub content: String,
-}
-
-// 追加用户消息接口, 向指定对话追加一条 role 为 user 的消息并刷新对话更新时间, 对话不存在返回 404
-pub async fn add_conversation_message(
-    State(state): State<AppState>,
-    Path(conversation_id): Path<i64>,
-    Json(req): Json<AddMessageRequest>,
-) -> Result<(), AppError> {
-    let conversation =
-        conversation_repository::get_conversation(&state.db, conversation_id).await?;
-    if conversation.is_none() {
-        return Err(AppError::NotFound("Conversation not found".to_string()));
-    }
-    // content 列存整条 pi 消息 JSON
-    let message = crate::ai::pi::types::Message::User(crate::ai::pi::types::UserMessage {
-        content: crate::ai::pi::types::UserMessageContent::Text(req.content),
-        timestamp: crate::ai::pi::types::now_timestamp(),
-    });
-    let messages = vec![NewMessageEntity {
-        content: serde_json::to_value(&message).map_err(|e| AppError::Internal(e.into()))?,
-    }];
-    conversation_repository::add_conversation_messages(&state.db, conversation_id, &messages)
-        .await?;
     Ok(())
 }
 

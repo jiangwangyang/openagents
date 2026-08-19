@@ -1655,7 +1655,7 @@ input.form-control {
 }
 
 /* ===== 9. 任务状态徽章与操作区 ===== */
-/* 状态徽章：五色区分 待启动/运行中/待审核/已完成/异常中断 */
+/* 状态徽章：五色区分 待启动/运行中/待审核/已完成/运行失败 */
 .task-status-badge {
     flex-shrink: 0;
     font-family: var(--font-display);

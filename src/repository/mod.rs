@@ -16,3 +16,8 @@ pub enum DeleteResult {
     NotFound,
     Referenced,
 }
+
+// 当前本地时间(RFC 3339), create_time/update_time 统一使用
+pub fn now_rfc3339() -> String {
+    chrono::Local::now().to_rfc3339()
+}

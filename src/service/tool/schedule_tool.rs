@@ -1,7 +1,7 @@
 // 定时任务管理工具
 use std::str::FromStr;
 
-use super::ToolResult;
+use super::{parse_bool, parse_id, ToolResult};
 use crate::repository::schedule_repository;
 use crate::service::schedule_service;
 use crate::state::AppState;
@@ -37,9 +37,9 @@ pub async fn execute(cmd_and_args: &[String], state: &AppState) -> ToolResult {
         }
         // schedule get <schedule_id>
         Some("get") if cmd_and_args.len() == 3 => {
-            let schedule_id: i64 = match cmd_and_args[2].parse() {
+            let schedule_id = match parse_id(&cmd_and_args[2], "schedule_id") {
                 Ok(id) => id,
-                Err(_) => return (format!("Invalid schedule_id: {}", cmd_and_args[2]), true),
+                Err(r) => return r,
             };
             match schedule_repository::get_schedule(&state.db, schedule_id).await {
                 Ok(Some(s)) => {
@@ -69,9 +69,9 @@ pub async fn execute(cmd_and_args: &[String], state: &AppState) -> ToolResult {
             if cron::Schedule::from_str(&cmd_and_args[5]).is_err() {
                 return (format!("Invalid cron_expr: {}", cmd_and_args[5]), true);
             }
-            let agent_id: i64 = match cmd_and_args[6].parse() {
+            let agent_id = match parse_id(&cmd_and_args[6], "agent_id") {
                 Ok(id) => id,
-                Err(_) => return (format!("Invalid agent_id: {}", cmd_and_args[6]), true),
+                Err(r) => return r,
             };
             match schedule_service::add_schedule(
                 state,
@@ -89,21 +89,21 @@ pub async fn execute(cmd_and_args: &[String], state: &AppState) -> ToolResult {
         }
         // schedule update <schedule_id> <name> <content> <work_dir> <cron_expr> <agent_id> <enabled>
         Some("update") if cmd_and_args.len() == 9 => {
-            let schedule_id: i64 = match cmd_and_args[2].parse() {
+            let schedule_id = match parse_id(&cmd_and_args[2], "schedule_id") {
                 Ok(id) => id,
-                Err(_) => return (format!("Invalid schedule_id: {}", cmd_and_args[2]), true),
+                Err(r) => return r,
             };
             // 校验 cron 表达式合法性(与调度器使用同一 cron 解析器)
             if cron::Schedule::from_str(&cmd_and_args[6]).is_err() {
                 return (format!("Invalid cron_expr: {}", cmd_and_args[6]), true);
             }
-            let agent_id: i64 = match cmd_and_args[7].parse() {
+            let agent_id = match parse_id(&cmd_and_args[7], "agent_id") {
                 Ok(id) => id,
-                Err(_) => return (format!("Invalid agent_id: {}", cmd_and_args[7]), true),
+                Err(r) => return r,
             };
-            let enabled: bool = match cmd_and_args[8].parse() {
+            let enabled = match parse_bool(&cmd_and_args[8], "enabled") {
                 Ok(b) => b,
-                Err(_) => return (format!("Invalid enabled: {}", cmd_and_args[8]), true),
+                Err(r) => return r,
             };
             match schedule_service::update_schedule(
                 state,
@@ -124,9 +124,9 @@ pub async fn execute(cmd_and_args: &[String], state: &AppState) -> ToolResult {
         }
         // schedule delete <schedule_id>
         Some("delete") if cmd_and_args.len() == 3 => {
-            let schedule_id: i64 = match cmd_and_args[2].parse() {
+            let schedule_id = match parse_id(&cmd_and_args[2], "schedule_id") {
                 Ok(id) => id,
-                Err(_) => return (format!("Invalid schedule_id: {}", cmd_and_args[2]), true),
+                Err(r) => return r,
             };
             match schedule_service::delete_schedule(state, schedule_id).await {
                 Ok(true) => (format!("Schedule {} deleted", schedule_id), false),

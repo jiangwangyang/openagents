@@ -1,5 +1,5 @@
 // 任务工具: 任务交接与任务管理
-use super::{ToolContext, ToolResult};
+use super::{parse_id, ToolContext, ToolResult};
 use crate::repository::{agent_repository, conversation_repository, task_repository};
 use crate::service::task_service;
 
@@ -47,9 +47,9 @@ pub async fn execute(cmd_and_args: &[String], ctx: &ToolContext) -> ToolResult {
                 }
             } else {
                 // 移交给智能体: 校验 agent 存在且属于该任务团队
-                let agent_id: i64 = match cmd_and_args[2].parse() {
+                let agent_id = match parse_id(&cmd_and_args[2], "agent_id") {
                     Ok(id) => id,
-                    Err(_) => return (format!("Invalid agent_id: {}", cmd_and_args[2]), true),
+                    Err(r) => return r,
                 };
 
                 let agent = match agent_repository::get_agent(&ctx.state.db, agent_id).await {
@@ -96,9 +96,9 @@ pub async fn execute(cmd_and_args: &[String], ctx: &ToolContext) -> ToolResult {
         }
         // task get <task_id>
         Some("get") if cmd_and_args.len() == 3 => {
-            let task_id: i64 = match cmd_and_args[2].parse() {
+            let task_id = match parse_id(&cmd_and_args[2], "task_id") {
                 Ok(id) => id,
-                Err(_) => return (format!("Invalid task_id: {}", cmd_and_args[2]), true),
+                Err(r) => return r,
             };
             match task_repository::get_task(&ctx.state.db, task_id).await {
                 Ok(Some(task)) => (serde_json::to_string(&task).unwrap_or_default(), false),
@@ -132,9 +132,9 @@ pub async fn execute(cmd_and_args: &[String], ctx: &ToolContext) -> ToolResult {
         }
         // task update <task_id> <title> <content> <agent_ids> <work_dir>
         Some("update") if cmd_and_args.len() == 7 => {
-            let task_id: i64 = match cmd_and_args[2].parse() {
+            let task_id = match parse_id(&cmd_and_args[2], "task_id") {
                 Ok(id) => id,
-                Err(_) => return (format!("Invalid task_id: {}", cmd_and_args[2]), true),
+                Err(r) => return r,
             };
             let agent_ids: Vec<i64> = match serde_json::from_str(&cmd_and_args[5]) {
                 Ok(ids) => ids,
@@ -162,9 +162,9 @@ pub async fn execute(cmd_and_args: &[String], ctx: &ToolContext) -> ToolResult {
         }
         // task delete <task_id>
         Some("delete") if cmd_and_args.len() == 3 => {
-            let task_id: i64 = match cmd_and_args[2].parse() {
+            let task_id = match parse_id(&cmd_and_args[2], "task_id") {
                 Ok(id) => id,
-                Err(_) => return (format!("Invalid task_id: {}", cmd_and_args[2]), true),
+                Err(r) => return r,
             };
             // 运行中的任务不允许删除, 避免级联删除阶段对话导致后台循环写消息失败
             if task_service::is_task_running(&ctx.state, task_id) {

@@ -27,6 +27,18 @@ pub struct ToolContext {
 // 工具执行结果: (内容, 是否错误)
 pub type ToolResult = (String, bool);
 
+// 解析命令参数中的整数 id, 失败转为 ToolResult
+pub fn parse_id(arg: &str, name: &str) -> Result<i64, ToolResult> {
+    arg.parse::<i64>()
+        .map_err(|_| (format!("Invalid {}: {}", name, arg), true))
+}
+
+// 解析命令参数中的布尔值, 失败转为 ToolResult
+pub fn parse_bool(arg: &str, name: &str) -> Result<bool, ToolResult> {
+    arg.parse::<bool>()
+        .map_err(|_| (format!("Invalid {}: {}", name, arg), true))
+}
+
 // 工具描述
 #[derive(Debug, Clone, serde::Serialize)]
 pub struct ToolDefinition {

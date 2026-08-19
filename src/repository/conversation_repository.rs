@@ -5,6 +5,7 @@ use super::entity::{
     ConversationAgentRow, ConversationEntity, ConversationHistorySummary, ConversationWithMessages,
     LatestConversationState, MessageEntity,
 };
+use super::now_rfc3339;
 
 // 查询全部独立对话(不含任务阶段对话与定时任务对话), 按更新时间倒序
 pub async fn list_conversations(pool: &SqlitePool) -> Result<Vec<ConversationEntity>, sqlx::Error> {
@@ -95,7 +96,7 @@ pub async fn add_conversation(
     agent_id: Option<i64>,
     schedule_id: Option<i64>,
 ) -> Result<i64, sqlx::Error> {
-    let now = chrono::Local::now().to_rfc3339();
+    let now = now_rfc3339();
     let result = sqlx::query(
         "INSERT INTO t_conversation (title, work_dir, system_prompt, task_id, schedule_id, agent_id, create_time, update_time) VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
     )
@@ -126,7 +127,7 @@ pub async fn add_conversation_messages(
             .execute(&mut *tx)
             .await?;
     }
-    let now = chrono::Local::now().to_rfc3339();
+    let now = now_rfc3339();
     sqlx::query("UPDATE t_conversation SET update_time = ? WHERE id = ?")
         .bind(&now)
         .bind(conversation_id)

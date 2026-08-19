@@ -1,7 +1,7 @@
 // Agent 管理工具
 use sqlx::SqlitePool;
 
-use super::ToolResult;
+use super::{parse_bool, parse_id, ToolResult};
 use crate::repository::{agent_repository, DeleteResult};
 
 // 执行 Agent 管理命令
@@ -14,9 +14,9 @@ pub async fn execute(cmd_and_args: &[String], db: &SqlitePool) -> ToolResult {
         },
         // agent get <agent_id>
         Some("get") if cmd_and_args.len() == 3 => {
-            let agent_id: i64 = match cmd_and_args[2].parse() {
+            let agent_id = match parse_id(&cmd_and_args[2], "agent_id") {
                 Ok(id) => id,
-                Err(_) => return (format!("Invalid agent_id: {}", cmd_and_args[2]), true),
+                Err(r) => return r,
             };
             match agent_repository::get_agent(db, agent_id).await {
                 // 工具输出只序列化 Agent 本体, 避免关联的模型提供商 api_key 进入模型上下文
@@ -30,18 +30,13 @@ pub async fn execute(cmd_and_args: &[String], db: &SqlitePool) -> ToolResult {
         }
         // agent add <name> <description> <prompt> <model_provider_id> <model> <thinking>
         Some("add") if cmd_and_args.len() == 8 => {
-            let model_provider_id: i64 = match cmd_and_args[5].parse() {
+            let model_provider_id = match parse_id(&cmd_and_args[5], "model_provider_id") {
                 Ok(id) => id,
-                Err(_) => {
-                    return (
-                        format!("Invalid model_provider_id: {}", cmd_and_args[5]),
-                        true,
-                    )
-                }
+                Err(r) => return r,
             };
-            let thinking: bool = match cmd_and_args[7].parse() {
+            let thinking = match parse_bool(&cmd_and_args[7], "thinking") {
                 Ok(b) => b,
-                Err(_) => return (format!("Invalid thinking: {}", cmd_and_args[7]), true),
+                Err(r) => return r,
             };
             match agent_repository::add_agent(
                 db,
@@ -60,22 +55,17 @@ pub async fn execute(cmd_and_args: &[String], db: &SqlitePool) -> ToolResult {
         }
         // agent update <agent_id> <name> <description> <prompt> <model_provider_id> <model> <thinking>
         Some("update") if cmd_and_args.len() == 9 => {
-            let agent_id: i64 = match cmd_and_args[2].parse() {
+            let agent_id = match parse_id(&cmd_and_args[2], "agent_id") {
                 Ok(id) => id,
-                Err(_) => return (format!("Invalid agent_id: {}", cmd_and_args[2]), true),
+                Err(r) => return r,
             };
-            let model_provider_id: i64 = match cmd_and_args[6].parse() {
+            let model_provider_id = match parse_id(&cmd_and_args[6], "model_provider_id") {
                 Ok(id) => id,
-                Err(_) => {
-                    return (
-                        format!("Invalid model_provider_id: {}", cmd_and_args[6]),
-                        true,
-                    )
-                }
+                Err(r) => return r,
             };
-            let thinking: bool = match cmd_and_args[8].parse() {
+            let thinking = match parse_bool(&cmd_and_args[8], "thinking") {
                 Ok(b) => b,
-                Err(_) => return (format!("Invalid thinking: {}", cmd_and_args[8]), true),
+                Err(r) => return r,
             };
             match agent_repository::update_agent(
                 db,
@@ -96,9 +86,9 @@ pub async fn execute(cmd_and_args: &[String], db: &SqlitePool) -> ToolResult {
         }
         // agent delete <agent_id>
         Some("delete") if cmd_and_args.len() == 3 => {
-            let agent_id: i64 = match cmd_and_args[2].parse() {
+            let agent_id = match parse_id(&cmd_and_args[2], "agent_id") {
                 Ok(id) => id,
-                Err(_) => return (format!("Invalid agent_id: {}", cmd_and_args[2]), true),
+                Err(r) => return r,
             };
             match agent_repository::delete_agent(db, agent_id).await {
                 Ok(DeleteResult::Deleted) => (format!("Agent {} deleted", agent_id), false),

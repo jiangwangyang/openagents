@@ -75,44 +75,37 @@ pub async fn create_conversation_work(
     State(state): State<AppState>,
     Json(req): Json<CreateWorkRequest>,
 ) -> Result<Json<i64>, AppError> {
-    let mut system_prompt = String::new();
-    let model_provider_id;
-    let model;
-    let thinking;
-
-    if let Some(agent_id) = req.agent_id {
-        // 指定 agent 时使用其 prompt 作为 system_prompt, 模型配置直接使用 agent 的配置, 忽略用户传入的参数
+    // 指定 agent 时使用其 prompt 作为 system_prompt 并沿用其模型配置(忽略用户传入参数);
+    // 未指定 agent 时使用用户传入的模型配置(必填), system_prompt 只从工作目录的 AGENTS.md 读取
+    let (system_prompt, model_provider_id, model, thinking) = if let Some(agent_id) = req.agent_id {
         let agent = agent_repository::get_agent(&state.db, agent_id).await?;
         let agent = match agent {
             Some(a) => a.agent,
             None => return Err(AppError::NotFound("Agent not found".to_string())),
         };
-        system_prompt = agent.prompt.clone();
-        model_provider_id = agent.model_provider_id;
-        model = agent.model.clone();
-        thinking = agent.thinking;
+        (
+            agent.prompt,
+            agent.model_provider_id,
+            agent.model,
+            agent.thinking,
+        )
     } else {
-        // 未指定 agent 时使用用户传入的模型配置, 模型配置必填
-        match (req.model_provider_id, req.model, req.thinking) {
-            (Some(p), Some(m), Some(t)) => {
-                model_provider_id = p;
-                model = m;
-                thinking = t;
-            }
-            _ => {
-                return Err(AppError::BadRequest(
-                    "Model config is required when agent_id is not provided".to_string(),
-                ))
-            }
-        }
-        // 未指定 agent 时只从工作目录读取 AGENTS.md 作为系统提示词
+        let (Some(model_provider_id), Some(model), Some(thinking)) =
+            (req.model_provider_id, req.model, req.thinking)
+        else {
+            return Err(AppError::BadRequest(
+                "Model config is required when agent_id is not provided".to_string(),
+            ));
+        };
+        let mut system_prompt = String::new();
         let agents_file = std::path::PathBuf::from(&req.work_dir).join("AGENTS.md");
-        if agents_file.exists() && agents_file.is_file() {
+        if agents_file.is_file() {
             if let Ok(content) = tokio::fs::read_to_string(&agents_file).await {
                 system_prompt = content;
             }
         }
-    }
+        (system_prompt, model_provider_id, model, thinking)
+    };
 
     // 先创建对话, 再根据对话ID开始任务
     let conversation_id = conversation_repository::add_conversation(

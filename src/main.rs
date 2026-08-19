@@ -102,8 +102,7 @@ async fn run_server(port_tx: Option<Sender<u16>>, bind_addr: String) -> anyhow::
     service::tool::shell_tool::setup_powershell_utf8().await;
 
     // 初始化技能列表
-    let skills: Arc<std::sync::RwLock<Vec<SkillInfo>>> =
-        Arc::new(std::sync::RwLock::new(Vec::new()));
+    let skills: Arc<std::sync::RwLock<Vec<SkillInfo>>> = Arc::default();
     skill_tool::init_skills(&skills).await;
 
     // 初始化数据库

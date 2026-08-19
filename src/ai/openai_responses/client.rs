@@ -512,7 +512,10 @@ async fn process_responses_stream(
                 output.usage.output = usage.output_tokens;
                 output.usage.cache_read = cached_tokens;
                 output.usage.cache_write = cache_write_tokens;
-                output.usage.reasoning = Some(usage.output_tokens_details.as_ref().and_then(|d| d.reasoning_tokens).unwrap_or(0));
+                output.usage.reasoning = usage
+                    .output_tokens_details
+                    .as_ref()
+                    .and_then(|d| d.reasoning_tokens);
                 output.usage.total_tokens = usage.total_tokens.unwrap_or(0);
             }
             // 状态映射停止原因; incomplete 保留供应商具体原因
@@ -771,11 +774,6 @@ async fn process_responses_stream(
                 finalize_response!(response);
             }
             ResponseStreamEvent::ResponseFailed { response } => {
-                // 对齐 pi 设置终止标记(此处随即返回, 赋值仅为对齐)
-                #[allow(unused_assignments)]
-                {
-                    saw_terminal_response_event = true;
-                }
                 output.raw_stop_reason = response.status.clone();
                 let msg = match &response.error {
                     Some(error) => format!(

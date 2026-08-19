@@ -2,6 +2,7 @@
 use sqlx::SqlitePool;
 
 use super::entity::{ScheduleAgentRow, ScheduleEntity, ScheduleWithAgent};
+use super::now_rfc3339;
 
 // 查询全部定时任务, 按 id 升序
 pub async fn list_schedules(pool: &SqlitePool) -> Result<Vec<ScheduleEntity>, sqlx::Error> {
@@ -35,7 +36,7 @@ pub async fn add_schedule(
     cron_expr: &str,
     agent_id: i64,
 ) -> Result<i64, sqlx::Error> {
-    let now = chrono::Local::now().to_rfc3339();
+    let now = now_rfc3339();
     let result = sqlx::query(
         "INSERT INTO t_schedule (name, content, work_dir, cron_expr, agent_id, enabled, create_time, update_time) VALUES (?, ?, ?, ?, ?, 1, ?, ?)",
     )
@@ -62,7 +63,7 @@ pub async fn update_schedule(
     agent_id: i64,
     enabled: bool,
 ) -> Result<bool, sqlx::Error> {
-    let now = chrono::Local::now().to_rfc3339();
+    let now = now_rfc3339();
     let result = sqlx::query(
         "UPDATE t_schedule SET name = ?, content = ?, work_dir = ?, cron_expr = ?, agent_id = ?, enabled = ?, update_time = ? WHERE id = ?",
     )

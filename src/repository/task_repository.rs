@@ -2,6 +2,7 @@
 use sqlx::SqlitePool;
 
 use super::entity::{TaskEntity, TASK_STATUS_IDLE};
+use super::now_rfc3339;
 
 // 查询全部任务, 按 id 升序
 pub async fn list_tasks(pool: &SqlitePool) -> Result<Vec<TaskEntity>, sqlx::Error> {
@@ -30,7 +31,7 @@ pub async fn add_task(
     agent_ids: &[i64],
     work_dir: &str,
 ) -> Result<i64, sqlx::Error> {
-    let now = chrono::Local::now().to_rfc3339();
+    let now = now_rfc3339();
     let result = sqlx::query(
         "INSERT INTO t_task (title, content, agent_ids, work_dir, status, create_time, update_time) VALUES (?, ?, ?, ?, ?, ?, ?)",
     )
@@ -55,7 +56,7 @@ pub async fn update_task(
     agent_ids: &[i64],
     work_dir: &str,
 ) -> Result<bool, sqlx::Error> {
-    let now = chrono::Local::now().to_rfc3339();
+    let now = now_rfc3339();
     let result = sqlx::query(
         "UPDATE t_task SET title = ?, content = ?, agent_ids = ?, work_dir = ?, update_time = ? WHERE id = ?",
     )

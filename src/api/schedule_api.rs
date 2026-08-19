@@ -92,19 +92,24 @@ pub struct ScheduleRequest {
     pub enabled: bool,
 }
 
+// 拼接并校验 cron 表达式(与调度器使用同一 cron 解析器)
+fn cron_expr_of(req: &ScheduleRequest) -> Result<String, AppError> {
+    let cron_expr = format!(
+        "{} {} {} {} {} {}",
+        req.second, req.minute, req.hour, req.day, req.month, req.day_of_week
+    );
+    if cron::Schedule::from_str(&cron_expr).is_err() {
+        return Err(AppError::BadRequest("Invalid cron expression".to_string()));
+    }
+    Ok(cron_expr)
+}
+
 // 新增定时任务接口, 返回自增 id
 pub async fn add_schedule(
     State(state): State<AppState>,
     Json(req): Json<ScheduleRequest>,
 ) -> Result<Json<i64>, AppError> {
-    let cron_expr = format!(
-        "{} {} {} {} {} {}",
-        req.second, req.minute, req.hour, req.day, req.month, req.day_of_week
-    );
-    // 校验 cron 表达式合法性(与调度器使用同一 cron 解析器)
-    if cron::Schedule::from_str(&cron_expr).is_err() {
-        return Err(AppError::BadRequest("Invalid cron expression".to_string()));
-    }
+    let cron_expr = cron_expr_of(&req)?;
     let id = schedule_service::add_schedule(
         &state,
         &req.name,
@@ -123,14 +128,7 @@ pub async fn update_schedule(
     Path(schedule_id): Path<i64>,
     Json(req): Json<ScheduleRequest>,
 ) -> Result<(), AppError> {
-    let cron_expr = format!(
-        "{} {} {} {} {} {}",
-        req.second, req.minute, req.hour, req.day, req.month, req.day_of_week
-    );
-    // 校验 cron 表达式合法性(与调度器使用同一 cron 解析器)
-    if cron::Schedule::from_str(&cron_expr).is_err() {
-        return Err(AppError::BadRequest("Invalid cron expression".to_string()));
-    }
+    let cron_expr = cron_expr_of(&req)?;
     let updated = schedule_service::update_schedule(
         &state,
         schedule_id,

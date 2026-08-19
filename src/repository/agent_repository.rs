@@ -2,6 +2,7 @@
 use sqlx::SqlitePool;
 
 use super::entity::{AgentEntity, AgentProviderRow, AgentWithProvider};
+use super::now_rfc3339;
 use super::DeleteResult;
 
 // 查询全部 Agent, 按 id 升序
@@ -37,7 +38,7 @@ pub async fn add_agent(
     model: &str,
     thinking: bool,
 ) -> Result<i64, sqlx::Error> {
-    let now = chrono::Local::now().to_rfc3339();
+    let now = now_rfc3339();
     let result = sqlx::query(
         "INSERT INTO t_agent (name, description, prompt, model_provider_id, model, thinking, create_time, update_time) VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
     )
@@ -65,7 +66,7 @@ pub async fn update_agent(
     model: &str,
     thinking: bool,
 ) -> Result<bool, sqlx::Error> {
-    let now = chrono::Local::now().to_rfc3339();
+    let now = now_rfc3339();
     let result = sqlx::query(
         "UPDATE t_agent SET name = ?, description = ?, prompt = ?, model_provider_id = ?, model = ?, thinking = ?, update_time = ? WHERE id = ?",
     )

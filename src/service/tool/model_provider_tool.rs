@@ -6,9 +6,10 @@ use crate::repository::model_provider_repository;
 
 // 执行模型提供商命令
 pub async fn execute(cmd_and_args: &[String], db: &SqlitePool) -> ToolResult {
-    match cmd_and_args.get(1).map(String::as_str) {
+    let args: Vec<&str> = cmd_and_args.iter().map(String::as_str).collect();
+    match args.as_slice() {
         // model_provider list
-        Some("list") if cmd_and_args.len() == 2 => {
+        ["model_provider", "list"] => {
             match model_provider_repository::list_model_providers(db).await {
                 Ok(providers) => {
                     // 不返回 api_key, 避免密钥进入对话上下文
@@ -31,7 +32,7 @@ pub async fn execute(cmd_and_args: &[String], db: &SqlitePool) -> ToolResult {
             }
         }
         _ => (
-            format!("Unknown model_provider command: {}", cmd_and_args.join(" ")),
+            format!("Unknown model_provider command: {}", args.join(" ")),
             true,
         ),
     }

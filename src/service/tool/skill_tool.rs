@@ -120,21 +120,23 @@ pub fn execute(
     cmd_and_args: &[String],
     skills_store: &std::sync::RwLock<Vec<SkillInfo>>,
 ) -> ToolResult {
-    // 1. skill list
-    if cmd_and_args.len() == 2 && cmd_and_args[0] == "skill" && cmd_and_args[1] == "list" {
-        let skills = skills_store.read().unwrap_or_else(|e| e.into_inner());
-        let result: Vec<serde_json::Value> = skills
-            .iter()
-            .map(|s| {
-                serde_json::json!({
-                    "name": s.name,
-                    "description": s.description,
-                    "path": s.path
+    let args: Vec<&str> = cmd_and_args.iter().map(String::as_str).collect();
+    match args.as_slice() {
+        // skill list
+        ["skill", "list"] => {
+            let skills = skills_store.read().unwrap_or_else(|e| e.into_inner());
+            let result: Vec<serde_json::Value> = skills
+                .iter()
+                .map(|s| {
+                    serde_json::json!({
+                        "name": s.name,
+                        "description": s.description,
+                        "path": s.path
+                    })
                 })
-            })
-            .collect();
-        (serde_json::to_string(&result).unwrap_or_default(), false)
-    } else {
-        ("Unknown command".to_string(), true)
+                .collect();
+            (serde_json::to_string(&result).unwrap_or_default(), false)
+        }
+        _ => ("Unknown command".to_string(), true),
     }
 }

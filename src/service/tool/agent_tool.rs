@@ -6,15 +6,16 @@ use crate::repository::{agent_repository, DeleteResult};
 
 // 执行 Agent 管理命令
 pub async fn execute(cmd_and_args: &[String], db: &SqlitePool) -> ToolResult {
-    match cmd_and_args.get(1).map(String::as_str) {
+    let args: Vec<&str> = cmd_and_args.iter().map(String::as_str).collect();
+    match args.as_slice() {
         // agent list
-        Some("list") if cmd_and_args.len() == 2 => match agent_repository::list_agents(db).await {
+        ["agent", "list"] => match agent_repository::list_agents(db).await {
             Ok(agents) => (serde_json::to_string(&agents).unwrap_or_default(), false),
             Err(e) => (format!("Database error: {}", e), true),
         },
         // agent get <agent_id>
-        Some("get") if cmd_and_args.len() == 3 => {
-            let agent_id = match parse_id(&cmd_and_args[2], "agent_id") {
+        ["agent", "get", agent_id] => {
+            let agent_id = match parse_id(agent_id, "agent_id") {
                 Ok(id) => id,
                 Err(r) => return r,
             };
@@ -29,22 +30,22 @@ pub async fn execute(cmd_and_args: &[String], db: &SqlitePool) -> ToolResult {
             }
         }
         // agent add <name> <description> <prompt> <model_provider_id> <model> <thinking>
-        Some("add") if cmd_and_args.len() == 8 => {
-            let model_provider_id = match parse_id(&cmd_and_args[5], "model_provider_id") {
+        ["agent", "add", name, description, prompt, model_provider_id, model, thinking] => {
+            let model_provider_id = match parse_id(model_provider_id, "model_provider_id") {
                 Ok(id) => id,
                 Err(r) => return r,
             };
-            let thinking = match parse_bool(&cmd_and_args[7], "thinking") {
+            let thinking = match parse_bool(thinking, "thinking") {
                 Ok(b) => b,
                 Err(r) => return r,
             };
             match agent_repository::add_agent(
                 db,
-                &cmd_and_args[2],
-                &cmd_and_args[3],
-                &cmd_and_args[4],
+                name,
+                description,
+                prompt,
                 model_provider_id,
-                &cmd_and_args[6],
+                model,
                 thinking,
             )
             .await
@@ -54,27 +55,28 @@ pub async fn execute(cmd_and_args: &[String], db: &SqlitePool) -> ToolResult {
             }
         }
         // agent update <agent_id> <name> <description> <prompt> <model_provider_id> <model> <thinking>
-        Some("update") if cmd_and_args.len() == 9 => {
-            let agent_id = match parse_id(&cmd_and_args[2], "agent_id") {
+        ["agent", "update", agent_id, name, description, prompt, model_provider_id, model, thinking] =>
+        {
+            let agent_id = match parse_id(agent_id, "agent_id") {
                 Ok(id) => id,
                 Err(r) => return r,
             };
-            let model_provider_id = match parse_id(&cmd_and_args[6], "model_provider_id") {
+            let model_provider_id = match parse_id(model_provider_id, "model_provider_id") {
                 Ok(id) => id,
                 Err(r) => return r,
             };
-            let thinking = match parse_bool(&cmd_and_args[8], "thinking") {
+            let thinking = match parse_bool(thinking, "thinking") {
                 Ok(b) => b,
                 Err(r) => return r,
             };
             match agent_repository::update_agent(
                 db,
                 agent_id,
-                &cmd_and_args[3],
-                &cmd_and_args[4],
-                &cmd_and_args[5],
+                name,
+                description,
+                prompt,
                 model_provider_id,
-                &cmd_and_args[7],
+                model,
                 thinking,
             )
             .await
@@ -85,8 +87,8 @@ pub async fn execute(cmd_and_args: &[String], db: &SqlitePool) -> ToolResult {
             }
         }
         // agent delete <agent_id>
-        Some("delete") if cmd_and_args.len() == 3 => {
-            let agent_id = match parse_id(&cmd_and_args[2], "agent_id") {
+        ["agent", "delete", agent_id] => {
+            let agent_id = match parse_id(agent_id, "agent_id") {
                 Ok(id) => id,
                 Err(r) => return r,
             };
@@ -103,9 +105,6 @@ pub async fn execute(cmd_and_args: &[String], db: &SqlitePool) -> ToolResult {
                 Err(e) => (format!("Failed to delete agent: {}", e), true),
             }
         }
-        _ => (
-            format!("Unknown agent command: {}", cmd_and_args.join(" ")),
-            true,
-        ),
+        _ => (format!("Unknown agent command: {}", args.join(" ")), true),
     }
 }

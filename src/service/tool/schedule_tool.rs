@@ -8,36 +8,35 @@ use crate::state::AppState;
 
 // 执行定时任务管理命令
 pub async fn execute(cmd_and_args: &[String], state: &AppState) -> ToolResult {
-    match cmd_and_args.get(1).map(String::as_str) {
+    let args: Vec<&str> = cmd_and_args.iter().map(String::as_str).collect();
+    match args.as_slice() {
         // schedule list
-        Some("list") if cmd_and_args.len() == 2 => {
-            match schedule_repository::list_schedules(&state.db).await {
-                Ok(schedules) => {
-                    let result: Vec<serde_json::Value> = schedules
-                        .iter()
-                        .map(|s| {
-                            serde_json::json!({
-                                "id": s.id,
-                                "name": s.name,
-                                "content": s.content,
-                                "work_dir": s.work_dir,
-                                "cron_expr": s.cron_expr,
-                                "agent_id": s.agent_id,
-                                "enabled": s.enabled,
-                                "next_fire_time": schedule_service::next_fire_time(&s.cron_expr),
-                                "create_time": s.create_time,
-                                "update_time": s.update_time,
-                            })
+        ["schedule", "list"] => match schedule_repository::list_schedules(&state.db).await {
+            Ok(schedules) => {
+                let result: Vec<serde_json::Value> = schedules
+                    .iter()
+                    .map(|s| {
+                        serde_json::json!({
+                            "id": s.id,
+                            "name": s.name,
+                            "content": s.content,
+                            "work_dir": s.work_dir,
+                            "cron_expr": s.cron_expr,
+                            "agent_id": s.agent_id,
+                            "enabled": s.enabled,
+                            "next_fire_time": schedule_service::next_fire_time(&s.cron_expr),
+                            "create_time": s.create_time,
+                            "update_time": s.update_time,
                         })
-                        .collect();
-                    (serde_json::to_string(&result).unwrap_or_default(), false)
-                }
-                Err(e) => (format!("Database error: {}", e), true),
+                    })
+                    .collect();
+                (serde_json::to_string(&result).unwrap_or_default(), false)
             }
-        }
+            Err(e) => (format!("Database error: {}", e), true),
+        },
         // schedule get <schedule_id>
-        Some("get") if cmd_and_args.len() == 3 => {
-            let schedule_id = match parse_id(&cmd_and_args[2], "schedule_id") {
+        ["schedule", "get", schedule_id] => {
+            let schedule_id = match parse_id(schedule_id, "schedule_id") {
                 Ok(id) => id,
                 Err(r) => return r,
             };
@@ -64,22 +63,17 @@ pub async fn execute(cmd_and_args: &[String], state: &AppState) -> ToolResult {
             }
         }
         // schedule add <name> <content> <work_dir> <cron_expr> <agent_id>
-        Some("add") if cmd_and_args.len() == 7 => {
+        ["schedule", "add", name, content, work_dir, cron_expr, agent_id] => {
             // 校验 cron 表达式合法性(与调度器使用同一 cron 解析器)
-            if cron::Schedule::from_str(&cmd_and_args[5]).is_err() {
-                return (format!("Invalid cron_expr: {}", cmd_and_args[5]), true);
+            if cron::Schedule::from_str(cron_expr).is_err() {
+                return (format!("Invalid cron_expr: {}", cron_expr), true);
             }
-            let agent_id = match parse_id(&cmd_and_args[6], "agent_id") {
+            let agent_id = match parse_id(agent_id, "agent_id") {
                 Ok(id) => id,
                 Err(r) => return r,
             };
             match schedule_service::add_schedule(
-                state,
-                &cmd_and_args[2],
-                &cmd_and_args[3],
-                &cmd_and_args[4],
-                &cmd_and_args[5],
-                agent_id,
+                state, name, content, work_dir, cron_expr, agent_id,
             )
             .await
             {
@@ -88,30 +82,31 @@ pub async fn execute(cmd_and_args: &[String], state: &AppState) -> ToolResult {
             }
         }
         // schedule update <schedule_id> <name> <content> <work_dir> <cron_expr> <agent_id> <enabled>
-        Some("update") if cmd_and_args.len() == 9 => {
-            let schedule_id = match parse_id(&cmd_and_args[2], "schedule_id") {
+        ["schedule", "update", schedule_id, name, content, work_dir, cron_expr, agent_id, enabled] =>
+        {
+            let schedule_id = match parse_id(schedule_id, "schedule_id") {
                 Ok(id) => id,
                 Err(r) => return r,
             };
             // 校验 cron 表达式合法性(与调度器使用同一 cron 解析器)
-            if cron::Schedule::from_str(&cmd_and_args[6]).is_err() {
-                return (format!("Invalid cron_expr: {}", cmd_and_args[6]), true);
+            if cron::Schedule::from_str(cron_expr).is_err() {
+                return (format!("Invalid cron_expr: {}", cron_expr), true);
             }
-            let agent_id = match parse_id(&cmd_and_args[7], "agent_id") {
+            let agent_id = match parse_id(agent_id, "agent_id") {
                 Ok(id) => id,
                 Err(r) => return r,
             };
-            let enabled = match parse_bool(&cmd_and_args[8], "enabled") {
+            let enabled = match parse_bool(enabled, "enabled") {
                 Ok(b) => b,
                 Err(r) => return r,
             };
             match schedule_service::update_schedule(
                 state,
                 schedule_id,
-                &cmd_and_args[3],
-                &cmd_and_args[4],
-                &cmd_and_args[5],
-                &cmd_and_args[6],
+                name,
+                content,
+                work_dir,
+                cron_expr,
                 agent_id,
                 enabled,
             )
@@ -123,8 +118,8 @@ pub async fn execute(cmd_and_args: &[String], state: &AppState) -> ToolResult {
             }
         }
         // schedule delete <schedule_id>
-        Some("delete") if cmd_and_args.len() == 3 => {
-            let schedule_id = match parse_id(&cmd_and_args[2], "schedule_id") {
+        ["schedule", "delete", schedule_id] => {
+            let schedule_id = match parse_id(schedule_id, "schedule_id") {
                 Ok(id) => id,
                 Err(r) => return r,
             };
@@ -135,7 +130,7 @@ pub async fn execute(cmd_and_args: &[String], state: &AppState) -> ToolResult {
             }
         }
         _ => (
-            format!("Unknown schedule command: {}", cmd_and_args.join(" ")),
+            format!("Unknown schedule command: {}", args.join(" ")),
             true,
         ),
     }

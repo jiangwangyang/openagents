@@ -5,9 +5,10 @@ use crate::service::task_service;
 
 // 执行任务命令
 pub async fn execute(cmd_and_args: &[String], ctx: &ToolContext) -> ToolResult {
-    match cmd_and_args.get(1).map(String::as_str) {
+    let args: Vec<&str> = cmd_and_args.iter().map(String::as_str).collect();
+    match args.as_slice() {
         // task handover <agent_id> | task handover user
-        Some("handover") if cmd_and_args.len() == 3 => {
+        ["task", "handover", target] => {
             // 任务移交: task_id 为当前对话所属任务(独立对话为空), 为该任务创建新对话
             let task_id = match ctx.task_id {
                 Some(id) => id,
@@ -25,7 +26,7 @@ pub async fn execute(cmd_and_args: &[String], ctx: &ToolContext) -> ToolResult {
             let work_dir = &task.work_dir;
 
             // 移交给用户: 创建 agent_id 为 None 的用户审核对话
-            if cmd_and_args[2] == "user" {
+            if *target == "user" {
                 let title = format!("{}-User", task.title);
                 match conversation_repository::add_conversation(
                     &ctx.state.db,
@@ -47,7 +48,7 @@ pub async fn execute(cmd_and_args: &[String], ctx: &ToolContext) -> ToolResult {
                 }
             } else {
                 // 移交给智能体: 校验 agent 存在且属于该任务团队
-                let agent_id = match parse_id(&cmd_and_args[2], "agent_id") {
+                let agent_id = match parse_id(target, "agent_id") {
                     Ok(id) => id,
                     Err(r) => return r,
                 };
@@ -88,15 +89,13 @@ pub async fn execute(cmd_and_args: &[String], ctx: &ToolContext) -> ToolResult {
             }
         }
         // task list
-        Some("list") if cmd_and_args.len() == 2 => {
-            match task_repository::list_tasks(&ctx.state.db).await {
-                Ok(tasks) => (serde_json::to_string(&tasks).unwrap_or_default(), false),
-                Err(e) => (format!("Database error: {}", e), true),
-            }
-        }
+        ["task", "list"] => match task_repository::list_tasks(&ctx.state.db).await {
+            Ok(tasks) => (serde_json::to_string(&tasks).unwrap_or_default(), false),
+            Err(e) => (format!("Database error: {}", e), true),
+        },
         // task get <task_id>
-        Some("get") if cmd_and_args.len() == 3 => {
-            let task_id = match parse_id(&cmd_and_args[2], "task_id") {
+        ["task", "get", task_id] => {
+            let task_id = match parse_id(task_id, "task_id") {
                 Ok(id) => id,
                 Err(r) => return r,
             };
@@ -107,51 +106,35 @@ pub async fn execute(cmd_and_args: &[String], ctx: &ToolContext) -> ToolResult {
             }
         }
         // task add <title> <content> <agent_ids> <work_dir>
-        Some("add") if cmd_and_args.len() == 6 => {
-            let agent_ids: Vec<i64> = match serde_json::from_str(&cmd_and_args[4]) {
+        ["task", "add", title, content, agent_ids, work_dir] => {
+            let agent_ids: Vec<i64> = match serde_json::from_str(agent_ids) {
                 Ok(ids) => ids,
-                Err(_) => {
-                    return (
-                        format!("Invalid agent_ids JSON array: {}", cmd_and_args[4]),
-                        true,
-                    )
-                }
+                Err(_) => return (format!("Invalid agent_ids JSON array: {}", agent_ids), true),
             };
-            match task_repository::add_task(
-                &ctx.state.db,
-                &cmd_and_args[2],
-                &cmd_and_args[3],
-                &agent_ids,
-                &cmd_and_args[5],
-            )
-            .await
+            match task_repository::add_task(&ctx.state.db, title, content, &agent_ids, work_dir)
+                .await
             {
                 Ok(id) => (format!("Task added with id {}", id), false),
                 Err(e) => (format!("Failed to add task: {}", e), true),
             }
         }
         // task update <task_id> <title> <content> <agent_ids> <work_dir>
-        Some("update") if cmd_and_args.len() == 7 => {
-            let task_id = match parse_id(&cmd_and_args[2], "task_id") {
+        ["task", "update", task_id, title, content, agent_ids, work_dir] => {
+            let task_id = match parse_id(task_id, "task_id") {
                 Ok(id) => id,
                 Err(r) => return r,
             };
-            let agent_ids: Vec<i64> = match serde_json::from_str(&cmd_and_args[5]) {
+            let agent_ids: Vec<i64> = match serde_json::from_str(agent_ids) {
                 Ok(ids) => ids,
-                Err(_) => {
-                    return (
-                        format!("Invalid agent_ids JSON array: {}", cmd_and_args[5]),
-                        true,
-                    )
-                }
+                Err(_) => return (format!("Invalid agent_ids JSON array: {}", agent_ids), true),
             };
             match task_repository::update_task(
                 &ctx.state.db,
                 task_id,
-                &cmd_and_args[3],
-                &cmd_and_args[4],
+                title,
+                content,
                 &agent_ids,
-                &cmd_and_args[6],
+                work_dir,
             )
             .await
             {
@@ -161,8 +144,8 @@ pub async fn execute(cmd_and_args: &[String], ctx: &ToolContext) -> ToolResult {
             }
         }
         // task delete <task_id>
-        Some("delete") if cmd_and_args.len() == 3 => {
-            let task_id = match parse_id(&cmd_and_args[2], "task_id") {
+        ["task", "delete", task_id] => {
+            let task_id = match parse_id(task_id, "task_id") {
                 Ok(id) => id,
                 Err(r) => return r,
             };
@@ -176,9 +159,6 @@ pub async fn execute(cmd_and_args: &[String], ctx: &ToolContext) -> ToolResult {
                 Err(e) => (format!("Failed to delete task: {}", e), true),
             }
         }
-        _ => (
-            format!("Unknown task command: {}", cmd_and_args.join(" ")),
-            true,
-        ),
+        _ => (format!("Unknown task command: {}", args.join(" ")), true),
     }
 }

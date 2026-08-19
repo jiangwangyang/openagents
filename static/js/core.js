@@ -207,6 +207,84 @@ function createStageRecordItem(conversation) {
     return item;
 }
 
+// ===== 阶段对话列表排序（任务/定时面板共用） =====
+// 排序方向存储键（后端 Web 存储持久化记忆）
+const STAGE_SORT_KEY = 'openagents_stage_sort';
+// 当前排序方向：asc 升序（默认）/ desc 降序
+let stageSortOrder = 'asc';
+
+// 按当前排序方向返回对话列表副本（后端按 id 升序返回，降序时反转）
+function sortedStageConversations(conversations) {
+    const list = (conversations || []).slice();
+    if (stageSortOrder === 'desc') {
+        list.reverse();
+    }
+    return list;
+}
+
+// 创建排序按钮：显示当前排序方向，点击切换升/降序
+function createStageSortButton() {
+    const button = document.createElement('button');
+    button.className = 'btn btn-sm btn-secondary btn-card-xs stage-sort-btn';
+    button.textContent = t(stageSortOrder === 'asc' ? 'common.sortAsc' : 'common.sortDesc');
+    button.title = t('common.sortToggle');
+    button.onclick = toggleStageSortOrder;
+    return button;
+}
+
+// 切换排序方向：持久化到后端存储，同步全部按钮文本并重渲染两个面板中已展开的列表
+function toggleStageSortOrder() {
+    stageSortOrder = stageSortOrder === 'asc' ? 'desc' : 'asc';
+    setWebStorage(STAGE_SORT_KEY, stageSortOrder);
+    document.querySelectorAll('.stage-sort-btn').forEach(button => {
+        button.textContent = t(stageSortOrder === 'asc' ? 'common.sortAsc' : 'common.sortDesc');
+    });
+    // 重渲染任务面板已展开卡片的阶段列表
+    Object.keys(taskControllers).forEach(taskId => {
+        if (taskControllers[taskId].expanded) {
+            renderTaskStages(parseInt(taskId));
+        }
+    });
+    // 重渲染定时面板已展开卡片的执行记录
+    document.querySelectorAll('[id^="cron-stages-"]').forEach(stageList => {
+        if (stageList.closest('.info-card').hasAttribute('open')) {
+            loadCronDetail(parseInt(stageList.id.replace('cron-stages-', '')));
+        }
+    });
+}
+
+// 摘要展开状态：true 时列表完整显示对话内容（仅运行时状态，不持久化记忆）
+let stageSnippetExpanded = false;
+
+// 创建摘要展开按钮：点击切换 3 行截断 / 完整显示
+function createStageExpandButton() {
+    const button = document.createElement('button');
+    button.className = 'btn btn-sm btn-secondary btn-card-xs stage-expand-btn';
+    button.textContent = t(stageSnippetExpanded ? 'common.collapse' : 'common.expand');
+    button.onclick = toggleStageSnippetExpanded;
+    return button;
+}
+
+// 切换摘要展开状态：同步全部按钮文本并切换所有列表容器的展开类
+function toggleStageSnippetExpanded() {
+    stageSnippetExpanded = !stageSnippetExpanded;
+    document.querySelectorAll('.stage-expand-btn').forEach(button => {
+        button.textContent = t(stageSnippetExpanded ? 'common.collapse' : 'common.expand');
+    });
+    document.querySelectorAll('.task-stage-list').forEach(list => {
+        list.classList.toggle('snippet-expanded', stageSnippetExpanded);
+    });
+}
+
+// 初始化：从后端存储恢复排序方向记忆
+(function initStageSortOrder() {
+    getWebStorage(STAGE_SORT_KEY).then(savedOrder => {
+        if (savedOrder === 'asc' || savedOrder === 'desc') {
+            stageSortOrder = savedOrder;
+        }
+    });
+})();
+
 function toggleCardOpen(cardElement) {
     const details = cardElement.querySelector('.info-card-details');
     if (cardElement.hasAttribute('open')) {

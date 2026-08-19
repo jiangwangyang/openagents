@@ -570,6 +570,12 @@ input.form-control {
     -webkit-box-orient: vertical;
 }
 
+/* 摘要展开态：取消 3 行截断，完整显示对话内容 */
+.task-stage-list.snippet-expanded .task-stage-snippet {
+    display: block;
+    -webkit-line-clamp: unset;
+}
+
 .agent-check-list {
     display: flex;
     flex-wrap: wrap;
@@ -1388,6 +1394,15 @@ input.form-control {
 
 .details-block-header .details-label {
     margin-bottom: 0;
+}
+
+/* 标题栏按钮组：排序/展开按钮靠右排列 */
+.details-block-header .stage-sort-btn {
+    margin-left: auto;
+}
+
+.details-block-header .stage-expand-btn {
+    margin-left: 6px;
 }
 
 /* 执行中的阶段摘要高亮 */

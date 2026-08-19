@@ -465,8 +465,11 @@ function renderTaskDetails(taskId) {
     const stageBlock = document.createElement('div');
     stageBlock.className = 'details-block-container';
     stageBlock.innerHTML = `<div class="details-block-header"><div class="details-label">${t('task.stageProgress')}</div></div>`;
+    stageBlock.querySelector('.details-block-header').appendChild(createStageSortButton());
+    stageBlock.querySelector('.details-block-header').appendChild(createStageExpandButton());
     const stageList = document.createElement('div');
-    stageList.className = 'task-stage-list';
+    // 重绘时按当前展开状态补类，避免轮询/SSE 重绘丢失展开效果
+    stageList.className = stageSnippetExpanded ? 'task-stage-list snippet-expanded' : 'task-stage-list';
     stageList.id = `task-stages-${taskId}`;
     stageBlock.appendChild(stageList);
     container.appendChild(stageBlock);
@@ -535,7 +538,8 @@ function renderTaskStages(taskId) {
         stageList.innerHTML = `<div class="text-hint">${t('task.notStarted')}</div>`;
         return;
     }
-    conversations.forEach(conversation => {
+    // 按当前排序方向渲染（升/降序由排序按钮切换并持久化记忆）
+    sortedStageConversations(conversations).forEach(conversation => {
         stageList.appendChild(createStageRecordItem(conversation));
     });
 }

@@ -178,14 +178,16 @@ async function fetchCronTasks() {
                     <div class="details-block-container" style="margin-top: 12px;">
                         <div class="details-block-header">
                             <div class="details-label">${t('cron.execHistory')}</div>
-                            <button class="btn btn-sm btn-secondary btn-card-xs" onclick="loadCronDetail(${task.id})">${t('common.refresh')}</button>
                         </div>
-                        <div class="task-stage-list" id="cron-stages-${task.id}"></div>
+                        <div class="task-stage-list${stageSnippetExpanded ? ' snippet-expanded' : ''}" id="cron-stages-${task.id}"></div>
                     </div>
                 </div>
             `;
             // 保存按钮
             card.querySelector('.cron-save-btn').onclick = () => updateSingleCron(task.id);
+            // 执行记录标题栏追加排序按钮（升/降序切换并持久化记忆）
+            card.querySelector('.details-block-header').appendChild(createStageSortButton());
+            card.querySelector('.details-block-header').appendChild(createStageExpandButton());
             // 启用/禁用切换按钮
             card.querySelector('.cron-toggle-btn').onclick = () => toggleCronEnabled(task);
             // 删除按钮通过闭包绑定，避免任务名中的引号破坏内联 onclick 字符串
@@ -229,7 +231,8 @@ async function loadCronDetail(scheduleId) {
             stageList.innerHTML = `<div class="text-hint">${t('cron.notTriggered')}</div>`;
             return;
         }
-        schedule.conversations.forEach(conversation => {
+        // 按当前排序方向渲染（升/降序由排序按钮切换并持久化记忆）
+        sortedStageConversations(schedule.conversations).forEach(conversation => {
             // 点击执行记录项复用对话页右侧展示区：切换视图并流式回放/跟随该次执行对话（只读，禁止发送消息）
             stageList.appendChild(createStageRecordItem(conversation));
         });

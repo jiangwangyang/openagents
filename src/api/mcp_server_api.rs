@@ -156,26 +156,26 @@ pub async fn list_mcp_server_tools(
     let service = mcp_tool::connect_mcp_server(&state.db, server_id)
         .await
         .map_err(|e| AppError::Internal(anyhow::anyhow!("MCP connect failed: {}", e)))?;
-    let tools = match service.peer().list_all_tools().await {
-        Ok(t) => t,
-        Err(e) => {
-            let _ = service.cancel().await;
-            return Err(AppError::Internal(anyhow::anyhow!(
+    // 先算出结果再统一关闭连接, 避免提前返回分支重复 cancel
+    let result = async {
+        match service.peer().list_all_tools().await {
+            Ok(tools) => Ok(tools
+                .iter()
+                .map(|tool| {
+                    serde_json::json!({
+                        "name": tool.name,
+                        "description": tool.description,
+                    })
+                })
+                .collect::<Vec<serde_json::Value>>()),
+            Err(e) => Err(AppError::Internal(anyhow::anyhow!(
                 "MCP list tools failed: {}",
                 e
-            )));
+            ))),
         }
-    };
-    let result: Vec<serde_json::Value> = tools
-        .iter()
-        .map(|tool| {
-            serde_json::json!({
-                "name": tool.name,
-                "description": tool.description,
-            })
-        })
-        .collect();
+    }
+    .await;
     // 获取完毕, 关闭连接
     let _ = service.cancel().await;
-    Ok(Json(result))
+    Ok(Json(result?))
 }

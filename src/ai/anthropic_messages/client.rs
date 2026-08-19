@@ -420,6 +420,34 @@ pub fn stream(
             p.content = blocks.iter().map(|b| b.content.clone()).collect();
             p
         };
+        // 推入新内容块并发送对应 Start 事件(对齐 pi: 块创建即推流)
+        let push_block = |output: &AssistantMessage,
+                          blocks: &mut Vec<Block>,
+                          index: u32,
+                          content: AssistantContent| {
+            blocks.push(Block {
+                index,
+                content,
+                partial_json: String::new(),
+            });
+            let content_index = blocks.len() - 1;
+            let snapshot = partial(output, blocks);
+            let event = match &blocks[content_index].content {
+                AssistantContent::Text(_) => AssistantMessageEvent::TextStart {
+                    content_index,
+                    partial: snapshot,
+                },
+                AssistantContent::Thinking(_) => AssistantMessageEvent::ThinkingStart {
+                    content_index,
+                    partial: snapshot,
+                },
+                AssistantContent::ToolCall(_) => AssistantMessageEvent::ToolcallStart {
+                    content_index,
+                    partial: snapshot,
+                },
+            };
+            let _ = tx.send(event);
+        };
 
         let byte_stream = response.bytes_stream();
         let mut event_stream = Box::pin(byte_stream.eventsource());
@@ -453,71 +481,38 @@ pub fn stream(
                 MessageStreamEvent::ContentBlockStart {
                     index,
                     content_block,
-                } => match content_block {
-                    ContentBlock::Text { text } => {
-                        blocks.push(Block {
-                            index,
-                            content: AssistantContent::Text(TextContent {
-                                text,
-                                text_signature: None,
-                            }),
-                            partial_json: String::new(),
-                        });
-                        let _ = tx.send(AssistantMessageEvent::TextStart {
-                            content_index: blocks.len() - 1,
-                            partial: partial(&output, &blocks),
-                        });
-                    }
-                    ContentBlock::Thinking {
-                        thinking,
-                        signature,
-                    } => {
-                        blocks.push(Block {
-                            index,
-                            content: AssistantContent::Thinking(ThinkingContent {
-                                thinking,
-                                thinking_signature: Some(signature),
-                                redacted: None,
-                            }),
-                            partial_json: String::new(),
-                        });
-                        let _ = tx.send(AssistantMessageEvent::ThinkingStart {
-                            content_index: blocks.len() - 1,
-                            partial: partial(&output, &blocks),
-                        });
-                    }
-                    ContentBlock::RedactedThinking { data } => {
-                        blocks.push(Block {
-                            index,
-                            content: AssistantContent::Thinking(ThinkingContent {
+                } => {
+                    let content = match content_block {
+                        ContentBlock::Text { text } => AssistantContent::Text(TextContent {
+                            text,
+                            text_signature: None,
+                        }),
+                        ContentBlock::Thinking {
+                            thinking,
+                            signature,
+                        } => AssistantContent::Thinking(ThinkingContent {
+                            thinking,
+                            thinking_signature: Some(signature),
+                            redacted: None,
+                        }),
+                        ContentBlock::RedactedThinking { data } => {
+                            AssistantContent::Thinking(ThinkingContent {
                                 thinking: "[Reasoning redacted]".to_string(),
                                 thinking_signature: Some(data),
                                 redacted: Some(true),
-                            }),
-                            partial_json: String::new(),
-                        });
-                        let _ = tx.send(AssistantMessageEvent::ThinkingStart {
-                            content_index: blocks.len() - 1,
-                            partial: partial(&output, &blocks),
-                        });
-                    }
-                    ContentBlock::ToolUse { id, name, input } => {
-                        blocks.push(Block {
-                            index,
-                            content: AssistantContent::ToolCall(ToolCall {
+                            })
+                        }
+                        ContentBlock::ToolUse { id, name, input } => {
+                            AssistantContent::ToolCall(ToolCall {
                                 id,
                                 name,
                                 arguments: input,
                                 thought_signature: None,
-                            }),
-                            partial_json: String::new(),
-                        });
-                        let _ = tx.send(AssistantMessageEvent::ToolcallStart {
-                            content_index: blocks.len() - 1,
-                            partial: partial(&output, &blocks),
-                        });
-                    }
-                },
+                            })
+                        }
+                    };
+                    push_block(&output, &mut blocks, index, content);
+                }
                 MessageStreamEvent::ContentBlockDelta { index, delta } => {
                     let Some(pos) = blocks.iter().position(|b| b.index == index) else {
                         continue;

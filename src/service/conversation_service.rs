@@ -26,6 +26,39 @@ pub fn user_text_message(text: &str) -> Message {
     })
 }
 
+// 拼接用户内容块中的文本(忽略图片块)
+pub fn user_blocks_text(blocks: &[UserContent]) -> String {
+    blocks
+        .iter()
+        .filter_map(|b| match b {
+            UserContent::Text(t) => Some(t.text.as_str()),
+            _ => None,
+        })
+        .collect::<Vec<_>>()
+        .join("\n")
+}
+
+// 提取用户消息纯文本(纯文本直取, 内容块拼接)
+pub fn user_message_text(content: &UserMessageContent) -> String {
+    match content {
+        UserMessageContent::Text(s) => s.clone(),
+        UserMessageContent::Blocks(blocks) => user_blocks_text(blocks),
+    }
+}
+
+// 提取助手消息最后一个文本块内容(无文本块返回空串)
+pub fn assistant_message_text(message: &AssistantMessage) -> String {
+    message
+        .content
+        .iter()
+        .rev()
+        .find_map(|b| match b {
+            AssistantContent::Text(t) => Some(t.text.clone()),
+            _ => None,
+        })
+        .unwrap_or_default()
+}
+
 // 启动对话, 同一 conversation 不允许同时运行多个; query 为 true 时仅回放历史, 不执行模型调用
 pub async fn start_conversation(
     state: &AppState,
@@ -289,24 +322,22 @@ async fn do_run_conversation(
     )
     .await;
 
-    // 发布历史消息(content 列为 pi 消息协议 JSON)
+    // 解析历史消息(content 列为 pi 消息协议 JSON): 单趟完成 chunk 回放与模型上下文构造, 无法解析的消息跳过
+    let mut messages: Vec<Message> = Vec::new();
     for msg in &conversation.messages {
-        match serde_json::from_value::<Message>(msg.content.clone()) {
-            Ok(Message::User(user)) => {
-                let text = match &user.content {
-                    UserMessageContent::Text(s) => s.clone(),
-                    UserMessageContent::Blocks(blocks) => blocks
-                        .iter()
-                        .filter_map(|b| match b {
-                            UserContent::Text(t) => Some(t.text.as_str()),
-                            _ => None,
-                        })
-                        .collect::<Vec<_>>()
-                        .join("\n"),
-                };
+        let parsed = match serde_json::from_value::<Message>(msg.content.clone()) {
+            Ok(m) => m,
+            Err(e) => {
+                tracing::warn!("Skip unparsable history message: id={} error={}", msg.id, e);
+                continue;
+            }
+        };
+        match &parsed {
+            Message::User(user) => {
+                let text = user_message_text(&user.content);
                 publish_chunk(state, conversation_id, "user", &text, json!({})).await;
             }
-            Ok(Message::Assistant(assistant)) => {
+            Message::Assistant(assistant) => {
                 for block in &assistant.content {
                     match block {
                         AssistantContent::Thinking(t) => {
@@ -350,16 +381,8 @@ async fn do_run_conversation(
                 )
                 .await;
             }
-            Ok(Message::ToolResult(tool_result)) => {
-                let text = tool_result
-                    .content
-                    .iter()
-                    .filter_map(|b| match b {
-                        UserContent::Text(t) => Some(t.text.as_str()),
-                        _ => None,
-                    })
-                    .collect::<Vec<_>>()
-                    .join("\n");
+            Message::ToolResult(tool_result) => {
+                let text = user_blocks_text(&tool_result.content);
                 publish_chunk(
                     state,
                     conversation_id,
@@ -369,10 +392,8 @@ async fn do_run_conversation(
                 )
                 .await;
             }
-            Err(e) => {
-                tracing::warn!("Skip unparsable history message: id={} error={}", msg.id, e);
-            }
         }
+        messages.push(parsed);
     }
     if !task_content.is_empty() {
         publish_chunk(state, conversation_id, "user", task_content, json!({})).await;
@@ -400,20 +421,7 @@ async fn do_run_conversation(
     })
     .collect();
 
-    // 构造初始消息列表(content 列为 pi 消息协议 JSON, 无法解析的历史消息跳过)
-    let mut messages: Vec<Message> = conversation
-        .messages
-        .iter()
-        .filter_map(
-            |msg| match serde_json::from_value::<Message>(msg.content.clone()) {
-                Ok(m) => Some(m),
-                Err(e) => {
-                    tracing::warn!("Skip unparsable history message: id={} error={}", msg.id, e);
-                    None
-                }
-            },
-        )
-        .collect();
+    // 本轮任务消息并入上下文
     let task_message = user_text_message(task_content);
     messages.push(task_message.clone());
     // 本轮新增的消息(结束后统一持久化)

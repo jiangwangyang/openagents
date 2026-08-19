@@ -133,32 +133,8 @@ pub async fn start_task(
     if task_service::is_task_running(&state, task_id) {
         return Err(AppError::Conflict("Task already running".to_string()));
     }
-    // 先落一条用户消息, 再执行后续启动流程
-    let latest =
-        conversation_repository::get_latest_task_conversation_state(&state.db, task_id).await?;
-    let conversation_id = match latest {
-        Some(l) if l.agent_id.is_none() => l.id,
-        _ => {
-            conversation_repository::add_conversation(
-                &state.db,
-                &format!("{}-User", task.title),
-                &task.work_dir,
-                "",
-                Some(task_id),
-                None,
-                None,
-            )
-            .await?
-        }
-    };
-    // content 列存整条 pi 消息 JSON
-    let user_message = conversation_service::user_text_message(message);
-    conversation_repository::add_conversation_messages(
-        &state.db,
-        conversation_id,
-        &[serde_json::to_value(&user_message)?],
-    )
-    .await?;
+    // 先落一条用户消息(最新对话为用户对话时直接追加, 否则新建用户对话承载), 再执行后续启动流程
+    task_service::append_task_user_message(&state, &task, message, true).await?;
     if !task_service::start_task(&state, task_id, req.agent_id) {
         return Err(AppError::Conflict("Task already running".to_string()));
     }
@@ -191,7 +167,7 @@ pub async fn complete_task(
     Path(task_id): Path<i64>,
     Json(req): Json<CompleteTaskRequest>,
 ) -> Result<(), AppError> {
-    task_repository::get_task(&state.db, task_id)
+    let task = task_repository::get_task(&state.db, task_id)
         .await?
         .ok_or_else(|| AppError::NotFound("Task not found".to_string()))?;
     let message = req.message.trim();
@@ -202,21 +178,13 @@ pub async fn complete_task(
     if task_service::is_task_running(&state, task_id) {
         return Err(AppError::Conflict("Task is running".to_string()));
     }
-    // 最新阶段对话须为用户审核对话(agent_id 为空), 否则任务不在待审核状态
-    let latest =
-        conversation_repository::get_latest_task_conversation_state(&state.db, task_id).await?;
-    let conversation_id = match latest {
-        Some(l) if l.agent_id.is_none() => l.id,
-        _ => return Err(AppError::Conflict("Task is not in review".to_string())),
-    };
-    // content 列存整条 pi 消息 JSON
-    let user_message = conversation_service::user_text_message(message);
-    conversation_repository::add_conversation_messages(
-        &state.db,
-        conversation_id,
-        &[serde_json::to_value(&user_message)?],
-    )
-    .await?;
+    // 最新阶段对话须为用户审核对话(agent_id 为空)才落消息, 否则任务不在待审核状态
+    if task_service::append_task_user_message(&state, &task, message, false)
+        .await?
+        .is_none()
+    {
+        return Err(AppError::Conflict("Task is not in review".to_string()));
+    }
     // 用户已提交完成意见: 任务状态置为已完成
     task_repository::update_task_status(&state.db, task_id, TASK_STATUS_DONE).await?;
     Ok(())

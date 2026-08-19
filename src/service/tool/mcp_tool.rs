@@ -88,6 +88,22 @@ pub async fn connect_mcp_server(
     Ok(service)
 }
 
+// 解析 server_id 并连接 MCP 服务, 失败转为 ToolResult
+async fn connect_by_id(
+    db: &SqlitePool,
+    server_id: &str,
+) -> Result<RunningService<RoleClient, ClientInfo>, ToolResult> {
+    let server_id = server_id
+        .parse::<i64>()
+        .map_err(|_| (format!("Invalid server id {}", server_id), true))?;
+    connect_mcp_server(db, server_id).await.map_err(|e| {
+        (
+            format!("Failed to connect MCP server {}: {}", server_id, e),
+            true,
+        )
+    })
+}
+
 // 执行 MCP 命令, 用到某个客户端时按 id 从数据库读取配置即时创建, 使用完后直接 cancel
 pub async fn execute(cmd_and_args: &[String], db: &SqlitePool) -> ToolResult {
     let args: Vec<&str> = cmd_and_args.iter().map(String::as_str).collect();
@@ -112,136 +128,116 @@ pub async fn execute(cmd_and_args: &[String], db: &SqlitePool) -> ToolResult {
         }
         // mcp server <server_id> tool list
         ["mcp", "server", server_id, "tool", "list"] => {
-            let server_id = match server_id.parse::<i64>() {
-                Ok(id) => id,
-                Err(_) => return (format!("Invalid server id {}", server_id), true),
+            let service = match connect_by_id(db, server_id).await {
+                Ok(s) => s,
+                Err(r) => return r,
             };
-            let service = match connect_mcp_server(db, server_id).await {
-                Ok(v) => v,
-                Err(e) => {
-                    return (
-                        format!("Failed to connect MCP server {}: {}", server_id, e),
-                        true,
-                    )
-                }
-            };
-            let tools = match service.peer().list_all_tools().await {
-                Ok(t) => t,
-                Err(e) => {
-                    let _ = service.cancel().await;
-                    return (
+            // 先算出结果再统一关闭连接, 避免各提前返回分支重复 cancel
+            let result = async {
+                match service.peer().list_all_tools().await {
+                    Ok(tools) => {
+                        let tools: Vec<serde_json::Value> = tools
+                            .iter()
+                            .map(|tool| {
+                                serde_json::json!({
+                                    "name": tool.name,
+                                    "description": tool.description,
+                                })
+                            })
+                            .collect();
+                        (serde_json::to_string(&tools).unwrap_or_default(), false)
+                    }
+                    Err(e) => (
                         format!("Failed to list tools of MCP server {}: {}", server_id, e),
                         true,
-                    );
+                    ),
                 }
-            };
-            let result: Vec<serde_json::Value> = tools
-                .iter()
-                .map(|tool| {
-                    serde_json::json!({
-                        "name": tool.name,
-                        "description": tool.description,
-                    })
-                })
-                .collect();
+            }
+            .await;
             // 使用完毕, 关闭连接
             let _ = service.cancel().await;
-            (serde_json::to_string(&result).unwrap_or_default(), false)
+            result
         }
         // mcp server <server_id> tool <tool_name> info
         ["mcp", "server", server_id, "tool", tool_name, "info"] => {
-            let server_id = match server_id.parse::<i64>() {
-                Ok(id) => id,
-                Err(_) => return (format!("Invalid server id {}", server_id), true),
+            let service = match connect_by_id(db, server_id).await {
+                Ok(s) => s,
+                Err(r) => return r,
             };
-            let service = match connect_mcp_server(db, server_id).await {
-                Ok(v) => v,
-                Err(e) => {
-                    return (
-                        format!("Failed to connect MCP server {}: {}", server_id, e),
-                        true,
-                    )
-                }
-            };
-            let tools = match service.peer().list_all_tools().await {
-                Ok(t) => t,
-                Err(e) => {
-                    let _ = service.cancel().await;
-                    return (
+            // 先算出结果再统一关闭连接, 避免各提前返回分支重复 cancel
+            let result = async {
+                match service.peer().list_all_tools().await {
+                    Err(e) => (
                         format!("Failed to list tools of MCP server {}: {}", server_id, e),
                         true,
-                    );
+                    ),
+                    Ok(tools) => match tools.iter().find(|t| t.name.as_ref() == *tool_name) {
+                        Some(tool) => {
+                            let result = serde_json::json!({
+                                "name": tool.name,
+                                "description": tool.description,
+                                "input_schema": tool.input_schema,
+                            });
+                            (serde_json::to_string(&result).unwrap_or_default(), false)
+                        }
+                        None => (format!("Unknown tool {}", tool_name), true),
+                    },
                 }
-            };
-            let tool = match tools.iter().find(|t| t.name.as_ref() == *tool_name) {
-                Some(t) => t,
-                None => {
-                    let _ = service.cancel().await;
-                    return (format!("Unknown tool {}", tool_name), true);
-                }
-            };
-            let result = serde_json::json!({
-                "name": tool.name,
-                "description": tool.description,
-                "input_schema": tool.input_schema,
-            });
+            }
+            .await;
             // 使用完毕, 关闭连接
             let _ = service.cancel().await;
-            (serde_json::to_string(&result).unwrap_or_default(), false)
+            result
         }
         // mcp server <server_id> tool <tool_name> call <tool_json_args>
         ["mcp", "server", server_id, "tool", tool_name, "call", json_string] => {
-            let server_id = match server_id.parse::<i64>() {
-                Ok(id) => id,
-                Err(_) => return (format!("Invalid server id {}", server_id), true),
+            let service = match connect_by_id(db, server_id).await {
+                Ok(s) => s,
+                Err(r) => return r,
             };
-            let service = match connect_mcp_server(db, server_id).await {
-                Ok(v) => v,
-                Err(e) => {
-                    return (
-                        format!("Failed to connect MCP server {}: {}", server_id, e),
-                        true,
-                    )
-                }
-            };
-            let arguments: Option<rmcp::model::JsonObject> = if json_string.is_empty() {
-                None
-            } else {
-                match serde_json::from_str::<serde_json::Map<String, Value>>(json_string) {
-                    Ok(map) => Some(map),
-                    Err(e) => {
-                        let _ = service.cancel().await;
-                        return (format!("Invalid JSON arguments: {}", e), true);
+            // 先算出结果再统一关闭连接, 避免各提前返回分支重复 cancel
+            let result = async {
+                // 空参数视为无参数, 否则解析 JSON 对象
+                let arguments = if json_string.is_empty() {
+                    Ok(None)
+                } else {
+                    serde_json::from_str::<serde_json::Map<String, Value>>(json_string)
+                        .map(Some)
+                        .map_err(|e| (format!("Invalid JSON arguments: {}", e), true))
+                };
+                match arguments {
+                    Err(r) => r,
+                    Ok(arguments) => {
+                        let mut params = CallToolRequestParams::new((*tool_name).to_string());
+                        if let Some(args) = arguments {
+                            params = params.with_arguments(args);
+                        }
+                        match service.peer().call_tool(params).await {
+                            Ok(tool_result) => {
+                                let tool_content_list: Vec<String> = tool_result
+                                    .content
+                                    .iter()
+                                    .map(|content| match content {
+                                        rmcp::model::ContentBlock::Text(text) => text.text.clone(),
+                                        other => format!("{:?}", other),
+                                    })
+                                    .collect();
+                                let tool_content = if tool_content_list.len() == 1 {
+                                    tool_content_list.into_iter().next().unwrap_or_default()
+                                } else {
+                                    serde_json::to_string(&tool_content_list).unwrap_or_default()
+                                };
+                                (tool_content, tool_result.is_error.unwrap_or(false))
+                            }
+                            Err(e) => (format!("Tool call failed: {}", e), true),
+                        }
                     }
                 }
-            };
-            let mut params = CallToolRequestParams::new((*tool_name).to_string());
-            if let Some(args) = arguments {
-                params = params.with_arguments(args);
             }
-            let call_result = match service.peer().call_tool(params).await {
-                Ok(tool_result) => {
-                    let tool_content_list: Vec<String> = tool_result
-                        .content
-                        .iter()
-                        .map(|content| match content {
-                            rmcp::model::ContentBlock::Text(text) => text.text.clone(),
-                            other => format!("{:?}", other),
-                        })
-                        .collect();
-                    let tool_content = if tool_content_list.len() == 1 {
-                        tool_content_list.into_iter().next().unwrap_or_default()
-                    } else {
-                        serde_json::to_string(&tool_content_list).unwrap_or_default()
-                    };
-                    let is_error = tool_result.is_error.unwrap_or(false);
-                    (tool_content, is_error)
-                }
-                Err(e) => (format!("Tool call failed: {}", e), true),
-            };
+            .await;
             // 使用完毕, 关闭连接
             let _ = service.cancel().await;
-            call_result
+            result
         }
         _ => ("Unknown command".to_string(), true),
     }

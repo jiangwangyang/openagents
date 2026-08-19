@@ -65,15 +65,8 @@ impl From<ProviderJoinRow> for Option<ModelProviderEntity> {
 // get_agent JOIN 查询中间行(Agent 列 + 关联的模型提供商列)
 #[derive(Debug, Clone, FromRow)]
 pub struct AgentProviderRow {
-    pub id: i64,
-    pub name: String,
-    pub description: String,
-    pub prompt: String,
-    pub model_provider_id: i64,
-    pub model: String,
-    pub thinking: bool,
-    pub create_time: String,
-    pub update_time: String,
+    #[sqlx(flatten)]
+    pub agent: AgentEntity,
     #[sqlx(flatten)]
     pub provider: ProviderJoinRow,
 }
@@ -81,17 +74,7 @@ pub struct AgentProviderRow {
 impl From<AgentProviderRow> for AgentWithProvider {
     fn from(r: AgentProviderRow) -> Self {
         AgentWithProvider {
-            agent: AgentEntity {
-                id: r.id,
-                name: r.name,
-                description: r.description,
-                prompt: r.prompt,
-                model_provider_id: r.model_provider_id,
-                model: r.model,
-                thinking: r.thinking,
-                create_time: r.create_time,
-                update_time: r.update_time,
-            },
+            agent: r.agent,
             model_provider: r.provider.into(),
         }
     }
@@ -173,15 +156,8 @@ impl From<AgentJoinRow> for Option<AgentEntity> {
 // get_schedule JOIN 查询中间行(定时任务列 + 关联的 Agent 列)
 #[derive(Debug, Clone, FromRow)]
 pub struct ScheduleAgentRow {
-    pub id: i64,
-    pub name: String,
-    pub content: String,
-    pub work_dir: String,
-    pub cron_expr: String,
-    pub agent_id: i64,
-    pub enabled: bool,
-    pub create_time: String,
-    pub update_time: String,
+    #[sqlx(flatten)]
+    pub schedule: ScheduleEntity,
     #[sqlx(flatten)]
     pub agent: AgentJoinRow,
 }
@@ -189,17 +165,7 @@ pub struct ScheduleAgentRow {
 impl From<ScheduleAgentRow> for ScheduleWithAgent {
     fn from(r: ScheduleAgentRow) -> Self {
         ScheduleWithAgent {
-            schedule: ScheduleEntity {
-                id: r.id,
-                name: r.name,
-                content: r.content,
-                work_dir: r.work_dir,
-                cron_expr: r.cron_expr,
-                agent_id: r.agent_id,
-                enabled: r.enabled,
-                create_time: r.create_time,
-                update_time: r.update_time,
-            },
+            schedule: r.schedule,
             agent: r.agent.into(),
         }
     }
@@ -239,15 +205,8 @@ pub struct ConversationWithMessages {
 // get_conversation JOIN 查询中间行(对话列 + 关联的 Agent 列), messages 由调用方另行查询填充
 #[derive(Debug, Clone, FromRow)]
 pub struct ConversationAgentRow {
-    pub id: i64,
-    pub task_id: Option<i64>,
-    pub schedule_id: Option<i64>,
-    pub agent_id: Option<i64>,
-    pub title: String,
-    pub work_dir: String,
-    pub system_prompt: String,
-    pub create_time: String,
-    pub update_time: String,
+    #[sqlx(flatten)]
+    pub conversation: ConversationEntity,
     #[sqlx(flatten)]
     pub agent: AgentJoinRow,
 }
@@ -255,17 +214,7 @@ pub struct ConversationAgentRow {
 impl From<ConversationAgentRow> for ConversationWithMessages {
     fn from(r: ConversationAgentRow) -> Self {
         ConversationWithMessages {
-            conversation: ConversationEntity {
-                id: r.id,
-                task_id: r.task_id,
-                schedule_id: r.schedule_id,
-                agent_id: r.agent_id,
-                title: r.title,
-                work_dir: r.work_dir,
-                system_prompt: r.system_prompt,
-                create_time: r.create_time,
-                update_time: r.update_time,
-            },
+            conversation: r.conversation,
             agent: r.agent.into(),
             messages: Vec::new(),
         }

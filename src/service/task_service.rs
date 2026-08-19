@@ -1,7 +1,9 @@
 // 多 Agent 执行循环
 use serde_json::{json, Value};
 
-use crate::repository::entity::{TASK_STATUS_FAILED, TASK_STATUS_REVIEW};
+use crate::ai::pi::types::Message;
+use crate::error::AppError;
+use crate::repository::entity::{TaskEntity, TASK_STATUS_FAILED, TASK_STATUS_REVIEW};
 use crate::repository::{
     agent_repository, conversation_repository, model_provider_repository, task_repository,
 };
@@ -51,6 +53,43 @@ pub fn stop_task(state: &AppState, task_id: i64) -> bool {
         return true;
     }
     false
+}
+
+// 向任务落一条用户消息: 最新阶段对话为用户审核对话(agent_id 为空)时直接追加,
+// 否则 allow_create 为 true 时新建用户审核对话承载, 为 false 时返回 Ok(None) 由调用方转 409
+pub async fn append_task_user_message(
+    state: &AppState,
+    task: &TaskEntity,
+    message: &str,
+    allow_create: bool,
+) -> Result<Option<i64>, AppError> {
+    let latest =
+        conversation_repository::get_latest_task_conversation_state(&state.db, task.id).await?;
+    let conversation_id = match latest {
+        Some(l) if l.agent_id.is_none() => l.id,
+        _ if allow_create => {
+            conversation_repository::add_conversation(
+                &state.db,
+                &format!("{}-User", task.title),
+                &task.work_dir,
+                "",
+                Some(task.id),
+                None,
+                None,
+            )
+            .await?
+        }
+        _ => return Ok(None),
+    };
+    // content 列存整条 pi 消息 JSON
+    let user_message = conversation_service::user_text_message(message);
+    conversation_repository::add_conversation_messages(
+        &state.db,
+        conversation_id,
+        &[serde_json::to_value(&user_message)?],
+    )
+    .await?;
+    Ok(Some(conversation_id))
 }
 
 // 后台执行循环
@@ -222,29 +261,9 @@ async fn do_run_task(
                 };
                 let name = item.agent_name.as_deref().unwrap_or("User");
                 // content 列为 pi 消息协议 JSON: 取用户文本或 assistant 最后一个文本块
-                let text = match serde_json::from_value::<crate::ai::pi::types::Message>(
-                    last_content.clone(),
-                ) {
-                    Ok(crate::ai::pi::types::Message::User(u)) => match &u.content {
-                        crate::ai::pi::types::UserMessageContent::Text(s) => s.clone(),
-                        crate::ai::pi::types::UserMessageContent::Blocks(blocks) => blocks
-                            .iter()
-                            .filter_map(|b| match b {
-                                crate::ai::pi::types::UserContent::Text(t) => Some(t.text.as_str()),
-                                _ => None,
-                            })
-                            .collect::<Vec<_>>()
-                            .join("\n"),
-                    },
-                    Ok(crate::ai::pi::types::Message::Assistant(a)) => a
-                        .content
-                        .iter()
-                        .rev()
-                        .find_map(|b| match b {
-                            crate::ai::pi::types::AssistantContent::Text(t) => Some(t.text.clone()),
-                            _ => None,
-                        })
-                        .unwrap_or_default(),
+                let text = match serde_json::from_value::<Message>(last_content.clone()) {
+                    Ok(Message::User(u)) => conversation_service::user_message_text(&u.content),
+                    Ok(Message::Assistant(a)) => conversation_service::assistant_message_text(&a),
                     _ => String::new(),
                 };
                 task_content_list.push(format!("## {}\n{}", name, serde_json::to_string(&text)?));

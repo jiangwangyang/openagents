@@ -543,6 +543,10 @@ async fn process_responses_stream(
             ResponseStreamEvent::ReasoningSummaryTextDelta {
                 output_index,
                 delta,
+            }
+            | ResponseStreamEvent::ReasoningTextDelta {
+                output_index,
+                delta,
             } => {
                 if let Some(ResponsesOutputSlot::Thinking { content_index }) =
                     output_slots.get(&output_index)
@@ -569,24 +573,6 @@ async fn process_responses_stream(
                     push(AssistantMessageEvent::ThinkingDelta {
                         content_index,
                         delta: "\n\n".to_string(),
-                        partial: output.clone(),
-                    });
-                }
-            }
-            ResponseStreamEvent::ReasoningTextDelta {
-                output_index,
-                delta,
-            } => {
-                if let Some(ResponsesOutputSlot::Thinking { content_index }) =
-                    output_slots.get(&output_index)
-                {
-                    let content_index = *content_index;
-                    if let AssistantContent::Thinking(t) = &mut output.content[content_index] {
-                        t.thinking.push_str(&delta);
-                    }
-                    push(AssistantMessageEvent::ThinkingDelta {
-                        content_index,
-                        delta,
                         partial: output.clone(),
                     });
                 }

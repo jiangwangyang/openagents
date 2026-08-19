@@ -2,7 +2,7 @@
 use sqlx::SqlitePool;
 
 use super::entity::{
-    ConversationEntity, ConversationHistorySummary, ConversationWithMessages,
+    ConversationAgentRow, ConversationEntity, ConversationHistorySummary, ConversationWithMessages,
     LatestConversationState, MessageEntity, NewMessageEntity,
 };
 
@@ -58,30 +58,28 @@ pub async fn list_messages_by_conversation_ids(
     query.fetch_all(pool).await
 }
 
-// 按 id 查询对话, 含消息列表(按 id 升序)
+// 按 id 查询对话, 单条 SQL LEFT JOIN 关联执行 Agent, 消息列表(一对多子表)单独查询, 按 id 升序
 pub async fn get_conversation(
     pool: &SqlitePool,
     conversation_id: i64,
 ) -> Result<Option<ConversationWithMessages>, sqlx::Error> {
-    let conv = sqlx::query_as::<_, ConversationEntity>(
-        "SELECT id, task_id, schedule_id, agent_id, title, work_dir, system_prompt, create_time, update_time FROM t_conversation WHERE id = ?",
+    let row = sqlx::query_as::<_, ConversationAgentRow>(
+        "SELECT c.id, c.task_id, c.schedule_id, c.agent_id, c.title, c.work_dir, c.system_prompt, c.create_time, c.update_time, a.id AS agent_ref_id, a.name AS agent_name, a.description AS agent_description, a.prompt AS agent_prompt, a.model_provider_id AS agent_model_provider_id, a.model AS agent_model, a.thinking AS agent_thinking, a.create_time AS agent_create_time, a.update_time AS agent_update_time FROM t_conversation c LEFT JOIN t_agent a ON a.id = c.agent_id WHERE c.id = ?",
     )
         .bind(conversation_id)
         .fetch_optional(pool)
         .await?;
 
-    match conv {
-        Some(c) => {
-            let messages = sqlx::query_as::<_, MessageEntity>(
+    match row {
+        Some(r) => {
+            let mut detail = ConversationWithMessages::from(r);
+            detail.messages = sqlx::query_as::<_, MessageEntity>(
                 "SELECT id, conversation_id, content FROM t_message WHERE conversation_id = ? ORDER BY id",
             )
                 .bind(conversation_id)
                 .fetch_all(pool)
                 .await?;
-            Ok(Some(ConversationWithMessages {
-                conversation: c,
-                messages,
-            }))
+            Ok(Some(detail))
         }
         None => Ok(None),
     }

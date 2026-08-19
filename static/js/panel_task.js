@@ -187,16 +187,8 @@ function deriveTaskStatus(controller) {
         }
         return detail.status;
     }
-    // 兜底：详情缺失或旧数据无 status 时按最新阶段对话本地推导
-    const latest = latestConversation(detail);
-    if (!latest) {
-        return TASK_STATUS.IDLE;
-    }
-    if (latest.agent_id == null) {
-        return (latest.messages || []).length > 0 ? TASK_STATUS.DONE : TASK_STATUS.REVIEW;
-    }
-    // 循环已停但最新仍是 Agent 对话：运行失败
-    return TASK_STATUS.FAILED;
+    // status 缺失或非法时按待启动处理
+    return TASK_STATUS.IDLE;
 }
 
 // 候选 Agent 对象列表（按任务 agent_ids 顺序解析花名册）
@@ -462,12 +454,12 @@ function renderTaskDetails(taskId) {
     grid.innerHTML = `
         <div class="details-label">${t('task.title')}</div>
         <div class="details-value">${escapeHtml(detail.title)}</div>
-        <div class="details-label">${t('task.content')}</div>
-        <div class="details-value" style="white-space: pre-wrap;">${escapeHtml(detail.content)}</div>
         <div class="details-label">${t('task.workDir')}</div>
         <div class="details-value">${escapeHtml(detail.work_dir || t('common.inheritedEnv'))}</div>
         <div class="details-label">${t('task.candidateAgents')}</div>
         <div class="details-value">${escapeHtml(candidateAgentNames(detail)) || t('common.none')}</div>
+        <div class="details-label">${t('task.content')}</div>
+        <div class="details-value" style="white-space: pre-wrap;">${escapeHtml(detail.content)}</div>
     `;
     container.appendChild(grid);
     // 阶段列表

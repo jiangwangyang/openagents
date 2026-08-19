@@ -243,8 +243,15 @@ async function startNewChat() {
     // 清空已加载会话的提示词来源状态，恢复为新会话预判模式
     currentSystemPrompt = '';
     currentConvAgentName = '';
+    // 关闭旧会话可能仍在进行的流式连接，避免其继续向新会话视图渲染或干扰按钮状态
+    if (currentEventSource) {
+        currentEventSource.close();
+        currentEventSource = null;
+    }
     // 新会话恢复可输入状态（清除任务/定时来源的只读标记与占位文案）
     setConversationReadonly(false);
+    // 重置流式状态：旧会话可能仍在输出，新建会话需将停止按钮恢复为发送按钮
+    setTyping(false);
     // 取消历史列表中所有条目的选中高亮
     conversationList.querySelectorAll('.conversation-item').forEach(item => item.classList.remove('active'));
     chatContainer.innerHTML = '';
@@ -563,36 +570,13 @@ async function sendMessage() {
 }
 
 // ===== 8. SSE 流式渲染 =====
-function addUserMessage(content, time) {
-    emptyState.style.display = 'none';
-    const div = document.createElement('div');
-    div.className = 'user-message';
-    div.innerHTML = `${formatMarkdown(content.trim())}<div class="message-time">${time}</div>`;
-    chatContainer.appendChild(div);
-}
-
-// 结束当前流式块：移除光标样式并折叠详情
-function finalizeStreamBlock() {
-    if (streamContentNode) {
-        streamContentNode.classList.remove('streaming-active');
-        const prevDetails = streamContentNode.closest('details');
-        if (prevDetails) {
-            prevDetails.open = false;
-        }
-        streamContentNode = null;
-    }
-}
-
-// 连接对话流式接口：先回放历史 chunks，再实时跟随新数据
+// 连接对话流式接口：先回放历史 chunks，再实时跟随新数据；chunk 渲染复用 core.js 的流式渲染器（与阶段弹窗同一套规则）
 function connectStream(conversationId) {
     // 关闭旧连接，重置流式渲染状态
     if (currentEventSource) {
         currentEventSource.close();
         currentEventSource = null;
     }
-    streamWrapper = null;
-    streamContentNode = null;
-    streamRawText = '';
     streamChunkCount = 0;
     // 重置 token 用量累计并清空 header 展示
     usageInputTokens = 0;
@@ -602,6 +586,8 @@ function connectStream(conversationId) {
     usageInfo.textContent = '';
     setTyping(true);
 
+    // 渲染器状态由闭包自持，滚动由本页按用户滚动意图控制
+    const renderer = createStreamRenderer(chatContainer);
     const source = new EventSource(`/conversation/${conversationId}/stream`);
     currentEventSource = source;
 
@@ -609,91 +595,7 @@ function connectStream(conversationId) {
         const data = JSON.parse(event.data);
         streamChunkCount += 1;
 
-        // 系统提示词：渲染为可折叠块，展示在消息流开头
-        if (data.type === 'system') {
-            if (data.text) {
-                const details = document.createElement('details');
-                details.className = 'system-details';
-                details.innerHTML = `<summary>${FOLD_SVG} ${t('stream.systemPrompt')}</summary><div class="content"></div>`;
-                details.querySelector('.content').innerHTML = formatMarkdown(data.text);
-                chatContainer.appendChild(details);
-            }
-        }
-
-        // 错误消息
-        if (data.type === 'error') {
-            finalizeStreamBlock();
-            streamWrapper = null;
-            const errorDiv = document.createElement('div');
-            errorDiv.className = 'user-message stream-error';
-            errorDiv.innerHTML = `\u26a0 ${escapeHtml(data.text || t('stream.unknownError'))}`;
-            chatContainer.appendChild(errorDiv);
-        }
-
-        // 手动停止提示条：结束当前流式块，展示中性提示
-        if (data.type === 'stopped') {
-            finalizeStreamBlock();
-            streamWrapper = null;
-            const stoppedDiv = document.createElement('div');
-            stoppedDiv.className = 'user-message stream-stopped';
-            stoppedDiv.textContent = t('stream.stopped');
-            chatContainer.appendChild(stoppedDiv);
-        }
-
-        // 用户消息：结束当前助手消息组，渲染用户气泡
-        if (data.type === 'user') {
-            finalizeStreamBlock();
-            streamWrapper = null;
-            addUserMessage(data.text || '', '');
-        }
-
-        // 助手消息块：thinking / text / tool_use / tool_result
-        if (data.type === 'thinking' || data.type === 'text' || data.type === 'tool_use' || data.type === 'tool_result') {
-            finalizeStreamBlock();
-            if (!streamWrapper) {
-                streamWrapper = document.createElement('div');
-                streamWrapper.className = 'assistant-message';
-                chatContainer.appendChild(streamWrapper);
-            }
-            streamRawText = data.text || '';
-
-            // 添加新消息块
-            if (data.type === 'thinking') {
-                const details = document.createElement('details');
-                details.className = 'think-details';
-                details.open = true;
-                details.innerHTML = `<summary>${FOLD_SVG} ${t('stream.thoughtProcess')}</summary><div class="content streaming-active"></div>`;
-                streamWrapper.appendChild(details);
-                streamContentNode = details.querySelector('.content');
-            } else if (data.type === 'text') {
-                const div = document.createElement('div');
-                div.className = 'reply-content streaming-active';
-                streamWrapper.appendChild(div);
-                streamContentNode = div;
-            } else if (data.type === 'tool_use') {
-                const details = document.createElement('details');
-                details.className = 'tool-details';
-                details.open = true;
-                details.innerHTML = `<summary>${FOLD_SVG} ${t('stream.callPrefix')}: ${escapeHtml(data.name || t('stream.tool'))}</summary><div class="content streaming-active"></div>`;
-                streamWrapper.appendChild(details);
-                streamContentNode = details.querySelector('.content');
-            } else if (data.type === 'tool_result') {
-                const details = document.createElement('details');
-                details.className = 'tool-details';
-                details.open = false;
-                const status = data.is_error ? t('stream.toolError') : t('stream.toolResult');
-                details.innerHTML = `<summary>${FOLD_SVG} ${t('stream.tool')} ${status} [${escapeHtml(String(data.id || ''))}]</summary><div class="content streaming-active"></div>`;
-                streamWrapper.appendChild(details);
-                streamContentNode = details.querySelector('.content');
-            }
-
-            // 设置消息文本
-            if (streamRawText && streamContentNode) {
-                streamContentNode.innerHTML = formatMarkdown(streamRawText);
-            }
-        }
-
-        // token 用量：累计本次连接的全部 usage（工具循环会有多条），更新 header 展示
+        // token 用量：对话页特有，累计本次连接的全部 usage（工具循环会有多条），更新 header 展示
         if (data.type === 'usage') {
             usageInputTokens += data.input_tokens || 0;
             usageOutputTokens += data.output_tokens || 0;
@@ -707,17 +609,10 @@ function connectStream(conversationId) {
             }
             usageText += ` · ${formatTokens(usageTotalTokens)} ${t('stream.usageTotal')}`;
             usageInfo.textContent = usageText;
+            return;
         }
 
-        // 追加消息文本
-        if (data.type === 'delta') {
-            streamRawText += (data.text || '');
-            if (streamContentNode) {
-                streamContentNode.innerHTML = formatMarkdown(streamRawText);
-            }
-        }
-
-        // 跟随滚动
+        renderer.handleChunk(data);
         scrollToBottomIfNotUserScroll();
     };
 
@@ -729,7 +624,7 @@ function connectStream(conversationId) {
         // 关闭连接，仅收尾，不重新打开避免无限重连
         source.close();
         currentEventSource = null;
-        finalizeStreamBlock();
+        renderer.finalize();
         // 流关闭且无任何数据时回退到空状态页
         if (streamChunkCount === 0) {
             chatContainer.appendChild(emptyState);

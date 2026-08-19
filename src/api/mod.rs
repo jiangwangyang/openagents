@@ -129,6 +129,7 @@ pub fn create_router(state: AppState) -> Router {
         .route("/task/list", get(task_api::list_tasks))
         .route("/task/{task_id}", get(task_api::get_task))
         .route("/task", post(task_api::add_task))
+        .route("/task/{task_id}", put(task_api::update_task))
         .route("/task/{task_id}", delete(task_api::delete_task))
         .route("/task/{task_id}/start", post(task_api::start_task))
         .route("/task/{task_id}/stop", post(task_api::stop_task))

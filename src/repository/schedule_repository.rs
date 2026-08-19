@@ -1,7 +1,7 @@
 // 定时任务 CRUD
 use sqlx::SqlitePool;
 
-use super::entity::ScheduleEntity;
+use super::entity::{ScheduleAgentRow, ScheduleEntity, ScheduleWithAgent};
 
 // 查询全部定时任务, 按 id 升序
 pub async fn list_schedules(pool: &SqlitePool) -> Result<Vec<ScheduleEntity>, sqlx::Error> {
@@ -12,17 +12,18 @@ pub async fn list_schedules(pool: &SqlitePool) -> Result<Vec<ScheduleEntity>, sq
     .await
 }
 
-// 按 id 查询定时任务
+// 按 id 查询定时任务, 单条 SQL LEFT JOIN 关联执行 Agent
 pub async fn get_schedule(
     pool: &SqlitePool,
     schedule_id: i64,
-) -> Result<Option<ScheduleEntity>, sqlx::Error> {
-    sqlx::query_as::<_, ScheduleEntity>(
-        "SELECT id, name, content, work_dir, cron_expr, agent_id, enabled, create_time, update_time FROM t_schedule WHERE id = ?",
+) -> Result<Option<ScheduleWithAgent>, sqlx::Error> {
+    let row = sqlx::query_as::<_, ScheduleAgentRow>(
+        "SELECT s.id, s.name, s.content, s.work_dir, s.cron_expr, s.agent_id, s.enabled, s.create_time, s.update_time, a.id AS agent_ref_id, a.name AS agent_name, a.description AS agent_description, a.prompt AS agent_prompt, a.model_provider_id AS agent_model_provider_id, a.model AS agent_model, a.thinking AS agent_thinking, a.create_time AS agent_create_time, a.update_time AS agent_update_time FROM t_schedule s LEFT JOIN t_agent a ON a.id = s.agent_id WHERE s.id = ?",
     )
     .bind(schedule_id)
     .fetch_optional(pool)
-    .await
+    .await?;
+    Ok(row.map(ScheduleWithAgent::from))
 }
 
 // 新增定时任务, 返回自增 id

@@ -38,12 +38,12 @@ pub struct McpStreamableHttpRequest {
     pub headers: Option<serde_json::Value>,
 }
 
-// 新增 streamable_http 类型的 MCP 服务
+// 新增 streamable_http 类型的 MCP 服务, 返回自增 id
 pub async fn add_mcp_streamable_http_server(
     State(state): State<AppState>,
     Json(req): Json<McpStreamableHttpRequest>,
-) -> Result<(), AppError> {
-    mcp_server_repository::add_mcp_server(
+) -> Result<Json<i64>, AppError> {
+    let id = mcp_server_repository::add_mcp_server(
         &state.db,
         &req.name,
         &req.description,
@@ -54,7 +54,7 @@ pub async fn add_mcp_streamable_http_server(
         None,
     )
     .await?;
-    Ok(())
+    Ok(Json(id))
 }
 
 // stdio 类型 MCP 服务新增/更新请求体
@@ -66,12 +66,12 @@ pub struct McpStdioRequest {
     pub args: Option<serde_json::Value>,
 }
 
-// 新增 stdio 类型的 MCP 服务
+// 新增 stdio 类型的 MCP 服务, 返回自增 id
 pub async fn add_mcp_stdio_server(
     State(state): State<AppState>,
     Json(req): Json<McpStdioRequest>,
-) -> Result<(), AppError> {
-    mcp_server_repository::add_mcp_server(
+) -> Result<Json<i64>, AppError> {
+    let id = mcp_server_repository::add_mcp_server(
         &state.db,
         &req.name,
         &req.description,
@@ -82,7 +82,7 @@ pub async fn add_mcp_stdio_server(
         req.args.as_ref(),
     )
     .await?;
-    Ok(())
+    Ok(Json(id))
 }
 
 // 按 id 更新 streamable_http 类型的 MCP 服务, 不存在返回 404

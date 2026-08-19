@@ -3,9 +3,7 @@ use std::str::FromStr;
 
 use tokio_cron_scheduler::{Job, JobSchedulerError};
 
-use crate::repository::{
-    agent_repository, conversation_repository, model_provider_repository, schedule_repository,
-};
+use crate::repository::{conversation_repository, model_provider_repository, schedule_repository};
 use crate::service::conversation_service;
 use crate::state::AppState;
 
@@ -75,16 +73,17 @@ pub async fn update_schedule(
                     let _ = schedule_repository::update_schedule(
                         &state.db,
                         schedule_id,
-                        &old.name,
-                        &old.content,
-                        &old.work_dir,
-                        &old.cron_expr,
-                        old.agent_id,
-                        old.enabled,
+                        &old.schedule.name,
+                        &old.schedule.content,
+                        &old.schedule.work_dir,
+                        &old.schedule.cron_expr,
+                        old.schedule.agent_id,
+                        old.schedule.enabled,
                     )
                     .await;
-                    if old.enabled {
-                        let _ = add_job_to_scheduler(state, schedule_id, &old.cron_expr).await;
+                    if old.schedule.enabled {
+                        let _ =
+                            add_job_to_scheduler(state, schedule_id, &old.schedule.cron_expr).await;
                     }
                 }
                 return Err(e.into());
@@ -166,12 +165,13 @@ fn start_conversation_boxed(
 
 // 执行定时任务: 创建对话并触发 agent 执行
 async fn execute_schedule(state: &AppState, schedule_id: i64) -> anyhow::Result<()> {
-    let schedule = schedule_repository::get_schedule(&state.db, schedule_id)
+    let detail = schedule_repository::get_schedule(&state.db, schedule_id)
         .await?
         .ok_or_else(|| anyhow::anyhow!("schedule not found"))?;
-
-    let agent = agent_repository::get_agent(&state.db, schedule.agent_id)
-        .await?
+    let schedule = detail.schedule;
+    // 执行 Agent 已由 get_schedule 单条 SQL 关联查出, 引用删除保护保证关联必然命中
+    let agent = detail
+        .agent
         .ok_or_else(|| anyhow::anyhow!("agent not found"))?;
     let provider =
         model_provider_repository::get_model_provider(&state.db, agent.model_provider_id)

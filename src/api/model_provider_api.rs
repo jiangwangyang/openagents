@@ -6,7 +6,7 @@ use serde::Deserialize;
 use crate::ai;
 use crate::error::AppError;
 use crate::repository::entity::ModelProviderEntity;
-use crate::repository::model_provider_repository;
+use crate::repository::{model_provider_repository, DeleteResult};
 use crate::state::AppState;
 
 // 查询全部模型提供商, 按 id 升序
@@ -38,12 +38,12 @@ pub struct ModelProviderRequest {
     pub api_key: String,
 }
 
-// 新增模型提供商
+// 新增模型提供商, 返回自增 id
 pub async fn add_model_provider(
     State(state): State<AppState>,
     Json(req): Json<ModelProviderRequest>,
-) -> Result<(), AppError> {
-    model_provider_repository::add_model_provider(
+) -> Result<Json<i64>, AppError> {
+    let id = model_provider_repository::add_model_provider(
         &state.db,
         &req.name,
         &req.protocol_type,
@@ -51,7 +51,7 @@ pub async fn add_model_provider(
         &req.api_key,
     )
     .await?;
-    Ok(())
+    Ok(Json(id))
 }
 
 // 按 id 更新模型提供商, 不存在返回 404
@@ -80,17 +80,13 @@ pub async fn delete_model_provider(
     State(state): State<AppState>,
     Path(provider_id): Path<i64>,
 ) -> Result<(), AppError> {
-    let provider = model_provider_repository::get_model_provider(&state.db, provider_id).await?;
-    if provider.is_none() {
-        return Err(AppError::NotFound("Model provider not found".to_string()));
-    }
-    let deleted = model_provider_repository::delete_model_provider(&state.db, provider_id).await?;
-    if !deleted {
-        return Err(AppError::Conflict(
+    match model_provider_repository::delete_model_provider(&state.db, provider_id).await? {
+        DeleteResult::Deleted => Ok(()),
+        DeleteResult::NotFound => Err(AppError::NotFound("Model provider not found".to_string())),
+        DeleteResult::Referenced => Err(AppError::Conflict(
             "Model provider is referenced by agents".to_string(),
-        ));
+        )),
     }
-    Ok(())
 }
 
 // 查询模型提供商的可用模型列表, 按 provider 协议类型路由实时获取

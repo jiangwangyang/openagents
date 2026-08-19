@@ -4,8 +4,8 @@ use axum::Json;
 use serde::Deserialize;
 
 use crate::error::AppError;
-use crate::repository::agent_repository;
-use crate::repository::entity::AgentEntity;
+use crate::repository::entity::{AgentEntity, AgentWithProvider};
+use crate::repository::{agent_repository, DeleteResult};
 use crate::state::AppState;
 
 // 查询全部 Agent, 按 id 升序
@@ -16,11 +16,11 @@ pub async fn list_agents(
     Ok(Json(agents))
 }
 
-// 按 id 查询 Agent, 不存在返回 404
+// 按 id 查询 Agent(含外键关联的模型提供商), 不存在返回 404
 pub async fn get_agent(
     State(state): State<AppState>,
     Path(agent_id): Path<i64>,
-) -> Result<Json<AgentEntity>, AppError> {
+) -> Result<Json<AgentWithProvider>, AppError> {
     let agent = agent_repository::get_agent(&state.db, agent_id).await?;
     match agent {
         Some(a) => Ok(Json(a)),
@@ -85,15 +85,11 @@ pub async fn delete_agent(
     State(state): State<AppState>,
     Path(agent_id): Path<i64>,
 ) -> Result<(), AppError> {
-    let agent = agent_repository::get_agent(&state.db, agent_id).await?;
-    if agent.is_none() {
-        return Err(AppError::NotFound("Agent not found".to_string()));
-    }
-    let deleted = agent_repository::delete_agent(&state.db, agent_id).await?;
-    if !deleted {
-        return Err(AppError::Conflict(
+    match agent_repository::delete_agent(&state.db, agent_id).await? {
+        DeleteResult::Deleted => Ok(()),
+        DeleteResult::NotFound => Err(AppError::NotFound("Agent not found".to_string())),
+        DeleteResult::Referenced => Err(AppError::Conflict(
             "Agent is referenced by conversations or schedules".to_string(),
-        ));
+        )),
     }
-    Ok(())
 }

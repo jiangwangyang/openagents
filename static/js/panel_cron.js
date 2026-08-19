@@ -2,11 +2,9 @@
 // CRON 定时任务面板
 // ==========================================
 
-// ===== 1. DOM 节点缓存与状态 =====
+// ===== 1. DOM 节点缓存 =====
 const cronListContainer = document.getElementById('cronListContainer');
 const addCronPanel = document.getElementById('addCronPanel');
-// 最近一次拉取的定时任务列表缓存，供保存时按 id 读取 enabled 等未编辑字段
-let cronTasksCache = [];
 
 // ===== 2. 新增面板与表单辅助 =====
 async function toggleAddCronPanel() {
@@ -91,7 +89,6 @@ async function fetchCronTasks() {
         const [taskResponse, agentResponse] = await Promise.all([fetch('/schedule/list'), fetch('/agent/list')]);
         const tasks = await taskResponse.json();
         const agents = await agentResponse.json();
-        cronTasksCache = tasks;
         cronListContainer.innerHTML = '';
 
         if (tasks.length === 0) {
@@ -101,6 +98,9 @@ async function fetchCronTasks() {
 
         tasks.forEach(task => {
             const cron = parseCronExpr(task.trigger);
+            // 解析 Agent 名称用于只读展示，花名册中缺失时回退为 common.none
+            const boundAgent = agents.find(agent => agent.id === task.agent_id);
+            const agentName = boundAgent ? boundAgent.name : '';
             const enabledText = task.enabled ? t('cron.enabled') : t('cron.disabled');
             const enabledColor = task.enabled ? 'var(--success-color)' : 'var(--slate-400)';
             const card = document.createElement('div');
@@ -117,63 +117,23 @@ async function fetchCronTasks() {
                     </div>
                     <div class="card-actions" onclick="event.stopPropagation();">
                         <button class="btn btn-sm btn-secondary cron-toggle-btn btn-card-sm">${task.enabled ? t('cron.disable') : t('cron.enable')}</button>
-                        <button class="btn btn-sm send-button cron-save-btn btn-card-sm">${t('common.save')}</button>
                         <button class="delete-btn always-visible">${DELETE_SVG}</button>
                     </div>
                 </div>
                 <div class="info-card-details" style="display: none;">
-                    <div class="form-row">
-                        <div class="form-group">
-                            <label>${t('cron.name')}</label>
-                            <input type="text" id="cron-name-${task.id}" class="form-control" value="${escapeHtml(task.name || '')}">
-                        </div>
-                        <div class="form-group">
-                            <label>${t('cron.workingDir')}</label>
-                            <button class="workspace-btn flush" title="Set Directory Context" onclick="selectPanelWorkspace('cron-workdir-display-${task.id}')">
-                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                    <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path>
-                                </svg>
-                                <span>${t('input.cwdLabel')}</span>
-                                <span class="workspace-path" id="cron-workdir-display-${task.id}" title="${escapeHtml(task.work_dir || '')}">${escapeHtml(task.work_dir || t('input.unset'))}</span>
-                            </button>
-                        </div>
-                    </div>
-                    <div class="form-row">
-                        <div class="form-group">
-                            <label>${t('cron.agent')}</label>
-                            <select id="cron-agent-${task.id}" class="form-control"></select>
-                        </div>
-                        <div class="form-group">
-                            <label>${t('cron.minute')}</label>
-                            <input type="text" id="cron-min-${task.id}" class="form-control mono" value="${escapeHtml(cron.minute)}">
-                        </div>
-                        <div class="form-group">
-                            <label>${t('cron.hour')}</label>
-                            <input type="text" id="cron-hour-${task.id}" class="form-control mono" value="${escapeHtml(cron.hour)}">
-                        </div>
-                        <div class="form-group">
-                            <label>${t('cron.day')}</label>
-                            <input type="text" id="cron-day-${task.id}" class="form-control mono" value="${escapeHtml(cron.day)}">
-                        </div>
-                        <div class="form-group">
-                            <label>${t('cron.month')}</label>
-                            <input type="text" id="cron-month-${task.id}" class="form-control mono" value="${escapeHtml(cron.month)}">
-                        </div>
-                        <div class="form-group">
-                            <label>${t('cron.week')}</label>
-                            <input type="text" id="cron-week-${task.id}" class="form-control mono" value="${escapeHtml(cron.day_of_week)}">
-                        </div>
-                    </div>
-                    <div class="form-hint">${t('cron.formatHint')}</div>
-                    <div class="form-row">
-                        <div class="form-group">
-                            <label>${t('cron.execContent')}</label>
-                            <textarea id="cron-content-${task.id}" class="form-control mono textarea-sm" rows="5">${escapeHtml(task.content || '')}</textarea>
-                        </div>
-                    </div>
-                    <div class="form-row align-center">
-                        <label class="nextfire-label">${t('cron.nextFire')}</label>
-                        <div class="nextfire-value">${escapeHtml(task.next_fire_time || t('cron.suspended'))}</div>
+                    <div class="details-grid">
+                        <div class="details-label">${t('cron.name')}</div>
+                        <div class="details-value">${escapeHtml(task.name || t('cron.unnamed'))}</div>
+                        <div class="details-label">${t('cron.workingDir')}</div>
+                        <div class="details-value">${escapeHtml(task.work_dir || t('common.inheritedEnv'))}</div>
+                        <div class="details-label">${t('cron.agent')}</div>
+                        <div class="details-value">${escapeHtml(agentName) || t('common.none')}</div>
+                        <div class="details-label">${t('cron.triggerSpec')}</div>
+                        <div class="details-value">${escapeHtml(`${cron.minute} ${cron.hour} ${cron.day} ${cron.month} ${cron.day_of_week}`)}</div>
+                        <div class="details-label">${t('cron.nextFire')}</div>
+                        <div class="details-value">${escapeHtml(task.next_fire_time || t('cron.suspended'))}</div>
+                        <div class="details-label">${t('cron.execContent')}</div>
+                        <div class="details-value" style="white-space: pre-wrap;">${escapeHtml(task.content || '')}</div>
                     </div>
                     <div class="details-block-container" style="margin-top: 12px;">
                         <div class="details-block-header">
@@ -183,8 +143,6 @@ async function fetchCronTasks() {
                     </div>
                 </div>
             `;
-            // 保存按钮
-            card.querySelector('.cron-save-btn').onclick = () => updateSingleCron(task.id);
             // 执行记录标题栏追加排序按钮（升/降序切换并持久化记忆）
             card.querySelector('.details-block-header').appendChild(createStageSortButton());
             card.querySelector('.details-block-header').appendChild(createStageExpandButton());
@@ -198,8 +156,6 @@ async function fetchCronTasks() {
                 removeCronTask(task.id, task.name);
             };
             cronListContainer.appendChild(card);
-            // 填充 agent 下拉并选中当前值
-            fillSelectOptions(document.getElementById(`cron-agent-${task.id}`), agents, task.agent_id);
         });
     } catch (e) {
         cronListContainer.innerHTML = errorListHtml('common.fetchFailed');
@@ -274,43 +230,7 @@ async function submitCronTask() {
     }
 }
 
-// ===== 6. 编辑任务 =====
-// 保存单个定时任务的编辑
-async function updateSingleCron(taskId) {
-    const name = document.getElementById(`cron-name-${taskId}`).value.trim();
-    const content = document.getElementById(`cron-content-${taskId}`).value.trim();
-    const workDir = document.getElementById(`cron-workdir-display-${taskId}`).title || '';
-    const agentIdVal = document.getElementById(`cron-agent-${taskId}`).value;
-    const cronFieldValues = [
-        document.getElementById(`cron-min-${taskId}`).value,
-        document.getElementById(`cron-hour-${taskId}`).value,
-        document.getElementById(`cron-day-${taskId}`).value,
-        document.getElementById(`cron-month-${taskId}`).value,
-        document.getElementById(`cron-week-${taskId}`).value
-    ];
-    // 从缓存列表中获取 enabled 状态与秒字段（均不在编辑表单内），避免保存时被重置
-    const existing = cronTasksCache.find(taskItem => taskItem.id === taskId);
-    const enabled = existing ? existing.enabled : true;
-    const second = existing ? parseCronExpr(existing.trigger).second : '0';
-    const payload = buildCronPayload(name, content, workDir, agentIdVal, cronFieldValues, second, enabled);
-    if (!payload) {
-        return;
-    }
-    try {
-        const response = await fetch(`/schedule/${taskId}`, {
-            method: 'PUT',
-            headers: {'Content-Type': 'application/json'},
-            body: JSON.stringify(payload)
-        });
-        if (response.ok) {
-            showToast(t('cron.synced', {name: name}));
-            await fetchCronTasks();
-        }
-    } catch (e) {
-        showToast(t('common.syncCrashed'), 'error');
-    }
-}
-
+// ===== 6. 启用/禁用切换 =====
 // 切换定时任务启用/禁用状态
 async function toggleCronEnabled(task) {
     const cron = parseCronExpr(task.trigger);

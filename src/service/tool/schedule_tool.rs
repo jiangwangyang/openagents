@@ -43,6 +43,8 @@ pub async fn execute(cmd_and_args: &[String], state: &AppState) -> ToolResult {
             };
             match schedule_repository::get_schedule(&state.db, schedule_id).await {
                 Ok(Some(s)) => {
+                    // 工具输出保持定时任务基本字段, 不含关联的 Agent 实体
+                    let s = s.schedule;
                     let result = serde_json::json!({
                         "id": s.id,
                         "name": s.name,

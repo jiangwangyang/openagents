@@ -9,7 +9,7 @@ use crate::repository::entity::{
     MessageEntity, NewMessageEntity, TaskEntity, TASK_STATUS_DONE, TASK_STATUS_RUNNING,
 };
 use crate::repository::{agent_repository, conversation_repository, task_repository};
-use crate::service::task_service;
+use crate::service::{conversation_service, task_service};
 use crate::state::AppState;
 
 // 任务列表接口, 按 id 升序返回全部任务(仅基本字段, 不含阶段对话)
@@ -42,7 +42,7 @@ pub async fn get_task(
             &state.db,
             &conversation_ids,
         )
-            .await?;
+        .await?;
         for message in messages {
             message_map
                 .entry(message.conversation_id)
@@ -65,6 +65,8 @@ pub async fn get_task(
                 "create_time": c.create_time,
                 "update_time": c.update_time,
                 "messages": messages,
+                // 对话是否正在执行: 前端据此标记执行中的阶段记录, 不再按数据形状猜测
+                "running": conversation_service::is_conversation_running(&state, c.id),
             })
         })
         .collect();
@@ -85,9 +87,9 @@ pub async fn get_task(
     })))
 }
 
-// 新增任务请求体
+// 任务新增/更新请求体
 #[derive(Debug, Deserialize)]
-pub struct AddTaskRequest {
+pub struct TaskRequest {
     pub title: String,
     pub content: String,
     pub agent_ids: Vec<i64>,
@@ -97,7 +99,7 @@ pub struct AddTaskRequest {
 // 新增任务接口, agent_ids 为可供 Agent 选择下一个执行者的候选池, work_dir 为任务阶段对话的工作目录, 返回自增 id
 pub async fn add_task(
     State(state): State<AppState>,
-    Json(req): Json<AddTaskRequest>,
+    Json(req): Json<TaskRequest>,
 ) -> Result<Json<i64>, AppError> {
     let id = task_repository::add_task(
         &state.db,
@@ -106,8 +108,33 @@ pub async fn add_task(
         &req.agent_ids,
         &req.work_dir,
     )
-        .await?;
+    .await?;
     Ok(Json(id))
+}
+
+// 按 id 更新任务接口(状态字段由执行流转维护, 不在编辑范围), 任务不存在返回 404, 正在运行返回 409
+pub async fn update_task(
+    State(state): State<AppState>,
+    Path(task_id): Path<i64>,
+    Json(req): Json<TaskRequest>,
+) -> Result<(), AppError> {
+    // 运行中的任务不允许编辑, 避免与执行循环读取的字段产生竞争
+    if task_service::is_task_running(&state, task_id) {
+        return Err(AppError::Conflict("Task is running".to_string()));
+    }
+    let updated = task_repository::update_task(
+        &state.db,
+        task_id,
+        &req.title,
+        &req.content,
+        &req.agent_ids,
+        &req.work_dir,
+    )
+    .await?;
+    if !updated {
+        return Err(AppError::NotFound("Task not found".to_string()));
+    }
+    Ok(())
 }
 
 // 删除任务接口, 关联对话由数据库外键 ON DELETE CASCADE 级联删除, 任务不存在返回 404, 正在运行返回 409
@@ -159,7 +186,8 @@ pub async fn start_task(
         return Err(AppError::Conflict("Task already running".to_string()));
     }
     // 先落一条用户消息, 再执行后续启动流程
-    let latest = conversation_repository::get_latest_task_conversation_state(&state.db, task_id).await?;
+    let latest =
+        conversation_repository::get_latest_task_conversation_state(&state.db, task_id).await?;
     let conversation_id = match latest {
         Some(l) if l.agent_id.is_none() => l.id,
         _ => {
@@ -172,7 +200,7 @@ pub async fn start_task(
                 None,
                 None,
             )
-                .await?
+            .await?
         }
     };
     // content 列存整条 pi 消息 JSON

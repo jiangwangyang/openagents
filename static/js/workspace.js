@@ -121,11 +121,8 @@ function createDirItem(name, path) {
     return div;
 }
 
-// 获取默认工作目录：优先对话页当前目录，未设置时从后端拉取 home 目录（任务/定时添加面板的初值来源）
-async function resolveDefaultWorkdir() {
-    if (currentWorkdir) {
-        return currentWorkdir;
-    }
+// 从后端拉取默认工作目录（home 目录），失败返回空串
+async function fetchDefaultWorkdir() {
     try {
         const response = await fetch('/dir/list?path=');
         const data = await response.json();
@@ -135,15 +132,16 @@ async function resolveDefaultWorkdir() {
     }
 }
 
+// 获取默认工作目录：优先对话页当前目录，未设置时从后端拉取 home 目录（任务/定时添加面板的初值来源）
+async function resolveDefaultWorkdir() {
+    return currentWorkdir || await fetchDefaultWorkdir();
+}
+
+// 初始化对话页工作目录：新会话时重置为后端默认目录
 async function initDefaultWorkspace() {
-    try {
-        const response = await fetch(`/dir/list?path=`);
-        const data = await response.json();
-        if (data.current_path) {
-            updateWorkspaceUI(data.current_path);
-        }
-    } catch (e) {
-        // 静默处理错误
+    const workdir = await fetchDefaultWorkdir();
+    if (workdir) {
+        updateWorkspaceUI(workdir);
     }
 }
 

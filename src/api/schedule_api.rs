@@ -9,7 +9,7 @@ use serde_json::json;
 use crate::error::AppError;
 use crate::repository::entity::MessageEntity;
 use crate::repository::{conversation_repository, schedule_repository};
-use crate::service::schedule_service;
+use crate::service::{conversation_service, schedule_service};
 use crate::state::AppState;
 
 // 定时任务响应体(trigger 即 cron 表达式, 含下次触发时间)
@@ -50,7 +50,7 @@ pub async fn list_schedules(
     Ok(Json(result))
 }
 
-// 定时任务详情接口, 包含全部执行对话(对话按 id 升序, 每条对话含全部按 id 升序的消息), 不存在返回 404
+// 定时任务详情接口, 包含外键关联的执行 Agent 与全部执行对话(对话按 id 升序, 每条对话含全部按 id 升序的消息), 不存在返回 404
 pub async fn get_schedule(
     State(state): State<AppState>,
     Path(schedule_id): Path<i64>,
@@ -97,21 +97,25 @@ pub async fn get_schedule(
                 "create_time": c.create_time,
                 "update_time": c.update_time,
                 "messages": messages,
+                // 对话是否正在执行: 前端据此标记执行中的执行记录, 不再按数据形状猜测
+                "running": conversation_service::is_conversation_running(&state, c.id),
             })
         })
         .collect();
 
     Ok(Json(json!({
-        "id": s.id,
-        "name": s.name,
-        "content": s.content,
-        "work_dir": s.work_dir,
-        "trigger": s.cron_expr.clone(),
-        "agent_id": s.agent_id,
-        "enabled": s.enabled,
-        "next_fire_time": schedule_service::next_fire_time(&s.cron_expr),
-        "create_time": s.create_time,
-        "update_time": s.update_time,
+        "id": s.schedule.id,
+        "name": s.schedule.name,
+        "content": s.schedule.content,
+        "work_dir": s.schedule.work_dir,
+        "trigger": s.schedule.cron_expr.clone(),
+        "agent_id": s.schedule.agent_id,
+        "enabled": s.schedule.enabled,
+        "next_fire_time": schedule_service::next_fire_time(&s.schedule.cron_expr),
+        "create_time": s.schedule.create_time,
+        "update_time": s.schedule.update_time,
+        // 外键关联的执行 Agent 完整实体, 未关联为 null
+        "agent": s.agent,
         "conversations": conversations,
     })))
 }

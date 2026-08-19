@@ -2,7 +2,7 @@
 use sqlx::SqlitePool;
 
 use super::ToolResult;
-use crate::repository::agent_repository;
+use crate::repository::{agent_repository, DeleteResult};
 
 // 执行 Agent 管理命令
 pub async fn execute(cmd_and_args: &[String], db: &SqlitePool) -> ToolResult {
@@ -19,7 +19,11 @@ pub async fn execute(cmd_and_args: &[String], db: &SqlitePool) -> ToolResult {
                 Err(_) => return (format!("Invalid agent_id: {}", cmd_and_args[2]), true),
             };
             match agent_repository::get_agent(db, agent_id).await {
-                Ok(Some(agent)) => (serde_json::to_string(&agent).unwrap_or_default(), false),
+                // 工具输出只序列化 Agent 本体, 避免关联的模型提供商 api_key 进入模型上下文
+                Ok(Some(agent)) => (
+                    serde_json::to_string(&agent.agent).unwrap_or_default(),
+                    false,
+                ),
                 Ok(None) => (format!("Agent not found: {}", agent_id), true),
                 Err(e) => (format!("Database error: {}", e), true),
             }
@@ -97,10 +101,11 @@ pub async fn execute(cmd_and_args: &[String], db: &SqlitePool) -> ToolResult {
                 Err(_) => return (format!("Invalid agent_id: {}", cmd_and_args[2]), true),
             };
             match agent_repository::delete_agent(db, agent_id).await {
-                Ok(true) => (format!("Agent {} deleted", agent_id), false),
-                Ok(false) => (
+                Ok(DeleteResult::Deleted) => (format!("Agent {} deleted", agent_id), false),
+                Ok(DeleteResult::NotFound) => (format!("Agent not found: {}", agent_id), true),
+                Ok(DeleteResult::Referenced) => (
                     format!(
-                        "Agent {} not found or referenced by conversations/schedules",
+                        "Agent {} is referenced by conversations/schedules",
                         agent_id
                     ),
                     true,

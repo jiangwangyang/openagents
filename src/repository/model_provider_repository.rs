@@ -2,6 +2,7 @@
 use sqlx::SqlitePool;
 
 use super::entity::ModelProviderEntity;
+use super::DeleteResult;
 
 // 查询全部模型提供商, 按 id 升序
 pub async fn list_model_providers(
@@ -70,22 +71,27 @@ pub async fn update_model_provider(
     Ok(result.rows_affected() > 0)
 }
 
-// 按 id 删除模型提供商, 不存在或被 Agent 引用返回 false
+// 按 id 删除模型提供商, 不存在返回 NotFound, 被 Agent 引用返回 Referenced
 pub async fn delete_model_provider(
     pool: &SqlitePool,
     provider_id: i64,
-) -> Result<bool, sqlx::Error> {
+) -> Result<DeleteResult, sqlx::Error> {
+    // 引用检查先于删除: t_agent 的 model_provider_id 为 ON DELETE RESTRICT, 直接删被引用行会触发外键错误
     let referenced: Option<(i64,)> =
         sqlx::query_as("SELECT id FROM t_agent WHERE model_provider_id = ? LIMIT 1")
             .bind(provider_id)
             .fetch_optional(pool)
             .await?;
     if referenced.is_some() {
-        return Ok(false);
+        return Ok(DeleteResult::Referenced);
     }
     let result = sqlx::query("DELETE FROM t_model_provider WHERE id = ?")
         .bind(provider_id)
         .execute(pool)
         .await?;
-    Ok(result.rows_affected() > 0)
+    Ok(if result.rows_affected() > 0 {
+        DeleteResult::Deleted
+    } else {
+        DeleteResult::NotFound
+    })
 }

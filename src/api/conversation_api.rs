@@ -23,7 +23,7 @@ pub async fn list_conversations(
     Ok(Json(conversations))
 }
 
-// 查询对话详情接口: 返回对话基本字段、消息列表及执行 Agent 配置(含模型提供方), 对话不存在返回 404
+// 查询对话详情接口: 返回对话基本字段、消息列表、外键关联的执行 Agent 及运行状态, 对话不存在返回 404
 pub async fn get_conversation(
     State(state): State<AppState>,
     Path(conversation_id): Path<i64>,
@@ -34,25 +34,13 @@ pub async fn get_conversation(
         Some(c) => c,
         None => return Err(AppError::NotFound("Conversation not found".to_string())),
     };
-    // 关联 Agent: 用于对话页同步工作目录/智能体/模型提供方/模型/是否思考配置
-    let agent = match conversation.conversation.agent_id {
-        Some(agent_id) => agent_repository::get_agent(&state.db, agent_id).await?,
-        None => None,
-    };
-    let agent_json = agent.as_ref().map(|a| {
-        json!({
-            "id": a.id,
-            "name": a.name,
-            "model_provider_id": a.model_provider_id,
-            "model": a.model,
-            "thinking": a.thinking,
-        })
-    });
-    // 对话基本字段由实体序列化展开, messages 直接返回数据库字段(id/conversation_id/content), 追加 agent 字段
-    let mut result = serde_json::to_value(&conversation.conversation)
-        .map_err(|e| AppError::Internal(e.into()))?;
-    result["messages"] = json!(conversation.messages);
-    result["agent"] = agent_json.unwrap_or(serde_json::Value::Null);
+    // 对话基本字段由实体序列化展开, messages 直接返回数据库字段(id/conversation_id/content), agent 为外键关联的执行 Agent, 追加 running 字段
+    let mut result =
+        serde_json::to_value(&conversation).map_err(|e| AppError::Internal(e.into()))?;
+    result["running"] = json!(conversation_service::is_conversation_running(
+        &state,
+        conversation_id
+    ));
     Ok(Json(result))
 }
 
@@ -100,7 +88,7 @@ pub async fn create_conversation_work(
         // 指定 agent 时使用其 prompt 作为 system_prompt, 模型配置直接使用 agent 的配置, 忽略用户传入的参数
         let agent = agent_repository::get_agent(&state.db, agent_id).await?;
         let agent = match agent {
-            Some(a) => a,
+            Some(a) => a.agent,
             None => return Err(AppError::NotFound("Agent not found".to_string())),
         };
         system_prompt = agent.prompt.clone();

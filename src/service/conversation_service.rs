@@ -34,6 +34,7 @@ pub async fn start_conversation(
         done: false,
         notify: tx,
         stop: stop_tx,
+        query: false,
     }));
     // 防重入: entry 原子检查并替换, 持锁期间不 await, 状态锁被占用视为运行中
     match state.conversation_states.entry(conversation_id) {
@@ -81,6 +82,7 @@ pub async fn start_conversation_query(state: &AppState, conversation_id: i64) ->
         done: false,
         notify: tx,
         stop: stop_tx,
+        query: true,
     }));
     // 防重入: entry 原子检查并替换, 持锁期间不 await, 状态锁被占用视为运行中
     match state.conversation_states.entry(conversation_id) {
@@ -126,6 +128,18 @@ pub fn get_conversation_state(
         .conversation_states
         .get(&conversation_id)
         .map(|r| r.clone())
+}
+
+// 查询对话是否正在执行: 存在内存状态且未结束且非回放查询会话视为运行中
+pub fn is_conversation_running(state: &AppState, conversation_id: i64) -> bool {
+    match state.conversation_states.get(&conversation_id) {
+        Some(conv_state) => match conv_state.try_read() {
+            Ok(s) => !s.done && !s.query,
+            // 状态锁被占用(正在写入)视为运行中, 与 start_conversation 的占用判定一致
+            Err(_) => true,
+        },
+        None => false,
+    }
 }
 
 // 停止对话: 发送停止信号, 对话未在运行(无内存状态或已结束)返回 false, 幂等无副作用

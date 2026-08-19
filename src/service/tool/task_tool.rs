@@ -53,7 +53,7 @@ pub async fn execute(cmd_and_args: &[String], ctx: &ToolContext) -> ToolResult {
                 };
 
                 let agent = match agent_repository::get_agent(&ctx.state.db, agent_id).await {
-                    Ok(Some(a)) => a,
+                    Ok(Some(a)) => a.agent,
                     Ok(None) => {
                         return (format!("Agent not found in task team: {}", agent_id), true)
                     }

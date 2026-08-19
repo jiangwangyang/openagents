@@ -23,9 +23,6 @@ let currentEventSource = null;
 let currentWorkdir = '';
 
 // 流式渲染状态
-let streamWrapper = null;
-let streamContentNode = null;
-let streamRawText = '';
 let streamChunkCount = 0;
 // token 用量累计（每次 connectStream 时重置）
 let usageInputTokens = 0;
@@ -187,10 +184,10 @@ function getLastMessageText(messages) {
     return '';
 }
 
-// 渲染执行记录项（任务阶段/定时执行记录通用）：执行中的 agent 对话高亮提示，点击打开覆盖式弹窗查看对话内容
+// 渲染执行记录项（任务阶段/定时执行记录通用）：执行中的对话高亮提示，点击打开覆盖式弹窗查看对话内容
 function createStageRecordItem(conversation) {
-    // agent 对话且无消息说明正在执行中，提示点击查看实时流式内容；用户对话由用户自己处理，不在执行
-    const isRunning = conversation.agent_id != null && (!conversation.messages || conversation.messages.length === 0);
+    // 运行状态由后端查询接口按对话返回（running 字段），不再按数据形状猜测
+    const isRunning = conversation.running === true;
     const snippet = isRunning ? t('task.generating') : getLastMessageText(conversation.messages);
     const item = document.createElement('div');
     item.className = 'task-stage-item';
@@ -391,7 +388,7 @@ function switchView(viewName) {
 // 当前打开的阶段弹窗状态：持有弹窗独立的 SSE 连接与流式渲染器
 let stageDialogState = null;
 
-// 流式渲染器工厂：handleChunk 处理 SSE chunk 并往容器追加块，delta 合并入当前块；渲染规则与对话页一致
+// 流式渲染器工厂：对话页与阶段弹窗共用，handleChunk 处理 SSE chunk 并往容器追加块，delta 合并入当前块；滚动由调用方负责
 function createStreamRenderer(container) {
     let wrapper = null;
     let contentNode = null;
@@ -481,7 +478,6 @@ function createStreamRenderer(container) {
             if (rawText && contentNode) {
                 contentNode.innerHTML = formatMarkdown(rawText);
             }
-            container.scrollTop = container.scrollHeight;
             return;
         }
         // 追加消息文本
@@ -490,7 +486,6 @@ function createStreamRenderer(container) {
             if (contentNode) {
                 contentNode.innerHTML = formatMarkdown(rawText);
             }
-            container.scrollTop = container.scrollHeight;
         }
     };
     return {handleChunk, finalize};
@@ -522,6 +517,7 @@ function showStageDialog(conversation) {
     stageDialogState = {conversationId: conversation.id, renderer: renderer, eventSource: source};
     source.onmessage = (event) => {
         renderer.handleChunk(JSON.parse(event.data));
+        body.scrollTop = body.scrollHeight;
     };
     source.onerror = () => {
         // 流结束（回放完毕或对话完成）：关闭连接阻止浏览器自动重连，并收尾当前流式块

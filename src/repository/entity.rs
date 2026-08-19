@@ -27,6 +27,63 @@ pub struct AgentEntity {
     pub update_time: String,
 }
 
+// Agent 详情查询结果(含外键关联的模型提供商)
+#[derive(Debug, Clone, serde::Serialize)]
+pub struct AgentWithProvider {
+    #[serde(flatten)]
+    pub agent: AgentEntity,
+    pub model_provider: Option<ModelProviderEntity>,
+}
+
+// get_agent JOIN 查询中间行(provider_ 前缀字段为模型提供商列, LEFT JOIN 未命中时为 NULL)
+#[derive(Debug, Clone, FromRow)]
+pub struct AgentProviderRow {
+    pub id: i64,
+    pub name: String,
+    pub description: String,
+    pub prompt: String,
+    pub model_provider_id: i64,
+    pub model: String,
+    pub thinking: bool,
+    pub create_time: String,
+    pub update_time: String,
+    pub provider_id: Option<i64>,
+    pub provider_name: Option<String>,
+    pub provider_protocol_type: Option<String>,
+    pub provider_base_url: Option<String>,
+    pub provider_api_key: Option<String>,
+    pub provider_create_time: Option<String>,
+    pub provider_update_time: Option<String>,
+}
+
+// AgentProviderRow -> AgentWithProvider: provider_id 为 None 说明 LEFT JOIN 未命中
+impl From<AgentProviderRow> for AgentWithProvider {
+    fn from(r: AgentProviderRow) -> Self {
+        AgentWithProvider {
+            agent: AgentEntity {
+                id: r.id,
+                name: r.name,
+                description: r.description,
+                prompt: r.prompt,
+                model_provider_id: r.model_provider_id,
+                model: r.model,
+                thinking: r.thinking,
+                create_time: r.create_time,
+                update_time: r.update_time,
+            },
+            model_provider: r.provider_id.map(|provider_id| ModelProviderEntity {
+                id: provider_id,
+                name: r.provider_name.unwrap_or_default(),
+                protocol_type: r.provider_protocol_type.unwrap_or_default(),
+                base_url: r.provider_base_url.unwrap_or_default(),
+                api_key: r.provider_api_key.unwrap_or_default(),
+                create_time: r.provider_create_time.unwrap_or_default(),
+                update_time: r.provider_update_time.unwrap_or_default(),
+            }),
+        }
+    }
+}
+
 // 任务状态: 待启动/运行中/待审核/已完成/运行失败, 与前端 TASK_STATUS 常量对齐
 pub const TASK_STATUS_IDLE: &str = "idle";
 pub const TASK_STATUS_RUNNING: &str = "running";
@@ -59,6 +116,67 @@ pub struct ScheduleEntity {
     pub enabled: bool,
     pub create_time: String,
     pub update_time: String,
+}
+
+// 定时任务详情查询结果(含外键关联的执行 Agent)
+#[derive(Debug, Clone, serde::Serialize)]
+pub struct ScheduleWithAgent {
+    #[serde(flatten)]
+    pub schedule: ScheduleEntity,
+    pub agent: Option<AgentEntity>,
+}
+
+// get_schedule JOIN 查询中间行(agent_ 前缀字段为 Agent 列, agent_ref_id 为 Agent id, LEFT JOIN 未命中时为 NULL)
+#[derive(Debug, Clone, FromRow)]
+pub struct ScheduleAgentRow {
+    pub id: i64,
+    pub name: String,
+    pub content: String,
+    pub work_dir: String,
+    pub cron_expr: String,
+    pub agent_id: i64,
+    pub enabled: bool,
+    pub create_time: String,
+    pub update_time: String,
+    pub agent_ref_id: Option<i64>,
+    pub agent_name: Option<String>,
+    pub agent_description: Option<String>,
+    pub agent_prompt: Option<String>,
+    pub agent_model_provider_id: Option<i64>,
+    pub agent_model: Option<String>,
+    pub agent_thinking: Option<bool>,
+    pub agent_create_time: Option<String>,
+    pub agent_update_time: Option<String>,
+}
+
+// ScheduleAgentRow -> ScheduleWithAgent: agent_ref_id 为 None 说明 LEFT JOIN 未命中
+impl From<ScheduleAgentRow> for ScheduleWithAgent {
+    fn from(r: ScheduleAgentRow) -> Self {
+        ScheduleWithAgent {
+            schedule: ScheduleEntity {
+                id: r.id,
+                name: r.name,
+                content: r.content,
+                work_dir: r.work_dir,
+                cron_expr: r.cron_expr,
+                agent_id: r.agent_id,
+                enabled: r.enabled,
+                create_time: r.create_time,
+                update_time: r.update_time,
+            },
+            agent: r.agent_ref_id.map(|agent_id| AgentEntity {
+                id: agent_id,
+                name: r.agent_name.unwrap_or_default(),
+                description: r.agent_description.unwrap_or_default(),
+                prompt: r.agent_prompt.unwrap_or_default(),
+                model_provider_id: r.agent_model_provider_id.unwrap_or_default(),
+                model: r.agent_model.unwrap_or_default(),
+                thinking: r.agent_thinking.unwrap_or_default(),
+                create_time: r.agent_create_time.unwrap_or_default(),
+                update_time: r.agent_update_time.unwrap_or_default(),
+            }),
+        }
+    }
 }
 
 // 对话
@@ -113,12 +231,67 @@ pub struct NewMessageEntity {
     pub content: serde_json::Value,
 }
 
-// 对话查询结果(含消息列表)
+// 对话详情查询结果(含外键关联的执行 Agent 与消息列表)
 #[derive(Debug, Clone, serde::Serialize)]
 pub struct ConversationWithMessages {
     #[serde(flatten)]
     pub conversation: ConversationEntity,
+    pub agent: Option<AgentEntity>,
     pub messages: Vec<MessageEntity>,
+}
+
+// get_conversation JOIN 查询中间行(agent_ 前缀字段为 Agent 列, agent_ref_id 为 Agent id, LEFT JOIN 未命中时为 NULL)
+#[derive(Debug, Clone, FromRow)]
+pub struct ConversationAgentRow {
+    pub id: i64,
+    pub task_id: Option<i64>,
+    pub schedule_id: Option<i64>,
+    pub agent_id: Option<i64>,
+    pub title: String,
+    pub work_dir: String,
+    pub system_prompt: String,
+    pub create_time: String,
+    pub update_time: String,
+    pub agent_ref_id: Option<i64>,
+    pub agent_name: Option<String>,
+    pub agent_description: Option<String>,
+    pub agent_prompt: Option<String>,
+    pub agent_model_provider_id: Option<i64>,
+    pub agent_model: Option<String>,
+    pub agent_thinking: Option<bool>,
+    pub agent_create_time: Option<String>,
+    pub agent_update_time: Option<String>,
+}
+
+// ConversationAgentRow -> ConversationWithMessages: agent_ref_id 为 None 说明未关联 Agent, messages 由调用方另行查询填充
+impl From<ConversationAgentRow> for ConversationWithMessages {
+    fn from(r: ConversationAgentRow) -> Self {
+        ConversationWithMessages {
+            conversation: ConversationEntity {
+                id: r.id,
+                task_id: r.task_id,
+                schedule_id: r.schedule_id,
+                agent_id: r.agent_id,
+                title: r.title,
+                work_dir: r.work_dir,
+                system_prompt: r.system_prompt,
+                create_time: r.create_time,
+                update_time: r.update_time,
+            },
+            agent: r.agent_ref_id.map(|agent_id| AgentEntity {
+                id: agent_id,
+                name: r.agent_name.unwrap_or_default(),
+                description: r.agent_description.unwrap_or_default(),
+                prompt: r.agent_prompt.unwrap_or_default(),
+                model_provider_id: r.agent_model_provider_id.unwrap_or_default(),
+                model: r.agent_model.unwrap_or_default(),
+                thinking: r.agent_thinking.unwrap_or_default(),
+                create_time: r.agent_create_time.unwrap_or_default(),
+                update_time: r.agent_update_time.unwrap_or_default(),
+            }),
+            messages: Vec::new(),
+        }
+    }
 }
 
 // 任务循环查询结果: 最新阶段对话状态

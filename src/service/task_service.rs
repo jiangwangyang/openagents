@@ -91,7 +91,9 @@ async fn do_run_task(
     );
     // 为第一个执行的 agent 创建阶段对话
     let task = task_repository::get_task(&state.db, task_id).await?;
-    let agent = agent_repository::get_agent(&state.db, agent_id).await?;
+    let agent = agent_repository::get_agent(&state.db, agent_id)
+        .await?
+        .map(|d| d.agent);
     let (task, agent) = match (task, agent) {
         (Some(t), Some(a)) => (t, a),
         _ => return Ok(()),
@@ -177,7 +179,8 @@ async fn do_run_task(
         // 模型配置从当前对话的 Agent 读取
         let agent = agent_repository::get_agent(&state.db, latest_agent_id)
             .await?
-            .ok_or_else(|| anyhow::anyhow!("agent not found"))?;
+            .ok_or_else(|| anyhow::anyhow!("agent not found"))?
+            .agent;
         let provider =
             model_provider_repository::get_model_provider(&state.db, agent.model_provider_id)
                 .await?

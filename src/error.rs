@@ -16,6 +16,9 @@ pub enum AppError {
     #[error("数据库错误: {0}")]
     Db(#[from] sqlx::Error),
 
+    #[error("JSON 序列化失败: {0}")]
+    Json(#[from] serde_json::Error),
+
     #[error("内部错误: {0}")]
     Internal(#[from] anyhow::Error),
 }
@@ -27,6 +30,7 @@ impl IntoResponse for AppError {
             AppError::Conflict(msg) => (StatusCode::CONFLICT, msg.clone()),
             AppError::BadRequest(msg) => (StatusCode::BAD_REQUEST, msg.clone()),
             AppError::Db(e) => (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()),
+            AppError::Json(e) => (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()),
             AppError::Internal(e) => (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()),
         };
         // 5xx 为服务端故障记 ERROR, 4xx 为客户端问题记 WARN

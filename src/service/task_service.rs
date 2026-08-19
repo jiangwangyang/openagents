@@ -269,6 +269,7 @@ async fn do_run_task(
             provider.id,
             agent.model.clone(),
             agent.thinking,
+            false,
         )
         .await
         {

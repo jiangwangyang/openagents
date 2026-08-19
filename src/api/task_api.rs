@@ -5,9 +5,7 @@ use serde::Deserialize;
 use serde_json::json;
 
 use crate::error::AppError;
-use crate::repository::entity::{
-    MessageEntity, NewMessageEntity, TaskEntity, TASK_STATUS_DONE, TASK_STATUS_RUNNING,
-};
+use crate::repository::entity::{TaskEntity, TASK_STATUS_DONE, TASK_STATUS_RUNNING};
 use crate::repository::{agent_repository, conversation_repository, task_repository};
 use crate::service::{conversation_service, task_service};
 use crate::state::AppState;
@@ -23,68 +21,21 @@ pub async fn get_task(
     State(state): State<AppState>,
     Path(task_id): Path<i64>,
 ) -> Result<Json<serde_json::Value>, AppError> {
-    let task = task_repository::get_task(&state.db, task_id).await?;
-    let task = match task {
-        Some(t) => t,
-        None => return Err(AppError::NotFound("Task not found".to_string())),
-    };
+    let task = task_repository::get_task(&state.db, task_id)
+        .await?
+        .ok_or_else(|| AppError::NotFound("Task not found".to_string()))?;
 
-    // 查询任务的全部阶段对话, 按 id 升序
+    // 查询任务的全部阶段对话并组装(对话按 id 升序, 每条对话含全部按 id 升序的消息)
     let conversations =
         conversation_repository::list_conversations_by_task_id(&state.db, task_id).await?;
+    let conversations = conversation_service::conversations_to_json(&state, conversations).await?;
 
-    // 批量查询全部阶段对话的消息(一次 IN 查询 + 内存分组, 避免 N+1), 按 id 升序
-    let mut message_map: std::collections::HashMap<i64, Vec<MessageEntity>> =
-        std::collections::HashMap::new();
-    if !conversations.is_empty() {
-        let conversation_ids: Vec<i64> = conversations.iter().map(|c| c.id).collect();
-        let messages = conversation_repository::list_messages_by_conversation_ids(
-            &state.db,
-            &conversation_ids,
-        )
-        .await?;
-        for message in messages {
-            message_map
-                .entry(message.conversation_id)
-                .or_default()
-                .push(message);
-        }
-    }
-
-    let conversations: Vec<serde_json::Value> = conversations
-        .into_iter()
-        .map(|c| {
-            // messages 直接返回数据库字段(id/conversation_id/content)
-            let messages = message_map.remove(&c.id).unwrap_or_default();
-            json!({
-                "id": c.id,
-                "task_id": c.task_id,
-                "agent_id": c.agent_id,
-                "title": c.title,
-                "work_dir": c.work_dir,
-                "create_time": c.create_time,
-                "update_time": c.update_time,
-                "messages": messages,
-                // 对话是否正在执行: 前端据此标记执行中的阶段记录, 不再按数据形状猜测
-                "running": conversation_service::is_conversation_running(&state, c.id),
-            })
-        })
-        .collect();
-
-    Ok(Json(json!({
-        "id": task.id,
-        "title": task.title,
-        "content": task.content,
-        "agent_ids": task.agent_ids,
-        "work_dir": task.work_dir,
-        // 任务状态: 由后端各流转点持久化维护, 前端直接采用
-        "status": task.status,
-        "create_time": task.create_time,
-        "update_time": task.update_time,
-        "conversations": conversations,
-        // 执行循环是否存活: 前端据此区分运行中(含长轮次执行/阶段交接间隙)与运行失败, 替代 SSE 活跃性探针
-        "running": task_service::is_task_running(&state, task_id),
-    })))
+    // 任务基本字段由实体序列化展开(status 由后端各流转点持久化维护, 前端直接采用), 追加阶段对话与运行状态
+    let mut result = serde_json::to_value(&task)?;
+    result["conversations"] = json!(conversations);
+    // 执行循环是否存活: 前端据此区分运行中(含长轮次执行/阶段交接间隙)与运行失败, 替代 SSE 活跃性探针
+    result["running"] = json!(task_service::is_task_running(&state, task_id));
+    Ok(Json(result))
 }
 
 // 任务新增/更新请求体
@@ -168,15 +119,12 @@ pub async fn start_task(
     Path(task_id): Path<i64>,
     Json(req): Json<StartTaskRequest>,
 ) -> Result<(), AppError> {
-    let task = task_repository::get_task(&state.db, task_id).await?;
-    let task = match task {
-        Some(t) => t,
-        None => return Err(AppError::NotFound("Task not found".to_string())),
-    };
-    let agent = agent_repository::get_agent(&state.db, req.agent_id).await?;
-    if agent.is_none() {
-        return Err(AppError::NotFound("Agent not found".to_string()));
-    }
+    let task = task_repository::get_task(&state.db, task_id)
+        .await?
+        .ok_or_else(|| AppError::NotFound("Task not found".to_string()))?;
+    agent_repository::get_agent(&state.db, req.agent_id)
+        .await?
+        .ok_or_else(|| AppError::NotFound("Agent not found".to_string()))?;
     let message = req.message.trim();
     if message.is_empty() {
         return Err(AppError::BadRequest("Message is required".to_string()));
@@ -204,15 +152,13 @@ pub async fn start_task(
         }
     };
     // content 列存整条 pi 消息 JSON
-    let user_message = crate::ai::pi::types::Message::User(crate::ai::pi::types::UserMessage {
-        content: crate::ai::pi::types::UserMessageContent::Text(message.to_string()),
-        timestamp: crate::ai::pi::types::now_timestamp(),
-    });
-    let messages = vec![NewMessageEntity {
-        content: serde_json::to_value(&user_message).map_err(|e| AppError::Internal(e.into()))?,
-    }];
-    conversation_repository::add_conversation_messages(&state.db, conversation_id, &messages)
-        .await?;
+    let user_message = conversation_service::user_text_message(message);
+    conversation_repository::add_conversation_messages(
+        &state.db,
+        conversation_id,
+        &[serde_json::to_value(&user_message)?],
+    )
+    .await?;
     if !task_service::start_task(&state, task_id, req.agent_id) {
         return Err(AppError::Conflict("Task already running".to_string()));
     }
@@ -245,10 +191,9 @@ pub async fn complete_task(
     Path(task_id): Path<i64>,
     Json(req): Json<CompleteTaskRequest>,
 ) -> Result<(), AppError> {
-    let task = task_repository::get_task(&state.db, task_id).await?;
-    if task.is_none() {
-        return Err(AppError::NotFound("Task not found".to_string()));
-    }
+    task_repository::get_task(&state.db, task_id)
+        .await?
+        .ok_or_else(|| AppError::NotFound("Task not found".to_string()))?;
     let message = req.message.trim();
     if message.is_empty() {
         return Err(AppError::BadRequest("Message is required".to_string()));
@@ -265,15 +210,13 @@ pub async fn complete_task(
         _ => return Err(AppError::Conflict("Task is not in review".to_string())),
     };
     // content 列存整条 pi 消息 JSON
-    let user_message = crate::ai::pi::types::Message::User(crate::ai::pi::types::UserMessage {
-        content: crate::ai::pi::types::UserMessageContent::Text(message.to_string()),
-        timestamp: crate::ai::pi::types::now_timestamp(),
-    });
-    let messages = vec![NewMessageEntity {
-        content: serde_json::to_value(&user_message).map_err(|e| AppError::Internal(e.into()))?,
-    }];
-    conversation_repository::add_conversation_messages(&state.db, conversation_id, &messages)
-        .await?;
+    let user_message = conversation_service::user_text_message(message);
+    conversation_repository::add_conversation_messages(
+        &state.db,
+        conversation_id,
+        &[serde_json::to_value(&user_message)?],
+    )
+    .await?;
     // 用户已提交完成意见: 任务状态置为已完成
     task_repository::update_task_status(&state.db, task_id, TASK_STATUS_DONE).await?;
     Ok(())

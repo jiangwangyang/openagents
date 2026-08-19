@@ -22,11 +22,10 @@ pub async fn get_model_provider(
     State(state): State<AppState>,
     Path(provider_id): Path<i64>,
 ) -> Result<Json<ModelProviderEntity>, AppError> {
-    let provider = model_provider_repository::get_model_provider(&state.db, provider_id).await?;
-    match provider {
-        Some(p) => Ok(Json(p)),
-        None => Err(AppError::NotFound("Model provider not found".to_string())),
-    }
+    let provider = model_provider_repository::get_model_provider(&state.db, provider_id)
+        .await?
+        .ok_or_else(|| AppError::NotFound("Model provider not found".to_string()))?;
+    Ok(Json(provider))
 }
 
 // 模型提供商新增/更新请求体
@@ -94,14 +93,11 @@ pub async fn list_provider_models(
     State(state): State<AppState>,
     Path(provider_id): Path<i64>,
 ) -> Result<Json<Vec<String>>, AppError> {
-    let provider = model_provider_repository::get_model_provider(&state.db, provider_id).await?;
-    match provider {
-        Some(p) => {
-            let models = ai::client::list_models(&p)
-                .await
-                .map_err(|e| AppError::Internal(anyhow::anyhow!(e.to_string())))?;
-            Ok(Json(models))
-        }
-        None => Err(AppError::NotFound("Model provider not found".to_string())),
-    }
+    let provider = model_provider_repository::get_model_provider(&state.db, provider_id)
+        .await?
+        .ok_or_else(|| AppError::NotFound("Model provider not found".to_string()))?;
+    let models = ai::client::list_models(&provider)
+        .await
+        .map_err(|e| AppError::Internal(e.into()))?;
+    Ok(Json(models))
 }

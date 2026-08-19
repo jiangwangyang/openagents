@@ -3,7 +3,7 @@ use sqlx::SqlitePool;
 
 use super::entity::{
     ConversationAgentRow, ConversationEntity, ConversationHistorySummary, ConversationWithMessages,
-    LatestConversationState, MessageEntity, NewMessageEntity,
+    LatestConversationState, MessageEntity,
 };
 
 // 查询全部独立对话(不含任务阶段对话与定时任务对话), 按更新时间倒序
@@ -112,17 +112,17 @@ pub async fn add_conversation(
     Ok(result.last_insert_rowid())
 }
 
-// 批量追加对话消息, 并原子刷新对话的更新时间
+// 批量追加对话消息(content 列存整条 pi 消息 JSON), 并原子刷新对话的更新时间
 pub async fn add_conversation_messages(
     pool: &SqlitePool,
     conversation_id: i64,
-    messages: &[NewMessageEntity],
+    messages: &[serde_json::Value],
 ) -> Result<(), sqlx::Error> {
     let mut tx = pool.begin().await?;
-    for msg in messages {
+    for content in messages {
         sqlx::query("INSERT INTO t_message (conversation_id, content) VALUES (?, ?)")
             .bind(conversation_id)
-            .bind(&msg.content)
+            .bind(content)
             .execute(&mut *tx)
             .await?;
     }

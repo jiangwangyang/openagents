@@ -14,24 +14,25 @@ use crate::error::AppError;
 #[folder = "static/"]
 struct StaticAssets;
 
-// GET / 重定向到 static/index.html
+// 应用入口: 重定向到 static/index.html
 pub async fn index() -> impl IntoResponse {
     Redirect::to("/static/index.html")
 }
 
-// GET /static/* 静态资源
+// 静态资源: 从嵌入资源按路径返回内容
 pub async fn static_file(uri: Uri) -> impl IntoResponse {
     let path = uri.path().trim_start_matches("/static/");
-    match <StaticAssets as rust_embed::Embed>::get(path) {
-        Some(content) => {
-            let mime = guess_mime_type(path);
-            ([(header::CONTENT_TYPE, mime)], content.data).into_response()
-        }
+    match StaticAssets::get(path) {
+        Some(content) => (
+            [(header::CONTENT_TYPE, guess_mime_type(path))],
+            content.data,
+        )
+            .into_response(),
         None => (StatusCode::NOT_FOUND, "File not found").into_response(),
     }
 }
 
-// 根据文件扩展名猜测 MIME 类型
+// 根据文件扩展名猜测 MIME 类型(rust-embed 8 不再内置该能力)
 fn guess_mime_type(path: &str) -> &'static str {
     match path.rsplit('.').next() {
         Some("html") => "text/html; charset=utf-8",
@@ -56,7 +57,7 @@ pub struct DirListQuery {
     pub path: String,
 }
 
-// GET /dir/list 列出指定路径下的子目录
+// 目录浏览接口: 列出指定路径下的子目录
 pub async fn list_directory(
     Query(query): Query<DirListQuery>,
 ) -> Result<impl IntoResponse, AppError> {

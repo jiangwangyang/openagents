@@ -10,7 +10,7 @@ use crate::ai::pi::types::{
     now_timestamp, AssistantContent, AssistantMessage, AssistantMessageEvent, Context, Message,
     TextContent, ToolCall, ToolResultMessage, UserContent, UserMessage, UserMessageContent,
 };
-use crate::repository::entity::NewMessageEntity;
+use crate::repository::entity::{ConversationEntity, MessageEntity};
 use crate::repository::{conversation_repository, model_provider_repository};
 use crate::service::tool::{self, ToolContext};
 use crate::state::{AppState, ConversationState};
@@ -18,7 +18,15 @@ use crate::state::{AppState, ConversationState};
 // 查询对话状态在内存中的保留时长(秒)
 const QUERY_STATE_TTL_SECS: u64 = 300;
 
-// 启动对话, 同一 conversation 不允许同时运行多个
+// 构造纯文本用户消息
+pub fn user_text_message(text: &str) -> Message {
+    Message::User(UserMessage {
+        content: UserMessageContent::Text(text.to_string()),
+        timestamp: now_timestamp(),
+    })
+}
+
+// 启动对话, 同一 conversation 不允许同时运行多个; query 为 true 时仅回放历史, 不执行模型调用
 pub async fn start_conversation(
     state: &AppState,
     conversation_id: i64,
@@ -26,6 +34,7 @@ pub async fn start_conversation(
     model_provider_id: i64,
     model: String,
     thinking: bool,
+    query: bool,
 ) -> bool {
     let (tx, _) = tokio::sync::watch::channel(0u64);
     let (stop_tx, _) = tokio::sync::watch::channel(false);
@@ -34,7 +43,7 @@ pub async fn start_conversation(
         done: false,
         notify: tx,
         stop: stop_tx,
-        query: false,
+        query,
     }));
     // 防重入: entry 原子检查并替换, 持锁期间不 await, 状态锁被占用视为运行中
     match state.conversation_states.entry(conversation_id) {
@@ -45,8 +54,9 @@ pub async fn start_conversation(
             };
             if !finished {
                 tracing::warn!(
-                    "Conversation start rejected: conversation_id={} already running",
-                    conversation_id
+                    "Conversation start rejected: conversation_id={} already running query={}",
+                    conversation_id,
+                    query
                 );
                 return false;
             }
@@ -57,10 +67,11 @@ pub async fn start_conversation(
         }
     }
     tracing::info!(
-        "Conversation started: conversation_id={} model={} thinking={}",
+        "Conversation started: conversation_id={} model={} thinking={} query={}",
         conversation_id,
         model,
-        thinking
+        thinking,
+        query
     );
     tokio::spawn(run_conversation(
         state.clone(),
@@ -69,52 +80,7 @@ pub async fn start_conversation(
         model_provider_id,
         model,
         thinking,
-    ));
-    true
-}
-
-// 启动历史回放查询, 不执行模型调用
-pub async fn start_conversation_query(state: &AppState, conversation_id: i64) -> bool {
-    let (tx, _) = tokio::sync::watch::channel(0u64);
-    let (stop_tx, _) = tokio::sync::watch::channel(false);
-    let conv_state = Arc::new(RwLock::new(ConversationState {
-        chunks: Vec::new(),
-        done: false,
-        notify: tx,
-        stop: stop_tx,
-        query: true,
-    }));
-    // 防重入: entry 原子检查并替换, 持锁期间不 await, 状态锁被占用视为运行中
-    match state.conversation_states.entry(conversation_id) {
-        dashmap::mapref::entry::Entry::Occupied(mut entry) => {
-            let finished = match entry.get().try_read() {
-                Ok(s) => s.done,
-                Err(_) => false,
-            };
-            if !finished {
-                tracing::warn!(
-                    "Conversation query rejected: conversation_id={} already running",
-                    conversation_id
-                );
-                return false;
-            }
-            entry.insert(conv_state);
-        }
-        dashmap::mapref::entry::Entry::Vacant(entry) => {
-            entry.insert(conv_state);
-        }
-    }
-    tracing::info!(
-        "Conversation query started: conversation_id={}",
-        conversation_id
-    );
-    tokio::spawn(run_conversation(
-        state.clone(),
-        conversation_id,
-        String::new(),
-        0,
-        String::new(),
-        false,
+        query,
     ));
     true
 }
@@ -140,6 +106,50 @@ pub fn is_conversation_running(state: &AppState, conversation_id: i64) -> bool {
         },
         None => false,
     }
+}
+
+// 组装对话列表 JSON(任务/定时任务详情接口共用): 批量查询消息并按对话分组, 每条对话附 running 标记
+pub async fn conversations_to_json(
+    state: &AppState,
+    conversations: Vec<ConversationEntity>,
+) -> Result<Vec<Value>, sqlx::Error> {
+    // 批量查询全部对话的消息(一次 IN 查询 + 内存分组, 避免 N+1), 按 id 升序
+    let mut message_map: std::collections::HashMap<i64, Vec<MessageEntity>> =
+        std::collections::HashMap::new();
+    if !conversations.is_empty() {
+        let conversation_ids: Vec<i64> = conversations.iter().map(|c| c.id).collect();
+        let messages = conversation_repository::list_messages_by_conversation_ids(
+            &state.db,
+            &conversation_ids,
+        )
+        .await?;
+        for message in messages {
+            message_map
+                .entry(message.conversation_id)
+                .or_default()
+                .push(message);
+        }
+    }
+    // messages 直接返回数据库字段(id/conversation_id/content)
+    Ok(conversations
+        .into_iter()
+        .map(|c| {
+            let messages = message_map.remove(&c.id).unwrap_or_default();
+            json!({
+                "id": c.id,
+                "task_id": c.task_id,
+                "schedule_id": c.schedule_id,
+                "agent_id": c.agent_id,
+                "title": c.title,
+                "work_dir": c.work_dir,
+                "create_time": c.create_time,
+                "update_time": c.update_time,
+                "messages": messages,
+                // 对话是否正在执行: 前端据此标记执行中的对话记录, 不再按数据形状猜测
+                "running": is_conversation_running(state, c.id),
+            })
+        })
+        .collect())
 }
 
 // 停止对话: 发送停止信号, 对话未在运行(无内存状态或已结束)返回 false, 幂等无副作用
@@ -197,6 +207,7 @@ async fn run_conversation(
     model_provider_id: i64,
     model: String,
     thinking: bool,
+    query: bool,
 ) {
     // 捕获 panic 兜底, 保证 finish_conversation 必执行, 避免对话被永久锁死
     let result = std::panic::AssertUnwindSafe(do_run_conversation(
@@ -233,8 +244,8 @@ async fn run_conversation(
         );
     }
     finish_conversation(&state, conversation_id).await;
-    // 执行任务存储的 chunk 太碎立即移除, 查询任务的状态则保留 5 分钟后再移除
-    if task_content.is_empty() {
+    // 执行会话的 chunk 较碎, 结束后立即移除; 回放会话的状态保留 5 分钟供 SSE 重连后再移除
+    if query {
         // 仅当状态未被新启动的对话替换时才移除
         if let Some(conv_state) = state
             .conversation_states
@@ -403,10 +414,7 @@ async fn do_run_conversation(
             },
         )
         .collect();
-    let task_message = Message::User(UserMessage {
-        content: UserMessageContent::Text(task_content.to_string()),
-        timestamp: now_timestamp(),
-    });
+    let task_message = user_text_message(task_content);
     messages.push(task_message.clone());
     // 本轮新增的消息(结束后统一持久化)
     let mut new_messages: Vec<Message> = vec![task_message];
@@ -618,11 +626,9 @@ async fn do_run_conversation(
 
     // 对话结束(正常结束/手动停止/模型报错)统一持久化本轮新增的完整消息(content 列存整条 pi 消息 JSON)
     // 停止或报错时未完成的 partial assistant 消息不入库, 避免半截 tool_call 破坏 pi 消息协议导致续跑上下文损坏
-    let messages_to_save: Vec<NewMessageEntity> = new_messages
+    let messages_to_save: Vec<Value> = new_messages
         .iter()
-        .map(|m| NewMessageEntity {
-            content: serde_json::to_value(m).unwrap_or_default(),
-        })
+        .map(|m| serde_json::to_value(m).unwrap_or_default())
         .collect();
     conversation_repository::add_conversation_messages(
         &state.db,

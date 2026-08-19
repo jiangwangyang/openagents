@@ -11,10 +11,11 @@ use crate::state::AppState;
 pub async fn init_scheduler(state: &AppState) -> anyhow::Result<()> {
     let schedules = schedule_repository::list_schedules(&state.db).await?;
     for schedule in schedules {
-        if schedule.enabled {
-            if let Err(e) = add_job_to_scheduler(state, schedule.id, &schedule.cron_expr).await {
-                tracing::error!("Failed to load schedule {}: {}", schedule.id, e);
-            }
+        if !schedule.enabled {
+            continue;
+        }
+        if let Err(e) = add_job_to_scheduler(state, schedule.id, &schedule.cron_expr).await {
+            tracing::error!("Failed to load schedule {}: {}", schedule.id, e);
         }
     }
     Ok(())
@@ -40,7 +41,7 @@ pub async fn add_schedule(
     Ok(id)
 }
 
-// 更新定时任务并重置调度器
+// 更新定时任务并重置调度器, 不存在返回 false
 pub async fn update_schedule(
     state: &AppState,
     schedule_id: i64,
@@ -51,9 +52,23 @@ pub async fn update_schedule(
     agent_id: i64,
     enabled: bool,
 ) -> anyhow::Result<bool> {
-    // 先取出旧数据, 用于加入调度器失败时还原
+    // 先校验任务存在并取出旧数据, 用于加入调度器失败时恢复旧调度
     let old = schedule_repository::get_schedule(&state.db, schedule_id).await?;
-    let updated = schedule_repository::update_schedule(
+    let old = match old {
+        Some(o) => o,
+        None => return Ok(false),
+    };
+    // 先重置调度再更新数据库: 加入失败时恢复旧调度并报错, 数据库保持原状, 无需回滚
+    remove_job_from_scheduler(state, schedule_id).await;
+    if enabled {
+        if let Err(e) = add_job_to_scheduler(state, schedule_id, cron_expr).await {
+            if old.schedule.enabled {
+                let _ = add_job_to_scheduler(state, schedule_id, &old.schedule.cron_expr).await;
+            }
+            return Err(e.into());
+        }
+    }
+    schedule_repository::update_schedule(
         &state.db,
         schedule_id,
         name,
@@ -64,33 +79,7 @@ pub async fn update_schedule(
         enabled,
     )
     .await?;
-    if updated {
-        remove_job_from_scheduler(state, schedule_id).await;
-        if enabled {
-            // 加入调度器失败时还原旧数据并恢复旧调度, 保持数据库与调度器一致
-            if let Err(e) = add_job_to_scheduler(state, schedule_id, cron_expr).await {
-                if let Some(old) = old {
-                    let _ = schedule_repository::update_schedule(
-                        &state.db,
-                        schedule_id,
-                        &old.schedule.name,
-                        &old.schedule.content,
-                        &old.schedule.work_dir,
-                        &old.schedule.cron_expr,
-                        old.schedule.agent_id,
-                        old.schedule.enabled,
-                    )
-                    .await;
-                    if old.schedule.enabled {
-                        let _ =
-                            add_job_to_scheduler(state, schedule_id, &old.schedule.cron_expr).await;
-                    }
-                }
-                return Err(e.into());
-            }
-        }
-    }
-    Ok(updated)
+    Ok(true)
 }
 
 // 删除定时任务并从调度器移除
@@ -158,6 +147,7 @@ fn start_conversation_boxed(
             model_provider_id,
             model,
             thinking,
+            false,
         )
         .await
     })

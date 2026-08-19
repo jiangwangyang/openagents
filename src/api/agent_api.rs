@@ -21,11 +21,10 @@ pub async fn get_agent(
     State(state): State<AppState>,
     Path(agent_id): Path<i64>,
 ) -> Result<Json<AgentWithProvider>, AppError> {
-    let agent = agent_repository::get_agent(&state.db, agent_id).await?;
-    match agent {
-        Some(a) => Ok(Json(a)),
-        None => Err(AppError::NotFound("Agent not found".to_string())),
-    }
+    let agent = agent_repository::get_agent(&state.db, agent_id)
+        .await?
+        .ok_or_else(|| AppError::NotFound("Agent not found".to_string()))?;
+    Ok(Json(agent))
 }
 
 // Agent 新增/更新请求体

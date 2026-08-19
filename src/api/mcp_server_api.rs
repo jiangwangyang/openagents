@@ -22,11 +22,10 @@ pub async fn get_mcp_server(
     State(state): State<AppState>,
     Path(server_id): Path<i64>,
 ) -> Result<Json<McpServerEntity>, AppError> {
-    let server = mcp_server_repository::get_mcp_server(&state.db, server_id).await?;
-    match server {
-        Some(s) => Ok(Json(s)),
-        None => Err(AppError::NotFound("MCP server not found".to_string())),
-    }
+    let server = mcp_server_repository::get_mcp_server(&state.db, server_id)
+        .await?
+        .ok_or_else(|| AppError::NotFound("MCP server not found".to_string()))?;
+    Ok(Json(server))
 }
 
 // streamable_http 类型 MCP 服务新增/更新请求体
@@ -151,10 +150,9 @@ pub async fn list_mcp_server_tools(
     Path(server_id): Path<i64>,
 ) -> Result<Json<Vec<serde_json::Value>>, AppError> {
     // 先校验服务存在, 不存在返回 404(连接内部的查询不再区分该场景)
-    let server = mcp_server_repository::get_mcp_server(&state.db, server_id).await?;
-    if server.is_none() {
-        return Err(AppError::NotFound("MCP server not found".to_string()));
-    }
+    mcp_server_repository::get_mcp_server(&state.db, server_id)
+        .await?
+        .ok_or_else(|| AppError::NotFound("MCP server not found".to_string()))?;
     let service = mcp_tool::connect_mcp_server(&state.db, server_id)
         .await
         .map_err(|e| AppError::Internal(anyhow::anyhow!("MCP connect failed: {}", e)))?;

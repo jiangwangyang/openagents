@@ -28,15 +28,11 @@ pub async fn get_conversation(
     State(state): State<AppState>,
     Path(conversation_id): Path<i64>,
 ) -> Result<Json<serde_json::Value>, AppError> {
-    let conversation =
-        conversation_repository::get_conversation(&state.db, conversation_id).await?;
-    let conversation = match conversation {
-        Some(c) => c,
-        None => return Err(AppError::NotFound("Conversation not found".to_string())),
-    };
+    let conversation = conversation_repository::get_conversation(&state.db, conversation_id)
+        .await?
+        .ok_or_else(|| AppError::NotFound("Conversation not found".to_string()))?;
     // 对话基本字段由实体序列化展开, messages 直接返回数据库字段(id/conversation_id/content), agent 为外键关联的执行 Agent, 追加 running 字段
-    let mut result =
-        serde_json::to_value(&conversation).map_err(|e| AppError::Internal(e.into()))?;
+    let mut result = serde_json::to_value(&conversation)?;
     result["running"] = json!(conversation_service::is_conversation_running(
         &state,
         conversation_id
@@ -74,7 +70,7 @@ pub struct CreateWorkRequest {
     pub agent_id: Option<i64>,
 }
 
-// POST /conversation/start 创建对话并启动 work
+// 创建对话接口: 新建对话并启动执行, 返回自增 id
 pub async fn create_conversation_work(
     State(state): State<AppState>,
     Json(req): Json<CreateWorkRequest>,
@@ -136,6 +132,7 @@ pub async fn create_conversation_work(
         model_provider_id,
         model,
         thinking,
+        false,
     )
     .await
     {
@@ -155,7 +152,7 @@ pub struct StartWorkRequest {
     pub thinking: bool,
 }
 
-// POST /conversation/{conversation_id}/start 启动历史回放
+// 启动历史对话执行接口, 已在运行返回 409
 pub async fn start_conversation_work(
     State(state): State<AppState>,
     Path(conversation_id): Path<i64>,
@@ -168,6 +165,7 @@ pub async fn start_conversation_work(
         req.model_provider_id,
         req.model,
         req.thinking,
+        false,
     )
     .await
     {
@@ -176,7 +174,7 @@ pub async fn start_conversation_work(
     Ok(())
 }
 
-// POST /conversation/{conversation_id}/stop 停止运行中的对话, 对话未在运行返回 409
+// 停止对话接口: 对话未在运行返回 409
 pub async fn stop_conversation_work(
     State(state): State<AppState>,
     Path(conversation_id): Path<i64>,
@@ -189,21 +187,27 @@ pub async fn stop_conversation_work(
     Ok(())
 }
 
-// GET /conversation/{conversation_id}/stream SSE 流式订阅
+// SSE 流式订阅接口: 先回放历史 chunks, 再实时跟随新数据
 pub async fn stream_conversation_work(
     State(state): State<AppState>,
     Path(conversation_id): Path<i64>,
 ) -> Result<Sse<impl futures_util::Stream<Item = Result<Event, Infallible>>>, AppError> {
-    let conversation =
-        conversation_repository::get_conversation(&state.db, conversation_id).await?;
-    if conversation.is_none() {
-        return Err(AppError::NotFound("Conversation not found".to_string()));
-    }
+    conversation_repository::get_conversation(&state.db, conversation_id)
+        .await?
+        .ok_or_else(|| AppError::NotFound("Conversation not found".to_string()))?;
 
     // 无内存状态说明对话未运行, 启动仅查询的回放会话
-    let conversation_state = conversation_service::get_conversation_state(&state, conversation_id);
-    if conversation_state.is_none() {
-        conversation_service::start_conversation_query(&state, conversation_id).await;
+    if conversation_service::get_conversation_state(&state, conversation_id).is_none() {
+        conversation_service::start_conversation(
+            &state,
+            conversation_id,
+            String::new(),
+            0,
+            String::new(),
+            false,
+            true,
+        )
+        .await;
     }
     let conversation_state = conversation_service::get_conversation_state(&state, conversation_id)
         .ok_or_else(|| AppError::Internal(anyhow::anyhow!("Failed to get conversation state")))?;
@@ -252,12 +256,8 @@ fn create_sse_stream(
                     continue;
                 }
 
-                // 异步等待新数据通知
-                let receiver = match rx.as_mut() {
-                    Some(r) => r,
-                    None => return None,
-                };
-                if receiver.changed().await.is_err() {
+                // 异步等待新数据通知(rx 必已初始化)
+                if rx.as_mut()?.changed().await.is_err() {
                     return None;
                 }
             }

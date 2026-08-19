@@ -135,6 +135,7 @@ pub fn create_router(state: AppState) -> Router {
         .route("/task", post(task_api::add_task))
         .route("/task/{task_id}", delete(task_api::delete_task))
         .route("/task/{task_id}/start", post(task_api::start_task))
+        .route("/task/{task_id}/stop", post(task_api::stop_task))
         // Web 存储
         .route("/web-storage/{key}", get(web_storage_api::get_web_storage))
         .route("/web-storage/{key}", put(web_storage_api::put_web_storage))

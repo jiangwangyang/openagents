@@ -1,4 +1,4 @@
-// AppState: 数据库连接池、定时任务调度器、任务执行句柄、对话状态表、技能列表
+// AppState: 数据库连接池、定时任务调度器、任务执行句柄(含停止信号)、对话状态表、技能列表
 use std::sync::Arc;
 
 use dashmap::DashMap;
@@ -30,7 +30,7 @@ pub struct AppState {
     pub db: SqlitePool,
     pub scheduler: JobScheduler,
     pub job_ids: Arc<DashMap<i64, uuid::Uuid>>,
-    pub task_loops: Arc<DashMap<i64, JoinHandle<()>>>,
+    pub task_loops: Arc<DashMap<i64, (JoinHandle<()>, tokio::sync::watch::Sender<bool>)>>,
     pub conversation_states: Arc<DashMap<i64, Arc<RwLock<ConversationState>>>>,
     pub skills: Arc<std::sync::RwLock<Vec<SkillInfo>>>,
 }

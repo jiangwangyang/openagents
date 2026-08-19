@@ -15,15 +15,17 @@ pub fn start_task(state: &AppState, task_id: i64, agent_id: i64) -> bool {
     // 防重入: entry 原子检查并插入, 持锁期间不 await
     match state.task_loops.entry(task_id) {
         dashmap::mapref::entry::Entry::Occupied(mut entry) => {
-            if !entry.get().is_finished() {
+            if !entry.get().0.is_finished() {
                 return false;
             }
-            let handle = tokio::spawn(run_task(state.clone(), task_id, agent_id));
-            entry.insert(handle);
+            let (stop_tx, stop_rx) = tokio::sync::watch::channel(false);
+            let handle = tokio::spawn(run_task(state.clone(), task_id, agent_id, stop_rx));
+            entry.insert((handle, stop_tx));
         }
         dashmap::mapref::entry::Entry::Vacant(entry) => {
-            let handle = tokio::spawn(run_task(state.clone(), task_id, agent_id));
-            entry.insert(handle);
+            let (stop_tx, stop_rx) = tokio::sync::watch::channel(false);
+            let handle = tokio::spawn(run_task(state.clone(), task_id, agent_id, stop_rx));
+            entry.insert((handle, stop_tx));
         }
     }
     true
@@ -32,14 +34,32 @@ pub fn start_task(state: &AppState, task_id: i64, agent_id: i64) -> bool {
 // 查询任务执行循环是否正在运行
 pub fn is_task_running(state: &AppState, task_id: i64) -> bool {
     match state.task_loops.get(&task_id) {
-        Some(handle) => !handle.is_finished(),
+        Some(entry) => !entry.0.is_finished(),
         None => false,
     }
 }
 
+// 停止任务执行循环: 发送停止信号, 任务未在运行返回 false, 幂等无副作用
+pub fn stop_task(state: &AppState, task_id: i64) -> bool {
+    if let Some(entry) = state.task_loops.get(&task_id) {
+        if entry.0.is_finished() {
+            return false;
+        }
+        let _ = entry.1.send(true);
+        tracing::info!("Task stop requested: task_id={}", task_id);
+        return true;
+    }
+    false
+}
+
 // 后台执行循环
-async fn run_task(state: AppState, task_id: i64, agent_id: i64) {
-    let result = do_run_task(&state, task_id, agent_id).await;
+async fn run_task(
+    state: AppState,
+    task_id: i64,
+    agent_id: i64,
+    stop_rx: tokio::sync::watch::Receiver<bool>,
+) {
+    let result = do_run_task(&state, task_id, agent_id, stop_rx).await;
     if let Err(e) = result {
         tracing::error!("Task execution failed: task_id={} error={}", task_id, e);
     }
@@ -47,7 +67,12 @@ async fn run_task(state: AppState, task_id: i64, agent_id: i64) {
 }
 
 // 实际任务循环逻辑
-async fn do_run_task(state: &AppState, task_id: i64, agent_id: i64) -> anyhow::Result<()> {
+async fn do_run_task(
+    state: &AppState,
+    task_id: i64,
+    agent_id: i64,
+    mut stop_rx: tokio::sync::watch::Receiver<bool>,
+) -> anyhow::Result<()> {
     tracing::info!(
         "Task loop started: task_id={} agent_id={}",
         task_id,
@@ -76,6 +101,12 @@ async fn do_run_task(state: &AppState, task_id: i64, agent_id: i64) -> anyhow::R
     let mut consecutive_reminders = 0u32;
 
     loop {
+        // 每轮开头检测任务停止信号, 覆盖交接间隙触发停止的场景
+        if *stop_rx.borrow() {
+            tracing::info!("Task loop stopped: task_id={} reason=user_stop", task_id);
+            return Ok(());
+        }
+
         // 每轮重新查询任务基本字段与最新阶段对话状态
         let task = task_repository::get_task(&state.db, task_id).await?;
         let task = match task {
@@ -228,7 +259,7 @@ async fn do_run_task(state: &AppState, task_id: i64, agent_id: i64) -> anyhow::R
             );
             return Ok(());
         }
-        // 等待对话完成: 订阅通知并等待, 订阅后先复查 done 避免错过完成信号
+        // 等待对话完成: 订阅通知并等待, 订阅后先复查 done 避免错过完成信号; 同时监听任务停止信号
         if let Some(conv_state) = conversation_service::get_conversation_state(state, latest.id) {
             let mut receiver = {
                 let s = conv_state.read().await;
@@ -241,9 +272,19 @@ async fn do_run_task(state: &AppState, task_id: i64, agent_id: i64) -> anyhow::R
                         break;
                     }
                 }
-                // 发送端关闭(状态被移除)时退出等待
-                if receiver.changed().await.is_err() {
-                    break;
+                tokio::select! {
+                    // 发送端关闭(状态被移除)时退出等待
+                    changed = receiver.changed() => {
+                        if changed.is_err() {
+                            break;
+                        }
+                    }
+                    // 收到任务停止信号: 优雅停止当前对话(已执行内容入库)后结束任务循环
+                    _ = stop_rx.changed() => {
+                        conversation_service::stop_conversation(state, latest.id).await;
+                        tracing::info!("Task loop stopped: task_id={} reason=user_stop", task_id);
+                        return Ok(());
+                    }
                 }
             }
         }

@@ -186,3 +186,14 @@ pub async fn start_task(
     }
     Ok(())
 }
+
+// 停止任务执行循环接口: 循环收到信号后优雅停止当前对话并退出, 任务未在运行返回 409
+pub async fn stop_task(
+    State(state): State<AppState>,
+    Path(task_id): Path<i64>,
+) -> Result<(), AppError> {
+    if !task_service::stop_task(&state, task_id) {
+        return Err(AppError::Conflict("Task is not running".to_string()));
+    }
+    Ok(())
+}

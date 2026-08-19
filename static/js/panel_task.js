@@ -481,9 +481,9 @@ function renderTaskActionArea(taskId, container) {
     const controller = getTaskController(taskId);
     const detail = controller.detail;
     const status = controller.status;
-    // 运行中：停止任务占位按钮（功能未实现，禁用态展示）
+    // 运行中：停止任务按钮
     if (status === TASK_STATUS.RUNNING) {
-        container.innerHTML = `<button class="btn btn-sm btn-secondary" disabled title="${t('task.stopPending')}">${t('task.stop')}</button>`;
+        container.innerHTML = `<button class="btn btn-sm btn-secondary" onclick="stopTask(${taskId})">${t('task.stop')}</button>`;
         return;
     }
     // 其余状态：意见输入框 + 候选 Agent 下拉 + 状态主按钮；输入框占位文本即空输入时的默认提交内容
@@ -544,7 +544,7 @@ function renderTaskStages(taskId) {
     });
 }
 
-// ===== 9. 动作：启动/审核/继续/重启/新增/删除 =====
+// ===== 9. 动作：启动/停止/审核/继续/重启/新增/删除 =====
 // 启动任务并附带用户消息（开始执行/提交并执行/继续执行统一入口）：消息随启动请求提交，由后端落入用户对话后再启动流水线
 async function runTask(taskId, defaultText) {
     const select = document.getElementById(`task-agent-${taskId}`);
@@ -579,6 +579,25 @@ async function runTask(taskId, defaultText) {
         }
     } catch (e) {
         showToast(t('task.startFault'), 'error');
+    }
+}
+
+// 停止任务：通知后端停止执行循环（当前对话优雅收尾后循环退出），状态经延迟补拉收敛
+async function stopTask(taskId) {
+    try {
+        const response = await fetch(`/task/${taskId}/stop`, {method: 'POST'});
+        if (response.ok) {
+            showToast(t('task.stopped'));
+            // 循环退出与对话收尾为异步过程：立即拉取一次，再延迟补拉一次兜底
+            await loadTaskState(taskId);
+            scheduleTaskRefetch(taskId, TASK_START_REFETCH_DELAY);
+        } else if (response.status === 409) {
+            showToast(t('task.notRunning'), 'error');
+        } else {
+            showToast(t('task.stopFault'), 'error');
+        }
+    } catch (e) {
+        showToast(t('task.stopFault'), 'error');
     }
 }
 

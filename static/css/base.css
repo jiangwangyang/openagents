@@ -12,6 +12,7 @@
 /* 全局常量: 所有主题取值一致, 禁止在主题中覆写 */
 :root {
     --transition-snap: all 0.2s cubic-bezier(0.2, 0, 0, 1);
+    --no-history-text: 'NO HISTORY';
 }
 
 /* 文本选中(高亮)样式 */

@@ -13,16 +13,18 @@ use crate::repository::{agent_repository, conversation_repository};
 use crate::service::conversation_service;
 use crate::state::AppState;
 
-// 对话列表接口, 按更新时间倒序返回独立对话(不含任务中的阶段对话)
+// 对话列表接口, 返回独立对话(不含任务阶段对话与定时任务对话), 内存过滤并按更新时间倒序
 pub async fn list_conversations(State(state): State<AppState>) -> Result<Json<Vec<ConversationEntity>>, AppError> {
     let conversations = conversation_repository::list_conversations(&state.db).await?;
+    let mut conversations: Vec<ConversationEntity> = conversations.into_iter().filter(|c| c.task_id.is_none() && c.schedule_id.is_none()).collect();
+    conversations.sort_by(|a, b| b.update_time.cmp(&a.update_time));
     Ok(Json(conversations))
 }
 
-// 查询对话详情接口: 返回对话基本字段、消息列表、外键关联的执行 Agent 及运行状态, 对话不存在返回 404
+// 查询对话详情接口: 返回对话基本字段, 消息列表, 外键关联的执行 Agent 及运行状态, 对话不存在返回 404
 pub async fn get_conversation(State(state): State<AppState>, Path(conversation_id): Path<i64>) -> Result<Json<serde_json::Value>, AppError> {
     let conversation = conversation_repository::get_conversation_with_messages(&state.db, conversation_id).await?.ok_or_else(|| AppError::NotFound("Conversation not found".to_string()))?;
-    // 对话基本字段由实体序列化展开, messages 直接返回数据库字段(id/conversation_id/content), agent 为外键关联的执行 Agent, 追加 running 字段
+    // 对话基本字段由实体序列化展开, messages 直接返回数据库字段(id/conversation_id/content/create_time/update_time), agent 为外键关联的执行 Agent, 追加 running 字段
     let mut result = serde_json::to_value(&conversation)?;
     result["running"] = json!(conversation_service::is_conversation_running(&state, conversation_id));
     Ok(Json(result))

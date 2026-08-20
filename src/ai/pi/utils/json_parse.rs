@@ -2,7 +2,7 @@
 // 对齐说明: pi 依赖 partial-json 包做不完整 JSON 的容错解析, 本项目以本地实现 partial_parse 替代(不引入新依赖)
 use serde_json::Value;
 
-// 合法 JSON 转义字符集
+// 合法 JSON 转义字符集(对齐 pi VALID_JSON_ESCAPES; u 在 match 中单独处理)
 const VALID_JSON_ESCAPES: [char; 8] = ['"', '\\', '/', 'b', 'f', 'n', 'r', 't'];
 
 // 是否为控制字符
@@ -54,12 +54,15 @@ pub fn repair_json(json: &str) -> String {
                 Some('u') => {
                     let digits: String = chars.iter().skip(index + 2).take(4).collect();
                     if digits.len() == 4 && digits.chars().all(|d| d.is_ascii_hexdigit()) {
-                        repaired.push('\\');
-                        repaired.push('u');
+                        repaired.push_str("\\u");
                         repaired.push_str(&digits);
                         index += 6;
                         continue;
                     }
+                    // hex 非法/不足 4 位时按合法转义原样保留 \u(对齐 pi: VALID_JSON_ESCAPES 含 u)
+                    repaired.push_str("\\u");
+                    index += 2;
+                    continue;
                 }
                 Some(next) if VALID_JSON_ESCAPES.contains(&next) => {
                     repaired.push('\\');

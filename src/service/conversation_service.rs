@@ -1,4 +1,4 @@
-// 对话服务: 启动对话、查询状态、发布 SSE chunk、后台 agent loop
+// 对话服务: 启动对话, 查询状态, 发布 SSE chunk, 后台 agent loop
 use std::sync::Arc;
 
 use futures_util::{FutureExt, StreamExt};
@@ -6,7 +6,7 @@ use serde_json::{json, Value};
 use tokio::sync::RwLock;
 
 use crate::ai;
-use crate::ai::pi::types::{now_timestamp, AssistantContent, AssistantMessage, AssistantMessageEvent, Context, Message, TextContent, ToolCall, ToolResultMessage, UserContent, UserMessage, UserMessageContent};
+use crate::ai::pi::types::{now_timestamp, AssistantContent, AssistantMessage, AssistantMessageEvent, Context, Message, TextContent, Tool, ToolCall, ToolResultMessage, UserContent, UserMessage, UserMessageContent};
 use crate::repository::{conversation_repository, model_provider_repository};
 use crate::service::tool::{self, ToolContext};
 use crate::state::{AppState, ConversationState};
@@ -194,7 +194,7 @@ async fn do_run_conversation(state: &AppState, conversation_id: i64, task_conten
     // 模型调用数据
     let provider = model_provider_repository::get_model_provider(&state.db, model_provider_id).await?.ok_or_else(|| anyhow::anyhow!("model provider not found"))?;
     let system_prompt = conversation.conversation.system_prompt.clone();
-    let tools: Vec<crate::ai::pi::types::Tool> = tool::list_tools(conversation.conversation.task_id.is_some(), conversation.conversation.schedule_id.is_some()).iter().map(|t| crate::ai::pi::types::Tool { name: t.name.clone(), description: t.description.clone(), parameters: t.input_schema.clone() }).collect();
+    let tools: Vec<Tool> = tool::list_tools(conversation.conversation.task_id.is_some(), conversation.conversation.schedule_id.is_some()).iter().map(|t| Tool { name: t.name.clone(), description: t.description.clone(), parameters: t.input_schema.clone() }).collect();
 
     // 本轮任务消息并入上下文
     let task_message = user_text_message(task_content);

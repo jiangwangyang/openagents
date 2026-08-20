@@ -11,7 +11,7 @@ function toggleAddMcpPanel() {
     addMcpPanel.style.display = addMcpPanel.style.display === 'none' ? 'flex' : 'none';
 }
 
-// 切换新增面板内 stdio / 网络 字段区域显示（协议类型下拉联动）
+// 切换新增面板内 stdio / 网络 字段区域显示(协议类型下拉联动)
 function adaptMcpFormFields() {
     const type = document.getElementById('mcpType').value;
     const isStdio = type === 'stdio';
@@ -21,7 +21,7 @@ function adaptMcpFormFields() {
     document.getElementById('mcpLocalRowArgs').style.display = isStdio ? 'flex' : 'none';
 }
 
-// 切换 MCP 修改卡片内 stdio / 网络 字段区域显示（协议类型下拉联动）
+// 切换 MCP 修改卡片内 stdio / 网络 字段区域显示(协议类型下拉联动)
 function adaptMcpCardFields(index) {
     const type = document.getElementById(`mcp-type-${index}`).value;
     const isStdio = type === 'stdio';
@@ -46,7 +46,7 @@ async function fetchMcpRegistry() {
             const name = server.name;
             const card = document.createElement('div');
             card.className = 'info-card';
-            // 元素 id 使用列表索引生成（服务名可能包含引号等特殊字符）
+            // 元素 id 使用列表索引生成(服务名可能包含引号等特殊字符)
             card.id = `mcp-card-${index}`;
 
             const snippet = server.url || (server.command ? `${server.command} ${server.args?.join(' ')}` : t('mcp.localContext'));
@@ -117,7 +117,7 @@ async function fetchMcpRegistry() {
                     </div>
                 </div>
             `;
-            // 按钮通过闭包绑定，避免服务名中的引号破坏内联 onclick 字符串
+            // 按钮通过闭包绑定, 避免服务名中的引号破坏内联 onclick 字符串
             card.querySelector('.mcp-save-btn').onclick = () => updateSingleMcp(server.id, index);
             card.querySelector('.mcp-test-btn').onclick = () => testMcpServerTools(server, index);
             const deleteBtn = card.querySelector('.delete-btn');
@@ -144,7 +144,7 @@ async function submitMcpServer() {
     if (type === 'stdio') {
         bodyPayload.command = document.getElementById('mcpCommand').value.trim();
         const argsStr = document.getElementById('mcpArgs').value.trim();
-        bodyPayload.args = argsStr ? argsStr.split(',').map(a => a.trim()) : [];
+        bodyPayload.args = argsStr ? argsStr.split(',').map(a => a.trim()).filter(a => a) : [];
     } else {
         bodyPayload.url = document.getElementById('mcpUrl').value.trim();
         const headersStr = document.getElementById('mcpHeaders').value.trim();
@@ -212,8 +212,7 @@ async function updateSingleMcp(id, index) {
     }
 
     try {
-        // server.protocol_type 为下划线形式（streamable_http），接口路径使用连字符形式（streamable-http）
-        const response = await fetch(`/mcp-server/${id}/${encodeURIComponent(type.replace('_', '-'))}`, {
+        const response = await fetch(`/mcp-server/${id}/${encodeURIComponent(type)}`, {
             method: 'PUT',
             headers: {'Content-Type': 'application/json'},
             body: JSON.stringify(bodyPayload)

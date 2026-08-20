@@ -3,7 +3,7 @@ use std::collections::HashMap;
 
 use rmcp::model::{CallToolRequestParams, ClientInfo};
 use rmcp::service::{RoleClient, RunningService};
-use rmcp::transport::{ConfigureCommandExt, StreamableHttpClientTransport, TokioChildProcess};
+use rmcp::transport::{StreamableHttpClientTransport, TokioChildProcess};
 use rmcp::ServiceExt;
 use serde_json::Value;
 use sqlx::SqlitePool;
@@ -27,12 +27,12 @@ pub async fn connect_mcp_server(db: &SqlitePool, server_id: i64) -> Result<Runni
             for arg in &args {
                 cmd.arg(arg);
             }
-            // Windows 下隐藏子进程控制台窗口, 避免桌面模式调用外部模型时弹出黑框
+            // Windows 下隐藏子进程控制台窗口, 避免桌面模式弹出黑框
             #[cfg(windows)]
             {
                 cmd.creation_flags(0x08000000);
             }
-            let transport = TokioChildProcess::new(cmd.configure(|_c| {})).map_err(|e| format!("failed to create stdio transport: {}", e))?;
+            let transport = TokioChildProcess::new(cmd).map_err(|e| format!("failed to create stdio transport: {}", e))?;
             ClientInfo::default().serve(transport).await.map_err(|e| format!("failed to connect: {}", e))?
         }
         "streamable_http" => {

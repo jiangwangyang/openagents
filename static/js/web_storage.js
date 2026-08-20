@@ -1,8 +1,8 @@
 // ==========================================
-// Web 存储引擎（后端 KV 存储，替代 localStorage）
+// Web 存储引擎(后端 KV 存储, 替代 localStorage)
 // ==========================================
 
-// 读取存储值：不存在或请求失败返回 null
+// 读取存储值: 不存在或请求失败返回 null
 async function getWebStorage(key) {
     try {
         const response = await fetch(`/web-storage/${encodeURIComponent(key)}`);
@@ -13,7 +13,7 @@ async function getWebStorage(key) {
     }
 }
 
-// 写入存储值：失败静默
+// 写入存储值: 失败静默
 async function setWebStorage(key, value) {
     try {
         await fetch(`/web-storage/${encodeURIComponent(key)}`, {

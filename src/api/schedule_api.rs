@@ -30,7 +30,9 @@ pub struct ScheduleResponse {
 // ScheduleEntity -> ScheduleResponse: cron_expr 更名 trigger, 附带下次触发时间
 impl From<ScheduleEntity> for ScheduleResponse {
     fn from(s: ScheduleEntity) -> Self {
-        ScheduleResponse { id: s.id, name: s.name, content: s.content, work_dir: s.work_dir, trigger: s.cron_expr.clone(), agent_id: s.agent_id, enabled: s.enabled, next_fire_time: schedule_service::next_fire_time(&s.cron_expr), create_time: s.create_time, update_time: s.update_time }
+        // next_fire_time 借用 cron_expr 需先于 trigger 的 move 求值
+        let next_fire_time = schedule_service::next_fire_time(&s.cron_expr);
+        ScheduleResponse { id: s.id, name: s.name, content: s.content, work_dir: s.work_dir, trigger: s.cron_expr, agent_id: s.agent_id, enabled: s.enabled, next_fire_time, create_time: s.create_time, update_time: s.update_time }
     }
 }
 
@@ -58,13 +60,13 @@ pub async fn get_schedule(State(state): State<AppState>, Path(schedule_id): Path
     let conversations = list;
 
     // 定时任务基本字段由响应体序列化展开, 追加外键关联的执行 Agent 与执行对话
-    let mut result = serde_json::to_value(&ScheduleResponse::from(s.schedule))?;
+    let mut result = serde_json::to_value(ScheduleResponse::from(s.schedule))?;
     result["agent"] = json!(s.agent);
     result["conversations"] = json!(conversations);
     Ok(Json(result))
 }
 
-// 定时任务新增/更新请求体(新增时 enabled 字段忽略, 默认启用)
+// 定时任务新增/更新请求体
 #[derive(Debug, Deserialize)]
 pub struct ScheduleRequest {
     pub name: String,
@@ -92,7 +94,7 @@ fn cron_expr_of(req: &ScheduleRequest) -> Result<String, AppError> {
 // 新增定时任务接口, 返回自增 id
 pub async fn add_schedule(State(state): State<AppState>, Json(req): Json<ScheduleRequest>) -> Result<Json<i64>, AppError> {
     let cron_expr = cron_expr_of(&req)?;
-    let id = schedule_service::add_schedule(&state, &req.name, &req.content, &req.work_dir, &cron_expr, req.agent_id).await?;
+    let id = schedule_service::add_schedule(&state, &req.name, &req.content, &req.work_dir, &cron_expr, req.agent_id, req.enabled).await?;
     Ok(Json(id))
 }
 

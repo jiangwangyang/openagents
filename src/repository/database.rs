@@ -1,4 +1,4 @@
-// 连接池、建表、版本迁移
+// 连接池, 建表, 版本迁移
 use std::str::FromStr;
 
 use sqlx::sqlite::{SqliteConnectOptions, SqlitePoolOptions};
@@ -31,7 +31,7 @@ const TABLES: &[TableSchema] = &[
     TableSchema { name: "t_task", columns: &[ID_COL, ColumnSchema { name: "title", column_type: "TEXT", not_null: true, suffix: "" }, ColumnSchema { name: "content", column_type: "TEXT", not_null: true, suffix: "" }, ColumnSchema { name: "agent_ids", column_type: "TEXT", not_null: true, suffix: "" }, ColumnSchema { name: "work_dir", column_type: "TEXT", not_null: true, suffix: "" }, ColumnSchema { name: "status", column_type: "TEXT", not_null: true, suffix: "" }, ColumnSchema { name: "create_time", column_type: "TEXT", not_null: true, suffix: "" }, ColumnSchema { name: "update_time", column_type: "TEXT", not_null: true, suffix: "" }], indexes: &[] },
     TableSchema { name: "t_schedule", columns: &[ID_COL, ColumnSchema { name: "name", column_type: "TEXT", not_null: true, suffix: "" }, ColumnSchema { name: "content", column_type: "TEXT", not_null: true, suffix: "" }, ColumnSchema { name: "work_dir", column_type: "TEXT", not_null: true, suffix: "" }, ColumnSchema { name: "cron_expr", column_type: "TEXT", not_null: true, suffix: "" }, ColumnSchema { name: "agent_id", column_type: "INTEGER", not_null: false, suffix: "REFERENCES t_agent(id) ON DELETE RESTRICT" }, ColumnSchema { name: "enabled", column_type: "INTEGER", not_null: true, suffix: "" }, ColumnSchema { name: "create_time", column_type: "TEXT", not_null: true, suffix: "" }, ColumnSchema { name: "update_time", column_type: "TEXT", not_null: true, suffix: "" }], indexes: &[] },
     TableSchema { name: "t_conversation", columns: &[ID_COL, ColumnSchema { name: "task_id", column_type: "INTEGER", not_null: false, suffix: "REFERENCES t_task(id) ON DELETE CASCADE" }, ColumnSchema { name: "schedule_id", column_type: "INTEGER", not_null: false, suffix: "REFERENCES t_schedule(id) ON DELETE RESTRICT" }, ColumnSchema { name: "agent_id", column_type: "INTEGER", not_null: false, suffix: "REFERENCES t_agent(id) ON DELETE RESTRICT" }, ColumnSchema { name: "title", column_type: "TEXT", not_null: true, suffix: "" }, ColumnSchema { name: "work_dir", column_type: "TEXT", not_null: true, suffix: "" }, ColumnSchema { name: "system_prompt", column_type: "TEXT", not_null: true, suffix: "" }, ColumnSchema { name: "create_time", column_type: "TEXT", not_null: true, suffix: "" }, ColumnSchema { name: "update_time", column_type: "TEXT", not_null: true, suffix: "" }], indexes: &["CREATE INDEX IF NOT EXISTS idx_conversation_task ON t_conversation(task_id)"] },
-    TableSchema { name: "t_message", columns: &[ID_COL, ColumnSchema { name: "conversation_id", column_type: "INTEGER", not_null: true, suffix: "REFERENCES t_conversation(id) ON DELETE CASCADE" }, ColumnSchema { name: "content", column_type: "TEXT", not_null: true, suffix: "" }], indexes: &["CREATE INDEX IF NOT EXISTS idx_message_conversation ON t_message(conversation_id)"] },
+    TableSchema { name: "t_message", columns: &[ID_COL, ColumnSchema { name: "conversation_id", column_type: "INTEGER", not_null: true, suffix: "REFERENCES t_conversation(id) ON DELETE CASCADE" }, ColumnSchema { name: "content", column_type: "TEXT", not_null: true, suffix: "" }, ColumnSchema { name: "create_time", column_type: "TEXT", not_null: true, suffix: "" }, ColumnSchema { name: "update_time", column_type: "TEXT", not_null: true, suffix: "" }], indexes: &["CREATE INDEX IF NOT EXISTS idx_message_conversation ON t_message(conversation_id)"] },
     TableSchema { name: "t_mcp_server", columns: &[ID_COL, ColumnSchema { name: "name", column_type: "TEXT", not_null: true, suffix: "" }, ColumnSchema { name: "description", column_type: "TEXT", not_null: true, suffix: "" }, ColumnSchema { name: "protocol_type", column_type: "TEXT", not_null: true, suffix: "" }, ColumnSchema { name: "url", column_type: "TEXT", not_null: false, suffix: "" }, ColumnSchema { name: "headers", column_type: "TEXT", not_null: false, suffix: "" }, ColumnSchema { name: "command", column_type: "TEXT", not_null: false, suffix: "" }, ColumnSchema { name: "args", column_type: "TEXT", not_null: false, suffix: "" }, ColumnSchema { name: "create_time", column_type: "TEXT", not_null: true, suffix: "" }, ColumnSchema { name: "update_time", column_type: "TEXT", not_null: true, suffix: "" }], indexes: &[] },
     TableSchema { name: "t_web_storage", columns: &[ColumnSchema { name: "key", column_type: "TEXT", not_null: false, suffix: "PRIMARY KEY" }, ColumnSchema { name: "value", column_type: "TEXT", not_null: true, suffix: "" }, ColumnSchema { name: "create_time", column_type: "TEXT", not_null: true, suffix: "" }, ColumnSchema { name: "update_time", column_type: "TEXT", not_null: true, suffix: "" }], indexes: &[] },
 ];
@@ -47,7 +47,7 @@ pub async fn init_db() -> anyhow::Result<SqlitePool> {
     let db_url = format!("sqlite:{}", db_file.display());
     let options = SqliteConnectOptions::from_str(&db_url)?.create_if_missing(true).pragma("journal_mode", "WAL").pragma("foreign_keys", "ON");
 
-    // WAL 模式下读写可并发, 连接数放宽到 5;写事务仍串行, 由 sqlx 默认 5s busy_timeout 兜底
+    // WAL 模式下读写可并发, 连接数放宽到 5, 写事务仍串行, 由 sqlx 默认 5s busy_timeout 兜底
     let pool = SqlitePoolOptions::new().max_connections(5).connect_with(options).await?;
 
     // 建表并迁移
@@ -57,7 +57,7 @@ pub async fn init_db() -> anyhow::Result<SqlitePool> {
     Ok(pool)
 }
 
-// 创建并迁移所有表: 缺失列补充(非空列先带默认值, 再重建表去除默认值)、多余列删除
+// 创建并迁移所有表: 缺失列补充(非空列先带默认值, 再重建表去除默认值), 多余列删除
 async fn migrate_tables(pool: &SqlitePool) -> anyhow::Result<()> {
     // 单连接执行, 迁移期间关闭外键约束以允许删表重建
     let mut conn = pool.acquire().await?;

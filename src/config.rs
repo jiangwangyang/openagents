@@ -1,4 +1,4 @@
-// 路径、环境变量、常量定义
+// 路径, 环境变量, 常量定义
 use std::path::PathBuf;
 
 // 获取用户主目录, 环境变量缺失时 panic, 避免数据目录错误落到当前工作目录
@@ -16,7 +16,7 @@ pub fn database_file() -> PathBuf {
     data_dir().join("database.db")
 }
 
-// 日志文件路径
-pub fn log_file() -> PathBuf {
-    data_dir().join("app.log")
+// 日志目录: ~/.openagents/log
+pub fn log_dir() -> PathBuf {
+    data_dir().join("log")
 }

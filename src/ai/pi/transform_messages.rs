@@ -1,5 +1,6 @@
 // 消息跨模型转换(移植自 pi/packages/ai/src/api/transform-messages.ts)
-// 裁剪说明: 本项目不使用图片, 未移植 downgradeUnsupportedImages 图片降级与 replaceImagesWithPlaceholder
+// 裁剪说明: 本项目不使用图片, 未移植 downgradeUnsupportedImages 图片降级与 replaceImagesWithPlaceholder;
+// pi 的 null content 归一化未移植(Rust 类型系统保证 content 非空)
 use std::collections::{HashMap, HashSet};
 
 use super::types::{now_timestamp, AssistantContent, AssistantMessage, Message, Model, StopReason, TextContent, ToolCall, ToolResultMessage, UserContent};
@@ -7,12 +8,12 @@ use super::types::{now_timestamp, AssistantContent, AssistantMessage, Message, M
 // toolCallId 规范化回调(由各协议适配器注入, 对齐 pi 的 normalizeToolCallId 参数)
 pub type NormalizeToolCallId<'a> = Option<&'a dyn Fn(&str, &Model, &AssistantMessage) -> String>;
 
-// 跨模型重放转换: thinking 降级/丢弃、toolCallId 规范化、孤儿 toolCall 补合成 toolResult、跳过失败消息
+// 跨模型重放转换: thinking 降级/丢弃, toolCallId 规范化, 孤儿 toolCall 补合成 toolResult, 跳过失败消息
 pub fn transform_messages(messages: &[Message], model: &Model, normalize_tool_call_id: NormalizeToolCallId) -> Vec<Message> {
     // 原始 toolCallId -> 规范化 id 的映射
     let mut tool_call_id_map: HashMap<String, String> = HashMap::new();
 
-    // 第一遍: 转换消息(thinking 块处理、toolCallId 规范化)
+    // 第一遍: 转换消息(thinking 块处理, toolCallId 规范化)
     let transformed: Vec<Message> = messages
         .iter()
         .map(|msg| match msg {

@@ -9,12 +9,12 @@
     box-sizing: border-box;
 }
 
-/* 全局常量：所有主题取值一致，禁止在主题中覆写 */
+/* 全局常量: 所有主题取值一致, 禁止在主题中覆写 */
 :root {
     --transition-snap: all 0.2s cubic-bezier(0.2, 0, 0, 1);
 }
 
-/* 文本选中（高亮）样式 */
+/* 文本选中(高亮)样式 */
 ::selection {
     background: var(--charcoal-900);
     color: var(--bg-canvas);
@@ -46,7 +46,7 @@ body::before {
 }
 
 /* ===== 2. 主题背景层 ===== */
-/* 静态背景装饰层（纯 CSS，由各主题的 --backdrop-* 变量驱动） */
+/* 静态背景装饰层(纯 CSS, 由各主题的 --backdrop-* 变量驱动) */
 #themeBackdrop {
     position: fixed;
     inset: 0;
@@ -60,7 +60,7 @@ body::before {
     transition: background-color 0.4s ease, background-image 0.4s ease;
 }
 
-/* 布景层（Canvas 实体背景建筑，位于静态背景之上、内容之下，由各主题的 --scenery-display 令牌控制显隐） */
+/* 布景层(Canvas 实体背景建筑, 位于静态背景之上, 内容之下, 由各主题的 --scenery-display 令牌控制显隐) */
 #themeScenery {
     position: fixed;
     inset: 0;
@@ -75,7 +75,7 @@ body::before {
     height: 100%;
 }
 
-/* 动态特效层（Canvas 粒子，浮于内容之上，pointer-events 关闭不拦截交互） */
+/* 动态特效层(Canvas 粒子, 浮于内容之上, pointer-events 关闭不拦截交互) */
 #themeEffects {
     position: fixed;
     inset: 0;
@@ -89,7 +89,7 @@ body::before {
     height: 100%;
 }
 
-/* 黑洞 WebGL 渲染层（位于静态背景之上、内容之下，由各主题的 --blackhole-display 令牌控制显隐） */
+/* 黑洞 WebGL 渲染层(位于静态背景之上, 内容之下, 由各主题的 --blackhole-display 令牌控制显隐) */
 #themeBlackhole {
     position: fixed;
     inset: 0;
@@ -104,8 +104,8 @@ body::before {
     height: 100%;
 }
 
-/* ===== 3. 减少动态效果（无障碍） ===== */
-/* 关闭全部 CSS 动画与过渡，粒子特效由 theme_effects.js 的 reducedMotion 同步关闭 */
+/* ===== 3. 减少动态效果(无障碍) ===== */
+/* 关闭全部 CSS 动画与过渡, 粒子特效由 theme_effects.js 的 reducedMotion 同步关闭 */
 @media (prefers-reduced-motion: reduce) {
     *,
     *::before,
@@ -325,8 +325,9 @@ body::before {
     height: 14px;
 }
 
+/* 空历史占位文案: 内容由 i18n.js 经 CSS 变量注入实现本地化 */
 #conversationList:empty::after {
-    content: 'NO HISTORY';
+    content: var(--no-history-text, 'NO HISTORY');
     display: block;
     text-align: center;
     color: var(--slate-400);
@@ -358,7 +359,7 @@ body::before {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    /* 提升 header 整体层级：防止其内部弹出层（如主题下拉）被后续视图中 position:relative 的卡片遮挡 */
+    /* 提升 header 整体层级: 防止其内部弹出层(如主题下拉)被后续视图中 position:relative 的卡片遮挡 */
     position: relative;
     z-index: 20;
 }
@@ -444,7 +445,7 @@ body::before {
     animation: fadeIn 0.25s ease;
 }
 
-/* 会话页聊天容器：占满视图高度，纵向排列消息流 */
+/* 会话页聊天容器: 占满视图高度, 纵向排列消息流 */
 .chat-container {
     padding: 0;
     flex: 1;

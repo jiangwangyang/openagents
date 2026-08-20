@@ -2,7 +2,6 @@
 use sqlx::SqlitePool;
 
 use super::entity::{AgentEntity, AgentProviderRow, AgentWithProvider};
-use super::now_rfc3339;
 use super::DeleteResult;
 
 // 查询全部 Agent, 按 id 升序
@@ -18,14 +17,14 @@ pub async fn get_agent(pool: &SqlitePool, agent_id: i64) -> Result<Option<AgentW
 
 // 新增 Agent, 返回自增 id
 pub async fn add_agent(pool: &SqlitePool, name: &str, description: &str, prompt: &str, model_provider_id: i64, model: &str, thinking: bool) -> Result<i64, sqlx::Error> {
-    let now = now_rfc3339();
+    let now = chrono::Local::now().to_rfc3339();
     let result = sqlx::query("INSERT INTO t_agent (name, description, prompt, model_provider_id, model, thinking, create_time, update_time) VALUES (?, ?, ?, ?, ?, ?, ?, ?)").bind(name).bind(description).bind(prompt).bind(model_provider_id).bind(model).bind(thinking).bind(&now).bind(&now).execute(pool).await?;
     Ok(result.last_insert_rowid())
 }
 
 // 按 id 更新 Agent, id 不存在返回 false
 pub async fn update_agent(pool: &SqlitePool, agent_id: i64, name: &str, description: &str, prompt: &str, model_provider_id: i64, model: &str, thinking: bool) -> Result<bool, sqlx::Error> {
-    let now = now_rfc3339();
+    let now = chrono::Local::now().to_rfc3339();
     let result = sqlx::query("UPDATE t_agent SET name = ?, description = ?, prompt = ?, model_provider_id = ?, model = ?, thinking = ?, update_time = ? WHERE id = ?").bind(name).bind(description).bind(prompt).bind(model_provider_id).bind(model).bind(thinking).bind(&now).bind(agent_id).execute(pool).await?;
     Ok(result.rows_affected() > 0)
 }

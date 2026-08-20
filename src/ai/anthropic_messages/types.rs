@@ -89,7 +89,7 @@ pub enum ThinkingConfig {
 // ========== 响应消息 ==========
 
 // 完整消息(message_start 事件中的 message)
-// 对齐 pi 的容错: 仅读取 id/usage, 其余字段容忍缺省(部分代理返回非标准 message_start)
+// 对齐 pi 的容错: 仅读取 id/model/usage, 其余字段容忍缺省(部分代理返回非标准 message_start)
 #[allow(dead_code)]
 #[derive(Debug, Clone, Deserialize)]
 pub struct Message {

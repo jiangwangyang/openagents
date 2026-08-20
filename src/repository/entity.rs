@@ -167,6 +167,8 @@ pub struct MessageEntity {
     pub id: i64,
     pub conversation_id: i64,
     pub content: serde_json::Value,
+    pub create_time: String,
+    pub update_time: String,
 }
 
 // 对话详情查询结果(含外键关联的执行 Agent 与消息列表)

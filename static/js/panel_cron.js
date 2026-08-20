@@ -26,7 +26,7 @@ async function resetCronForm() {
     document.getElementById('cronDay').value = '*';
     document.getElementById('cronMonth').value = '*';
     document.getElementById('cronWeek').value = '*';
-    // 工作目录默认填入对话页当前目录，未设置时从后端拉取默认目录
+    // 工作目录默认填入对话页当前目录, 未设置时从后端拉取默认目录
     const workdir = await resolveDefaultWorkdir();
     const display = document.getElementById('cronWorkspaceDisplay');
     display.textContent = workdir || t('input.unset');
@@ -56,13 +56,13 @@ function parseCronExpr(expr) {
     };
 }
 
-// 组装定时任务提交载荷：校验必填项与 cron 字段格式，失败时提示并返回 null
+// 组装定时任务提交载荷: 校验必填项与 cron 字段格式, 失败时提示并返回 null
 function buildCronPayload(name, content, workDir, agentIdVal, cronFieldValues, second, enabled) {
     if (!name || !content || !workDir || !agentIdVal) {
         showToast(t('common.requiredMissing'), 'error');
         return null;
     }
-    // 简单格式校验：cron 字段仅允许数字与 * , - / 符号
+    // 简单格式校验: cron 字段仅允许数字与 * , - / 符号
     if (cronFieldValues.some(fieldValue => !/^[0-9*,\/\-]+$/.test(fieldValue.trim()))) {
         showToast(t('cron.invalidFormat'), 'error');
         return null;
@@ -98,7 +98,7 @@ async function fetchCronTasks() {
 
         tasks.forEach(task => {
             const cron = parseCronExpr(task.trigger);
-            // 解析 Agent 名称用于只读展示，花名册中缺失时回退为 common.none
+            // 解析 Agent 名称用于只读展示, 花名册中缺失时回退为 common.none
             const boundAgent = agents.find(agent => agent.id === task.agent_id);
             const agentName = boundAgent ? boundAgent.name : '';
             const enabledText = task.enabled ? t('cron.enabled') : t('cron.disabled');
@@ -143,12 +143,12 @@ async function fetchCronTasks() {
                     </div>
                 </div>
             `;
-            // 执行记录标题栏追加排序按钮（升/降序切换并持久化记忆）
+            // 执行记录标题栏追加排序按钮(升/降序切换并持久化记忆)
             card.querySelector('.details-block-header').appendChild(createStageSortButton());
             card.querySelector('.details-block-header').appendChild(createStageExpandButton());
             // 启用/禁用切换按钮
             card.querySelector('.cron-toggle-btn').onclick = () => toggleCronEnabled(task);
-            // 删除按钮通过闭包绑定，避免任务名中的引号破坏内联 onclick 字符串
+            // 删除按钮通过闭包绑定, 避免任务名中的引号破坏内联 onclick 字符串
             const deleteBtn = card.querySelector('.delete-btn');
             deleteBtn.title = t('common.purge');
             deleteBtn.onclick = (event) => {
@@ -163,7 +163,7 @@ async function fetchCronTasks() {
 }
 
 // ===== 4. 执行记录 =====
-// 展开 cron 卡片时加载定时任务详情（执行对话记录）
+// 展开 cron 卡片时加载定时任务详情(执行对话记录)
 function toggleCronCard(cardElement, scheduleId) {
     toggleCardOpen(cardElement);
     if (cardElement.hasAttribute('open')) {
@@ -171,7 +171,7 @@ function toggleCronCard(cardElement, scheduleId) {
     }
 }
 
-// 加载定时任务详情：渲染各次执行对话的最后一条消息
+// 加载定时任务详情: 渲染各次执行对话的最后一条消息
 async function loadCronDetail(scheduleId) {
     const stageList = document.getElementById(`cron-stages-${scheduleId}`);
     stageList.innerHTML = SKELETON_HTML;
@@ -187,9 +187,8 @@ async function loadCronDetail(scheduleId) {
             stageList.innerHTML = `<div class="text-hint">${t('cron.notTriggered')}</div>`;
             return;
         }
-        // 按当前排序方向渲染（升/降序由排序按钮切换并持久化记忆）
+        // 按当前排序方向渲染(升/降序由排序按钮切换并持久化记忆)
         sortedStageConversations(schedule.conversations).forEach(conversation => {
-            // 点击执行记录项复用对话页右侧展示区：切换视图并流式回放/跟随该次执行对话（只读，禁止发送消息）
             stageList.appendChild(createStageRecordItem(conversation));
         });
     } catch (e) {
@@ -210,7 +209,7 @@ async function submitCronTask() {
         document.getElementById('cronMonth').value,
         document.getElementById('cronWeek').value
     ];
-    // 新增时后端忽略 enabled 字段，默认启用，但接口要求必传
+    // 新增默认启用, enabled 固定传 true
     const payload = buildCronPayload(name, content, workDir, agentIdVal, cronFieldValues, '0', true);
     if (!payload) {
         return;

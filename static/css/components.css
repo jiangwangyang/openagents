@@ -60,7 +60,6 @@ details > summary {
     gap: 8px;
     user-select: none;
     text-transform: uppercase;
-    letter-spacing: 0.5px;
     background: var(--subtle-bg);
     transition: var(--transition-snap);
 }
@@ -130,34 +129,7 @@ details.system-details .content {
     padding: 4px 0;
 }
 
-.reply-content p, .content p {
-    margin-bottom: 0.8em;
-}
-
-.reply-content pre, .content pre {
-    background: var(--charcoal-900);
-    color: var(--bg-canvas);
-    padding: 16px;
-    border-radius: var(--radius-sm);
-    overflow-x: auto;
-    font-family: var(--font-mono);
-    font-size: 13px;
-    margin: 12px 0;
-}
-
-.reply-content code, .content code {
-    font-family: var(--font-mono);
-    background: var(--inline-code-bg);
-    padding: 2px 6px;
-    border-radius: 2px;
-    font-size: 0.9em;
-}
-
-.reply-content pre code {
-    background: transparent;
-    padding: 0;
-}
-
+/* formatMarkdown 仅输出转义文本与 <br>, 消息内容不会产生 p/pre/code 标签, 无需对应样式 */
 .streaming-active::after {
     content: '';
     display: inline-block;
@@ -169,7 +141,7 @@ details.system-details .content {
     animation: blink 1s step-end infinite;
 }
 
-/* 流式错误消息块（居中警示样式） */
+/* 流式错误消息块(居中警示样式) */
 .stream-error {
     background: var(--danger-bg);
     color: var(--danger-color);
@@ -178,7 +150,7 @@ details.system-details .content {
     max-width: 80%;
 }
 
-/* 手动停止提示条（居中中性样式） */
+/* 手动停止提示条(居中中性样式) */
 .stream-stopped {
     background: var(--subtle-bg);
     color: var(--slate-400);
@@ -204,7 +176,7 @@ details.system-details .content {
     text-transform: uppercase;
 }
 
-/* 标题主题化：字距/颜色/渐变底/辉光统一由各主题标题令牌驱动（--title-bg 非 none 时经 background-clip 呈现渐变文字） */
+/* 标题主题化: 字距/颜色/渐变底/辉光统一由各主题标题令牌驱动(--title-bg 非 none 时经 background-clip 呈现渐变文字) */
 .panel-view-title, .empty-state-title {
     letter-spacing: var(--title-spacing);
     color: var(--title-color);
@@ -214,7 +186,7 @@ details.system-details .content {
     text-shadow: var(--title-shadow);
 }
 
-/* 标题与副标题说明的纵向容器，flex:1 占满标题栏剩余空间避免副标题被压缩换行 */
+/* 标题与副标题说明的纵向容器, flex:1 占满标题栏剩余空间避免副标题被压缩换行 */
 .panel-view-heading {
     display: flex;
     flex-direction: column;
@@ -223,7 +195,7 @@ details.system-details .content {
     flex: 1;
 }
 
-/* 栏目功能副标题：一句话说明页面用途与前置条件 */
+/* 栏目功能副标题: 一句话说明页面用途与前置条件 */
 .panel-view-desc {
     margin: 0;
     font-family: var(--font-mono);
@@ -332,7 +304,7 @@ details.system-details .content {
     animation: slideDown 0.25s ease;
 }
 
-/* 供应商卡片的详情区为表单编辑区，用底色加实线分隔与只读详情区分（原 panel_provider.js 内联样式迁移至此） */
+/* 供应商卡片的详情区为表单编辑区, 用底色加实线分隔与只读详情区分(原 panel_provider.js 内联样式迁移至此) */
 .info-card-details.details-surface {
     background: var(--bg-surface);
     border-top: 1px solid var(--border-hard);
@@ -366,22 +338,8 @@ details.system-details .content {
     padding-top: 14px;
 }
 
-.details-block-container code, .details-block-container pre {
-    font-family: var(--font-mono);
-    background: var(--bg-surface);
-    padding: 12px 16px;
-    border: 1px solid var(--border-hard);
-    border-radius: var(--radius-sm);
-    display: block;
-    white-space: pre-wrap;
-    font-size: 12.5px;
-    color: var(--charcoal-800);
-    line-height: 1.6;
-    overflow-x: auto;
-}
-
 /* ===== 3. 表单与配置面板 ===== */
-/* 新增面板（任务/定时/智能体/MCP/供应商通用） */
+/* 新增面板(任务/定时/智能体/MCP/供应商通用) */
 .add-panel {
     background: var(--bg-surface);
     border: 1px dashed var(--charcoal-900);
@@ -446,18 +404,18 @@ select.form-control {
     height: 36px;
 }
 
-/* 输入框与下拉框统一 36px 高度（textarea 由 rows 控制高度，不受影响；小型控件由更高优先级类覆盖） */
+/* 输入框与下拉框统一 36px 高度(textarea 由 rows 控制高度, 不受影响; 小型控件由更高优先级类覆盖) */
 input.form-control {
     height: 36px;
 }
 
-/* 禁用态统一样式：选择智能体后模型配置锁定等场景，与上下文锁定视觉保持一致 */
+/* 禁用态统一样式: 选择智能体后模型配置锁定等场景, 与上下文锁定视觉保持一致 */
 .form-control:disabled {
     opacity: 0.4;
     cursor: not-allowed;
 }
 
-/* 表单字段格式说明：cron 字段等的小字提示 */
+/* 表单字段格式说明: cron 字段等的小字提示 */
 .form-hint {
     font-family: var(--font-mono);
     font-size: 10px;
@@ -465,7 +423,7 @@ input.form-control {
     margin-top: -4px;
 }
 
-/* 密钥显隐切换（新增/编辑卡片通用） */
+/* 密钥显隐切换(新增/编辑卡片通用) */
 .password-toggle-group {
     display: flex;
     gap: 6px;
@@ -570,7 +528,7 @@ input.form-control {
     -webkit-box-orient: vertical;
 }
 
-/* 摘要展开态：取消 3 行截断，完整显示对话内容 */
+/* 摘要展开态: 取消 3 行截断, 完整显示对话内容 */
 .task-stage-list.snippet-expanded .task-stage-snippet {
     display: block;
     -webkit-line-clamp: unset;
@@ -644,7 +602,7 @@ input.form-control {
     color: var(--charcoal-900);
 }
 
-/* 禁用态统一样式：会话上下文锁定后不再响应悬停高亮 */
+/* 禁用态统一样式: 会话上下文锁定后不再响应悬停高亮 */
 .workspace-btn:disabled {
     opacity: 0.4;
     cursor: not-allowed;
@@ -721,13 +679,13 @@ input.form-control {
     color: var(--slate-300);
 }
 
-/* 禁用态统一样式：流式回复期间输入框锁定 */
+/* 禁用态统一样式: 流式回复期间输入框锁定 */
 .message-input:disabled {
     opacity: 0.4;
     cursor: not-allowed;
 }
 
-/* 会话上下文锁定提示：会话创建后目录与智能体不可修改的说明文字 */
+/* 会话上下文锁定提示: 会话创建后目录与智能体不可修改的说明文字 */
 .context-lock-hint {
     font-family: var(--font-mono);
     font-size: 10px;
@@ -737,7 +695,7 @@ input.form-control {
     align-self: center;
 }
 
-/* 系统提示词来源提示：与锁定说明同风格，超长来源路径省略号截断 */
+/* 系统提示词来源提示: 与锁定说明同风格, 超长来源路径省略号截断 */
 .prompt-source-hint {
     font-family: var(--font-mono);
     font-size: 10px;
@@ -751,7 +709,7 @@ input.form-control {
     white-space: nowrap;
 }
 
-/* 输入框字数计数：绝对定位于输入容器右下角 */
+/* 输入框字数计数: 绝对定位于输入容器右下角 */
 .input-char-count {
     position: absolute;
     right: 96px;
@@ -762,7 +720,7 @@ input.form-control {
     pointer-events: none;
 }
 
-/* 达到输入上限时计数器标红加粗，提示截断风险 */
+/* 达到输入上限时计数器标红加粗, 提示截断风险 */
 .input-char-count.at-limit {
     color: var(--danger-color);
     font-weight: 700;
@@ -967,7 +925,7 @@ input.form-control {
     text-transform: uppercase;
 }
 
-/* 目录弹窗标题复用 confirm-title 排版，去除默认下外边距 */
+/* 目录弹窗标题复用 confirm-title 排版, 去除默认下外边距 */
 .dir-modal-header .confirm-title {
     margin-bottom: 0;
 }
@@ -1118,12 +1076,12 @@ input.form-control {
     width: 45%;
 }
 
-/* ===== 10. 主题选择器（色板预览下拉） ===== */
+/* ===== 10. 主题选择器(色板预览下拉) ===== */
 .theme-picker {
     position: relative;
 }
 
-/* 按钮上的当前主题色点：底色为画布色，描边为强调色 */
+/* 按钮上的当前主题色点: 底色为画布色, 描边为强调色 */
 .theme-picker-dot {
     width: 10px;
     height: 10px;
@@ -1188,7 +1146,7 @@ input.form-control {
     font-weight: 700;
 }
 
-/* 菜单项色板：外圈画布底色 + 内点强调色，未切换即可预览主题配色 */
+/* 菜单项色板: 外圈画布底色 + 内点强调色, 未切换即可预览主题配色 */
 .theme-picker-swatch {
     width: 16px;
     height: 16px;
@@ -1213,12 +1171,12 @@ input.form-control {
     margin: 4px 6px;
 }
 
-/* ===== 11. 模型输入组合框（可输入 + 下拉选择） ===== */
+/* ===== 11. 模型输入组合框(可输入 + 下拉选择) ===== */
 .model-combo-wrapper {
     position: relative;
 }
 
-/* 模型输入框固定宽度（其余头部下拉为自适应宽度） */
+/* 模型输入框固定宽度(其余头部下拉为自适应宽度) */
 #modelSelect {
     width: 160px;
 }
@@ -1271,7 +1229,7 @@ input.form-control {
     white-space: nowrap;
 }
 
-/* 模型组合框的空态/失败提示项：不可点击，hover 不变色（需置于 model-combo-item 规则之后） */
+/* 模型组合框的空态/失败提示项: 不可点击, hover 不变色(需置于 model-combo-item 规则之后) */
 .model-combo-hint {
     color: var(--slate-400);
     cursor: default;
@@ -1283,7 +1241,7 @@ input.form-control {
 }
 
 /* ===== 12. 轻量提示 Toast ===== */
-/* 顶部居中淡入，自动消失，不阻断操作 */
+/* 顶部居中淡入, 自动消失, 不阻断操作 */
 .app-toast {
     position: fixed;
     top: 16px;
@@ -1308,7 +1266,7 @@ input.form-control {
     transform: translate(-50%, 0);
 }
 
-/* 错误提示 toast：危险配色，与成功提示区分 */
+/* 错误提示 toast: 危险配色, 与成功提示区分 */
 .app-toast.error {
     background: var(--danger-bg);
     color: var(--danger-color);
@@ -1316,9 +1274,9 @@ input.form-control {
 }
 
 /* ===== 13. 通用工具类 ===== */
-/* 收敛面板模板与输入区中重复的内联样式；与基础组件同优先级的覆盖类须保持在对应基础规则之后 */
+/* 收敛面板模板与输入区中重复的内联样式; 与基础组件同优先级的覆盖类须保持在对应基础规则之后 */
 
-/* 头部输入区的小型下拉框（智能体/供应商/模型/思考模式），.form-control 前缀提升优先级以覆盖 select.form-control 的默认高度 */
+/* 头部输入区的小型下拉框(智能体/供应商/模型/思考模式), .form-control 前缀提升优先级以覆盖 select.form-control 的默认高度 */
 .form-control.header-select {
     width: auto;
     height: 28px;
@@ -1329,7 +1287,7 @@ input.form-control {
     text-transform: uppercase;
 }
 
-/* 输入区顶部工具行（工作目录/智能体/模型路由控件） */
+/* 输入区顶部工具行(工作目录/智能体/模型路由控件) */
 .input-toolbar {
     display: flex;
     gap: 8px;
@@ -1350,21 +1308,21 @@ input.form-control {
     max-width: 280px;
 }
 
-/* 卡片摘要行内的小型按钮（保存/启用切换等） */
+/* 卡片摘要行内的小型按钮(保存/启用切换等) */
 .btn-card-sm {
     height: 28px;
     padding: 0 8px;
     font-size: 10px;
 }
 
-/* 详情块头部的迷你按钮（刷新等） */
+/* 详情块头部的迷你按钮(排序/展开) */
 .btn-card-xs {
     height: 24px;
     padding: 0 8px;
     font-size: 10px;
 }
 
-/* 卡片摘要内的等宽小字元信息（启用状态/触发规则/下次触发） */
+/* 卡片摘要内的等宽小字元信息(启用状态/触发规则/下次触发) */
 .card-meta {
     font-size: 10px;
     font-family: var(--font-mono);
@@ -1377,14 +1335,14 @@ input.form-control {
     margin-left: 8px;
 }
 
-/* 表单底部按钮行（取消/保存右对齐） */
+/* 表单底部按钮行(取消/保存右对齐) */
 .form-actions {
     justify-content: flex-end;
     margin-top: 4px;
     gap: 12px;
 }
 
-/* 详情块头部（块标签 + 右侧操作按钮） */
+/* 详情块头部(块标签 + 右侧操作按钮) */
 .details-block-header {
     display: flex;
     justify-content: space-between;
@@ -1396,7 +1354,7 @@ input.form-control {
     margin-bottom: 0;
 }
 
-/* 标题栏按钮组：排序/展开按钮靠右排列 */
+/* 标题栏按钮组: 排序/展开按钮靠右排列 */
 .details-block-header .stage-sort-btn {
     margin-left: auto;
 }
@@ -1411,28 +1369,14 @@ input.form-control {
     font-weight: 600;
 }
 
-/* 任务审核区（等待人工审核的提示与输入行） */
-.review-hint {
-    font-size: 11px;
-    font-weight: 600;
-    color: var(--charcoal-900);
-    margin-top: 8px;
-}
-
-.review-area {
-    display: flex;
-    gap: 8px;
-    margin-top: 4px;
-    align-items: flex-start;
-}
-
+/* 任务操作区的审核意见输入框 */
 .review-input {
     flex: 1;
     resize: vertical;
     font-size: 11px;
 }
 
-/* MCP 卡片协议字段分区（显示/隐藏由 JS 控制 display） */
+/* MCP 卡片协议字段分区(显示/隐藏由 JS 控制 display) */
 .mcp-zone {
     display: flex;
     flex-direction: column;
@@ -1454,18 +1398,18 @@ input.form-control {
     color: var(--charcoal-700);
 }
 
-/* 卡片上常驻可见的删除按钮（默认删除按钮 hover 才显现） */
+/* 卡片上常驻可见的删除按钮(默认删除按钮 hover 才显现) */
 .delete-btn.always-visible {
     opacity: 1;
     padding: 6px;
 }
 
-/* 去除工作目录按钮的默认下外边距（嵌入表单行时使用） */
+/* 去除工作目录按钮的默认下外边距(嵌入表单行时使用) */
 .workspace-btn.flush {
     margin-bottom: 0;
 }
 
-/* 表单项弹性占比工具类（form-row 内宽度分配） */
+/* 表单项弹性占比工具类(form-row 内宽度分配) */
 .flex-1 {
     flex: 1;
 }
@@ -1474,18 +1418,13 @@ input.form-control {
     flex: 2;
 }
 
-/* flex 行垂直居中工具类（配合 form-row 使用） */
-.align-center {
-    align-items: center;
-}
-
-/* 表单内可拉伸多行编辑框（任务/定时/智能体新增面板通用） */
+/* 表单内可拉伸多行编辑框(任务/定时/智能体新增面板通用) */
 .form-textarea {
     resize: vertical;
     min-height: 100px;
 }
 
-/* 加高按钮（配置页新增供应商表单的取消/保存按钮） */
+/* 加高按钮(配置页新增供应商表单的取消/保存按钮) */
 .btn-tall {
     height: 36px;
 }
@@ -1497,7 +1436,7 @@ input.form-control {
     color: var(--slate-300);
 }
 
-/* 任务卡片摘要行的启动控件（候选智能体下拉 + 启动按钮），.form-control 前缀提升优先级以覆盖 select.form-control 的默认高度 */
+/* 任务卡片摘要行的启动控件(候选智能体下拉 + 启动按钮), .form-control 前缀提升优先级以覆盖 select.form-control 的默认高度 */
 .form-control.task-start-select {
     width: 140px;
     height: 28px;
@@ -1505,28 +1444,7 @@ input.form-control {
     padding: 0 6px;
 }
 
-.task-start-btn {
-    height: 28px;
-    white-space: nowrap;
-}
-
-/* 定时卡片详情内的下次触发信息行 */
-.nextfire-label {
-    font-family: var(--font-display);
-    font-size: 11px;
-    font-weight: 700;
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
-    color: var(--slate-400);
-}
-
-.nextfire-value {
-    font-family: var(--font-mono);
-    font-size: 12px;
-    color: var(--charcoal-800);
-}
-
-/* 目录选择弹窗：手动路径输入行 / 路径输入框 / 跳转按钮 / 当前路径栏 */
+/* 目录选择弹窗: 手动路径输入行 / 路径输入框 / 跳转按钮 / 当前路径栏 */
 .dir-modal-toolbar {
     padding: 12px 24px;
     border-bottom: 1px solid var(--border-hard);
@@ -1566,7 +1484,7 @@ input.form-control {
     gap: 24px;
 }
 
-/* 新增面板内的子标题（配置页新增供应商卡片） */
+/* 新增面板内的子标题(配置页新增供应商卡片) */
 .panel-sub-title {
     font-family: var(--font-display);
     font-size: 12px;
@@ -1654,8 +1572,8 @@ input.form-control {
     }
 }
 
-/* ===== 9. 任务状态徽章与操作区 ===== */
-/* 状态徽章：五色区分 待启动/运行中/待审核/已完成/运行失败 */
+/* ===== 15. 任务状态徽章与操作区 ===== */
+/* 状态徽章: 五色区分 待启动/运行中/待审核/已完成/运行失败 */
 .task-status-badge {
     flex-shrink: 0;
     font-family: var(--font-display);
@@ -1699,7 +1617,7 @@ input.form-control {
     }
 }
 
-/* 待审核卡片高亮：琥珀色边框提示需要人工介入 */
+/* 待审核卡片高亮: 琥珀色边框提示需要人工介入 */
 .info-card.task-card-review {
     border-color: #d97706;
     box-shadow: 2px 2px 0 rgba(217, 119, 6, 0.15);
@@ -1713,12 +1631,12 @@ input.form-control {
     white-space: nowrap;
 }
 
-/* 实况行：运行中流式滚动最新文本，保持单行截断 */
+/* 实况行: 运行中流式滚动最新文本, 保持单行截断 */
 .task-live-line {
     font-size: 12px;
 }
 
-/* 统一操作区：展开区顶部，承载各状态的启动/停止/审核/继续动作 */
+/* 统一操作区: 展开区顶部, 承载各状态的启动/停止/审核/继续动作 */
 .task-action-area {
     display: flex;
     flex-direction: column;
@@ -1736,25 +1654,25 @@ input.form-control {
     align-items: center;
 }
 
-/* 阶段对话弹窗：覆盖式窗口，复用目录弹窗骨架加宽加高（背景已被遮罩虚化，接近满屏展示） */
+/* 阶段对话弹窗: 覆盖式窗口, 复用目录弹窗骨架加宽加高(背景已被遮罩虚化, 接近满屏展示) */
 .dir-modal.stage-dialog {
     width: 96%;
     max-width: 1400px;
     height: 92vh;
 }
 
-/* 弹窗页脚：「在对话页打开」入口靠左放置，与头部关闭按钮上下分离避免误触 */
+/* 弹窗页脚: "在对话页打开"入口靠左放置, 与头部关闭按钮上下分离避免误触 */
 .stage-dialog-footer {
     justify-content: flex-start;
 }
 
-/* 弹窗主体即消息流容器，样式类与对话页一致 */
+/* 弹窗主体即消息流容器, 样式类与对话页一致 */
 .stage-dialog-body {
     display: flex;
     flex-direction: column;
 }
 
-/* 弹窗头部的次级入口（在对话页打开） */
+/* 弹窗头部的次级入口(在对话页打开) */
 .stage-dialog-link {
     font-family: var(--font-display);
     font-size: 10px;

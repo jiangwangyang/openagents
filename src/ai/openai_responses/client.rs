@@ -1,6 +1,7 @@
 // OpenAI Responses 流式客户端 + pi 基准协议双向适配
 // (移植自 pi/packages/ai/src/api/openai-responses.ts 与 openai-responses-shared.ts)
-// 裁剪说明: 不迁移 grammar 自定义工具、deferred tools、serviceTier 计费、prompt cache、compat 选项
+// 裁剪说明: 不迁移 grammar 自定义工具, deferred tools, serviceTier 计费, prompt cache, compat 选项,
+// 重试, abort/timeout, onPayload/onResponse 钩子, temperature/toolChoice
 use eventsource_stream::Eventsource;
 use futures_util::{Stream, StreamExt};
 use reqwest::Client;
@@ -243,7 +244,7 @@ pub fn convert_responses_messages(model: &Model, context: &Context, options: &Co
                             // 跨模型消息丢弃 fc_ id 避免配对校验; 非 fc_ 开头的 id 一并丢弃
                             // (function_call item id 必须为 fc_*; 对齐 pi, 本项目无自定义工具分支)
                             let starts_with_fc = item_id_raw.map(|i| i.starts_with("fc_")).unwrap_or(false);
-                            let item_id = if (is_different_model && starts_with_fc) || !starts_with_fc { None } else { item_id_raw };
+                            let item_id = if !starts_with_fc || is_different_model { None } else { item_id_raw };
                             let mut item = json!({
                                 "type": "function_call",
                                 "call_id": call_id,
@@ -672,19 +673,11 @@ pub fn stream(model: &Model, context: &Context, options: &OpenAIResponsesOptions
         let _ = tx.send(AssistantMessageEvent::Start { partial: output.clone() });
 
         // bytes_stream -> eventsource-stream -> 反序列化为 ResponseStreamEvent
+        // 对齐 pi: 解析失败即终止流(不静默跳过, 避免丢失内容块)
         let byte_stream = response.bytes_stream();
-        let parsed_stream = byte_stream.eventsource().filter_map(|result| {
-            std::future::ready(match result {
-                Ok(event) => match serde_json::from_str::<ResponseStreamEvent>(&event.data) {
-                    Ok(evt) => Some(Ok(evt)),
-                    // 走到这里说明已建模事件的字段结构与协议不符
-                    Err(e) => {
-                        tracing::warn!("Failed to parse SSE event: {} error={}", event.data, e);
-                        None
-                    }
-                },
-                Err(e) => Some(Err(OpenAiResponsesError::Sse(e.to_string()))),
-            })
+        let parsed_stream = byte_stream.eventsource().map(|result| match result {
+            Ok(event) => serde_json::from_str::<ResponseStreamEvent>(&event.data).map_err(|e| OpenAiResponsesError::Sse(format!("无法解析 OpenAI Responses SSE 事件: {}; data={}", e, event.data))),
+            Err(e) => Err(OpenAiResponsesError::Sse(e.to_string())),
         });
         if let Err(e) = process_responses_stream(Box::pin(parsed_stream), &mut output, &tx).await {
             fail!(e);

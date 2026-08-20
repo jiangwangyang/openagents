@@ -2,7 +2,6 @@
 use sqlx::SqlitePool;
 
 use super::entity::{ScheduleAgentRow, ScheduleEntity, ScheduleWithAgent};
-use super::now_rfc3339;
 
 // 查询全部定时任务, 按 id 升序
 pub async fn list_schedules(pool: &SqlitePool) -> Result<Vec<ScheduleEntity>, sqlx::Error> {
@@ -16,15 +15,15 @@ pub async fn get_schedule(pool: &SqlitePool, schedule_id: i64) -> Result<Option<
 }
 
 // 新增定时任务, 返回自增 id
-pub async fn add_schedule(pool: &SqlitePool, name: &str, content: &str, work_dir: &str, cron_expr: &str, agent_id: i64) -> Result<i64, sqlx::Error> {
-    let now = now_rfc3339();
-    let result = sqlx::query("INSERT INTO t_schedule (name, content, work_dir, cron_expr, agent_id, enabled, create_time, update_time) VALUES (?, ?, ?, ?, ?, 1, ?, ?)").bind(name).bind(content).bind(work_dir).bind(cron_expr).bind(agent_id).bind(&now).bind(&now).execute(pool).await?;
+pub async fn add_schedule(pool: &SqlitePool, name: &str, content: &str, work_dir: &str, cron_expr: &str, agent_id: i64, enabled: bool) -> Result<i64, sqlx::Error> {
+    let now = chrono::Local::now().to_rfc3339();
+    let result = sqlx::query("INSERT INTO t_schedule (name, content, work_dir, cron_expr, agent_id, enabled, create_time, update_time) VALUES (?, ?, ?, ?, ?, ?, ?, ?)").bind(name).bind(content).bind(work_dir).bind(cron_expr).bind(agent_id).bind(enabled).bind(&now).bind(&now).execute(pool).await?;
     Ok(result.last_insert_rowid())
 }
 
 // 按 id 更新定时任务, 不存在返回 false
 pub async fn update_schedule(pool: &SqlitePool, schedule_id: i64, name: &str, content: &str, work_dir: &str, cron_expr: &str, agent_id: i64, enabled: bool) -> Result<bool, sqlx::Error> {
-    let now = now_rfc3339();
+    let now = chrono::Local::now().to_rfc3339();
     let result = sqlx::query("UPDATE t_schedule SET name = ?, content = ?, work_dir = ?, cron_expr = ?, agent_id = ?, enabled = ?, update_time = ? WHERE id = ?").bind(name).bind(content).bind(work_dir).bind(cron_expr).bind(agent_id).bind(enabled).bind(&now).bind(schedule_id).execute(pool).await?;
     Ok(result.rows_affected() > 0)
 }

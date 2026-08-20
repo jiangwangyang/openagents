@@ -2,7 +2,6 @@
 use sqlx::SqlitePool;
 
 use super::entity::McpServerEntity;
-use super::now_rfc3339;
 
 // 查询全部 MCP 服务, 按 id 升序
 pub async fn list_mcp_servers(pool: &SqlitePool) -> Result<Vec<McpServerEntity>, sqlx::Error> {
@@ -16,14 +15,14 @@ pub async fn get_mcp_server(pool: &SqlitePool, server_id: i64) -> Result<Option<
 
 // 新增 MCP 服务, 成功返回自增 id
 pub async fn add_mcp_server(pool: &SqlitePool, name: &str, description: &str, protocol_type: &str, url: Option<&str>, headers: Option<&serde_json::Value>, command: Option<&str>, args: Option<&serde_json::Value>) -> Result<i64, sqlx::Error> {
-    let now = now_rfc3339();
+    let now = chrono::Local::now().to_rfc3339();
     let result = sqlx::query("INSERT INTO t_mcp_server (name, description, protocol_type, url, headers, command, args, create_time, update_time) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)").bind(name).bind(description).bind(protocol_type).bind(url).bind(headers).bind(command).bind(args).bind(&now).bind(&now).execute(pool).await?;
     Ok(result.last_insert_rowid())
 }
 
 // 按 id 更新 MCP 服务, id 不存在返回 false
 pub async fn update_mcp_server(pool: &SqlitePool, server_id: i64, name: &str, description: &str, protocol_type: &str, url: Option<&str>, headers: Option<&serde_json::Value>, command: Option<&str>, args: Option<&serde_json::Value>) -> Result<bool, sqlx::Error> {
-    let now = now_rfc3339();
+    let now = chrono::Local::now().to_rfc3339();
     let result = sqlx::query("UPDATE t_mcp_server SET name = ?, description = ?, protocol_type = ?, url = ?, headers = ?, command = ?, args = ?, update_time = ? WHERE id = ?").bind(name).bind(description).bind(protocol_type).bind(url).bind(headers).bind(command).bind(args).bind(&now).bind(server_id).execute(pool).await?;
     Ok(result.rows_affected() > 0)
 }

@@ -1,4 +1,4 @@
-// AppState: 数据库连接池、定时任务调度器、任务执行句柄(含停止信号)、对话状态表、技能列表
+// AppState: 数据库连接池, 定时任务调度器, 任务执行句柄(含停止信号), 对话状态表, 技能列表
 use std::sync::Arc;
 
 use dashmap::DashMap;

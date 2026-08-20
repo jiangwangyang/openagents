@@ -15,7 +15,7 @@ function toggleAddAgentPanel() {
     }
 }
 
-// 加载供应商下拉选项（必填，无空选项），selectedId 指定后选中
+// 加载供应商下拉选项(必填, 无空选项), selectedId 指定后选中
 async function loadAgentProviderOptions(elementId, selectedId) {
     try {
         const response = await fetch('/model-provider/list');
@@ -83,14 +83,14 @@ async function fetchAgentRegistry() {
                         <div class="form-group flex-1">
                             <label>${t('input.thinkingTitle')}</label>
                             <select id="agent-thinking-${agent.id}" class="form-control">
-                                <option value="true" ${agent.thinking ? 'selected' : ''}>THINK</option>
-                                <option value="false" ${agent.thinking ? '' : 'selected'}>NO THINK</option>
+                                <option value="true" ${agent.thinking ? 'selected' : ''}>${t('input.think')}</option>
+                                <option value="false" ${agent.thinking ? '' : 'selected'}>${t('input.noThink')}</option>
                             </select>
                         </div>
                     </div>
                 </div>
             `;
-            // 删除按钮通过闭包绑定，避免名称中的引号破坏内联 onclick 字符串
+            // 删除按钮通过闭包绑定, 避免名称中的引号破坏内联 onclick 字符串
             const deleteBtn = card.querySelector('.delete-btn');
             deleteBtn.title = t('common.purge');
             deleteBtn.onclick = () => removeAgent(agent.id, agent.name);

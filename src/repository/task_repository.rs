@@ -2,7 +2,6 @@
 use sqlx::SqlitePool;
 
 use super::entity::{TaskEntity, TASK_STATUS_IDLE};
-use super::now_rfc3339;
 
 // 查询全部任务, 按 id 升序
 pub async fn list_tasks(pool: &SqlitePool) -> Result<Vec<TaskEntity>, sqlx::Error> {
@@ -16,26 +15,27 @@ pub async fn get_task(pool: &SqlitePool, task_id: i64) -> Result<Option<TaskEnti
 
 // 新增任务, 返回自增 id
 pub async fn add_task(pool: &SqlitePool, title: &str, content: &str, agent_ids: &[i64], work_dir: &str) -> Result<i64, sqlx::Error> {
-    let now = now_rfc3339();
+    let now = chrono::Local::now().to_rfc3339();
     let result = sqlx::query("INSERT INTO t_task (title, content, agent_ids, work_dir, status, create_time, update_time) VALUES (?, ?, ?, ?, ?, ?, ?)").bind(title).bind(content).bind(sqlx::types::Json(agent_ids)).bind(work_dir).bind(TASK_STATUS_IDLE).bind(&now).bind(&now).execute(pool).await?;
     Ok(result.last_insert_rowid())
 }
 
 // 按 id 更新任务, 不存在返回 false
 pub async fn update_task(pool: &SqlitePool, task_id: i64, title: &str, content: &str, agent_ids: &[i64], work_dir: &str) -> Result<bool, sqlx::Error> {
-    let now = now_rfc3339();
+    let now = chrono::Local::now().to_rfc3339();
     let result = sqlx::query("UPDATE t_task SET title = ?, content = ?, agent_ids = ?, work_dir = ?, update_time = ? WHERE id = ?").bind(title).bind(content).bind(sqlx::types::Json(agent_ids)).bind(work_dir).bind(&now).bind(task_id).execute(pool).await?;
     Ok(result.rows_affected() > 0)
 }
 
-// 按 id 删除任务, 不存在返回 false
+// 按 id 删除任务, 关联阶段对话与消息由数据库外键 ON DELETE CASCADE 级联删除, 不存在返回 false
 pub async fn delete_task(pool: &SqlitePool, task_id: i64) -> Result<bool, sqlx::Error> {
     let result = sqlx::query("DELETE FROM t_task WHERE id = ?").bind(task_id).execute(pool).await?;
     Ok(result.rows_affected() > 0)
 }
 
-// 按 id 更新任务状态(不动 update_time, 状态流转不属于任务字段编辑), 不存在返回 false
+// 按 id 更新任务状态, 不存在返回 false
 pub async fn update_task_status(pool: &SqlitePool, task_id: i64, status: &str) -> Result<bool, sqlx::Error> {
-    let result = sqlx::query("UPDATE t_task SET status = ? WHERE id = ?").bind(status).bind(task_id).execute(pool).await?;
+    let now = chrono::Local::now().to_rfc3339();
+    let result = sqlx::query("UPDATE t_task SET status = ?, update_time = ? WHERE id = ?").bind(status).bind(&now).bind(task_id).execute(pool).await?;
     Ok(result.rows_affected() > 0)
 }

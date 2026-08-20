@@ -35,8 +35,8 @@ pub async fn execute(cmd_and_args: &[String], state: &AppState) -> ToolResult {
                 Err(e) => (format!("Database error: {}", e), true),
             }
         }
-        // schedule add <name> <content> <work_dir> <cron_expr> <agent_id>
-        ["schedule", "add", name, content, work_dir, cron_expr, agent_id] => {
+        // schedule add <name> <content> <work_dir> <cron_expr> <agent_id> <enabled>
+        ["schedule", "add", name, content, work_dir, cron_expr, agent_id, enabled] => {
             // 校验 cron 表达式合法性(与调度器使用同一 cron 解析器)
             if cron::Schedule::from_str(cron_expr).is_err() {
                 return (format!("Invalid cron_expr: {}", cron_expr), true);
@@ -45,7 +45,11 @@ pub async fn execute(cmd_and_args: &[String], state: &AppState) -> ToolResult {
                 Ok(id) => id,
                 Err(r) => return r,
             };
-            match schedule_service::add_schedule(state, name, content, work_dir, cron_expr, agent_id).await {
+            let enabled = match parse_bool(enabled, "enabled") {
+                Ok(b) => b,
+                Err(r) => return r,
+            };
+            match schedule_service::add_schedule(state, name, content, work_dir, cron_expr, agent_id, enabled).await {
                 Ok(id) => (format!("Schedule added with id {}", id), false),
                 Err(e) => (format!("Failed to add schedule: {}", e), true),
             }

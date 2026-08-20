@@ -1,17 +1,17 @@
 // ==========================================
-// 工作空间模块：工作目录 (CWD) 状态与目录选择弹窗
+// 工作空间模块: 工作目录 (CWD) 状态与目录选择弹窗
 // ==========================================
 
 // ===== 1. 弹窗状态与历史缓存 =====
-// 目录选择弹窗暂存路径与确认回调（回调为空则写入对话工作目录，默认行为）
+// 目录选择弹窗暂存路径与确认回调(回调为空则写入对话工作目录, 默认行为)
 let tempSelectedPath = '';
 let dirConfirmCallback = null;
 
-// 工作目录历史记忆（后端 Web 存储）
+// 工作目录历史记忆(后端 Web 存储)
 const WORKDIR_HISTORY_KEY = 'openagents_recent_workdirs';
 const WORKDIR_HISTORY_LIMIT = 10;
 
-// 工作目录历史内存缓存（打开目录弹窗时从后端拉取）
+// 工作目录历史内存缓存(打开目录弹窗时从后端拉取)
 let workdirHistoryCache = [];
 
 // ===== 2. 工作目录历史 =====
@@ -34,7 +34,7 @@ function saveWorkdirToHistory(path) {
     if (!path) {
         return;
     }
-    // 去重后置顶，超出上限截断
+    // 去重后置顶, 超出上限截断
     const list = getWorkdirHistory().filter(item => item !== path);
     list.unshift(path);
     workdirHistoryCache = list.slice(0, WORKDIR_HISTORY_LIMIT);
@@ -80,7 +80,7 @@ function renderWorkdirHistory() {
     });
 }
 
-// 点击历史记录：直接选中该目录并走确认流程
+// 点击历史记录: 直接选中该目录并走确认流程
 function confirmHistorySelection(path) {
     saveWorkdirToHistory(path);
     if (dirConfirmCallback) {
@@ -121,7 +121,7 @@ function createDirItem(name, path) {
     return div;
 }
 
-// 从后端拉取默认工作目录（home 目录），失败返回空串
+// 从后端拉取默认工作目录(home 目录), 失败返回空串
 async function fetchDefaultWorkdir() {
     try {
         const response = await fetch('/dir/list?path=');
@@ -132,12 +132,12 @@ async function fetchDefaultWorkdir() {
     }
 }
 
-// 获取默认工作目录：优先对话页当前目录，未设置时从后端拉取 home 目录（任务/定时添加面板的初值来源）
+// 获取默认工作目录: 优先对话页当前目录, 未设置时从后端拉取 home 目录(任务/定时添加面板的初值来源)
 async function resolveDefaultWorkdir() {
     return currentWorkdir || await fetchDefaultWorkdir();
 }
 
-// 初始化对话页工作目录：新会话时重置为后端默认目录
+// 初始化对话页工作目录: 新会话时重置为后端默认目录
 async function initDefaultWorkspace() {
     const workdir = await fetchDefaultWorkdir();
     if (workdir) {
@@ -146,10 +146,10 @@ async function initDefaultWorkspace() {
 }
 
 // ===== 4. 目录选择弹窗 =====
-// 打开目录选择弹窗：callback 为空时确认后写入对话工作目录（默认行为），否则回调处理选中路径
+// 打开目录选择弹窗: callback 为空时确认后写入对话工作目录(默认行为), 否则回调处理选中路径
 async function openDirModal(callback, currentPath) {
     dirConfirmCallback = callback || null;
-    // 遮罩层需为 flex，弹窗的 margin:auto 才能在垂直方向居中（block 时只能靠顶）
+    // 遮罩层需为 flex, 弹窗的 margin:auto 才能在垂直方向居中(block 时只能靠顶)
     document.getElementById('dirModalOverlay').style.display = 'flex';
     // 从后端加载工作目录历史后再渲染
     await loadWorkdirHistory();
@@ -161,7 +161,7 @@ async function selectWorkspace() {
     await openDirModal(null, currentWorkdir);
 }
 
-// 打开目录选择弹窗，选中后写入指定显示元素（任务/定时面板各自维护独立目录，不回写对话页）
+// 打开目录选择弹窗, 选中后写入指定显示元素(任务/定时面板各自维护独立目录, 不回写对话页)
 function selectPanelWorkspace(displayId) {
     const display = document.getElementById(displayId);
     openDirModal((path) => {
@@ -194,7 +194,7 @@ function closeDirModal() {
 // ===== 5. 工作目录显示 =====
 function updateWorkspaceUI(path) {
     currentWorkdir = path;
-    // 仅刷新对话页的工作目录显示；任务/定时面板各自维护独立目录状态，避免互相覆盖
+    // 仅刷新对话页的工作目录显示; 任务/定时面板各自维护独立目录状态, 避免互相覆盖
     const display = document.getElementById('workspaceDisplay');
     display.textContent = path || t('input.unset');
     display.title = path;

@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>OpenAgents</title>
 
-    <!-- 主题字体（仅特色主题使用，light/dark 用系统默认字体）：JetBrains Mono(等宽) / Noto Serif SC(中文衬线) -->
+    <!-- 主题字体(仅特色主题使用, light/dark 用系统默认字体): JetBrains Mono(赛博朋克/黑洞) / Noto Serif SC(水墨) / Outfit(极光) / Quicksand(落日) -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&family=Noto+Serif+SC:wght@400;600;700&family=Outfit:wght@300;400;600&family=Quicksand:wght@400;500;700&display=swap">
@@ -16,22 +16,22 @@
 </head>
 
 <body>
-    <!-- ===== 主题背景装饰层（静态，纯 CSS） ===== -->
+    <!-- ===== 主题背景装饰层(静态, 纯 CSS) ===== -->
     <div id="themeBackdrop" aria-hidden="true"></div>
-    <!-- ===== 主题布景层（Canvas 实体背景建筑，位于静态背景之上、内容之下，仅需要的主题显示） ===== -->
+    <!-- ===== 主题布景层(Canvas 实体背景建筑, 位于静态背景之上, 内容之下, 仅需要的主题显示) ===== -->
     <div id="themeScenery" aria-hidden="true">
         <canvas id="themeSceneryCanvas"></canvas>
     </div>
-    <!-- ===== 主题动态特效层（Canvas 粒子，pointer-events 关闭不拦截交互） ===== -->
+    <!-- ===== 主题动态特效层(Canvas 粒子, pointer-events 关闭不拦截交互) ===== -->
     <div id="themeEffects" aria-hidden="true">
         <canvas id="themeEffectsCanvas"></canvas>
     </div>
-    <!-- ===== 黑洞主题 WebGL 渲染层（仅 blackhole 主题显示，位于静态背景之上、内容之下） ===== -->
+    <!-- ===== 黑洞主题 WebGL 渲染层(仅 blackhole 主题显示, 位于静态背景之上, 内容之下) ===== -->
     <div id="themeBlackhole" aria-hidden="true">
         <canvas id="blackholeCanvas"></canvas>
     </div>
 
-    <!-- ===== 侧边栏：Logo / 新建会话 / 历史会话列表 ===== -->
+    <!-- ===== 侧边栏: Logo / 新建会话 / 历史会话列表 ===== -->
     <div class="sidebar">
         <div class="sidebar-header">
             <div class="sidebar-logo">
@@ -49,15 +49,15 @@
         <!-- 头部导航 -->
         <div class="header">
             <div class="header-left">
-                <!-- 导航按钮：data-i18n-title 提供悬停提示，一句话说明该栏目功能 -->
+                <!-- 导航按钮: data-i18n-title 提供悬停提示, 一句话说明该栏目功能 -->
                 <button class="header-nav-btn active" id="navDialogBtn" onclick="switchView('dialog')" data-i18n="nav.dialog" title="Chat directly with an agent" data-i18n-title="nav.dialogTip">DIALOG</button>
                 <button class="header-nav-btn" id="navTaskBtn" onclick="switchView('task')" data-i18n="nav.task" title="Multi-agent pipeline with staged execution and review" data-i18n-title="nav.taskTip">TASK</button>
                 <button class="header-nav-btn" id="navCronBtn" onclick="switchView('cron')" data-i18n="nav.cron" title="Auto-run tasks on a cron schedule" data-i18n-title="nav.cronTip">CRON</button>
                 <button class="header-nav-btn" id="navAgentBtn" onclick="switchView('agent')" data-i18n="nav.agent" title="Register agents: model, prompt and behavior" data-i18n-title="nav.agentTip">AGENT</button>
-                <button class="header-nav-btn" id="navSkillBtn" onclick="switchView('skill')" data-i18n="nav.skill" title="Skills distilled automatically from task runs" data-i18n-title="nav.skillTip">SKILL</button>
+                <button class="header-nav-btn" id="navSkillBtn" onclick="switchView('skill')" data-i18n="nav.skill" title="Skills scanned from local skill directories" data-i18n-title="nav.skillTip">SKILL</button>
                 <button class="header-nav-btn" id="navMcpBtn" onclick="switchView('mcp')" data-i18n="nav.mcp" title="Register external tool servers for agents" data-i18n-title="nav.mcpTip">MCP</button>
                 <button class="header-nav-btn" id="navConfigBtn" onclick="switchView('config')" data-i18n="nav.config" title="Configure model providers (protocol, URL, API key)" data-i18n-title="nav.configTip">CONFIG</button>
-                <!-- 主题选择器：色板预览下拉，菜单项由 theme.js 按 THEME_META 动态生成 -->
+                <!-- 主题选择器: 色板预览下拉, 菜单项由 theme.js 按 THEME_META 动态生成 -->
                 <div class="theme-picker" id="themePicker">
                     <button class="header-nav-btn theme-picker-btn" id="themePickerBtn" type="button" title="Switch Theme" data-i18n-title="header.switchTheme">
                         <span class="theme-picker-dot" id="themePickerDot"></span>
@@ -65,7 +65,7 @@
                     </button>
                     <div class="theme-picker-menu" id="themePickerMenu"></div>
                 </div>
-                <!-- 语言切换按钮：点击中英直接互换，按钮显示目标语言 -->
+                <!-- 语言切换按钮: 点击中英直接互换, 按钮显示目标语言 -->
                 <button class="header-nav-btn" id="langToggleBtn" type="button" title="Switch Language" data-i18n-title="lang.toggleTitle" onclick="toggleLanguage()">中/EN</button>
             </div>
             <div class="header-right">
@@ -246,8 +246,8 @@
                     <div class="form-group flex-1">
                         <label data-i18n="input.thinkingTitle">Thinking Mode</label>
                         <select id="agentThinking" class="form-control">
-                            <option value="true">THINK</option>
-                            <option value="false">NO THINK</option>
+                            <option value="true" data-i18n="input.think">THINK</option>
+                            <option value="false" data-i18n="input.noThink">NO THINK</option>
                         </select>
                     </div>
                 </div>
@@ -369,7 +369,7 @@
                             <label data-i18n="config.secretToken">Secret Token (API Key)</label>
                             <div class="password-toggle-group">
                                 <input type="password" id="newProviderKey" class="form-control mono">
-                                <button type="button" class="password-toggle-btn" onclick="toggleKeyVisibility('newProviderKey', this)" title="Show / Hide Secret">👁</button>
+                                <button type="button" class="password-toggle-btn" onclick="toggleKeyVisibility('newProviderKey', this)" title="Show / Hide Secret" data-i18n-title="config.toggleSecret">👁</button>
                             </div>
                         </div>
                     </div>
@@ -379,7 +379,7 @@
                     </div>
                 </div>
 
-                <!-- 供应商列表（JS 异步渲染） -->
+                <!-- 供应商列表(JS 异步渲染) -->
                 <div class="info-card-list" id="providerConfigList"></div>
             </div>
         </div>
@@ -397,19 +397,19 @@
                 <select id="agentSelect" class="form-control header-select" title="Select Agent" data-i18n-title="input.agentTitle" onchange="onAgentSelectChange()">
                     <option value="" data-i18n="common.none">NONE</option>
                 </select>
-                <!-- 模型路由选择：供应商下拉、模型输入（聚焦时拉取模型列表）、思考开关，每次发送消息时生效 -->
+                <!-- 模型路由选择: 供应商下拉, 模型输入(聚焦时拉取模型列表), 思考开关, 每次发送消息时生效 -->
                 <select id="providerSelect" class="form-control header-select" title="Select Provider" data-i18n-title="input.providerTitle"></select>
                 <div class="model-combo-wrapper" id="modelComboWrapper">
-                    <input id="modelSelect" class="form-control header-select" title="Select Model" data-i18n-title="input.modelTitle" placeholder="MODEL" autocomplete="off">
+                    <input id="modelSelect" class="form-control header-select" title="Select Model" data-i18n-title="input.modelTitle" placeholder="MODEL" data-i18n-placeholder="input.modelPlaceholder" autocomplete="off">
                     <div class="model-combo-list" id="modelComboList"></div>
                 </div>
                 <select id="thinkingSelect" class="form-control header-select" title="Thinking Mode" data-i18n-title="input.thinkingTitle">
-                    <option value="true">THINK</option>
-                    <option value="false">NO THINK</option>
+                    <option value="true" data-i18n="input.think">THINK</option>
+                    <option value="false" data-i18n="input.noThink">NO THINK</option>
                 </select>
-                <!-- 会话创建后锁定目录与智能体的说明文字，默认隐藏，由 setContextLocked 控制显隐 -->
+                <!-- 会话创建后锁定目录与智能体的说明文字, 默认隐藏, 由 setContextLocked 控制显隐 -->
                 <span class="context-lock-hint" id="contextLockHint" style="display: none;" data-i18n="input.contextLocked"></span>
-                <!-- 系统提示词来源提示，由 updatePromptSourceHint 维护内容与显隐 -->
+                <!-- 系统提示词来源提示, 由 updatePromptSourceHint 维护内容与显隐 -->
                 <span class="prompt-source-hint" id="promptSourceHint" style="display: none;"></span>
             </div>
             <div class="input-container">

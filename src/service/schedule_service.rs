@@ -21,13 +21,15 @@ pub async fn init_scheduler(state: &AppState) -> anyhow::Result<()> {
     Ok(())
 }
 
-// 新增定时任务并加入调度器
-pub async fn add_schedule(state: &AppState, name: &str, content: &str, work_dir: &str, cron_expr: &str, agent_id: i64) -> anyhow::Result<i64> {
-    let id = schedule_repository::add_schedule(&state.db, name, content, work_dir, cron_expr, agent_id).await?;
-    // 加入调度器失败时回滚数据库, 避免产生无法调度的启用任务
-    if let Err(e) = add_job_to_scheduler(state, id, cron_expr).await {
-        let _ = schedule_repository::delete_schedule(&state.db, id).await;
-        return Err(e.into());
+// 新增定时任务, 启用时加入调度器
+pub async fn add_schedule(state: &AppState, name: &str, content: &str, work_dir: &str, cron_expr: &str, agent_id: i64, enabled: bool) -> anyhow::Result<i64> {
+    let id = schedule_repository::add_schedule(&state.db, name, content, work_dir, cron_expr, agent_id, enabled).await?;
+    // 仅启用的任务加入调度器; 加入失败时回滚数据库, 避免产生无法调度的启用任务
+    if enabled {
+        if let Err(e) = add_job_to_scheduler(state, id, cron_expr).await {
+            let _ = schedule_repository::delete_schedule(&state.db, id).await;
+            return Err(e.into());
+        }
     }
     Ok(id)
 }

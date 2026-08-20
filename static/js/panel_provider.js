@@ -1,5 +1,5 @@
 // ==========================================
-// CONFIG 系统配置面板（模型供应商）
+// CONFIG 系统配置面板(模型供应商)
 // ==========================================
 
 // ===== 1. DOM 节点缓存 =====
@@ -28,7 +28,7 @@ function renderProvidersFormList(providers) {
     const providerList = document.getElementById('providerConfigList');
     providerList.innerHTML = '';
 
-    // 空列表时展示功能引导：配置页是创建智能体的第一步
+    // 空列表时展示功能引导: 配置页是创建智能体的第一步
     if (providers.length === 0) {
         providerList.innerHTML = emptyListHtml('config.empty', 'config.emptyHint');
         return;
@@ -76,13 +76,13 @@ function renderProvidersFormList(providers) {
                         <label class="form-label-strong">${t('config.secretToken')}</label>
                         <div class="password-toggle-group">
                             <input type="password" id="provider-key-${index}" class="form-control mono" value="${escapeHtml(provider.api_key || '')}" placeholder="••••••••••••">
-                            <button type="button" class="password-toggle-btn" onclick="toggleKeyVisibility('provider-key-${index}', this)" title="Show / Hide Secret">👁</button>
+                            <button type="button" class="password-toggle-btn" onclick="toggleKeyVisibility('provider-key-${index}', this)" title="${t('config.toggleSecret')}">👁</button>
                         </div>
                     </div>
                 </div>
             </div>
         `;
-        // 按钮通过闭包绑定，避免供应商名中的引号破坏内联 onclick 字符串
+        // 按钮通过闭包绑定, 避免供应商名中的引号破坏内联 onclick 字符串
         card.querySelector('.provider-save-btn').onclick = () => updateSingleProvider(provider.id, index);
         const deleteBtn = card.querySelector('.delete-btn');
         deleteBtn.title = t('common.purge');
@@ -171,7 +171,7 @@ function removeModelProvider(id, name) {
     });
 }
 
-// ===== 7. 密钥显隐切换（新增卡片与编辑卡片通用） =====
+// ===== 7. 密钥显隐切换(新增卡片与编辑卡片通用) =====
 function toggleKeyVisibility(inputId, btn) {
     const input = document.getElementById(inputId);
     if (!input) {

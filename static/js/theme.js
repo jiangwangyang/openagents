@@ -1,11 +1,11 @@
 // ==========================================
-// 主题切换引擎（多套主题，未手动选择时默认浅色，非法值回退浅色）
+// 主题切换引擎(多套主题, 未手动选择时默认浅色, 非法值回退浅色)
 // ==========================================
 
 // ===== 1. 主题元数据 =====
 const THEME_STORAGE_KEY = 'openagents_theme';
 
-// 主题选择器元数据：菜单顺序即数组顺序，分 3 组（基础 light/dark → 其它主题 → 黑洞），divider 标记该项前插入分组分割线，bg/accent 用于色板预览，名称取自 i18n theme 组
+// 主题选择器元数据: 菜单顺序即数组顺序, 分 3 组(基础 light/dark -> 其它主题 -> 黑洞), divider 标记该项前插入分组分割线, bg/accent 用于色板预览, 名称取自 i18n theme 组
 const THEME_META = [
     {id: 'light', bg: '#f0efe9', accent: '#121417'},
     {id: 'dark', bg: '#101214', accent: '#e6e8eb'},
@@ -18,20 +18,20 @@ const THEME_META = [
 
 // ===== 2. 主题切换 =====
 function setTheme(theme) {
-    // 校验主题合法性（已删除主题/非法值回退浅色），THEME_EFFECTS 的 key 即有效主题白名单
+    // 校验主题合法性(已删除主题/非法值回退浅色), THEME_EFFECTS 的 key 即有效主题白名单
     if (!Object.prototype.hasOwnProperty.call(THEME_EFFECTS, theme)) {
         theme = 'light';
     }
-    // 持久化到后端 Web 存储（异步落库，不阻塞主题切换）
+    // 持久化到后端 Web 存储(异步落库, 不阻塞主题切换)
     setWebStorage(THEME_STORAGE_KEY, theme);
     document.documentElement.dataset.theme = theme;
     syncThemePicker(theme);
-    // 同步切换动态粒子特效（静态背景由 CSS 变量随 data-theme 自动生效）
+    // 同步切换动态粒子特效(静态背景由 CSS 变量随 data-theme 自动生效)
     startThemeEffects(theme);
 }
 
 // ===== 3. 主题选择器 =====
-// 同步主题选择器显示：按钮色板与标签 + 菜单项高亮
+// 同步主题选择器显示: 按钮色板与标签 + 菜单项高亮
 function syncThemePicker(theme) {
     const meta = THEME_META.find(item => item.id === theme) || THEME_META[0];
     const dot = document.getElementById('themePickerDot');
@@ -47,13 +47,13 @@ function syncThemePicker(theme) {
     if (menu) {
         menu.querySelectorAll('.theme-picker-item').forEach(item => {
             item.classList.toggle('active', item.dataset.theme === theme);
-            // 随语言切换刷新菜单项文案（i18n.js 的 setLanguage 会调用本函数）
+            // 随语言切换刷新菜单项文案(i18n.js 的 setLanguage 会调用本函数)
             item.querySelector('.theme-picker-text').textContent = t('theme.' + item.dataset.theme);
         });
     }
 }
 
-// 初始化主题选择器：构建色板菜单、绑定开合、点击外部或按 Escape 关闭
+// 初始化主题选择器: 构建色板菜单, 绑定开合, 点击外部或按 Escape 关闭
 function initThemePicker() {
     const menu = document.getElementById('themePickerMenu');
     const btn = document.getElementById('themePickerBtn');
@@ -61,7 +61,7 @@ function initThemePicker() {
         return;
     }
     THEME_META.forEach(meta => {
-        // 三组主题之间插入分割线（divider 标记的项为一组之首）
+        // 三组主题之间插入分割线(divider 标记的项为一组之首)
         if (meta.divider) {
             const divider = document.createElement('div');
             divider.className = 'theme-picker-divider';
@@ -104,12 +104,12 @@ function initThemePicker() {
 }
 
 // ===== 4. 初始化 =====
-// 先应用当前 data-theme（未设置时默认浅色，不触发持久化），再异步加载后端持久化主题并应用
+// 先应用当前 data-theme(未设置时默认浅色, 不触发持久化), 再异步加载后端持久化主题并应用
 (function initTheme() {
     const preset = document.documentElement.dataset.theme || 'light';
     document.documentElement.dataset.theme = preset;
     syncThemePicker(preset);
-    // 同步开启动态粒子特效（静态背景由 CSS 变量随 data-theme 自动生效）
+    // 同步开启动态粒子特效(静态背景由 CSS 变量随 data-theme 自动生效)
     startThemeEffects(preset);
     getWebStorage(THEME_STORAGE_KEY).then(savedTheme => {
         if (savedTheme && savedTheme !== preset) {

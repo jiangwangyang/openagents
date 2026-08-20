@@ -7,24 +7,24 @@ const taskListContainer = document.getElementById('taskListContainer');
 const addTaskPanel = document.getElementById('addTaskPanel');
 
 // ===== 2. 运行时状态 =====
-// 任务状态常量：待启动/运行中/待审核/已完成/运行失败
+// 任务状态常量: 待启动/运行中/待审核/已完成/运行失败
 const TASK_STATUS = {IDLE: 'idle', RUNNING: 'running', REVIEW: 'review', DONE: 'done', FAILED: 'failed'};
-// 每个任务的跟随控制器：状态推导、双模式更新（收起轮询/展开 SSE）与渲染载体
+// 每个任务的跟随控制器: 状态推导, 双模式更新(收起轮询/展开 SSE)与渲染载体
 const taskControllers = {};
-// Agent 花名册缓存：候选 Agent 下拉与名称解析共用
+// Agent 花名册缓存: 候选 Agent 下拉与名称解析共用
 let taskAgentRoster = [];
-// 收起态轮询间隔（毫秒）
+// 收起态轮询间隔(毫秒)
 const TASK_POLL_INTERVAL = 5000;
-// 流关闭后的单次复核延迟（毫秒）：覆盖任务循环交接的毫秒级间隙
+// 流关闭后的单次复核延迟(毫秒): 覆盖任务循环交接的毫秒级间隙
 const TASK_RECHECK_DELAY = 1500;
-// 启动后的补拉延迟（毫秒）：阶段对话由后台异步创建，立即拉取可能尚未出现
+// 启动后的补拉延迟(毫秒): 阶段对话由后台异步创建, 立即拉取可能尚未出现
 const TASK_START_REFETCH_DELAY = 1200;
 
 // ===== 3. 新增面板与表单辅助 =====
 async function toggleAddTaskPanel() {
     const isOpening = addTaskPanel.style.display === 'none';
     addTaskPanel.style.display = isOpening ? 'flex' : 'none';
-    // 打开面板时将任务目录默认填入对话页当前目录，未设置时从后端拉取默认目录（仅作初值，确认后独立保存，不回写对话页）
+    // 打开面板时将任务目录默认填入对话页当前目录, 未设置时从后端拉取默认目录(仅作初值, 确认后独立保存, 不回写对话页)
     if (isOpening) {
         const workdir = await resolveDefaultWorkdir();
         const display = document.getElementById('taskWorkspaceDisplay');
@@ -33,7 +33,7 @@ async function toggleAddTaskPanel() {
     }
 }
 
-// 渲染候选 Agent 多选列表，agents 为 Agent 列表，checkedIds 为已选中的 Agent id
+// 渲染候选 Agent 多选列表, agents 为 Agent 列表, checkedIds 为已选中的 Agent id
 function renderAgentCheckList(container, agents, checkedIds) {
     container.innerHTML = '';
     if (agents.length === 0) {
@@ -54,7 +54,7 @@ function getCheckedAgentIds(container) {
 }
 
 // ===== 4. 跟随控制器基础 =====
-// 获取（或惰性创建）任务控制器
+// 获取(或惰性创建)任务控制器
 function getTaskController(taskId) {
     if (!taskControllers[taskId]) {
         taskControllers[taskId] = {
@@ -73,12 +73,11 @@ function getTaskController(taskId) {
     return taskControllers[taskId];
 }
 
-// 取任务的最新阶段对话（对话按 id 升序，末尾即最新）
+// 取任务的最新阶段对话(对话按 id 升序, 末尾即最新)
 function latestConversation(detail) {
     const conversations = (detail && detail.conversations) || [];
     return conversations.length > 0 ? conversations[conversations.length - 1] : null;
 }
-
 
 // 关闭任务的 SSE 跟随流
 function closeTaskStream(controller) {
@@ -98,7 +97,7 @@ function stopTaskPolling(controller) {
     }
 }
 
-// 停止任务的全部跟随资源（轮询 + SSE）
+// 停止任务的全部跟随资源(轮询 + SSE)
 function stopTaskController(taskId) {
     const controller = taskControllers[taskId];
     if (controller) {
@@ -107,7 +106,7 @@ function stopTaskController(taskId) {
     }
 }
 
-// 视图清理钩子：离开任务视图时停止全部轮询与 SSE（由 switchView 按 VIEW_CONFIG.unload 调用）
+// 视图清理钩子: 离开任务视图时停止全部轮询与 SSE(由 switchView 按 VIEW_CONFIG.unload 调用)
 function cleanupTaskView() {
     Object.keys(taskControllers).forEach(taskId => stopTaskController(parseInt(taskId)));
 }
@@ -116,7 +115,7 @@ function cleanupTaskView() {
 async function fetchTaskList() {
     taskListContainer.innerHTML = SKELETON_HTML;
     try {
-        // 并行拉取任务清单与 Agent 花名册（候选 Agent 多选与操作区下拉共用）
+        // 并行拉取任务清单与 Agent 花名册(候选 Agent 多选与操作区下拉共用)
         const [taskResponse, agentResponse] = await Promise.all([fetch('/task/list'), fetch('/agent/list')]);
         const tasks = await taskResponse.json();
         taskAgentRoster = await agentResponse.json();
@@ -135,7 +134,7 @@ async function fetchTaskList() {
         }
         tasks.forEach(task => {
             taskListContainer.appendChild(createTaskCard(task));
-            // 初始状态推导：进入视图时对每个任务一次性拉取详情（非周期轮询）
+            // 初始状态推导: 进入视图时对每个任务一次性拉取详情(非周期轮询)
             loadTaskState(task.id);
         });
     } catch (e) {
@@ -143,7 +142,7 @@ async function fetchTaskList() {
     }
 }
 
-// 创建任务卡片：摘要行（标题/状态徽章/实况行/阶段计数/删除）+ 展开详情容器
+// 创建任务卡片: 摘要行(标题/状态徽章/实况行/阶段计数/删除)+ 展开详情容器
 function createTaskCard(task) {
     const card = document.createElement('div');
     card.className = 'info-card task-card';
@@ -163,7 +162,7 @@ function createTaskCard(task) {
         </div>
         <div class="info-card-details" style="display: none;" id="task-details-${task.id}"></div>
     `;
-    // 删除按钮通过闭包绑定，避免标题中的引号破坏内联 onclick 字符串
+    // 删除按钮通过闭包绑定, 避免标题中的引号破坏内联 onclick 字符串
     const deleteBtn = card.querySelector(`#task-delete-${task.id}`);
     deleteBtn.innerHTML = DELETE_SVG;
     deleteBtn.title = t('common.purge');
@@ -172,16 +171,16 @@ function createTaskCard(task) {
 }
 
 // ===== 6. 状态推导与摘要渲染 =====
-// 由控制器数据推导五状态：执行循环存活标记（detail.running）优先，其余以后端持久化的 status 字段为准
+// 由控制器数据推导五状态: 执行循环存活标记(detail.running)优先, 其余以后端持久化的 status 字段为准
 function deriveTaskStatus(controller) {
     const detail = controller.detail;
-    // 执行循环存活一律视为运行中（覆盖启动间隙/长轮次执行/阶段交接间隙）
+    // 执行循环存活一律视为运行中(覆盖启动间隙/长轮次执行/阶段交接间隙)
     if (detail && detail.running) {
         return TASK_STATUS.RUNNING;
     }
-    // 后端持久化状态为权威来源（由后端循环退出分支与审核提交处维护）
+    // 后端持久化状态为权威来源(由后端循环退出分支与审核提交处维护)
     if (detail && Object.values(TASK_STATUS).includes(detail.status)) {
-        // 持久化状态残留运行中但执行循环已消亡（如应用被异常杀掉）：视为运行失败
+        // 持久化状态残留运行中但执行循环已消亡(如应用被异常杀掉): 视为运行失败
         if (detail.status === TASK_STATUS.RUNNING) {
             return TASK_STATUS.FAILED;
         }
@@ -191,17 +190,17 @@ function deriveTaskStatus(controller) {
     return TASK_STATUS.IDLE;
 }
 
-// 候选 Agent 对象列表（按任务 agent_ids 顺序解析花名册）
+// 候选 Agent 对象列表(按任务 agent_ids 顺序解析花名册)
 function candidateAgents(detail) {
     return (detail.agent_ids || []).map(agentId => taskAgentRoster.find(agent => agent.id === agentId)).filter(agent => agent);
 }
 
-// 候选 Agent 名称列表（只读展示）
+// 候选 Agent 名称列表(只读展示)
 function candidateAgentNames(detail) {
     return candidateAgents(detail).map(agent => agent.name).join(', ');
 }
 
-// 上一个执行者：阶段历史中最后一个非空的 agent_id（继续/审核下拉的默认选中项）
+// 上一个执行者: 阶段历史中最后一个非空的 agent_id(继续/审核下拉的默认选中项)
 function lastExecutedAgentId(detail) {
     const conversations = (detail && detail.conversations) || [];
     for (let i = conversations.length - 1; i >= 0; i--) {
@@ -212,7 +211,7 @@ function lastExecutedAgentId(detail) {
     return null;
 }
 
-// 刷新卡片摘要行：状态徽章、实况行、阶段计数、删除可用性与待审核高亮
+// 刷新卡片摘要行: 状态徽章, 实况行, 阶段计数, 删除可用性与待审核高亮
 function updateTaskSummary(taskId) {
     const controller = getTaskController(taskId);
     const detail = controller.detail;
@@ -232,7 +231,7 @@ function updateTaskSummary(taskId) {
     badge.className = `task-status-badge status-${controller.status}`;
     // 待审核卡片高亮提示人工介入
     card.classList.toggle('task-card-review', controller.status === TASK_STATUS.REVIEW);
-    // 实况行：运行中优先流式文本，待审核显示等待提示，其余显示最新对话最后一条消息
+    // 实况行: 运行中优先流式文本, 待审核显示等待提示, 其余显示最新对话最后一条消息
     const liveLine = document.getElementById(`task-live-${taskId}`);
     const latest = latestConversation(detail);
     if (controller.status === TASK_STATUS.RUNNING && controller.liveText) {
@@ -250,14 +249,14 @@ function updateTaskSummary(taskId) {
     meta.textContent = stageCount > 0
         ? t('task.stageCount', {count: stageCount}) + (latest && latest.update_time ? ` · ${latest.update_time}` : '')
         : '';
-    // 运行中禁止删除（与后端 409 语义对齐）
+    // 运行中禁止删除(与后端 409 语义对齐)
     const deleteBtn = document.getElementById(`task-delete-${taskId}`);
     deleteBtn.disabled = controller.status === TASK_STATUS.RUNNING;
     deleteBtn.title = controller.status === TASK_STATUS.RUNNING ? t('task.runningNoPurge') : t('common.purge');
 }
 
 // ===== 7. 数据加载与双模式跟随 =====
-// 拉取任务详情并应用（初始推导、轮询、流结束复核、动作后刷新共用入口）
+// 拉取任务详情并应用(初始推导, 轮询, 流结束复核, 动作后刷新共用入口)
 async function loadTaskState(taskId) {
     try {
         const response = await fetch(`/task/${taskId}`);
@@ -271,26 +270,26 @@ async function loadTaskState(taskId) {
     }
 }
 
-// 应用任务详情：推导状态、刷新摘要与展开区、同步跟随模式（轮询/SSE 两条路径的汇聚点）
+// 应用任务详情: 推导状态, 刷新摘要与展开区, 同步跟随模式(轮询/SSE 两条路径的汇聚点)
 function applyTaskDetail(taskId, detail) {
     const controller = getTaskController(taskId);
     const previousStatus = controller.status;
     controller.detail = detail;
     controller.status = deriveTaskStatus(controller);
     updateTaskSummary(taskId);
-    // 运行中转入待审核：提醒用户人工介入
+    // 运行中转入待审核: 提醒用户人工介入
     if (controller.status === TASK_STATUS.REVIEW && previousStatus === TASK_STATUS.RUNNING) {
         showToast(t('task.reviewNeeded', {name: detail.title}));
     }
     if (controller.expanded) {
         renderTaskDetails(taskId);
-        // 展开且运行中但无跟随流：补齐 SSE（复核窗口内除外，避免流刚关闭被立即重开）
+        // 展开且运行中但无跟随流: 补齐 SSE(复核窗口内除外, 避免流刚关闭被立即重开)
         if (controller.status === TASK_STATUS.RUNNING && !controller.eventSource && !controller.rechecking) {
             const latest = latestConversation(detail);
             if (latest && latest.agent_id != null) {
                 openTaskStream(taskId, latest.id);
             } else {
-                // 运行中但最新仍是用户对话：阶段对话异步创建中，延迟补拉
+                // 运行中但最新仍是用户对话: 阶段对话异步创建中, 延迟补拉
                 scheduleTaskRefetch(taskId, TASK_START_REFETCH_DELAY);
             }
         }
@@ -298,7 +297,7 @@ function applyTaskDetail(taskId, detail) {
     syncTaskFollowMode(taskId);
 }
 
-// 同步跟随模式：展开且运行中由 SSE 驱动（此处只管计时器），收起且运行中启动 5 秒轮询，其余状态静止
+// 同步跟随模式: 展开且运行中由 SSE 驱动(此处只管计时器), 收起且运行中启动 5 秒轮询, 其余状态静止
 function syncTaskFollowMode(taskId) {
     const controller = getTaskController(taskId);
     const running = controller.status === TASK_STATUS.RUNNING;
@@ -313,7 +312,7 @@ function syncTaskFollowMode(taskId) {
     }
 }
 
-// 延迟单次补拉：用于阶段对话异步创建等短暂间隙（非周期轮询）
+// 延迟单次补拉: 用于阶段对话异步创建等短暂间隙(非周期轮询)
 function scheduleTaskRefetch(taskId, delay) {
     setTimeout(() => {
         if (taskControllers[taskId]) {
@@ -322,8 +321,7 @@ function scheduleTaskRefetch(taskId, delay) {
     }, delay);
 }
 
-
-// 打开阶段对话 SSE：实况行与阶段摘要实时更新
+// 打开阶段对话 SSE: 实况行与阶段摘要实时更新
 function openTaskStream(taskId, conversationId) {
     const controller = getTaskController(taskId);
     closeTaskStream(controller);
@@ -371,7 +369,7 @@ function openTaskStream(taskId, conversationId) {
         source.close();
         controller.eventSource = null;
         controller.streamLive = false;
-        // 流结束 = 当前对话完成：重新拉取任务，复核窗口内阻塞立即重开
+        // 流结束 = 当前对话完成: 重新拉取任务, 复核窗口内阻塞立即重开
         controller.rechecking = true;
         await loadTaskState(taskId);
         setTimeout(async () => {
@@ -387,10 +385,10 @@ function openTaskStream(taskId, conversationId) {
             }
             const latest = latestConversation(current.detail);
             if (latest && latest.agent_id != null) {
-                // 复核后仍运行中：继续跟随最新阶段对话
+                // 复核后仍运行中: 继续跟随最新阶段对话
                 openTaskStream(taskId, latest.id);
             } else {
-                // 运行中但最新仍是用户对话：阶段对话异步创建中，延迟补拉
+                // 运行中但最新仍是用户对话: 阶段对话异步创建中, 延迟补拉
                 scheduleTaskRefetch(taskId, TASK_START_REFETCH_DELAY);
             }
         }, TASK_RECHECK_DELAY);
@@ -398,7 +396,7 @@ function openTaskStream(taskId, conversationId) {
 }
 
 // ===== 8. 展开详情与统一操作区 =====
-// 展开/收起任务卡片：展开渲染详情并切换 SSE 模式，收起回到轮询模式
+// 展开/收起任务卡片: 展开渲染详情并切换 SSE 模式, 收起回到轮询模式
 function toggleTaskCard(cardElement, taskId) {
     toggleCardOpen(cardElement);
     const controller = getTaskController(taskId);
@@ -406,7 +404,7 @@ function toggleTaskCard(cardElement, taskId) {
     if (controller.expanded) {
         if (controller.detail) {
             renderTaskDetails(taskId);
-            // 展开运行中的任务：开启 SSE 实时跟随最新阶段对话
+            // 展开运行中的任务: 开启 SSE 实时跟随最新阶段对话
             if (controller.status === TASK_STATUS.RUNNING && !controller.eventSource) {
                 const latest = latestConversation(controller.detail);
                 if (latest && latest.agent_id != null) {
@@ -421,7 +419,7 @@ function toggleTaskCard(cardElement, taskId) {
     syncTaskFollowMode(taskId);
 }
 
-// 渲染展开区：统一操作区（顶部）+ 任务字段 + 阶段列表
+// 渲染展开区: 统一操作区(顶部)+ 任务字段 + 阶段列表
 function renderTaskDetails(taskId) {
     const controller = getTaskController(taskId);
     const detail = controller.detail;
@@ -433,11 +431,11 @@ function renderTaskDetails(taskId) {
         container.innerHTML = SKELETON_HTML;
         return;
     }
-    // 审核输入框内容在重绘后恢复（状态切换触发重绘时保留用户输入）
+    // 审核输入框内容在重绘后恢复(状态切换触发重绘时保留用户输入)
     const oldInput = document.getElementById(`task-review-input-${taskId}`);
     const preservedInput = oldInput ? oldInput.value : null;
     container.innerHTML = '';
-    // 统一操作区：启动/停止/审核/继续动作均在此处
+    // 统一操作区: 启动/停止/审核/继续动作均在此处
     const actionArea = document.createElement('div');
     actionArea.className = 'task-action-area';
     container.appendChild(actionArea);
@@ -469,7 +467,7 @@ function renderTaskDetails(taskId) {
     stageBlock.querySelector('.details-block-header').appendChild(createStageSortButton());
     stageBlock.querySelector('.details-block-header').appendChild(createStageExpandButton());
     const stageList = document.createElement('div');
-    // 重绘时按当前展开状态补类，避免轮询/SSE 重绘丢失展开效果
+    // 重绘时按当前展开状态补类, 避免轮询/SSE 重绘丢失展开效果
     stageList.className = stageSnippetExpanded ? 'task-stage-list snippet-expanded' : 'task-stage-list';
     stageList.id = `task-stages-${taskId}`;
     stageBlock.appendChild(stageList);
@@ -477,17 +475,17 @@ function renderTaskDetails(taskId) {
     renderTaskStages(taskId);
 }
 
-// 渲染统一操作区：按状态呈现 开始执行/停止任务/审核/继续执行 动作
+// 渲染统一操作区: 按状态呈现 开始执行/停止任务/审核/继续执行 动作
 function renderTaskActionArea(taskId, container) {
     const controller = getTaskController(taskId);
     const detail = controller.detail;
     const status = controller.status;
-    // 运行中：停止任务按钮
+    // 运行中: 停止任务按钮
     if (status === TASK_STATUS.RUNNING) {
         container.innerHTML = `<button class="btn btn-sm btn-secondary" onclick="stopTask(${taskId})">${t('task.stop')}</button>`;
         return;
     }
-    // 其余状态：意见输入框 + 候选 Agent 下拉 + 状态主按钮；输入框占位文本即空输入时的默认提交内容
+    // 其余状态: 意见输入框 + 候选 Agent 下拉 + 状态主按钮; 输入框占位文本即空输入时的默认提交内容
     const placeholderKey = {
         idle: 'task.launchPlaceholder',
         review: 'task.completePlaceholder',
@@ -510,7 +508,7 @@ function renderTaskActionArea(taskId, container) {
     }
     html += '</div>';
     container.innerHTML = html;
-    // 填充候选 Agent 下拉：默认选中上一个执行者；无候选时禁用主按钮并提示原因
+    // 填充候选 Agent 下拉: 默认选中上一个执行者; 无候选时禁用主按钮并提示原因
     const select = document.getElementById(selectId);
     const candidates = candidateAgents(detail);
     fillSelectOptions(select, candidates, lastExecutedAgentId(detail));
@@ -526,7 +524,8 @@ function renderTaskActionArea(taskId, container) {
         }
     }
 }
-// 渲染阶段列表：点击阶段项打开覆盖式弹窗查看对话内容
+
+// 渲染阶段列表: 点击阶段项打开覆盖式弹窗查看对话内容
 function renderTaskStages(taskId) {
     const controller = getTaskController(taskId);
     const stageList = document.getElementById(`task-stages-${taskId}`);
@@ -539,14 +538,14 @@ function renderTaskStages(taskId) {
         stageList.innerHTML = `<div class="text-hint">${t('task.notStarted')}</div>`;
         return;
     }
-    // 按当前排序方向渲染（升/降序由排序按钮切换并持久化记忆）
+    // 按当前排序方向渲染(升/降序由排序按钮切换并持久化记忆)
     sortedStageConversations(conversations).forEach(conversation => {
         stageList.appendChild(createStageRecordItem(conversation));
     });
 }
 
-// ===== 9. 动作：启动/停止/审核/继续/重启/新增/删除 =====
-// 启动任务并附带用户消息（开始执行/提交并执行/继续执行统一入口）：消息随启动请求提交，由后端落入用户对话后再启动流水线
+// ===== 9. 动作: 启动/停止/审核/继续/新增/删除 =====
+// 启动任务并附带用户消息(开始执行/提交并执行/继续执行统一入口): 消息随启动请求提交, 由后端落入用户对话后再启动流水线
 async function runTask(taskId, defaultText) {
     const select = document.getElementById(`task-agent-${taskId}`);
     const agentId = select ? select.value : '';
@@ -556,7 +555,7 @@ async function runTask(taskId, defaultText) {
     }
     const input = document.getElementById(`task-review-input-${taskId}`);
     const typed = input ? input.value.trim() : '';
-    // defaultText 为空串时表示必须填写意见（提交并执行），否则空输入提交占位文本
+    // defaultText 为空串时表示必须填写意见(提交并执行), 否则空输入提交占位文本
     const content = typed || defaultText;
     if (!content) {
         showToast(t('task.reviewRequired'), 'error');
@@ -570,7 +569,7 @@ async function runTask(taskId, defaultText) {
         });
         if (response.ok) {
             showToast(t('task.launched'));
-            // 阶段对话由后台异步创建：立即拉取一次，再延迟补拉一次兜底
+            // 阶段对话由后台异步创建: 立即拉取一次, 再延迟补拉一次兜底
             await loadTaskState(taskId);
             scheduleTaskRefetch(taskId, TASK_START_REFETCH_DELAY);
         } else if (response.status === 409) {
@@ -583,13 +582,13 @@ async function runTask(taskId, defaultText) {
     }
 }
 
-// 停止任务：通知后端停止执行循环（当前对话优雅收尾后循环退出），状态经延迟补拉收敛
+// 停止任务: 通知后端停止执行循环(当前对话优雅收尾后循环退出), 状态经延迟补拉收敛
 async function stopTask(taskId) {
     try {
         const response = await fetch(`/task/${taskId}/stop`, {method: 'POST'});
         if (response.ok) {
             showToast(t('task.stopped'));
-            // 循环退出与对话收尾为异步过程：立即拉取一次，再延迟补拉一次兜底
+            // 循环退出与对话收尾为异步过程: 立即拉取一次, 再延迟补拉一次兜底
             await loadTaskState(taskId);
             scheduleTaskRefetch(taskId, TASK_START_REFETCH_DELAY);
         } else if (response.status === 409) {
@@ -602,7 +601,7 @@ async function stopTask(taskId) {
     }
 }
 
-// 完成任务：调用任务完成接口（后端向待审核对话追加用户消息并将状态置为已完成，空输入时提交占位文本「完成」），不启动流水线
+// 完成任务: 调用任务完成接口(后端向待审核对话追加用户消息并将状态置为已完成, 空输入时提交占位文本"完成"), 不启动流水线
 async function submitTaskComplete(taskId) {
     const input = document.getElementById(`task-review-input-${taskId}`);
     const typed = input ? input.value.trim() : '';
@@ -622,11 +621,12 @@ async function submitTaskComplete(taskId) {
         showToast(t('task.reviewFault'), 'error');
     }
 }
+
 // 新增任务
 async function submitTask() {
     const title = document.getElementById('taskTitle').value.trim();
     const content = document.getElementById('taskContent').value.trim();
-    // 任务面板独立维护工作目录，从面板显示元素读取而非全局对话目录
+    // 任务面板独立维护工作目录, 从面板显示元素读取而非全局对话目录
     const workDir = document.getElementById('taskWorkspaceDisplay').title || '';
     const agentIds = getCheckedAgentIds(document.getElementById('addTaskAgentList'));
     if (!title || !content || !workDir) {
@@ -651,7 +651,7 @@ async function submitTask() {
     }
 }
 
-// 删除任务：清理跟随控制器后刷新列表
+// 删除任务: 清理跟随控制器后刷新列表
 function removeTask(taskId, taskTitle) {
     showConfirmDialog({
         title: t('task.purgeTitle'),

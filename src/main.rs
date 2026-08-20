@@ -49,7 +49,7 @@ fn run_desktop() -> anyhow::Result<()> {
         }
     });
 
-    // 等待服务就绪并获取实际端口, 超时说明后台服务在发送端口前挂起(如初始化阻塞), 避免主线程永久等待
+    // 等待服务就绪并获取实际端口, 超时或通道断开(后台线程提前退出)均说明服务未能就绪, 避免主线程永久等待
     let port: u16 = port_rx.recv_timeout(std::time::Duration::from_secs(30))?;
     let url: String = format!("http://127.0.0.1:{port}");
 
@@ -72,20 +72,19 @@ fn run_tauri(url: &str) -> anyhow::Result<()> {
 // 启动 HTTP 服务, Web 模式固定 8000 端口, 桌面模式由调用方传入随机端口地址
 async fn run_server(port_tx: Option<Sender<u16>>, bind_addr: String) -> anyhow::Result<()> {
     // 初始化日志: 文件 + 控制台双输出
-    let log_file = config::log_file();
-    // 路径固定为 ~/.openagents/app.log, parent 与 file_name 必然存在
-    let log_dir = log_file.parent().expect("log file has no parent directory");
-    let log_name = log_file.file_name().expect("log file has no file name");
-    std::fs::create_dir_all(log_dir)?;
-    let file_appender = tracing_appender::rolling::daily(log_dir, log_name);
+    let log_dir = config::log_dir();
+    std::fs::create_dir_all(&log_dir)?;
+    // 不设文件名前缀, 后缀为 log, 按天滚动文件名为 日期.log
+    let file_appender = tracing_appender::rolling::Builder::new().rotation(tracing_appender::rolling::Rotation::DAILY).filename_suffix("log").build(&log_dir)?;
     let (non_blocking, _guard) = tracing_appender::non_blocking(file_appender);
     tracing_subscriber::registry()
         // 文件层禁用 ANSI, 避免日志文件混入颜色转义码
-        .with(tracing_subscriber::fmt::layer().with_ansi(false).with_writer(non_blocking))
-        .with(tracing_subscriber::fmt::layer().with_writer(std::io::stdout))
+        // 时间格式: RFC3339 本机时区, 与业务时间统一使用 chrono
+        .with(tracing_subscriber::fmt::layer().with_ansi(false).with_timer((|w: &mut tracing_subscriber::fmt::format::Writer<'_>| write!(w, "{}", chrono::Local::now().to_rfc3339())) as fn(&mut tracing_subscriber::fmt::format::Writer<'_>) -> std::fmt::Result).with_writer(non_blocking))
+        .with(tracing_subscriber::fmt::layer().with_timer((|w: &mut tracing_subscriber::fmt::format::Writer<'_>| write!(w, "{}", chrono::Local::now().to_rfc3339())) as fn(&mut tracing_subscriber::fmt::format::Writer<'_>) -> std::fmt::Result).with_writer(std::io::stdout))
         .with(tracing_subscriber::EnvFilter::from_default_env().add_directive(tracing::Level::INFO.into()))
         .init();
-    tracing::info!("Logging initialized: log_file={}", log_file.display());
+    tracing::info!("Logging initialized: log_dir={}", log_dir.display());
 
     // Windows 下配置 PowerShell UTF-8
     service::tool::shell_tool::setup_powershell_utf8().await;

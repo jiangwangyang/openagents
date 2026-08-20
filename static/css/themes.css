@@ -1,7 +1,7 @@
 /* ==========================================
    主题设计令牌
-   契约：每个主题必须完整定义全部令牌，分组与顺序逐行一致，仅允许值不同
-   全局样式（base.css/components.css）统一消费令牌，禁止在主题中覆写选择器
+   契约: 每个主题必须完整定义全部令牌, 分组与顺序逐行一致, 仅允许值不同
+   全局样式(base.css/components.css)统一消费令牌, 禁止在主题中覆写选择器
    ========================================== */
 
 /* ===== 1. 浅色主题 (LIGHT) ===== */
@@ -27,7 +27,6 @@
     --hover-bg: rgba(0, 0, 0, 0.03);
     --subtle-bg: rgba(0, 0, 0, 0.01);
     --summary-bg: #fafafa;
-    --inline-code-bg: rgba(0, 0, 0, 0.05);
     --overlay-bg: rgba(240, 239, 233, 0.85);
     --on-accent-muted: rgba(255, 255, 255, 0.4);
     --noise-opacity: 0.035;
@@ -40,7 +39,7 @@
     --font-body: -apple-system, 'Segoe UI', 'PingFang SC', 'Microsoft YaHei', sans-serif;
     --font-mono: 'SF Mono', 'Fira Code', 'JetBrains Mono', monospace;
 
-    /* 背景装饰（静态背景图） */
+    /* 背景装饰(静态背景图) */
     --backdrop-image: none;
     --backdrop-size: cover;
     --backdrop-position: center;
@@ -116,7 +115,7 @@
     --nav-hover-text-shadow: none;
     --nav-hover-filter: none;
 
-    /* 消息、会话与输入 */
+    /* 消息, 会话与输入 */
     --user-msg-bg: var(--charcoal-900);
     --user-msg-color: var(--bg-canvas);
     --user-msg-radius: 2px;
@@ -165,7 +164,6 @@
     --hover-bg: rgba(255, 255, 255, 0.05);
     --subtle-bg: rgba(255, 255, 255, 0.02);
     --summary-bg: #21262c;
-    --inline-code-bg: rgba(255, 255, 255, 0.08);
     --overlay-bg: rgba(16, 18, 20, 0.85);
     --on-accent-muted: rgba(0, 0, 0, 0.4);
     --noise-opacity: 0.06;
@@ -178,7 +176,7 @@
     --font-body: -apple-system, 'Segoe UI', 'PingFang SC', 'Microsoft YaHei', sans-serif;
     --font-mono: 'SF Mono', 'Fira Code', 'JetBrains Mono', monospace;
 
-    /* 背景装饰（静态背景图） */
+    /* 背景装饰(静态背景图) */
     --backdrop-image: none;
     --backdrop-size: cover;
     --backdrop-position: center;
@@ -254,7 +252,7 @@
     --nav-hover-text-shadow: none;
     --nav-hover-filter: none;
 
-    /* 消息、会话与输入 */
+    /* 消息, 会话与输入 */
     --user-msg-bg: var(--charcoal-900);
     --user-msg-color: var(--bg-canvas);
     --user-msg-radius: 2px;
@@ -281,7 +279,7 @@
 }
 
 /* ===== 3. 水墨主题 (INK) ===== */
-/* 宣纸米白底 + 底部远山淡墨 + 顶部枯笔飞白 + 右上角朱红闲章，墨滴在宣纸四缘晕染、竹叶飘落 */
+/* 宣纸米白底 + 底部远山淡墨 + 顶部枯笔飞白 + 右上角朱红闲章, 墨滴在宣纸四缘晕染, 竹叶飘落 */
 :root[data-theme="ink"] {
     /* 基础色板与氛围 */
     --charcoal-900: #1c1a17;
@@ -304,7 +302,6 @@
     --hover-bg: rgba(28, 26, 23, 0.04);
     --subtle-bg: rgba(28, 26, 23, 0.02);
     --summary-bg: #f5f0e3;
-    --inline-code-bg: rgba(28, 26, 23, 0.07);
     --overlay-bg: rgba(242, 236, 223, 0.88);
     --on-accent-muted: rgba(242, 236, 223, 0.5);
     --noise-opacity: 0.06;
@@ -317,7 +314,7 @@
     --font-body: 'Noto Serif SC', 'Songti SC', 'STSong', Georgia, serif;
     --font-mono: 'SF Mono', 'Fira Code', 'JetBrains Mono', monospace;
 
-    /* 背景装饰（静态背景图） */
+    /* 背景装饰(静态背景图) */
     --backdrop-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='64' height='64' viewBox='0 0 64 64'%3E%3Cg transform='rotate(3 32 32)'%3E%3Crect x='8' y='8' width='48' height='48' rx='4' fill='%23b03a2e' opacity='0.85'/%3E%3Ctext x='32' y='43' font-size='26' text-anchor='middle' fill='%23faf6ec' font-family='serif'%3E%E5%A2%A8%3C/text%3E%3C/g%3E%3C/svg%3E"),
     url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='600' height='90' viewBox='0 0 600 90'%3E%3Cg fill='%231c1a17'%3E%3Cpath d='M20 40 C140 30 300 26 580 34 C500 40 300 42 60 48 Z' opacity='0.1'/%3E%3Cpath d='M40 52 C200 46 380 44 560 50 C420 54 220 56 50 60 Z' opacity='0.07'/%3E%3Cpath d='M90 62 C240 58 400 57 530 62 C400 65 240 66 100 68 Z' opacity='0.05'/%3E%3C/g%3E%3C/svg%3E"),
     url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='1600' height='300' viewBox='0 0 1600 300'%3E%3Cpath d='M0 300 L0 210 C160 170 260 120 400 150 C520 175 600 90 760 110 C900 128 980 60 1140 95 C1300 130 1420 100 1600 140 L1600 300 Z' fill='%231c1a17' opacity='0.05'/%3E%3Cpath d='M0 300 L0 250 C200 215 320 190 480 210 C640 230 720 160 880 180 C1040 200 1160 150 1320 180 C1440 202 1520 190 1600 205 L1600 300 Z' fill='%231c1a17' opacity='0.08'/%3E%3C/svg%3E"),
@@ -347,7 +344,7 @@
     --card-hover-transform: none;
     --card-hover-filter: none;
 
-    /* Logo（印章红方块，微旋转） */
+    /* Logo(印章红方块, 微旋转) */
     --logo-bg: #b03a2e;
     --logo-color: #faf6ec;
     --logo-radius: 2px;
@@ -398,7 +395,7 @@
     --nav-hover-text-shadow: none;
     --nav-hover-filter: none;
 
-    /* 消息、会话与输入 */
+    /* 消息, 会话与输入 */
     --user-msg-bg: var(--charcoal-900);
     --user-msg-color: var(--bg-canvas);
     --user-msg-radius: 2px 14px 2px 14px;
@@ -425,7 +422,7 @@
 }
 
 /* ===== 4. 落日主题 (SUNSET) ===== */
-/* 蜜桃-珊瑚-薰衣草三色天空 + 巨大落日圆盘沉入海平线 + 双层海浪剪影，海鸥掠过，暮色电影场景；面板半透明，落日余晖透过面板弥散 */
+/* 蜜桃-珊瑚-薰衣草三色天空 + 巨大落日圆盘沉入海平线 + 双层海浪剪影, 海鸥掠过, 暮色电影场景; 面板半透明, 落日余晖透过面板弥散 */
 :root[data-theme="sunset"] {
     /* 基础色板与氛围 */
     --charcoal-900: #4e2333;
@@ -448,7 +445,6 @@
     --hover-bg: rgba(232, 93, 61, 0.05);
     --subtle-bg: rgba(232, 93, 61, 0.02);
     --summary-bg: #fdf3ea;
-    --inline-code-bg: rgba(232, 93, 61, 0.07);
     --overlay-bg: rgba(255, 241, 228, 0.9);
     --on-accent-muted: rgba(255, 253, 248, 0.5);
     --noise-opacity: 0.025;
@@ -461,7 +457,7 @@
     --font-body: 'Quicksand', 'Segoe UI', 'PingFang SC', 'Microsoft YaHei', sans-serif;
     --font-mono: 'SF Mono', 'Fira Code', 'JetBrains Mono', monospace;
 
-    /* 背景装饰（静态背景图） */
+    /* 背景装饰(静态背景图) */
     --backdrop-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='720' height='140' viewBox='0 0 720 140'%3E%3Cpath d='M0 140 L0 84 C120 64 220 96 330 80 C440 64 540 92 720 70 L720 140 Z' fill='%236f3644' opacity='0.72'/%3E%3C/svg%3E"),
     url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='720' height='180' viewBox='0 0 720 180'%3E%3Cpath d='M0 180 L0 96 C90 78 180 108 270 92 C360 76 450 104 540 88 C630 74 680 92 720 84 L720 180 Z' fill='%23b87f9b' opacity='0.5'/%3E%3C/svg%3E"),
     url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='900' height='110' viewBox='0 0 900 110'%3E%3Cpath d='M0 110 L0 60 C150 44 260 70 400 56 C540 42 660 66 900 50 L900 110 Z' fill='%23d6a9b8' opacity='0.35'/%3E%3C/svg%3E"),
@@ -473,7 +469,7 @@
     --backdrop-position: bottom center, bottom center, bottom center, center, center, center, center;
     --backdrop-repeat: repeat-x, repeat-x, repeat-x, no-repeat, no-repeat, no-repeat, no-repeat;
 
-    /* 面板（半透明，余晖透入） */
+    /* 面板(半透明, 余晖透入) */
     --sidebar-bg: color-mix(in srgb, var(--bg-surface) 78%, transparent);
     --sidebar-header-bg: color-mix(in srgb, var(--bg-panel) 72%, transparent);
     --main-content-bg: color-mix(in srgb, var(--bg-panel) 80%, transparent);
@@ -492,7 +488,7 @@
     --card-hover-transform: translateY(-2px);
     --card-hover-filter: none;
 
-    /* Logo（落日圆盘） */
+    /* Logo(落日圆盘) */
     --logo-bg: radial-gradient(circle at 35% 35%, #ffd66e 0%, #ff9d5c 55%, #e85d3d 100%);
     --logo-color: #4e2333;
     --logo-radius: 50%;
@@ -505,14 +501,14 @@
     --logo-text-shadow: none;
     --logo-text-animation: none;
 
-    /* 标题（暮色渐变文字） */
+    /* 标题(暮色渐变文字) */
     --panel-header-border: 2px solid var(--charcoal-900);
     --title-spacing: 5px;
     --title-color: transparent;
     --title-bg: linear-gradient(90deg, #e85d3d 0%, #c95d8e 60%, #8d6b9e 100%);
     --title-shadow: none;
 
-    /* 发送按钮（胶囊渐变） */
+    /* 发送按钮(胶囊渐变) */
     --send-bg: linear-gradient(135deg, #e85d3d 0%, #ff9d5c 100%);
     --send-color: #fffdf8;
     --send-radius: 999px;
@@ -543,7 +539,7 @@
     --nav-hover-text-shadow: none;
     --nav-hover-filter: none;
 
-    /* 消息、会话与输入 */
+    /* 消息, 会话与输入 */
     --user-msg-bg: linear-gradient(135deg, #e85d3d 0%, #c95d8e 100%);
     --user-msg-color: #fffdf8;
     --user-msg-radius: 20px 20px 4px 20px;
@@ -570,7 +566,7 @@
 }
 
 /* ===== 5. 极光主题 (AURORA) ===== */
-/* 极夜深空 + 青绿/紫罗兰极光带与流星，玻璃拟态悬浮面板；面板半透明，极光可透过面板弥散 */
+/* 极夜深空 + 青绿/紫罗兰极光带与流星, 玻璃拟态悬浮面板; 面板半透明, 极光可透过面板弥散 */
 :root[data-theme="aurora"] {
     /* 基础色板与氛围 */
     --charcoal-900: #eaf6ff;
@@ -593,7 +589,6 @@
     --hover-bg: rgba(95, 240, 192, 0.06);
     --subtle-bg: rgba(95, 240, 192, 0.02);
     --summary-bg: #141c40;
-    --inline-code-bg: rgba(95, 240, 192, 0.1);
     --overlay-bg: rgba(6, 10, 24, 0.82);
     --on-accent-muted: rgba(6, 10, 24, 0.5);
     --noise-opacity: 0.04;
@@ -606,7 +601,7 @@
     --font-body: 'Outfit', 'Segoe UI', 'PingFang SC', 'Microsoft YaHei', sans-serif;
     --font-mono: 'SF Mono', 'Fira Code', 'JetBrains Mono', monospace;
 
-    /* 背景装饰（静态背景图） */
+    /* 背景装饰(静态背景图) */
     --backdrop-image: radial-gradient(ellipse at 20% 0%, rgba(95, 240, 192, 0.1) 0%, rgba(95, 240, 192, 0) 45%),
     radial-gradient(ellipse at 85% 15%, rgba(123, 108, 240, 0.12) 0%, rgba(123, 108, 240, 0) 50%),
     linear-gradient(180deg, #04060f 0%, #0a1028 55%, #101a3c 100%);
@@ -614,7 +609,7 @@
     --backdrop-position: center, center, center;
     --backdrop-repeat: no-repeat, no-repeat, no-repeat;
 
-    /* 面板（半透明玻璃） */
+    /* 面板(半透明玻璃) */
     --sidebar-bg: color-mix(in srgb, var(--bg-surface) 60%, transparent);
     --sidebar-header-bg: color-mix(in srgb, var(--bg-panel) 50%, transparent);
     --main-content-bg: color-mix(in srgb, var(--bg-panel) 60%, transparent);
@@ -623,7 +618,7 @@
     --input-fade-from: color-mix(in srgb, var(--bg-panel) 60%, transparent);
     --panel-blur: none;
 
-    /* 卡片（半透明，摘要与详情区透出卡片背景；供应商表单区由 .details-surface 保留底色） */
+    /* 卡片(半透明, 摘要与详情区透出卡片背景; 供应商表单区由 .details-surface 保留底色) */
     --card-bg: color-mix(in srgb, var(--bg-panel) 70%, transparent);
     --card-border-color: rgba(255, 255, 255, 0.08);
     --card-summary-bg: transparent;
@@ -684,7 +679,7 @@
     --nav-hover-text-shadow: none;
     --nav-hover-filter: none;
 
-    /* 消息、会话与输入 */
+    /* 消息, 会话与输入 */
     --user-msg-bg: linear-gradient(135deg, #5ff0c0 0%, #4ecbe0 100%);
     --user-msg-color: #060a18;
     --user-msg-radius: 14px 14px 4px 14px;
@@ -711,7 +706,7 @@
 }
 
 /* ===== 6. 赛博朋克主题 (CYBERPUNK) ===== */
-/* 深空黑底 + 霓虹青/品红双色辉光，透视网格地平线 + 霓虹雨，全息终端质感；交互元素统一斜切角，clip-path 会裁剪 box-shadow，辉光统一用 drop-shadow 贴合切角轮廓；面板高透明度（无模糊），让布景层城市剪影清晰透入 */
+/* 深空黑底 + 霓虹青/品红双色辉光, 透视网格地平线 + 霓虹雨, 全息终端质感; 交互元素统一斜切角, clip-path 会裁剪 box-shadow, 辉光统一用 drop-shadow 贴合切角轮廓; 面板高透明度(无模糊), 让布景层城市剪影清晰透入 */
 :root[data-theme="cyberpunk"] {
     /* 基础色板与氛围 */
     --charcoal-900: #6ff3ff;
@@ -734,7 +729,6 @@
     --hover-bg: rgba(0, 240, 255, 0.06);
     --subtle-bg: rgba(0, 240, 255, 0.02);
     --summary-bg: #0e1028;
-    --inline-code-bg: rgba(0, 240, 255, 0.1);
     --overlay-bg: rgba(4, 4, 12, 0.88);
     --on-accent-muted: rgba(4, 4, 12, 0.5);
     --noise-opacity: 0.05;
@@ -747,7 +741,7 @@
     --font-body: 'JetBrains Mono', 'SF Mono', 'Fira Code', 'Courier New', monospace;
     --font-mono: 'JetBrains Mono', 'SF Mono', 'Fira Code', monospace;
 
-    /* 背景装饰（静态背景图） */
+    /* 背景装饰(静态背景图) */
     --backdrop-image: radial-gradient(ellipse at 50% 115%, rgba(255, 42, 109, 0.22) 0%, rgba(255, 42, 109, 0) 55%),
     radial-gradient(ellipse at 50% -10%, rgba(0, 240, 255, 0.1) 0%, rgba(0, 240, 255, 0) 50%),
     linear-gradient(180deg, #04040c 0%, #0a0820 60%, #170a2e 100%);
@@ -755,7 +749,7 @@
     --backdrop-position: center, center, center;
     --backdrop-repeat: no-repeat, no-repeat, no-repeat;
 
-    /* 面板（高透明，透出布景层城市剪影） */
+    /* 面板(高透明, 透出布景层城市剪影) */
     --sidebar-bg: color-mix(in srgb, var(--bg-surface) 45%, transparent);
     --sidebar-header-bg: color-mix(in srgb, var(--bg-panel) 40%, transparent);
     --main-content-bg: color-mix(in srgb, var(--bg-panel) 42%, transparent);
@@ -764,7 +758,7 @@
     --input-fade-from: color-mix(in srgb, var(--bg-panel) 40%, transparent);
     --panel-blur: none;
 
-    /* 卡片（切角裁剪 box-shadow，hover 辉光走 filter） */
+    /* 卡片(切角裁剪 box-shadow, hover 辉光走 filter) */
     --card-bg: color-mix(in srgb, var(--bg-panel) 55%, transparent);
     --card-border-color: var(--border-hard);
     --card-summary-bg: var(--summary-bg);
@@ -774,7 +768,7 @@
     --card-hover-transform: none;
     --card-hover-filter: drop-shadow(0 0 8px rgba(0, 240, 255, 0.25)) drop-shadow(0 0 16px rgba(255, 42, 109, 0.2));
 
-    /* Logo（斜切角 + 霓虹闪烁） */
+    /* Logo(斜切角 + 霓虹闪烁) */
     --logo-bg: #ff2a6d;
     --logo-color: #04040c;
     --logo-radius: var(--radius-sm);
@@ -815,7 +809,7 @@
     --newchat-hover-shadow: none;
     --newchat-hover-filter: drop-shadow(0 0 10px rgba(0, 240, 255, 0.6));
 
-    /* 导航按钮（较小，切角 8px） */
+    /* 导航按钮(较小, 切角 8px) */
     --nav-radius: 0;
     --nav-clip: polygon(0 0, calc(100% - 8px) 0, 100% 8px, 100% 100%, 8px 100%, 0 calc(100% - 8px));
     --nav-hover-bg: var(--bg-surface);
@@ -825,7 +819,7 @@
     --nav-hover-text-shadow: 0 0 6px rgba(0, 240, 255, 0.7);
     --nav-hover-filter: drop-shadow(0 0 6px rgba(0, 240, 255, 0.3)) drop-shadow(0 0 12px rgba(255, 42, 109, 0.25));
 
-    /* 消息、会话与输入 */
+    /* 消息, 会话与输入 */
     --user-msg-bg: var(--charcoal-900);
     --user-msg-color: var(--bg-canvas);
     --user-msg-radius: 2px;
@@ -845,14 +839,14 @@
     --summary-spacing: normal;
     --summary-color: var(--charcoal-700);
 
-    /* 装饰层与切角（右上/左下各切 10px） */
+    /* 装饰层与切角(右上/左下各切 10px) */
     --scenery-display: block;
     --blackhole-display: none;
     --clip-interactive: polygon(0 0, calc(100% - 10px) 0, 100% 10px, 100% 100%, 10px 100%, 0 calc(100% - 10px));
 }
 
 /* ===== 7. 黑洞主题 (BLACK HOLE) ===== */
-/* 纯黑深空 + WebGL 实时光线追踪黑洞背景（引力透镜吸积盘/光子环辉光/星空），吸积盘橙琥珀辉光，毛玻璃面板悬浮于深空之上，黑洞透过面板隐约可见 */
+/* 纯黑深空 + WebGL 实时光线追踪黑洞背景(引力透镜吸积盘/光子环辉光/星空), 吸积盘橙琥珀辉光, 毛玻璃面板悬浮于深空之上, 黑洞透过面板隐约可见 */
 :root[data-theme="blackhole"] {
     /* 基础色板与氛围 */
     --charcoal-900: #f2f4f8;
@@ -875,7 +869,6 @@
     --hover-bg: rgba(255, 154, 61, 0.07);
     --subtle-bg: rgba(255, 154, 61, 0.03);
     --summary-bg: #0e1018;
-    --inline-code-bg: rgba(255, 154, 61, 0.12);
     --overlay-bg: rgba(0, 0, 0, 0.88);
     --on-accent-muted: rgba(0, 0, 0, 0.5);
     --noise-opacity: 0.04;
@@ -888,13 +881,13 @@
     --font-body: 'JetBrains Mono', 'SF Mono', 'Fira Code', 'Courier New', monospace;
     --font-mono: 'JetBrains Mono', 'SF Mono', 'Fira Code', monospace;
 
-    /* 背景装饰（无静态背景图：WebGL 黑洞画布即背景，此处仅保留微弱径向渐变作为 WebGL 不可用时的降级底色） */
+    /* 背景装饰(无静态背景图: WebGL 黑洞画布即背景, 此处仅保留微弱径向渐变作为 WebGL 不可用时的降级底色) */
     --backdrop-image: radial-gradient(ellipse at 50% 55%, rgba(255, 154, 61, 0.07) 0%, rgba(255, 154, 61, 0) 55%);
     --backdrop-size: cover;
     --backdrop-position: center;
     --backdrop-repeat: no-repeat;
 
-    /* 面板（毛玻璃深空） */
+    /* 面板(毛玻璃深空) */
     --sidebar-bg: color-mix(in srgb, var(--bg-surface) 62%, transparent);
     --sidebar-header-bg: color-mix(in srgb, var(--bg-panel) 52%, transparent);
     --main-content-bg: color-mix(in srgb, var(--bg-panel) 58%, transparent);
@@ -903,7 +896,7 @@
     --input-fade-from: color-mix(in srgb, var(--bg-panel) 60%, transparent);
     --panel-blur: blur(16px);
 
-    /* 卡片（半透明，摘要与详情区透出卡片背景；卡片不再叠加 backdrop-filter，主面板玻璃层已模糊背景；供应商表单区由 .details-surface 保留底色） */
+    /* 卡片(半透明, 摘要与详情区透出卡片背景; 卡片不再叠加 backdrop-filter, 主面板玻璃层已模糊背景; 供应商表单区由 .details-surface 保留底色) */
     --card-bg: color-mix(in srgb, var(--bg-panel) 70%, transparent);
     --card-border-color: rgba(255, 255, 255, 0.08);
     --card-summary-bg: transparent;
@@ -913,7 +906,7 @@
     --card-hover-transform: none;
     --card-hover-filter: none;
 
-    /* Logo（吸积盘橙） */
+    /* Logo(吸积盘橙) */
     --logo-bg: linear-gradient(135deg, #ff9a3d, #ff5e3a);
     --logo-color: #140a00;
     --logo-radius: var(--radius-sm);
@@ -964,7 +957,7 @@
     --nav-hover-text-shadow: none;
     --nav-hover-filter: none;
 
-    /* 消息、会话与输入 */
+    /* 消息, 会话与输入 */
     --user-msg-bg: linear-gradient(135deg, #ff9a3d 0%, #ff7a2f 100%);
     --user-msg-color: #140a00;
     --user-msg-radius: 14px 14px 4px 14px;
@@ -990,7 +983,7 @@
     --clip-interactive: none;
 }
 
-/* ===== 8. 主题专属动画（全局定义，由各主题令牌引用） ===== */
+/* ===== 8. 主题专属动画(全局定义, 由各主题令牌引用) ===== */
 @keyframes neonFlicker {
     0%, 100% { opacity: 1; }
     3% { opacity: 0.6; }
@@ -1018,6 +1011,6 @@
 :root[data-theme="aurora"] *,
 :root[data-theme="cyberpunk"] *,
 :root[data-theme="blackhole"] * {
-    /* 该规则优先级高于组件单类规则，必须列出 transform 与 opacity，否则会静默杀死组件过渡动画（toast 渐显、箭头旋转、hover 上浮等） */
+    /* 该规则优先级高于组件单类规则, 必须列出 transform 与 opacity, 否则会静默杀死组件过渡动画(toast 渐显, 箭头旋转, hover 上浮等) */
     transition: background-color 0.3s ease, color 0.3s ease, border-color 0.3s ease, box-shadow 0.3s ease, transform 0.2s cubic-bezier(0.2, 0, 0, 1), opacity 0.25s ease;
 }

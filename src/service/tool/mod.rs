@@ -1,4 +1,4 @@
-// 内置工具: 定义、注册与分发
+// 内置工具: 定义, 注册与分发
 pub mod agent_tool;
 pub mod file_tool;
 pub mod mcp_tool;
@@ -64,7 +64,7 @@ const MANAGE_COMMAND_HELP: &[(&str, &str)] = &[
     ("task delete <task_id>", "Delete a task. Fails if the task is running."),
     ("schedule list", "List all schedules."),
     ("schedule get <schedule_id>", "Show details of a specific schedule."),
-    ("schedule add <name> <content> <work_dir> <cron_expr> <agent_id>", "Add a new schedule. <cron_expr> has 6 fields: second minute hour day month day_of_week, e.g. \"0 0 9 * * *\"."),
+    ("schedule add <name> <content> <work_dir> <cron_expr> <agent_id> <enabled>", "Add a new schedule. <cron_expr> has 6 fields: second minute hour day month day_of_week, e.g. \"0 0 9 * * *\". <enabled> is true or false."),
     ("schedule update <schedule_id> <name> <content> <work_dir> <cron_expr> <agent_id> <enabled>", "Update an existing schedule. <enabled> is true or false."),
     ("schedule delete <schedule_id>", "Delete a schedule."),
     ("model_provider list", "List all model providers (id, name, protocol_type, base_url) without api_key."),
@@ -89,10 +89,10 @@ pub fn list_tools(has_task: bool, has_schedule: bool) -> &'static [ToolDefinitio
 // 构建工具描述列表
 fn build_tool_definitions(has_task: bool, has_schedule: bool) -> Vec<ToolDefinition> {
     let (shell_cmd, shell_desc): (&str, &str) = if cfg!(windows) {
-        // 探测 pwsh 是否可用: 可用使用 PowerShell 7, 不可用回退 Windows PowerShell 5.1
+        // 探测 pwsh 是否可用: 可用则使用 PowerShell 7, 不可用回退 Windows PowerShell 5.1
         let mut pwsh_version = std::process::Command::new("pwsh");
         pwsh_version.arg("--version").stdout(std::process::Stdio::null()).stderr(std::process::Stdio::null());
-        // Windows 下隐藏子进程控制台窗口, 避免桌面模式调用外部模型时弹出黑框
+        // Windows 下隐藏子进程控制台窗口, 避免桌面模式弹出黑框
         #[cfg(windows)]
         {
             pwsh_version.creation_flags(0x08000000);

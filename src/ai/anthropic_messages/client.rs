@@ -1,5 +1,6 @@
 // Anthropic 流式客户端 + pi 基准协议双向适配(移植自 pi/packages/ai/src/api/anthropic-messages.ts)
-// 裁剪说明: 不迁移 OAuth/Claude Code 伪装、cache_control、deferred tools、strict tools、adaptive thinking、重试
+// 裁剪说明: 不迁移 OAuth/Claude Code 伪装, cache_control, deferred/strict tools, adaptive thinking,
+// 重试, abort/timeout, onPayload/onResponse 钩子, temperature/toolChoice/metadata, fallbacks, cacheWrite1h
 use eventsource_stream::Eventsource;
 use futures_util::StreamExt;
 use reqwest::Client;
@@ -8,7 +9,7 @@ use super::types::{ContentBlock, ContentBlockDelta, ContentBlockParam, CreateMes
 use crate::ai::pi::transform_messages::transform_messages;
 use crate::ai::pi::types::{now_timestamp, AssistantContent, AssistantMessage, AssistantMessageEvent, Context, Message, Model, StopReason, TextContent, ThinkingContent, Tool, ToolCall, ToolResultMessage, Usage, UserContent, UserMessageContent};
 use crate::ai::pi::utils::event_stream::AssistantMessageEventStream;
-use crate::ai::pi::utils::json_parse::parse_streaming_json;
+use crate::ai::pi::utils::json_parse::{parse_json_with_repair, parse_streaming_json};
 use crate::ai::pi::utils::sanitize_unicode::sanitize_surrogates;
 use crate::ai::truncate_str;
 
@@ -285,16 +286,18 @@ pub fn stream(model: &Model, context: &Context, options: &AnthropicOptions) -> A
                 Ok(e) => e,
                 Err(e) => fail!(format!("SSE 解析失败: {}", e)),
             };
-            let event = match serde_json::from_str::<MessageStreamEvent>(&sse.data) {
+            // 对齐 pi: 事件数据经 repair 后解析, 仍失败则终止流(不静默跳过, 避免丢失内容块)
+            let event = match parse_json_with_repair(&sse.data).and_then(serde_json::from_value::<MessageStreamEvent>) {
                 Ok(evt) => evt,
-                Err(e) => {
-                    tracing::warn!("Failed to parse SSE event: {} error={}", sse.data, e);
-                    continue;
-                }
+                Err(e) => fail!(format!("无法解析 Anthropic SSE 事件: {}; data={}", e, sse.data)),
             };
             match event {
                 MessageStreamEvent::MessageStart { message } => {
                     output.response_id = Some(message.id);
+                    // 回填实际响应模型(对齐 pi: output.model = event.message.model), 影响跨模型重放的同模型判断
+                    if !message.model.is_empty() {
+                        output.model = message.model;
+                    }
                     // 捕获初始 token 用量, 保证流提前中断时也有输入 token 计数
                     output.usage.input = message.usage.input_tokens;
                     output.usage.output = message.usage.output_tokens;

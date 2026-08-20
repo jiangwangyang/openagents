@@ -1,3 +1,3 @@
-// Anthropic 协议客户端(手写)
+// Anthropic Messages 协议客户端
 pub mod client;
 pub mod types;

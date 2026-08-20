@@ -6,16 +6,9 @@ use futures_util::{Stream, StreamExt};
 use reqwest::Client;
 use serde_json::{json, Value};
 
-use super::types::{
-    CreateResponseRequest, ListModelsResponse, OutputItem, ReasoningConfig, ResponseOutputContent,
-    ResponseStreamEvent,
-};
+use super::types::{CreateResponseRequest, ListModelsResponse, OutputItem, ReasoningConfig, ResponseOutputContent, ResponseStreamEvent};
 use crate::ai::pi::transform_messages::transform_messages;
-use crate::ai::pi::types::{
-    now_timestamp, AssistantContent, AssistantMessage, AssistantMessageEvent, Context, Message,
-    Model, StopReason, TextContent, ThinkingContent, Tool, ToolCall, Usage, UserContent,
-    UserMessageContent,
-};
+use crate::ai::pi::types::{now_timestamp, AssistantContent, AssistantMessage, AssistantMessageEvent, Context, Message, Model, StopReason, TextContent, ThinkingContent, Tool, ToolCall, Usage, UserContent, UserMessageContent};
 use crate::ai::pi::utils::event_stream::AssistantMessageEventStream;
 use crate::ai::pi::utils::hash::short_hash;
 use crate::ai::pi::utils::json_parse::parse_streaming_json;
@@ -132,25 +125,12 @@ pub struct ConvertResponsesMessagesOptions {
 // pi 消息列表 -> Responses input(对齐 pi convertResponsesMessages 的裁剪版: 无 grammar/deferred tools)
 // 对齐说明: pi 以固定供应商集合判断是否允许 "callId|itemId" 拆分; 本项目 toolCall id 均由本客户端
 // 按本协议格式生成(provider 为用户配置的实体 id, 非 pi KnownApi), 恒允许拆分, 故裁剪该参数
-pub fn convert_responses_messages(
-    model: &Model,
-    context: &Context,
-    options: &ConvertResponsesMessagesOptions,
-) -> Vec<Value> {
+pub fn convert_responses_messages(model: &Model, context: &Context, options: &ConvertResponsesMessagesOptions) -> Vec<Value> {
     let mut messages: Vec<Value> = Vec::new();
 
     // id 片段规范化: 非法字符替换为 '_', 截断 64, 去掉尾部 '_'
     let normalize_id_part = |part: &str| -> String {
-        let sanitized: String = part
-            .chars()
-            .map(|c| {
-                if c.is_ascii_alphanumeric() || c == '_' || c == '-' {
-                    c
-                } else {
-                    '_'
-                }
-            })
-            .collect();
+        let sanitized: String = part.chars().map(|c| if c.is_ascii_alphanumeric() || c == '_' || c == '-' { c } else { '_' }).collect();
         let normalized: String = sanitized.chars().take(64).collect();
         normalized.trim_end_matches('_').to_string()
     };
@@ -161,45 +141,31 @@ pub fn convert_responses_messages(
         normalized.chars().take(64).collect()
     };
 
-    let normalize_tool_call_id =
-        |id: &str, _target_model: &Model, source: &AssistantMessage| -> String {
-            if !id.contains('|') {
-                return normalize_id_part(id);
-            }
-            let mut parts = id.splitn(2, '|');
-            let call_id = parts.next().unwrap_or("");
-            let item_id = parts.next().unwrap_or("");
-            let normalized_call_id = normalize_id_part(call_id);
-            let is_foreign_tool_call = source.provider != model.provider || source.api != model.api;
-            let mut normalized_item_id = if is_foreign_tool_call {
-                build_foreign_responses_item_id(item_id)
-            } else {
-                normalize_id_part(item_id)
-            };
-            // OpenAI Responses API 要求 item id 以 "fc" 开头
-            if !normalized_item_id.starts_with("fc_") {
-                normalized_item_id = normalize_id_part(&format!("fc_{}", normalized_item_id));
-            }
-            format!("{}|{}", normalized_call_id, normalized_item_id)
-        };
+    let normalize_tool_call_id = |id: &str, _target_model: &Model, source: &AssistantMessage| -> String {
+        if !id.contains('|') {
+            return normalize_id_part(id);
+        }
+        let mut parts = id.splitn(2, '|');
+        let call_id = parts.next().unwrap_or("");
+        let item_id = parts.next().unwrap_or("");
+        let normalized_call_id = normalize_id_part(call_id);
+        let is_foreign_tool_call = source.provider != model.provider || source.api != model.api;
+        let mut normalized_item_id = if is_foreign_tool_call { build_foreign_responses_item_id(item_id) } else { normalize_id_part(item_id) };
+        // OpenAI Responses API 要求 item id 以 "fc" 开头
+        if !normalized_item_id.starts_with("fc_") {
+            normalized_item_id = normalize_id_part(&format!("fc_{}", normalized_item_id));
+        }
+        format!("{}|{}", normalized_call_id, normalized_item_id)
+    };
 
-    let transformed_messages =
-        transform_messages(&context.messages, model, Some(&normalize_tool_call_id));
+    let transformed_messages = transform_messages(&context.messages, model, Some(&normalize_tool_call_id));
 
     let include_system_prompt = options.include_system_prompt.unwrap_or(true);
     if include_system_prompt {
         // 空 system prompt 跳过(对齐 pi 的真值判断), 部分兼容端点同样拒绝空 content
-        if let Some(system_prompt) = context
-            .system_prompt
-            .as_ref()
-            .filter(|s| !s.trim().is_empty())
-        {
+        if let Some(system_prompt) = context.system_prompt.as_ref().filter(|s| !s.trim().is_empty()) {
             // 对齐 pi: reasoning 模型使用 developer 角色(compat.supportsDeveloperRole 默认 true)
-            let role = if model.reasoning {
-                "developer"
-            } else {
-                "system"
-            };
+            let role = if model.reasoning { "developer" } else { "system" };
             messages.push(json!({ "role": role, "content": sanitize_surrogates(system_prompt) }));
         }
     }
@@ -235,37 +201,27 @@ pub fn convert_responses_messages(
             },
             Message::Assistant(assistant_msg) => {
                 let mut output: Vec<Value> = Vec::new();
-                let is_same_provider_and_api =
-                    assistant_msg.provider == model.provider && assistant_msg.api == model.api;
-                let is_different_model =
-                    is_same_provider_and_api && assistant_msg.model != model.id;
+                let is_same_provider_and_api = assistant_msg.provider == model.provider && assistant_msg.api == model.api;
+                let is_different_model = is_same_provider_and_api && assistant_msg.model != model.id;
                 let mut text_block_index = 0;
                 for block in &assistant_msg.content {
                     match block {
                         AssistantContent::Thinking(t) => {
                             // thinkingSignature 存 reasoning item JSON, 原样回放
                             if let Some(signature) = &t.thinking_signature {
-                                if let Ok(reasoning_item) = serde_json::from_str::<Value>(signature)
-                                {
+                                if let Ok(reasoning_item) = serde_json::from_str::<Value>(signature) {
                                     output.push(reasoning_item);
                                 }
                             }
                         }
                         AssistantContent::Text(t) => {
-                            let parsed_signature =
-                                parse_text_signature(t.text_signature.as_deref());
-                            let fallback_message_id = if text_block_index == 0 {
-                                format!("msg_pi_{}", msg_index)
-                            } else {
-                                format!("msg_pi_{}_{}", msg_index, text_block_index)
-                            };
+                            let parsed_signature = parse_text_signature(t.text_signature.as_deref());
+                            let fallback_message_id = if text_block_index == 0 { format!("msg_pi_{}", msg_index) } else { format!("msg_pi_{}_{}", msg_index, text_block_index) };
                             text_block_index += 1;
                             // OpenAI 要求 id 最长 64 字符
                             let (msg_id, phase) = match parsed_signature {
                                 None => (fallback_message_id, None),
-                                Some((id, phase)) if id.len() > 64 => {
-                                    (format!("msg_{}", short_hash(&id)), phase)
-                                }
+                                Some((id, phase)) if id.len() > 64 => (format!("msg_{}", short_hash(&id)), phase),
                                 Some((id, phase)) => (id, phase),
                             };
                             let mut item = json!({
@@ -286,14 +242,8 @@ pub fn convert_responses_messages(
                             let item_id_raw = parts.next();
                             // 跨模型消息丢弃 fc_ id 避免配对校验; 非 fc_ 开头的 id 一并丢弃
                             // (function_call item id 必须为 fc_*; 对齐 pi, 本项目无自定义工具分支)
-                            let starts_with_fc =
-                                item_id_raw.map(|i| i.starts_with("fc_")).unwrap_or(false);
-                            let item_id =
-                                if (is_different_model && starts_with_fc) || !starts_with_fc {
-                                    None
-                                } else {
-                                    item_id_raw
-                                };
+                            let starts_with_fc = item_id_raw.map(|i| i.starts_with("fc_")).unwrap_or(false);
+                            let item_id = if (is_different_model && starts_with_fc) || !starts_with_fc { None } else { item_id_raw };
                             let mut item = json!({
                                 "type": "function_call",
                                 "call_id": call_id,
@@ -349,16 +299,9 @@ pub fn convert_responses_tools(tools: &[Tool]) -> Vec<Value> {
 
 // 输出槽位(对齐 pi ResponsesOutputSlot; toolCall 的 partialJson 为流式暂存, 结束后丢弃)
 enum ResponsesOutputSlot {
-    Thinking {
-        content_index: usize,
-    },
-    Text {
-        content_index: usize,
-    },
-    ToolCall {
-        content_index: usize,
-        partial_json: String,
-    },
+    Thinking { content_index: usize },
+    Text { content_index: usize },
+    ToolCall { content_index: usize, partial_json: String },
 }
 
 // 槽位类别
@@ -369,10 +312,7 @@ enum SlotKind {
 }
 
 // 停止原因映射(对齐 pi mapStopReason, 未知 status 返回 Err 对齐 pi 的 throw)
-fn map_stop_reason(
-    status: Option<&str>,
-    incomplete_reason: Option<&str>,
-) -> Result<(StopReason, Option<String>), String> {
+fn map_stop_reason(status: Option<&str>, incomplete_reason: Option<&str>) -> Result<(StopReason, Option<String>), String> {
     let Some(status) = status else {
         return Ok((StopReason::Stop, None));
     };
@@ -399,17 +339,11 @@ fn map_stop_reason(
 }
 
 // 流事件处理(移植自 pi processResponsesStream, 裁剪 custom_tool_call/serviceTier)
-async fn process_responses_stream(
-    mut event_stream: impl Stream<Item = Result<ResponseStreamEvent, OpenAiResponsesError>> + Unpin,
-    output: &mut AssistantMessage,
-    tx: &tokio::sync::mpsc::UnboundedSender<AssistantMessageEvent>,
-) -> Result<(), String> {
+async fn process_responses_stream(mut event_stream: impl Stream<Item = Result<ResponseStreamEvent, OpenAiResponsesError>> + Unpin, output: &mut AssistantMessage, tx: &tokio::sync::mpsc::UnboundedSender<AssistantMessageEvent>) -> Result<(), String> {
     let mut saw_terminal_response_event = false;
-    let mut output_slots: std::collections::HashMap<u32, ResponsesOutputSlot> =
-        std::collections::HashMap::new();
+    let mut output_slots: std::collections::HashMap<u32, ResponsesOutputSlot> = std::collections::HashMap::new();
     // reasoning item id -> output.content 下标(用于终态响应回填签名)
-    let mut reasoning_blocks_by_id: std::collections::HashMap<String, usize> =
-        std::collections::HashMap::new();
+    let mut reasoning_blocks_by_id: std::collections::HashMap<String, usize> = std::collections::HashMap::new();
 
     // 事件发送(对齐 pi 的 stream.push)
     let push = |event: AssistantMessageEvent| {
@@ -421,57 +355,25 @@ async fn process_responses_stream(
         ($output_index:expr, $item:expr) => {
             match $item {
                 OutputItem::Reasoning(_) => {
-                    output
-                        .content
-                        .push(AssistantContent::Thinking(ThinkingContent {
-                            thinking: String::new(),
-                            thinking_signature: None,
-                            redacted: None,
-                        }));
+                    output.content.push(AssistantContent::Thinking(ThinkingContent { thinking: String::new(), thinking_signature: None, redacted: None }));
                     let content_index = output.content.len() - 1;
-                    output_slots.insert(
-                        $output_index,
-                        ResponsesOutputSlot::Thinking { content_index },
-                    );
-                    push(AssistantMessageEvent::ThinkingStart {
-                        content_index,
-                        partial: output.clone(),
-                    });
+                    output_slots.insert($output_index, ResponsesOutputSlot::Thinking { content_index });
+                    push(AssistantMessageEvent::ThinkingStart { content_index, partial: output.clone() });
                 }
                 OutputItem::Message(m) => {
                     if m.phase.as_deref() == Some("final_answer") {
                         output.stop_reason = StopReason::Stop;
                     }
-                    output.content.push(AssistantContent::Text(TextContent {
-                        text: String::new(),
-                        text_signature: None,
-                    }));
+                    output.content.push(AssistantContent::Text(TextContent { text: String::new(), text_signature: None }));
                     let content_index = output.content.len() - 1;
                     output_slots.insert($output_index, ResponsesOutputSlot::Text { content_index });
-                    push(AssistantMessageEvent::TextStart {
-                        content_index,
-                        partial: output.clone(),
-                    });
+                    push(AssistantMessageEvent::TextStart { content_index, partial: output.clone() });
                 }
                 OutputItem::FunctionCall(fc) => {
-                    output.content.push(AssistantContent::ToolCall(ToolCall {
-                        id: format!("{}|{}", fc.call_id, fc.id.clone().unwrap_or_default()),
-                        name: fc.name.clone(),
-                        arguments: json!({}),
-                        thought_signature: None,
-                    }));
+                    output.content.push(AssistantContent::ToolCall(ToolCall { id: format!("{}|{}", fc.call_id, fc.id.clone().unwrap_or_default()), name: fc.name.clone(), arguments: json!({}), thought_signature: None }));
                     let content_index = output.content.len() - 1;
-                    output_slots.insert(
-                        $output_index,
-                        ResponsesOutputSlot::ToolCall {
-                            content_index,
-                            partial_json: fc.arguments.clone().unwrap_or_default(),
-                        },
-                    );
-                    push(AssistantMessageEvent::ToolcallStart {
-                        content_index,
-                        partial: output.clone(),
-                    });
+                    output_slots.insert($output_index, ResponsesOutputSlot::ToolCall { content_index, partial_json: fc.arguments.clone().unwrap_or_default() });
+                    push(AssistantMessageEvent::ToolcallStart { content_index, partial: output.clone() });
                 }
                 OutputItem::Unknown => {}
             }
@@ -512,10 +414,7 @@ async fn process_responses_stream(
                 output.usage.output = usage.output_tokens;
                 output.usage.cache_read = cached_tokens;
                 output.usage.cache_write = cache_write_tokens;
-                output.usage.reasoning = usage
-                    .output_tokens_details
-                    .as_ref()
-                    .and_then(|d| d.reasoning_tokens);
+                output.usage.reasoning = usage.output_tokens_details.as_ref().and_then(|d| d.reasoning_tokens);
                 output.usage.total_tokens = usage.total_tokens.unwrap_or(0);
             }
             // 状态映射停止原因; incomplete 保留供应商具体原因
@@ -543,96 +442,46 @@ async fn process_responses_stream(
             ResponseStreamEvent::OutputItemAdded { output_index, item } => {
                 create_slot!(output_index, item);
             }
-            ResponseStreamEvent::ReasoningSummaryTextDelta {
-                output_index,
-                delta,
-            }
-            | ResponseStreamEvent::ReasoningTextDelta {
-                output_index,
-                delta,
-            } => {
-                if let Some(ResponsesOutputSlot::Thinking { content_index }) =
-                    output_slots.get(&output_index)
-                {
+            ResponseStreamEvent::ReasoningSummaryTextDelta { output_index, delta } | ResponseStreamEvent::ReasoningTextDelta { output_index, delta } => {
+                if let Some(ResponsesOutputSlot::Thinking { content_index }) = output_slots.get(&output_index) {
                     let content_index = *content_index;
                     if let AssistantContent::Thinking(t) = &mut output.content[content_index] {
                         t.thinking.push_str(&delta);
                     }
-                    push(AssistantMessageEvent::ThinkingDelta {
-                        content_index,
-                        delta,
-                        partial: output.clone(),
-                    });
+                    push(AssistantMessageEvent::ThinkingDelta { content_index, delta, partial: output.clone() });
                 }
             }
             ResponseStreamEvent::ReasoningSummaryPartDone { output_index } => {
-                if let Some(ResponsesOutputSlot::Thinking { content_index }) =
-                    output_slots.get(&output_index)
-                {
+                if let Some(ResponsesOutputSlot::Thinking { content_index }) = output_slots.get(&output_index) {
                     let content_index = *content_index;
                     if let AssistantContent::Thinking(t) = &mut output.content[content_index] {
                         t.thinking.push_str("\n\n");
                     }
-                    push(AssistantMessageEvent::ThinkingDelta {
-                        content_index,
-                        delta: "\n\n".to_string(),
-                        partial: output.clone(),
-                    });
+                    push(AssistantMessageEvent::ThinkingDelta { content_index, delta: "\n\n".to_string(), partial: output.clone() });
                 }
             }
-            ResponseStreamEvent::OutputTextDelta {
-                output_index,
-                delta,
-            }
-            | ResponseStreamEvent::RefusalDelta {
-                output_index,
-                delta,
-            } => {
-                if let Some(ResponsesOutputSlot::Text { content_index }) =
-                    output_slots.get(&output_index)
-                {
+            ResponseStreamEvent::OutputTextDelta { output_index, delta } | ResponseStreamEvent::RefusalDelta { output_index, delta } => {
+                if let Some(ResponsesOutputSlot::Text { content_index }) = output_slots.get(&output_index) {
                     let content_index = *content_index;
                     if let AssistantContent::Text(t) = &mut output.content[content_index] {
                         t.text.push_str(&delta);
                     }
-                    push(AssistantMessageEvent::TextDelta {
-                        content_index,
-                        delta,
-                        partial: output.clone(),
-                    });
+                    push(AssistantMessageEvent::TextDelta { content_index, delta, partial: output.clone() });
                 }
             }
-            ResponseStreamEvent::FunctionCallArgumentsDelta {
-                output_index,
-                delta,
-            } => {
-                if let Some(ResponsesOutputSlot::ToolCall {
-                    content_index,
-                    partial_json,
-                }) = output_slots.get_mut(&output_index)
-                {
+            ResponseStreamEvent::FunctionCallArgumentsDelta { output_index, delta } => {
+                if let Some(ResponsesOutputSlot::ToolCall { content_index, partial_json }) = output_slots.get_mut(&output_index) {
                     let content_index = *content_index;
                     partial_json.push_str(&delta);
                     let arguments = parse_streaming_json(partial_json);
                     if let AssistantContent::ToolCall(tc) = &mut output.content[content_index] {
                         tc.arguments = arguments;
                     }
-                    push(AssistantMessageEvent::ToolcallDelta {
-                        content_index,
-                        delta,
-                        partial: output.clone(),
-                    });
+                    push(AssistantMessageEvent::ToolcallDelta { content_index, delta, partial: output.clone() });
                 }
             }
-            ResponseStreamEvent::FunctionCallArgumentsDone {
-                output_index,
-                arguments,
-            } => {
-                if let Some(ResponsesOutputSlot::ToolCall {
-                    content_index,
-                    partial_json,
-                }) = output_slots.get_mut(&output_index)
-                {
+            ResponseStreamEvent::FunctionCallArgumentsDone { output_index, arguments } => {
+                if let Some(ResponsesOutputSlot::ToolCall { content_index, partial_json }) = output_slots.get_mut(&output_index) {
                     let content_index = *content_index;
                     let previous_partial_json = std::mem::replace(partial_json, arguments.clone());
                     let parsed = parse_streaming_json(partial_json);
@@ -642,11 +491,7 @@ async fn process_responses_stream(
                     // 完整参数以增量形式补发差额(对齐 pi)
                     if let Some(delta) = arguments.strip_prefix(previous_partial_json.as_str()) {
                         if !delta.is_empty() {
-                            push(AssistantMessageEvent::ToolcallDelta {
-                                content_index,
-                                delta: delta.to_string(),
-                                partial: output.clone(),
-                            });
+                            push(AssistantMessageEvent::ToolcallDelta { content_index, delta: delta.to_string(), partial: output.clone() });
                         }
                     }
                 }
@@ -663,36 +508,16 @@ async fn process_responses_stream(
                     create_slot!(output_index, item.clone());
                 }
                 let slot_info = output_slots.get(&output_index).map(|s| match s {
-                    ResponsesOutputSlot::Thinking { content_index } => {
-                        (SlotKind::Thinking, *content_index)
-                    }
+                    ResponsesOutputSlot::Thinking { content_index } => (SlotKind::Thinking, *content_index),
                     ResponsesOutputSlot::Text { content_index } => (SlotKind::Text, *content_index),
-                    ResponsesOutputSlot::ToolCall { content_index, .. } => {
-                        (SlotKind::ToolCall, *content_index)
-                    }
+                    ResponsesOutputSlot::ToolCall { content_index, .. } => (SlotKind::ToolCall, *content_index),
                 });
                 match (slot_info, item) {
-                    (
-                        Some((SlotKind::Thinking, content_index)),
-                        OutputItem::Reasoning(reasoning),
-                    ) => {
-                        let summary_text = reasoning
-                            .summary
-                            .iter()
-                            .map(|s| s.text.clone())
-                            .collect::<Vec<_>>()
-                            .join("\n\n");
-                        let content_text = reasoning
-                            .content
-                            .iter()
-                            .map(|c| c.text.clone())
-                            .collect::<Vec<_>>()
-                            .join("\n\n");
+                    (Some((SlotKind::Thinking, content_index)), OutputItem::Reasoning(reasoning)) => {
+                        let summary_text = reasoning.summary.iter().map(|s| s.text.clone()).collect::<Vec<_>>().join("\n\n");
+                        let content_text = reasoning.content.iter().map(|c| c.text.clone()).collect::<Vec<_>>().join("\n\n");
                         // thinkingSignature 存 reasoning item 的 JSON 序列化(对齐 pi JSON.stringify(item))
-                        let signature =
-                            serde_json::to_value(OutputItem::Reasoning(reasoning.clone()))
-                                .ok()
-                                .map(|v| v.to_string());
+                        let signature = serde_json::to_value(OutputItem::Reasoning(reasoning.clone())).ok().map(|v| v.to_string());
                         if let AssistantContent::Thinking(t) = &mut output.content[content_index] {
                             if !summary_text.is_empty() {
                                 t.thinking = summary_text;
@@ -706,11 +531,7 @@ async fn process_responses_stream(
                             AssistantContent::Thinking(t) => t.thinking.clone(),
                             _ => String::new(),
                         };
-                        push(AssistantMessageEvent::ThinkingEnd {
-                            content_index,
-                            content,
-                            partial: output.clone(),
-                        });
+                        push(AssistantMessageEvent::ThinkingEnd { content_index, content, partial: output.clone() });
                         output_slots.remove(&output_index);
                     }
                     (Some((SlotKind::Text, content_index)), OutputItem::Message(m)) => {
@@ -725,25 +546,18 @@ async fn process_responses_stream(
                             .collect();
                         if let AssistantContent::Text(t) = &mut output.content[content_index] {
                             t.text = text;
-                            t.text_signature =
-                                Some(encode_text_signature_v1(&m.id, m.phase.as_deref()));
+                            t.text_signature = Some(encode_text_signature_v1(&m.id, m.phase.as_deref()));
                         }
                         let content = match &output.content[content_index] {
                             AssistantContent::Text(t) => t.text.clone(),
                             _ => String::new(),
                         };
-                        push(AssistantMessageEvent::TextEnd {
-                            content_index,
-                            content,
-                            partial: output.clone(),
-                        });
+                        push(AssistantMessageEvent::TextEnd { content_index, content, partial: output.clone() });
                         output_slots.remove(&output_index);
                     }
                     (Some((SlotKind::ToolCall, content_index)), OutputItem::FunctionCall(fc)) => {
                         let partial_json = match output_slots.get(&output_index) {
-                            Some(ResponsesOutputSlot::ToolCall { partial_json, .. }) => {
-                                partial_json.clone()
-                            }
+                            Some(ResponsesOutputSlot::ToolCall { partial_json, .. }) => partial_json.clone(),
                             _ => String::new(),
                         };
                         let raw = match &fc.arguments {
@@ -759,36 +573,20 @@ async fn process_responses_stream(
                             AssistantContent::ToolCall(tc) => tc.clone(),
                             _ => continue,
                         };
-                        push(AssistantMessageEvent::ToolcallEnd {
-                            content_index,
-                            tool_call,
-                            partial: output.clone(),
-                        });
+                        push(AssistantMessageEvent::ToolcallEnd { content_index, tool_call, partial: output.clone() });
                         output_slots.remove(&output_index);
                     }
                     _ => {}
                 }
             }
-            ResponseStreamEvent::ResponseCompleted { response }
-            | ResponseStreamEvent::ResponseIncomplete { response } => {
+            ResponseStreamEvent::ResponseCompleted { response } | ResponseStreamEvent::ResponseIncomplete { response } => {
                 finalize_response!(response);
             }
             ResponseStreamEvent::ResponseFailed { response } => {
                 output.raw_stop_reason = response.status.clone();
                 let msg = match &response.error {
-                    Some(error) => format!(
-                        "{}: {}",
-                        error.code.clone().unwrap_or_else(|| "unknown".to_string()),
-                        error
-                            .message
-                            .clone()
-                            .unwrap_or_else(|| "no message".to_string())
-                    ),
-                    None => match response
-                        .incomplete_details
-                        .as_ref()
-                        .and_then(|d| d.reason.clone())
-                    {
+                    Some(error) => format!("{}: {}", error.code.clone().unwrap_or_else(|| "unknown".to_string()), error.message.clone().unwrap_or_else(|| "no message".to_string())),
+                    None => match response.incomplete_details.as_ref().and_then(|d| d.reason.clone()) {
                         Some(reason) => format!("incomplete: {}", reason),
                         None => "Unknown error (no error details in response)".to_string(),
                     },
@@ -796,11 +594,7 @@ async fn process_responses_stream(
                 return Err(msg);
             }
             ResponseStreamEvent::Error { code, message } => {
-                return Err(format!(
-                    "Error Code {}: {}",
-                    code.unwrap_or_default(),
-                    message.unwrap_or_default()
-                ));
+                return Err(format!("Error Code {}: {}", code.unwrap_or_default(), message.unwrap_or_default()));
             }
             ResponseStreamEvent::Unknown => {}
         }
@@ -815,34 +609,15 @@ async fn process_responses_stream(
 const MIN_OUTPUT_TOKENS: u32 = 16;
 
 // 请求参数构建(对齐 pi openai-responses.ts buildParams 的裁剪版)
-fn build_params(
-    model: &Model,
-    context: &Context,
-    options: &OpenAIResponsesOptions,
-) -> CreateResponseRequest {
-    let input =
-        convert_responses_messages(model, context, &ConvertResponsesMessagesOptions::default());
+fn build_params(model: &Model, context: &Context, options: &OpenAIResponsesOptions) -> CreateResponseRequest {
+    let input = convert_responses_messages(model, context, &ConvertResponsesMessagesOptions::default());
     let mut include: Vec<String> = Vec::new();
     let reasoning = if model.reasoning {
         if options.reasoning_effort.is_some() || options.reasoning_summary.is_some() {
             include.push("reasoning.encrypted_content".to_string());
-            Some(ReasoningConfig {
-                effort: options
-                    .reasoning_effort
-                    .clone()
-                    .unwrap_or_else(|| "medium".to_string()),
-                summary: Some(
-                    options
-                        .reasoning_summary
-                        .clone()
-                        .unwrap_or_else(|| "auto".to_string()),
-                ),
-            })
+            Some(ReasoningConfig { effort: options.reasoning_effort.clone().unwrap_or_else(|| "medium".to_string()), summary: Some(options.reasoning_summary.clone().unwrap_or_else(|| "auto".to_string())) })
         } else {
-            Some(ReasoningConfig {
-                effort: "none".to_string(),
-                summary: None,
-            })
+            Some(ReasoningConfig { effort: "none".to_string(), summary: None })
         }
     } else {
         None
@@ -850,11 +625,7 @@ fn build_params(
     CreateResponseRequest {
         model: model.id.clone(),
         input,
-        tools: context
-            .tools
-            .as_ref()
-            .filter(|t| !t.is_empty())
-            .map(|t| convert_responses_tools(t)),
+        tools: context.tools.as_ref().filter(|t| !t.is_empty()).map(|t| convert_responses_tools(t)),
         reasoning,
         max_output_tokens: options.max_tokens.map(|t| t.max(MIN_OUTPUT_TOKENS)),
         stream: true,
@@ -866,62 +637,28 @@ fn build_params(
 
 // 流式创建响应(对齐 pi stream): 输入 pi Context, 输出 pi AssistantMessageEvent 流,
 // 请求/运行时错误对齐 pi 编码为 error 事件而非抛出
-pub fn stream(
-    model: &Model,
-    context: &Context,
-    options: &OpenAIResponsesOptions,
-) -> AssistantMessageEventStream {
+pub fn stream(model: &Model, context: &Context, options: &OpenAIResponsesOptions) -> AssistantMessageEventStream {
     let (tx, mut rx) = tokio::sync::mpsc::unbounded_channel::<AssistantMessageEvent>();
     let model = model.clone();
     let context = context.clone();
     let options = options.clone();
     tokio::spawn(async move {
         // 输出消息(对齐 pi 的 output)
-        let mut output = AssistantMessage {
-            content: vec![],
-            api: model.api.clone(),
-            provider: model.provider.clone(),
-            model: model.id.clone(),
-            response_model: None,
-            response_id: None,
-            usage: Usage::default(),
-            stop_reason: StopReason::Pending,
-            error_message: None,
-            raw_stop_reason: None,
-            timestamp: now_timestamp(),
-        };
+        let mut output = AssistantMessage { content: vec![], api: model.api.clone(), provider: model.provider.clone(), model: model.id.clone(), response_model: None, response_id: None, usage: Usage::default(), stop_reason: StopReason::Pending, error_message: None, raw_stop_reason: None, timestamp: now_timestamp() };
         // 失败收尾(对齐 pi 的 catch: 错误编码为 error 事件)
         macro_rules! fail {
             ($message:expr) => {{
                 output.stop_reason = StopReason::Error;
                 output.error_message = Some($message);
-                let _ = tx.send(AssistantMessageEvent::Error {
-                    reason: output.stop_reason,
-                    error: output,
-                });
+                let _ = tx.send(AssistantMessageEvent::Error { reason: output.stop_reason, error: output });
                 return;
             }};
         }
 
         let params = build_params(&model, &context, &options);
         let url = format!("{}/responses", model.base_url.trim_end_matches('/'));
-        tracing::info!(
-            "Model request: POST {} model={} input={}",
-            url,
-            params.model,
-            params.input.len()
-        );
-        let response = match HTTP_CLIENT
-            .post(&url)
-            .header(
-                "authorization",
-                format!("Bearer {}", options.api_key.clone().unwrap_or_default()),
-            )
-            .header("content-type", "application/json")
-            .json(&params)
-            .send()
-            .await
-        {
+        tracing::info!("Model request: POST {} model={} input={}", url, params.model, params.input.len());
+        let response = match HTTP_CLIENT.post(&url).header("authorization", format!("Bearer {}", options.api_key.clone().unwrap_or_default())).header("content-type", "application/json").json(&params).send().await {
             Ok(r) => r,
             Err(e) => fail!(format!("HTTP 请求失败: {}", e)),
         };
@@ -929,16 +666,10 @@ pub fn stream(
         if !status.is_success() {
             let body = response.text().await.unwrap_or_default();
             // 日志中的 body 截断至 500 字符, 错误事件保留完整内容
-            tracing::error!(
-                "Model API error: status={} body={}",
-                status.as_u16(),
-                truncate_str(&body, 500)
-            );
+            tracing::error!("Model API error: status={} body={}", status.as_u16(), truncate_str(&body, 500));
             fail!(format!("API 错误 {}: {}", status.as_u16(), body));
         }
-        let _ = tx.send(AssistantMessageEvent::Start {
-            partial: output.clone(),
-        });
+        let _ = tx.send(AssistantMessageEvent::Start { partial: output.clone() });
 
         // bytes_stream -> eventsource-stream -> 反序列化为 ResponseStreamEvent
         let byte_stream = response.bytes_stream();
@@ -964,46 +695,26 @@ pub fn stream(
             fail!("OpenAI Responses stream ended without a stop reason".to_string());
         }
         if output.stop_reason == StopReason::Aborted || output.stop_reason == StopReason::Error {
-            fail!(output
-                .error_message
-                .clone()
-                .unwrap_or_else(|| "An unknown error occurred".to_string()));
+            fail!(output.error_message.clone().unwrap_or_else(|| "An unknown error occurred".to_string()));
         }
-        let _ = tx.send(AssistantMessageEvent::Done {
-            reason: output.stop_reason,
-            message: output,
-        });
+        let _ = tx.send(AssistantMessageEvent::Done { reason: output.stop_reason, message: output });
     });
     // tokio mpsc 接收端包装为 Stream
     Box::pin(futures_util::stream::poll_fn(move |cx| rx.poll_recv(cx)))
 }
 
 // 获取可用模型列表(GET {base_url}/models), 返回模型 id 列表
-pub async fn list_models(
-    base_url: &str,
-    api_key: &str,
-) -> Result<Vec<String>, OpenAiResponsesError> {
+pub async fn list_models(base_url: &str, api_key: &str) -> Result<Vec<String>, OpenAiResponsesError> {
     let url = format!("{}/models", base_url.trim_end_matches('/'));
     tracing::info!("Model request: GET {}", url);
-    let response = HTTP_CLIENT
-        .get(&url)
-        .header("authorization", format!("Bearer {}", api_key))
-        .send()
-        .await?;
+    let response = HTTP_CLIENT.get(&url).header("authorization", format!("Bearer {}", api_key)).send().await?;
 
     let status = response.status();
     if !status.is_success() {
         let body = response.text().await.unwrap_or_default();
         // 日志中的 body 截断至 500 字符, 错误对象保留完整内容
-        tracing::error!(
-            "Model API error: status={} body={}",
-            status.as_u16(),
-            truncate_str(&body, 500)
-        );
-        return Err(OpenAiResponsesError::Api {
-            status: status.as_u16(),
-            body,
-        });
+        tracing::error!("Model API error: status={} body={}", status.as_u16(), truncate_str(&body, 500));
+        return Err(OpenAiResponsesError::Api { status: status.as_u16(), body });
     }
 
     let list = response.json::<ListModelsResponse>().await?;

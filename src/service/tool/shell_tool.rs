@@ -23,10 +23,7 @@ pub async fn setup_powershell_utf8() {
     let home_dir = crate::config::home_dir();
     // 依次配置 Windows PowerShell 5.1 与 PowerShell 7 的输出编码
     for profile_dir in ["WindowsPowerShell", "PowerShell"] {
-        let profile_path = std::path::Path::new(&home_dir)
-            .join("Documents")
-            .join(profile_dir)
-            .join("Microsoft.PowerShell_profile.ps1");
+        let profile_path = std::path::Path::new(&home_dir).join("Documents").join(profile_dir).join("Microsoft.PowerShell_profile.ps1");
         if let Some(parent) = profile_path.parent() {
             let _ = tokio::fs::create_dir_all(parent).await;
         }

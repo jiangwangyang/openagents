@@ -21,10 +21,7 @@ pub async fn execute(cmd_and_args: &[String], db: &SqlitePool) -> ToolResult {
             };
             match agent_repository::get_agent(db, agent_id).await {
                 // 工具输出只序列化 Agent 本体, 避免关联的模型提供商 api_key 进入模型上下文
-                Ok(Some(agent)) => (
-                    serde_json::to_string(&agent.agent).unwrap_or_default(),
-                    false,
-                ),
+                Ok(Some(agent)) => (serde_json::to_string(&agent.agent).unwrap_or_default(), false),
                 Ok(None) => (format!("Agent not found: {}", agent_id), true),
                 Err(e) => (format!("Database error: {}", e), true),
             }
@@ -39,24 +36,13 @@ pub async fn execute(cmd_and_args: &[String], db: &SqlitePool) -> ToolResult {
                 Ok(b) => b,
                 Err(r) => return r,
             };
-            match agent_repository::add_agent(
-                db,
-                name,
-                description,
-                prompt,
-                model_provider_id,
-                model,
-                thinking,
-            )
-            .await
-            {
+            match agent_repository::add_agent(db, name, description, prompt, model_provider_id, model, thinking).await {
                 Ok(id) => (format!("Agent added with id {}", id), false),
                 Err(e) => (format!("Failed to add agent: {}", e), true),
             }
         }
         // agent update <agent_id> <name> <description> <prompt> <model_provider_id> <model> <thinking>
-        ["agent", "update", agent_id, name, description, prompt, model_provider_id, model, thinking] =>
-        {
+        ["agent", "update", agent_id, name, description, prompt, model_provider_id, model, thinking] => {
             let agent_id = match parse_id(agent_id, "agent_id") {
                 Ok(id) => id,
                 Err(r) => return r,
@@ -69,18 +55,7 @@ pub async fn execute(cmd_and_args: &[String], db: &SqlitePool) -> ToolResult {
                 Ok(b) => b,
                 Err(r) => return r,
             };
-            match agent_repository::update_agent(
-                db,
-                agent_id,
-                name,
-                description,
-                prompt,
-                model_provider_id,
-                model,
-                thinking,
-            )
-            .await
-            {
+            match agent_repository::update_agent(db, agent_id, name, description, prompt, model_provider_id, model, thinking).await {
                 Ok(true) => (format!("Agent {} updated", agent_id), false),
                 Ok(false) => (format!("Agent not found: {}", agent_id), true),
                 Err(e) => (format!("Failed to update agent: {}", e), true),
@@ -95,13 +70,7 @@ pub async fn execute(cmd_and_args: &[String], db: &SqlitePool) -> ToolResult {
             match agent_repository::delete_agent(db, agent_id).await {
                 Ok(DeleteResult::Deleted) => (format!("Agent {} deleted", agent_id), false),
                 Ok(DeleteResult::NotFound) => (format!("Agent not found: {}", agent_id), true),
-                Ok(DeleteResult::Referenced) => (
-                    format!(
-                        "Agent {} is referenced by conversations/schedules",
-                        agent_id
-                    ),
-                    true,
-                ),
+                Ok(DeleteResult::Referenced) => (format!("Agent {} is referenced by conversations/schedules", agent_id), true),
                 Err(e) => (format!("Failed to delete agent: {}", e), true),
             }
         }

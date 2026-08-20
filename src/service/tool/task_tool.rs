@@ -28,22 +28,8 @@ pub async fn execute(cmd_and_args: &[String], ctx: &ToolContext) -> ToolResult {
             // 移交给用户: 创建 agent_id 为 None 的用户审核对话
             if *target == "user" {
                 let title = format!("{}-User", task.title);
-                match conversation_repository::add_conversation(
-                    &ctx.state.db,
-                    &title,
-                    work_dir,
-                    "",
-                    Some(task_id),
-                    None,
-                    None,
-                )
-                .await
-                {
-                    Ok(_) => (
-                        "Task handed over to the user, please summarize the current progress"
-                            .to_string(),
-                        false,
-                    ),
+                match conversation_repository::add_conversation(&ctx.state.db, &title, work_dir, "", Some(task_id), None, None).await {
+                    Ok(_) => ("Task handed over to the user, please summarize the current progress".to_string(), false),
                     Err(e) => (format!("Failed to create conversation: {}", e), true),
                 }
             } else {
@@ -55,9 +41,7 @@ pub async fn execute(cmd_and_args: &[String], ctx: &ToolContext) -> ToolResult {
 
                 let agent = match agent_repository::get_agent(&ctx.state.db, agent_id).await {
                     Ok(Some(a)) => a.agent,
-                    Ok(None) => {
-                        return (format!("Agent not found in task team: {}", agent_id), true)
-                    }
+                    Ok(None) => return (format!("Agent not found in task team: {}", agent_id), true),
                     Err(e) => return (format!("Database error: {}", e), true),
                 };
 
@@ -66,24 +50,8 @@ pub async fn execute(cmd_and_args: &[String], ctx: &ToolContext) -> ToolResult {
                 }
 
                 let title = format!("{}-{}", task.title, agent.name);
-                match conversation_repository::add_conversation(
-                    &ctx.state.db,
-                    &title,
-                    work_dir,
-                    &agent.prompt,
-                    Some(task_id),
-                    Some(agent_id),
-                    None,
-                )
-                .await
-                {
-                    Ok(_) => (
-                        format!(
-                            "Task handed over to agent {}, please summarize the current progress",
-                            agent.name
-                        ),
-                        false,
-                    ),
+                match conversation_repository::add_conversation(&ctx.state.db, &title, work_dir, &agent.prompt, Some(task_id), Some(agent_id), None).await {
+                    Ok(_) => (format!("Task handed over to agent {}, please summarize the current progress", agent.name), false),
                     Err(e) => (format!("Failed to create conversation: {}", e), true),
                 }
             }
@@ -111,9 +79,7 @@ pub async fn execute(cmd_and_args: &[String], ctx: &ToolContext) -> ToolResult {
                 Ok(ids) => ids,
                 Err(_) => return (format!("Invalid agent_ids JSON array: {}", agent_ids), true),
             };
-            match task_repository::add_task(&ctx.state.db, title, content, &agent_ids, work_dir)
-                .await
-            {
+            match task_repository::add_task(&ctx.state.db, title, content, &agent_ids, work_dir).await {
                 Ok(id) => (format!("Task added with id {}", id), false),
                 Err(e) => (format!("Failed to add task: {}", e), true),
             }
@@ -128,16 +94,7 @@ pub async fn execute(cmd_and_args: &[String], ctx: &ToolContext) -> ToolResult {
                 Ok(ids) => ids,
                 Err(_) => return (format!("Invalid agent_ids JSON array: {}", agent_ids), true),
             };
-            match task_repository::update_task(
-                &ctx.state.db,
-                task_id,
-                title,
-                content,
-                &agent_ids,
-                work_dir,
-            )
-            .await
-            {
+            match task_repository::update_task(&ctx.state.db, task_id, title, content, &agent_ids, work_dir).await {
                 Ok(true) => (format!("Task {} updated", task_id), false),
                 Ok(false) => (format!("Task not found: {}", task_id), true),
                 Err(e) => (format!("Failed to update task: {}", e), true),

@@ -59,15 +59,9 @@ pub enum ResponseStreamEvent {
     #[serde(rename = "response.function_call_arguments.delta")]
     FunctionCallArgumentsDelta { output_index: u32, delta: String },
     #[serde(rename = "response.function_call_arguments.done")]
-    FunctionCallArgumentsDone {
-        output_index: u32,
-        arguments: String,
-    },
+    FunctionCallArgumentsDone { output_index: u32, arguments: String },
     #[serde(rename = "error")]
-    Error {
-        code: Option<String>,
-        message: Option<String>,
-    },
+    Error { code: Option<String>, message: Option<String> },
     // 协议中无需处理的生命周期事件(如 response.in_progress / content_part.added 等)
     #[serde(other)]
     Unknown,

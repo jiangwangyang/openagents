@@ -14,23 +14,8 @@ struct ColumnSchema {
     suffix: &'static str,
 }
 
-// 列定义简写
-const fn col(
-    name: &'static str,
-    column_type: &'static str,
-    not_null: bool,
-    suffix: &'static str,
-) -> ColumnSchema {
-    ColumnSchema {
-        name,
-        column_type,
-        not_null,
-        suffix,
-    }
-}
-
 // 自增主键列
-const ID_COL: ColumnSchema = col("id", "INTEGER", false, "PRIMARY KEY AUTOINCREMENT");
+const ID_COL: ColumnSchema = ColumnSchema { name: "id", column_type: "INTEGER", not_null: false, suffix: "PRIMARY KEY AUTOINCREMENT" };
 
 // 表定义: indexes 为依附于该表的索引语句, 重建表后需重新创建
 struct TableSchema {
@@ -41,146 +26,14 @@ struct TableSchema {
 
 // 全部表结构定义, 建表与迁移共用同一份数据源
 const TABLES: &[TableSchema] = &[
-    TableSchema {
-        name: "t_model_provider",
-        columns: &[
-            ID_COL,
-            col("name", "TEXT", true, ""),
-            col("protocol_type", "TEXT", true, ""),
-            col("base_url", "TEXT", true, ""),
-            col("api_key", "TEXT", true, ""),
-            col("create_time", "TEXT", true, ""),
-            col("update_time", "TEXT", true, ""),
-        ],
-        indexes: &[],
-    },
-    TableSchema {
-        name: "t_agent",
-        columns: &[
-            ID_COL,
-            col("name", "TEXT", true, ""),
-            col("description", "TEXT", true, ""),
-            col("prompt", "TEXT", true, ""),
-            col(
-                "model_provider_id",
-                "INTEGER",
-                true,
-                "REFERENCES t_model_provider(id) ON DELETE RESTRICT",
-            ),
-            col("model", "TEXT", true, ""),
-            col("thinking", "INTEGER", true, ""),
-            col("create_time", "TEXT", true, ""),
-            col("update_time", "TEXT", true, ""),
-        ],
-        indexes: &[],
-    },
-    TableSchema {
-        name: "t_task",
-        columns: &[
-            ID_COL,
-            col("title", "TEXT", true, ""),
-            col("content", "TEXT", true, ""),
-            col("agent_ids", "TEXT", true, ""),
-            col("work_dir", "TEXT", true, ""),
-            col("status", "TEXT", true, ""),
-            col("create_time", "TEXT", true, ""),
-            col("update_time", "TEXT", true, ""),
-        ],
-        indexes: &[],
-    },
-    TableSchema {
-        name: "t_schedule",
-        columns: &[
-            ID_COL,
-            col("name", "TEXT", true, ""),
-            col("content", "TEXT", true, ""),
-            col("work_dir", "TEXT", true, ""),
-            col("cron_expr", "TEXT", true, ""),
-            col(
-                "agent_id",
-                "INTEGER",
-                false,
-                "REFERENCES t_agent(id) ON DELETE RESTRICT",
-            ),
-            col("enabled", "INTEGER", true, ""),
-            col("create_time", "TEXT", true, ""),
-            col("update_time", "TEXT", true, ""),
-        ],
-        indexes: &[],
-    },
-    TableSchema {
-        name: "t_conversation",
-        columns: &[
-            ID_COL,
-            col(
-                "task_id",
-                "INTEGER",
-                false,
-                "REFERENCES t_task(id) ON DELETE CASCADE",
-            ),
-            col(
-                "schedule_id",
-                "INTEGER",
-                false,
-                "REFERENCES t_schedule(id) ON DELETE RESTRICT",
-            ),
-            col(
-                "agent_id",
-                "INTEGER",
-                false,
-                "REFERENCES t_agent(id) ON DELETE RESTRICT",
-            ),
-            col("title", "TEXT", true, ""),
-            col("work_dir", "TEXT", true, ""),
-            col("system_prompt", "TEXT", true, ""),
-            col("create_time", "TEXT", true, ""),
-            col("update_time", "TEXT", true, ""),
-        ],
-        indexes: &["CREATE INDEX IF NOT EXISTS idx_conversation_task ON t_conversation(task_id)"],
-    },
-    TableSchema {
-        name: "t_message",
-        columns: &[
-            ID_COL,
-            col(
-                "conversation_id",
-                "INTEGER",
-                true,
-                "REFERENCES t_conversation(id) ON DELETE CASCADE",
-            ),
-            // content 列存整条 pi 消息 JSON(含 role/usage/stopReason/timestamp), 不再单独物化
-            col("content", "TEXT", true, ""),
-        ],
-        indexes: &[
-            "CREATE INDEX IF NOT EXISTS idx_message_conversation ON t_message(conversation_id)",
-        ],
-    },
-    TableSchema {
-        name: "t_mcp_server",
-        columns: &[
-            ID_COL,
-            col("name", "TEXT", true, ""),
-            col("description", "TEXT", true, ""),
-            col("protocol_type", "TEXT", true, ""),
-            col("url", "TEXT", false, ""),
-            col("headers", "TEXT", false, ""),
-            col("command", "TEXT", false, ""),
-            col("args", "TEXT", false, ""),
-            col("create_time", "TEXT", true, ""),
-            col("update_time", "TEXT", true, ""),
-        ],
-        indexes: &[],
-    },
-    TableSchema {
-        name: "t_web_storage",
-        columns: &[
-            col("key", "TEXT", false, "PRIMARY KEY"),
-            col("value", "TEXT", true, ""),
-            col("create_time", "TEXT", true, ""),
-            col("update_time", "TEXT", true, ""),
-        ],
-        indexes: &[],
-    },
+    TableSchema { name: "t_model_provider", columns: &[ID_COL, ColumnSchema { name: "name", column_type: "TEXT", not_null: true, suffix: "" }, ColumnSchema { name: "protocol_type", column_type: "TEXT", not_null: true, suffix: "" }, ColumnSchema { name: "base_url", column_type: "TEXT", not_null: true, suffix: "" }, ColumnSchema { name: "api_key", column_type: "TEXT", not_null: true, suffix: "" }, ColumnSchema { name: "create_time", column_type: "TEXT", not_null: true, suffix: "" }, ColumnSchema { name: "update_time", column_type: "TEXT", not_null: true, suffix: "" }], indexes: &[] },
+    TableSchema { name: "t_agent", columns: &[ID_COL, ColumnSchema { name: "name", column_type: "TEXT", not_null: true, suffix: "" }, ColumnSchema { name: "description", column_type: "TEXT", not_null: true, suffix: "" }, ColumnSchema { name: "prompt", column_type: "TEXT", not_null: true, suffix: "" }, ColumnSchema { name: "model_provider_id", column_type: "INTEGER", not_null: true, suffix: "REFERENCES t_model_provider(id) ON DELETE RESTRICT" }, ColumnSchema { name: "model", column_type: "TEXT", not_null: true, suffix: "" }, ColumnSchema { name: "thinking", column_type: "INTEGER", not_null: true, suffix: "" }, ColumnSchema { name: "create_time", column_type: "TEXT", not_null: true, suffix: "" }, ColumnSchema { name: "update_time", column_type: "TEXT", not_null: true, suffix: "" }], indexes: &[] },
+    TableSchema { name: "t_task", columns: &[ID_COL, ColumnSchema { name: "title", column_type: "TEXT", not_null: true, suffix: "" }, ColumnSchema { name: "content", column_type: "TEXT", not_null: true, suffix: "" }, ColumnSchema { name: "agent_ids", column_type: "TEXT", not_null: true, suffix: "" }, ColumnSchema { name: "work_dir", column_type: "TEXT", not_null: true, suffix: "" }, ColumnSchema { name: "status", column_type: "TEXT", not_null: true, suffix: "" }, ColumnSchema { name: "create_time", column_type: "TEXT", not_null: true, suffix: "" }, ColumnSchema { name: "update_time", column_type: "TEXT", not_null: true, suffix: "" }], indexes: &[] },
+    TableSchema { name: "t_schedule", columns: &[ID_COL, ColumnSchema { name: "name", column_type: "TEXT", not_null: true, suffix: "" }, ColumnSchema { name: "content", column_type: "TEXT", not_null: true, suffix: "" }, ColumnSchema { name: "work_dir", column_type: "TEXT", not_null: true, suffix: "" }, ColumnSchema { name: "cron_expr", column_type: "TEXT", not_null: true, suffix: "" }, ColumnSchema { name: "agent_id", column_type: "INTEGER", not_null: false, suffix: "REFERENCES t_agent(id) ON DELETE RESTRICT" }, ColumnSchema { name: "enabled", column_type: "INTEGER", not_null: true, suffix: "" }, ColumnSchema { name: "create_time", column_type: "TEXT", not_null: true, suffix: "" }, ColumnSchema { name: "update_time", column_type: "TEXT", not_null: true, suffix: "" }], indexes: &[] },
+    TableSchema { name: "t_conversation", columns: &[ID_COL, ColumnSchema { name: "task_id", column_type: "INTEGER", not_null: false, suffix: "REFERENCES t_task(id) ON DELETE CASCADE" }, ColumnSchema { name: "schedule_id", column_type: "INTEGER", not_null: false, suffix: "REFERENCES t_schedule(id) ON DELETE RESTRICT" }, ColumnSchema { name: "agent_id", column_type: "INTEGER", not_null: false, suffix: "REFERENCES t_agent(id) ON DELETE RESTRICT" }, ColumnSchema { name: "title", column_type: "TEXT", not_null: true, suffix: "" }, ColumnSchema { name: "work_dir", column_type: "TEXT", not_null: true, suffix: "" }, ColumnSchema { name: "system_prompt", column_type: "TEXT", not_null: true, suffix: "" }, ColumnSchema { name: "create_time", column_type: "TEXT", not_null: true, suffix: "" }, ColumnSchema { name: "update_time", column_type: "TEXT", not_null: true, suffix: "" }], indexes: &["CREATE INDEX IF NOT EXISTS idx_conversation_task ON t_conversation(task_id)"] },
+    TableSchema { name: "t_message", columns: &[ID_COL, ColumnSchema { name: "conversation_id", column_type: "INTEGER", not_null: true, suffix: "REFERENCES t_conversation(id) ON DELETE CASCADE" }, ColumnSchema { name: "content", column_type: "TEXT", not_null: true, suffix: "" }], indexes: &["CREATE INDEX IF NOT EXISTS idx_message_conversation ON t_message(conversation_id)"] },
+    TableSchema { name: "t_mcp_server", columns: &[ID_COL, ColumnSchema { name: "name", column_type: "TEXT", not_null: true, suffix: "" }, ColumnSchema { name: "description", column_type: "TEXT", not_null: true, suffix: "" }, ColumnSchema { name: "protocol_type", column_type: "TEXT", not_null: true, suffix: "" }, ColumnSchema { name: "url", column_type: "TEXT", not_null: false, suffix: "" }, ColumnSchema { name: "headers", column_type: "TEXT", not_null: false, suffix: "" }, ColumnSchema { name: "command", column_type: "TEXT", not_null: false, suffix: "" }, ColumnSchema { name: "args", column_type: "TEXT", not_null: false, suffix: "" }, ColumnSchema { name: "create_time", column_type: "TEXT", not_null: true, suffix: "" }, ColumnSchema { name: "update_time", column_type: "TEXT", not_null: true, suffix: "" }], indexes: &[] },
+    TableSchema { name: "t_web_storage", columns: &[ColumnSchema { name: "key", column_type: "TEXT", not_null: false, suffix: "PRIMARY KEY" }, ColumnSchema { name: "value", column_type: "TEXT", not_null: true, suffix: "" }, ColumnSchema { name: "create_time", column_type: "TEXT", not_null: true, suffix: "" }, ColumnSchema { name: "update_time", column_type: "TEXT", not_null: true, suffix: "" }], indexes: &[] },
 ];
 
 // 创建数据库连接池并初始化
@@ -192,16 +45,10 @@ pub async fn init_db() -> anyhow::Result<SqlitePool> {
     }
 
     let db_url = format!("sqlite:{}", db_file.display());
-    let options = SqliteConnectOptions::from_str(&db_url)?
-        .create_if_missing(true)
-        .pragma("journal_mode", "WAL")
-        .pragma("foreign_keys", "ON");
+    let options = SqliteConnectOptions::from_str(&db_url)?.create_if_missing(true).pragma("journal_mode", "WAL").pragma("foreign_keys", "ON");
 
     // WAL 模式下读写可并发, 连接数放宽到 5;写事务仍串行, 由 sqlx 默认 5s busy_timeout 兜底
-    let pool = SqlitePoolOptions::new()
-        .max_connections(5)
-        .connect_with(options)
-        .await?;
+    let pool = SqlitePoolOptions::new().max_connections(5).connect_with(options).await?;
 
     // 建表并迁移
     migrate_tables(&pool).await?;
@@ -214,9 +61,7 @@ pub async fn init_db() -> anyhow::Result<SqlitePool> {
 async fn migrate_tables(pool: &SqlitePool) -> anyhow::Result<()> {
     // 单连接执行, 迁移期间关闭外键约束以允许删表重建
     let mut conn = pool.acquire().await?;
-    sqlx::query("PRAGMA foreign_keys=OFF")
-        .execute(&mut *conn)
-        .await?;
+    sqlx::query("PRAGMA foreign_keys=OFF").execute(&mut *conn).await?;
 
     for table in TABLES {
         // 建表, 新装库直接得到完整结构
@@ -235,21 +80,12 @@ async fn migrate_tables(pool: &SqlitePool) -> anyhow::Result<()> {
                 fragment
             })
             .collect();
-        let create_sql = format!(
-            "CREATE TABLE IF NOT EXISTS {} ({})",
-            table.name,
-            fragments.join(", ")
-        );
+        let create_sql = format!("CREATE TABLE IF NOT EXISTS {} ({})", table.name, fragments.join(", "));
         sqlx::query(&create_sql).execute(&mut *conn).await?;
 
         // 读取现有列
-        let column_rows = sqlx::query(&format!("PRAGMA table_info({})", table.name))
-            .fetch_all(&mut *conn)
-            .await?;
-        let existing_columns: Vec<String> = column_rows
-            .iter()
-            .map(|row| row.get::<String, _>("name"))
-            .collect();
+        let column_rows = sqlx::query(&format!("PRAGMA table_info({})", table.name)).fetch_all(&mut *conn).await?;
+        let existing_columns: Vec<String> = column_rows.iter().map(|row| row.get::<String, _>("name")).collect();
 
         // 补充缺失列, 非空列先带默认值创建(数值类型默认 0, 其余默认空串), 并标记该表需要重建以去除默认值
         let mut need_rebuild = false;
@@ -263,15 +99,9 @@ async fn migrate_tables(pool: &SqlitePool) -> anyhow::Result<()> {
                     "INTEGER" | "REAL" => "0",
                     _ => "''",
                 };
-                format!(
-                    "ALTER TABLE {} ADD COLUMN {} {} NOT NULL DEFAULT {}",
-                    table.name, col.name, col.column_type, default_sql
-                )
+                format!("ALTER TABLE {} ADD COLUMN {} {} NOT NULL DEFAULT {}", table.name, col.name, col.column_type, default_sql)
             } else {
-                format!(
-                    "ALTER TABLE {} ADD COLUMN {} {}",
-                    table.name, col.name, col.column_type
-                )
+                format!("ALTER TABLE {} ADD COLUMN {} {}", table.name, col.name, col.column_type)
             };
             sqlx::query(&add_sql).execute(&mut *conn).await?;
             tracing::info!("Column added: table={}, column={}", table.name, col.name);
@@ -289,32 +119,11 @@ async fn migrate_tables(pool: &SqlitePool) -> anyhow::Result<()> {
 
         // 重建表以去除补列时引入的默认值: 建新表 -> 按交集列拷数据 -> 删旧表 -> 改名
         if need_rebuild {
-            let latest_rows = sqlx::query(&format!("PRAGMA table_info({})", table.name))
-                .fetch_all(&mut *conn)
-                .await?;
-            let latest_columns: Vec<String> = latest_rows
-                .iter()
-                .map(|row| row.get::<String, _>("name"))
-                .collect();
-            let copy_columns: Vec<&str> = table
-                .columns
-                .iter()
-                .filter(|col| latest_columns.iter().any(|name| name == col.name))
-                .map(|col| col.name)
-                .collect();
+            let latest_rows = sqlx::query(&format!("PRAGMA table_info({})", table.name)).fetch_all(&mut *conn).await?;
+            let latest_columns: Vec<String> = latest_rows.iter().map(|row| row.get::<String, _>("name")).collect();
+            let copy_columns: Vec<&str> = table.columns.iter().filter(|col| latest_columns.iter().any(|name| name == col.name)).map(|col| col.name).collect();
             let temp_table = format!("{}__migrate", table.name);
-            let rebuild_sqls = [
-                format!("CREATE TABLE {} ({})", temp_table, fragments.join(", ")),
-                format!(
-                    "INSERT INTO {} ({}) SELECT {} FROM {}",
-                    temp_table,
-                    copy_columns.join(", "),
-                    copy_columns.join(", "),
-                    table.name
-                ),
-                format!("DROP TABLE {}", table.name),
-                format!("ALTER TABLE {} RENAME TO {}", temp_table, table.name),
-            ];
+            let rebuild_sqls = [format!("CREATE TABLE {} ({})", temp_table, fragments.join(", ")), format!("INSERT INTO {} ({}) SELECT {} FROM {}", temp_table, copy_columns.join(", "), copy_columns.join(", "), table.name), format!("DROP TABLE {}", table.name), format!("ALTER TABLE {} RENAME TO {}", temp_table, table.name)];
             sqlx::query("BEGIN").execute(&mut *conn).await?;
             let mut rebuild_error: Option<anyhow::Error> = None;
             for sql in &rebuild_sqls {
@@ -341,8 +150,6 @@ async fn migrate_tables(pool: &SqlitePool) -> anyhow::Result<()> {
         }
     }
 
-    sqlx::query("PRAGMA foreign_keys=ON")
-        .execute(&mut *conn)
-        .await?;
+    sqlx::query("PRAGMA foreign_keys=ON").execute(&mut *conn).await?;
     Ok(())
 }

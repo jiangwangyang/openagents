@@ -51,10 +51,7 @@ pub async fn execute(cmd_and_args: &[String], work_dir: &str) -> ToolResult {
                 Err(e) => return (format!("Failed to read file: {}", e), true),
             };
             if !content.contains(*old_str) {
-                return (
-                    format!("Target string not found in file:\n{}", old_str),
-                    true,
-                );
+                return (format!("Target string not found in file:\n{}", old_str), true);
             }
             let new_content = content.replace(old_str, new_str);
             match fs::write(&path, new_content).await {
@@ -62,7 +59,7 @@ pub async fn execute(cmd_and_args: &[String], work_dir: &str) -> ToolResult {
                 Err(e) => (format!("Failed to write file: {}", e), true),
             }
         }
-        _ => ("Unknown command".to_string(), true),
+        _ => (format!("Unknown file command: {}", args.join(" ")), true),
     }
 }
 

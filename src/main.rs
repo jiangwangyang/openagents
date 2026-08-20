@@ -62,11 +62,7 @@ fn run_tauri(url: &str) -> anyhow::Result<()> {
     let url = tauri::Url::parse(url)?;
     tauri::Builder::default()
         .setup(move |app| {
-            tauri::WebviewWindowBuilder::new(app, "main", tauri::WebviewUrl::External(url.clone()))
-                .title("OpenAgents")
-                .inner_size(1440.0, 900.0)
-                .maximized(true)
-                .build()?;
+            tauri::WebviewWindowBuilder::new(app, "main", tauri::WebviewUrl::External(url.clone())).title("OpenAgents").inner_size(1440.0, 900.0).maximized(true).build()?;
             Ok(())
         })
         .run(tauri::generate_context!())?;
@@ -85,16 +81,9 @@ async fn run_server(port_tx: Option<Sender<u16>>, bind_addr: String) -> anyhow::
     let (non_blocking, _guard) = tracing_appender::non_blocking(file_appender);
     tracing_subscriber::registry()
         // 文件层禁用 ANSI, 避免日志文件混入颜色转义码
-        .with(
-            tracing_subscriber::fmt::layer()
-                .with_ansi(false)
-                .with_writer(non_blocking),
-        )
+        .with(tracing_subscriber::fmt::layer().with_ansi(false).with_writer(non_blocking))
         .with(tracing_subscriber::fmt::layer().with_writer(std::io::stdout))
-        .with(
-            tracing_subscriber::EnvFilter::from_default_env()
-                .add_directive(tracing::Level::INFO.into()),
-        )
+        .with(tracing_subscriber::EnvFilter::from_default_env().add_directive(tracing::Level::INFO.into()))
         .init();
     tracing::info!("Logging initialized: log_file={}", log_file.display());
 
@@ -113,14 +102,7 @@ async fn run_server(port_tx: Option<Sender<u16>>, bind_addr: String) -> anyhow::
     scheduler.start().await?;
 
     // 组装应用状态
-    let state = AppState {
-        db,
-        scheduler,
-        job_ids: Arc::new(DashMap::new()),
-        task_loops: Arc::new(DashMap::new()),
-        conversation_states: Arc::new(DashMap::new()),
-        skills,
-    };
+    let state = AppState { db, scheduler, job_ids: Arc::new(DashMap::new()), task_loops: Arc::new(DashMap::new()), conversation_states: Arc::new(DashMap::new()), skills };
 
     // 从数据库加载所有启用的定时任务
     service::schedule_service::init_scheduler(&state).await?;
@@ -133,11 +115,7 @@ async fn run_server(port_tx: Option<Sender<u16>>, bind_addr: String) -> anyhow::
     let port: u16 = listener.local_addr()?.port();
     // 端口回传通道存在即为桌面模式
     let mode: &str = if port_tx.is_some() { "desktop" } else { "web" };
-    tracing::info!(
-        "Application started: mode={} listening=127.0.0.1:{}",
-        mode,
-        port
-    );
+    tracing::info!("Application started: mode={} listening=127.0.0.1:{}", mode, port);
 
     // 桌面模式回传端口给主线程用于加载页面
     if let Some(tx) = port_tx {
@@ -145,9 +123,7 @@ async fn run_server(port_tx: Option<Sender<u16>>, bind_addr: String) -> anyhow::
     }
 
     // 启动服务, 支持 Ctrl-C graceful shutdown
-    axum::serve(listener, app)
-        .with_graceful_shutdown(shutdown_signal())
-        .await?;
+    axum::serve(listener, app).with_graceful_shutdown(shutdown_signal()).await?;
 
     Ok(())
 }

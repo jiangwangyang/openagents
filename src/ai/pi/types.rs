@@ -5,10 +5,7 @@ use serde::{Deserialize, Serialize};
 
 // Unix 毫秒时间戳(对齐 pi 的 Date.now())
 pub fn now_timestamp() -> u64 {
-    std::time::SystemTime::now()
-        .duration_since(std::time::UNIX_EPOCH)
-        .map(|d| d.as_millis() as u64)
-        .unwrap_or(0)
+    std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).map(|d| d.as_millis() as u64).unwrap_or(0)
 }
 
 // ========== 内容块 ==========
@@ -228,57 +225,16 @@ pub struct Model {
 #[allow(dead_code)]
 #[derive(Debug, Clone)]
 pub enum AssistantMessageEvent {
-    Start {
-        partial: AssistantMessage,
-    },
-    TextStart {
-        content_index: usize,
-        partial: AssistantMessage,
-    },
-    TextDelta {
-        content_index: usize,
-        delta: String,
-        partial: AssistantMessage,
-    },
-    TextEnd {
-        content_index: usize,
-        content: String,
-        partial: AssistantMessage,
-    },
-    ThinkingStart {
-        content_index: usize,
-        partial: AssistantMessage,
-    },
-    ThinkingDelta {
-        content_index: usize,
-        delta: String,
-        partial: AssistantMessage,
-    },
-    ThinkingEnd {
-        content_index: usize,
-        content: String,
-        partial: AssistantMessage,
-    },
-    ToolcallStart {
-        content_index: usize,
-        partial: AssistantMessage,
-    },
-    ToolcallDelta {
-        content_index: usize,
-        delta: String,
-        partial: AssistantMessage,
-    },
-    ToolcallEnd {
-        content_index: usize,
-        tool_call: ToolCall,
-        partial: AssistantMessage,
-    },
-    Done {
-        reason: StopReason,
-        message: AssistantMessage,
-    },
-    Error {
-        reason: StopReason,
-        error: AssistantMessage,
-    },
+    Start { partial: AssistantMessage },
+    TextStart { content_index: usize, partial: AssistantMessage },
+    TextDelta { content_index: usize, delta: String, partial: AssistantMessage },
+    TextEnd { content_index: usize, content: String, partial: AssistantMessage },
+    ThinkingStart { content_index: usize, partial: AssistantMessage },
+    ThinkingDelta { content_index: usize, delta: String, partial: AssistantMessage },
+    ThinkingEnd { content_index: usize, content: String, partial: AssistantMessage },
+    ToolcallStart { content_index: usize, partial: AssistantMessage },
+    ToolcallDelta { content_index: usize, delta: String, partial: AssistantMessage },
+    ToolcallEnd { content_index: usize, tool_call: ToolCall, partial: AssistantMessage },
+    Done { reason: StopReason, message: AssistantMessage },
+    Error { reason: StopReason, error: AssistantMessage },
 }

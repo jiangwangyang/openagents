@@ -50,15 +50,7 @@ pub struct ProviderJoinRow {
 // ProviderJoinRow -> 模型提供商: provider_id 为 None 说明 LEFT JOIN 未命中
 impl From<ProviderJoinRow> for Option<ModelProviderEntity> {
     fn from(r: ProviderJoinRow) -> Self {
-        r.provider_id.map(|id| ModelProviderEntity {
-            id,
-            name: r.provider_name.unwrap_or_default(),
-            protocol_type: r.provider_protocol_type.unwrap_or_default(),
-            base_url: r.provider_base_url.unwrap_or_default(),
-            api_key: r.provider_api_key.unwrap_or_default(),
-            create_time: r.provider_create_time.unwrap_or_default(),
-            update_time: r.provider_update_time.unwrap_or_default(),
-        })
+        r.provider_id.map(|id| ModelProviderEntity { id, name: r.provider_name.unwrap_or_default(), protocol_type: r.provider_protocol_type.unwrap_or_default(), base_url: r.provider_base_url.unwrap_or_default(), api_key: r.provider_api_key.unwrap_or_default(), create_time: r.provider_create_time.unwrap_or_default(), update_time: r.provider_update_time.unwrap_or_default() })
     }
 }
 
@@ -73,10 +65,7 @@ pub struct AgentProviderRow {
 
 impl From<AgentProviderRow> for AgentWithProvider {
     fn from(r: AgentProviderRow) -> Self {
-        AgentWithProvider {
-            agent: r.agent,
-            model_provider: r.provider.into(),
-        }
+        AgentWithProvider { agent: r.agent, model_provider: r.provider.into() }
     }
 }
 
@@ -139,17 +128,7 @@ pub struct AgentJoinRow {
 // AgentJoinRow -> Agent: agent_ref_id 为 None 说明 LEFT JOIN 未命中
 impl From<AgentJoinRow> for Option<AgentEntity> {
     fn from(r: AgentJoinRow) -> Self {
-        r.agent_ref_id.map(|id| AgentEntity {
-            id,
-            name: r.agent_name.unwrap_or_default(),
-            description: r.agent_description.unwrap_or_default(),
-            prompt: r.agent_prompt.unwrap_or_default(),
-            model_provider_id: r.agent_model_provider_id.unwrap_or_default(),
-            model: r.agent_model.unwrap_or_default(),
-            thinking: r.agent_thinking.unwrap_or_default(),
-            create_time: r.agent_create_time.unwrap_or_default(),
-            update_time: r.agent_update_time.unwrap_or_default(),
-        })
+        r.agent_ref_id.map(|id| AgentEntity { id, name: r.agent_name.unwrap_or_default(), description: r.agent_description.unwrap_or_default(), prompt: r.agent_prompt.unwrap_or_default(), model_provider_id: r.agent_model_provider_id.unwrap_or_default(), model: r.agent_model.unwrap_or_default(), thinking: r.agent_thinking.unwrap_or_default(), create_time: r.agent_create_time.unwrap_or_default(), update_time: r.agent_update_time.unwrap_or_default() })
     }
 }
 
@@ -164,10 +143,7 @@ pub struct ScheduleAgentRow {
 
 impl From<ScheduleAgentRow> for ScheduleWithAgent {
     fn from(r: ScheduleAgentRow) -> Self {
-        ScheduleWithAgent {
-            schedule: r.schedule,
-            agent: r.agent.into(),
-        }
+        ScheduleWithAgent { schedule: r.schedule, agent: r.agent.into() }
     }
 }
 
@@ -202,7 +178,7 @@ pub struct ConversationWithMessages {
     pub messages: Vec<MessageEntity>,
 }
 
-// get_conversation JOIN 查询中间行(对话列 + 关联的 Agent 列), messages 由调用方另行查询填充
+// get_conversation_with_messages JOIN 查询中间行(对话列 + 关联的 Agent 列), messages 由调用方另行查询填充
 #[derive(Debug, Clone, FromRow)]
 pub struct ConversationAgentRow {
     #[sqlx(flatten)]
@@ -213,11 +189,7 @@ pub struct ConversationAgentRow {
 
 impl From<ConversationAgentRow> for ConversationWithMessages {
     fn from(r: ConversationAgentRow) -> Self {
-        ConversationWithMessages {
-            conversation: r.conversation,
-            agent: r.agent.into(),
-            messages: Vec::new(),
-        }
+        ConversationWithMessages { conversation: r.conversation, agent: r.agent.into(), messages: Vec::new() }
     }
 }
 

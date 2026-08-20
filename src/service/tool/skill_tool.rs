@@ -5,21 +5,15 @@ use super::ToolResult;
 use crate::config;
 use crate::state::SkillInfo;
 
-// Skill 读取目录
-fn skills_dir_list() -> Vec<PathBuf> {
-    let home = config::home_dir();
-    vec![
-        PathBuf::from(&home).join(".openagents").join("skills"),
-        PathBuf::from(&home).join(".agents").join("skills"),
-    ]
-}
-
 // 初始化所有 skill 信息
 pub async fn init_skills(skills_store: &std::sync::RwLock<Vec<SkillInfo>>) {
     let mut loaded = std::collections::HashSet::new();
     let mut skills = Vec::new();
 
-    for skills_dir in skills_dir_list() {
+    // Skill 读取目录
+    let home = config::home_dir();
+    let skills_dirs = vec![PathBuf::from(&home).join(".openagents").join("skills"), PathBuf::from(&home).join(".agents").join("skills")];
+    for skills_dir in skills_dirs {
         if !skills_dir.exists() {
             continue;
         }
@@ -80,17 +74,8 @@ pub async fn init_skills(skills_store: &std::sync::RwLock<Vec<SkillInfo>>) {
                     None => String::new(),
                 };
 
-                let path = skill_file
-                    .canonicalize()
-                    .unwrap_or(skill_file)
-                    .to_string_lossy()
-                    .to_string();
-                skills.push(SkillInfo {
-                    name,
-                    description,
-                    path,
-                    content,
-                });
+                let path = skill_file.canonicalize().unwrap_or(skill_file).to_string_lossy().to_string();
+                skills.push(SkillInfo { name, description, path, content });
                 loaded.insert(skill_name);
             }
         }
@@ -109,34 +94,19 @@ pub async fn init_skills(skills_store: &std::sync::RwLock<Vec<SkillInfo>>) {
 
 // 获取技能列表
 pub fn list_skills(skills_store: &std::sync::RwLock<Vec<SkillInfo>>) -> Vec<SkillInfo> {
-    skills_store
-        .read()
-        .unwrap_or_else(|e| e.into_inner())
-        .clone()
+    skills_store.read().unwrap_or_else(|e| e.into_inner()).clone()
 }
 
 // 执行技能命令
-pub fn execute(
-    cmd_and_args: &[String],
-    skills_store: &std::sync::RwLock<Vec<SkillInfo>>,
-) -> ToolResult {
+pub fn execute(cmd_and_args: &[String], skills_store: &std::sync::RwLock<Vec<SkillInfo>>) -> ToolResult {
     let args: Vec<&str> = cmd_and_args.iter().map(String::as_str).collect();
     match args.as_slice() {
         // skill list
         ["skill", "list"] => {
             let skills = skills_store.read().unwrap_or_else(|e| e.into_inner());
-            let result: Vec<serde_json::Value> = skills
-                .iter()
-                .map(|s| {
-                    serde_json::json!({
-                        "name": s.name,
-                        "description": s.description,
-                        "path": s.path
-                    })
-                })
-                .collect();
+            let result: Vec<serde_json::Value> = skills.iter().map(|s| serde_json::json!({"name": s.name, "description": s.description, "path": s.path})).collect();
             (serde_json::to_string(&result).unwrap_or_default(), false)
         }
-        _ => ("Unknown command".to_string(), true),
+        _ => (format!("Unknown skill command: {}", args.join(" ")), true),
     }
 }

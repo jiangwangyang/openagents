@@ -35,17 +35,9 @@ impl IntoResponse for AppError {
         };
         // 5xx 为服务端故障记 ERROR, 4xx 为客户端问题记 WARN
         if status.is_server_error() {
-            tracing::error!(
-                "Request failed: status={} error={}",
-                status.as_u16(),
-                message
-            );
+            tracing::error!("Request failed: status={} error={}", status.as_u16(), message);
         } else {
-            tracing::warn!(
-                "Request rejected: status={} error={}",
-                status.as_u16(),
-                message
-            );
+            tracing::warn!("Request rejected: status={} error={}", status.as_u16(), message);
         }
         (status, message).into_response()
     }

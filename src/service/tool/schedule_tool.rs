@@ -13,23 +13,7 @@ pub async fn execute(cmd_and_args: &[String], state: &AppState) -> ToolResult {
         // schedule list
         ["schedule", "list"] => match schedule_repository::list_schedules(&state.db).await {
             Ok(schedules) => {
-                let result: Vec<serde_json::Value> = schedules
-                    .iter()
-                    .map(|s| {
-                        serde_json::json!({
-                            "id": s.id,
-                            "name": s.name,
-                            "content": s.content,
-                            "work_dir": s.work_dir,
-                            "cron_expr": s.cron_expr,
-                            "agent_id": s.agent_id,
-                            "enabled": s.enabled,
-                            "next_fire_time": schedule_service::next_fire_time(&s.cron_expr),
-                            "create_time": s.create_time,
-                            "update_time": s.update_time,
-                        })
-                    })
-                    .collect();
+                let result: Vec<serde_json::Value> = schedules.iter().map(|s| serde_json::json!({"id": s.id, "name": s.name, "content": s.content, "work_dir": s.work_dir, "cron_expr": s.cron_expr, "agent_id": s.agent_id, "enabled": s.enabled, "next_fire_time": schedule_service::next_fire_time(&s.cron_expr), "create_time": s.create_time, "update_time": s.update_time})).collect();
                 (serde_json::to_string(&result).unwrap_or_default(), false)
             }
             Err(e) => (format!("Database error: {}", e), true),
@@ -44,18 +28,7 @@ pub async fn execute(cmd_and_args: &[String], state: &AppState) -> ToolResult {
                 Ok(Some(s)) => {
                     // 工具输出保持定时任务基本字段, 不含关联的 Agent 实体
                     let s = s.schedule;
-                    let result = serde_json::json!({
-                        "id": s.id,
-                        "name": s.name,
-                        "content": s.content,
-                        "work_dir": s.work_dir,
-                        "cron_expr": s.cron_expr,
-                        "agent_id": s.agent_id,
-                        "enabled": s.enabled,
-                        "next_fire_time": schedule_service::next_fire_time(&s.cron_expr),
-                        "create_time": s.create_time,
-                        "update_time": s.update_time,
-                    });
+                    let result = serde_json::json!({"id": s.id, "name": s.name, "content": s.content, "work_dir": s.work_dir, "cron_expr": s.cron_expr, "agent_id": s.agent_id, "enabled": s.enabled, "next_fire_time": schedule_service::next_fire_time(&s.cron_expr), "create_time": s.create_time, "update_time": s.update_time});
                     (serde_json::to_string(&result).unwrap_or_default(), false)
                 }
                 Ok(None) => (format!("Schedule not found: {}", schedule_id), true),
@@ -72,18 +45,13 @@ pub async fn execute(cmd_and_args: &[String], state: &AppState) -> ToolResult {
                 Ok(id) => id,
                 Err(r) => return r,
             };
-            match schedule_service::add_schedule(
-                state, name, content, work_dir, cron_expr, agent_id,
-            )
-            .await
-            {
+            match schedule_service::add_schedule(state, name, content, work_dir, cron_expr, agent_id).await {
                 Ok(id) => (format!("Schedule added with id {}", id), false),
                 Err(e) => (format!("Failed to add schedule: {}", e), true),
             }
         }
         // schedule update <schedule_id> <name> <content> <work_dir> <cron_expr> <agent_id> <enabled>
-        ["schedule", "update", schedule_id, name, content, work_dir, cron_expr, agent_id, enabled] =>
-        {
+        ["schedule", "update", schedule_id, name, content, work_dir, cron_expr, agent_id, enabled] => {
             let schedule_id = match parse_id(schedule_id, "schedule_id") {
                 Ok(id) => id,
                 Err(r) => return r,
@@ -100,18 +68,7 @@ pub async fn execute(cmd_and_args: &[String], state: &AppState) -> ToolResult {
                 Ok(b) => b,
                 Err(r) => return r,
             };
-            match schedule_service::update_schedule(
-                state,
-                schedule_id,
-                name,
-                content,
-                work_dir,
-                cron_expr,
-                agent_id,
-                enabled,
-            )
-            .await
-            {
+            match schedule_service::update_schedule(state, schedule_id, name, content, work_dir, cron_expr, agent_id, enabled).await {
                 Ok(true) => (format!("Schedule {} updated", schedule_id), false),
                 Ok(false) => (format!("Schedule not found: {}", schedule_id), true),
                 Err(e) => (format!("Failed to update schedule: {}", e), true),
@@ -129,9 +86,6 @@ pub async fn execute(cmd_and_args: &[String], state: &AppState) -> ToolResult {
                 Err(e) => (format!("Failed to delete schedule: {}", e), true),
             }
         }
-        _ => (
-            format!("Unknown schedule command: {}", args.join(" ")),
-            true,
-        ),
+        _ => (format!("Unknown schedule command: {}", args.join(" ")), true),
     }
 }

@@ -10,10 +10,10 @@ use tokio_cron_scheduler::JobScheduler;
 // 对话流式状态
 pub struct ConversationState {
     pub chunks: Vec<serde_json::Value>,
-    pub done: bool,
     // 回放查询会话标记: true 表示仅回放历史不执行模型调用, 不计入运行状态
     pub query: bool,
-    pub notify: tokio::sync::watch::Sender<u64>,
+    // 新 chunk 通知, 对话结束时置 None 关闭通道即完成信号(与 entry 移除同点发生, 保证完成状态只有一个事实来源)
+    pub notify: Option<tokio::sync::watch::Sender<u64>>,
     pub stop: tokio::sync::watch::Sender<bool>,
 }
 

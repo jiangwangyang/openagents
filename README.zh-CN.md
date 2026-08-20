@@ -8,8 +8,6 @@
 
 [English](README.md) | 中文
 
-![OpenAgents 主界面](docs/screenshots/hero.png)
-
 ## 为什么选择 OpenAgents
 
 - **绝对自由与掌控**
@@ -52,13 +50,19 @@
 
 ![定时任务](docs/screenshots/schedule.png)
 
-### MCP 服务器: 无限扩展工具能力
-
-![MCP 服务器配置](docs/screenshots/mcp.png)
-
 ### 多主题配色动效
 
-![多主题配色](docs/screenshots/themes.png)
+![多主题配色](docs/screenshots/theme-dark.png)
+
+![多主题配色](docs/screenshots/theme-ink.png)
+
+![多主题配色](docs/screenshots/theme-sunset.png)
+
+![多主题配色](docs/screenshots/theme-aurora.png)
+
+![多主题配色](docs/screenshots/theme-cyberpunk.png)
+
+![多主题配色](docs/screenshots/theme-blackhole.png)
 
 ## 安装与运行
 

@@ -25,7 +25,7 @@ jobs:
     runs-on: ${{ matrix.os }}
 
     steps:
-    - uses: actions/checkout@v4
+    - uses: actions/checkout@v5
 
     - name: Install Linux dependencies
       if: runner.os == 'Linux'
@@ -49,7 +49,7 @@ jobs:
         else
           cp target/${{ matrix.target }}/release/openagents dist/
         fi
-        cd dist && zip ../openagents-${{ matrix.target }}.zip *
+        cd dist && 7z a ../openagents-${{ matrix.target }}.zip *
 
     - name: Upload release assets
       uses: softprops/action-gh-release@v2

@@ -15,12 +15,16 @@ jobs:
         include:
           - os: windows-latest
             target: x86_64-pc-windows-msvc
+            name: windows-x86_64
           - os: macos-latest
             target: aarch64-apple-darwin
+            name: macos-aarch64
           - os: ubuntu-latest
             target: x86_64-unknown-linux-gnu
+            name: linux-x86_64
           - os: ubuntu-24.04-arm
             target: aarch64-unknown-linux-gnu
+            name: linux-aarch64
 
     runs-on: ${{ matrix.os }}
 
@@ -49,9 +53,9 @@ jobs:
         else
           cp target/${{ matrix.target }}/release/openagents dist/
         fi
-        cd dist && 7z a ../openagents-${{ matrix.target }}.zip *
+        cd dist && 7z a ../openagents-${{ matrix.name }}.zip *
 
     - name: Upload release assets
-      uses: softprops/action-gh-release@v2
+      uses: softprops/action-gh-release@v3
       with:
-        files: openagents-${{ matrix.target }}.zip
+        files: openagents-${{ matrix.name }}.zip

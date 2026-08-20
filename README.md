@@ -66,11 +66,16 @@ English | [中文](README.zh-CN.md)
 
 ## Installation & Usage
 
-Download the executable for your platform from the Releases page:
+Download the archive for your platform from the [Releases](https://github.com/jiangwangyang/openagents/releases) page and extract it:
 
-- Windows: `openagents.exe`
-- macOS: `openagents`
-- Linux: `openagents`
+| Platform | File |
+| --- | --- |
+| Windows (x86_64) | `openagents-windows-x86_64.zip` |
+| macOS (Apple Silicon) | `openagents-macos-aarch64.zip` |
+| Linux (x86_64) | `openagents-linux-x86_64.zip` |
+| Linux (ARM64) | `openagents-linux-aarch64.zip` |
+
+The archive contains a single executable: `openagents.exe` on Windows, `openagents` on macOS / Linux (grant execute permission after extraction: `chmod +x openagents`)
 
 ### Desktop mode (default)
 

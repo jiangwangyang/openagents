@@ -66,11 +66,16 @@
 
 ## 安装与运行
 
-从 Releases 页面下载对应平台的可执行文件:
+从 [Releases](https://github.com/jiangwangyang/openagents/releases) 页面下载对应平台的压缩包, 解压后即可使用:
 
-- Windows: `openagents.exe`
-- macOS: `openagents`
-- Linux: `openagents`
+| 平台 | 文件 |
+| --- | --- |
+| Windows (x86_64) | `openagents-windows-x86_64.zip` |
+| macOS (Apple Silicon) | `openagents-macos-aarch64.zip` |
+| Linux (x86_64) | `openagents-linux-x86_64.zip` |
+| Linux (ARM64) | `openagents-linux-aarch64.zip` |
+
+压缩包内为单个可执行文件: Windows 为 `openagents.exe`, macOS / Linux 为 `openagents` (解压后需赋予执行权限: `chmod +x openagents`)
 
 ### 桌面模式 (默认)
 

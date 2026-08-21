@@ -116,6 +116,7 @@ async function fetchCronTasks() {
                         <span class="card-meta">${t('cron.nextFire')}: ${escapeHtml(task.next_fire_time || t('cron.suspended'))}</span>
                     </div>
                     <div class="card-actions" onclick="event.stopPropagation();">
+                        <button class="btn btn-sm btn-secondary cron-run-btn btn-card-sm">${t('cron.triggerNow')}</button>
                         <button class="btn btn-sm btn-secondary cron-toggle-btn btn-card-sm">${task.enabled ? t('cron.disable') : t('cron.enable')}</button>
                         <button class="delete-btn always-visible">${DELETE_SVG}</button>
                     </div>
@@ -146,6 +147,8 @@ async function fetchCronTasks() {
             // 执行记录标题栏追加排序按钮(升/降序切换并持久化记忆)
             card.querySelector('.details-block-header').appendChild(createStageSortButton());
             card.querySelector('.details-block-header').appendChild(createStageExpandButton());
+            // 手动触发按钮
+            card.querySelector('.cron-run-btn').onclick = () => triggerCronTask(task);
             // 启用/禁用切换按钮
             card.querySelector('.cron-toggle-btn').onclick = () => toggleCronEnabled(task);
             // 删除按钮通过闭包绑定, 避免任务名中的引号破坏内联 onclick 字符串
@@ -260,7 +263,25 @@ async function toggleCronEnabled(task) {
     }
 }
 
-// ===== 7. 删除任务 =====
+// ===== 7. 手动触发 =====
+// 手动触发定时任务: 立即执行一次, 不影响原调度计划
+async function triggerCronTask(task) {
+    try {
+        const response = await fetch(`/schedule/${task.id}/trigger`, {method: 'POST'});
+        if (response.ok) {
+            showToast(t('cron.triggered', {name: task.name}));
+            // 卡片处于展开状态时刷新执行记录
+            const stageList = document.getElementById(`cron-stages-${task.id}`);
+            if (stageList && stageList.closest('.info-card').hasAttribute('open')) {
+                loadCronDetail(task.id);
+            }
+        }
+    } catch (e) {
+        showToast(t('common.syncCrashed'), 'error');
+    }
+}
+
+// ===== 8. 删除任务 =====
 function removeCronTask(taskId, taskName) {
     showConfirmDialog({
         title: t('cron.purgeTitle'),

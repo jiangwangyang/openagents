@@ -59,6 +59,7 @@ pub fn create_router(state: AppState) -> Router {
         .route("/schedule", post(schedule_api::add_schedule))
         .route("/schedule/{schedule_id}", put(schedule_api::update_schedule))
         .route("/schedule/{schedule_id}", delete(schedule_api::delete_schedule))
+        .route("/schedule/{schedule_id}/trigger", post(schedule_api::trigger_schedule))
         // 任务 CRUD
         .route("/task/list", get(task_api::list_tasks))
         .route("/task/{task_id}", get(task_api::get_task))

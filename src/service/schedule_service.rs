@@ -63,6 +63,15 @@ pub async fn delete_schedule(state: &AppState, schedule_id: i64) -> anyhow::Resu
     Ok(deleted)
 }
 
+// 手动触发定时任务: 立即执行一次, 不影响原调度计划, 不存在返回 false
+pub async fn trigger_schedule(state: &AppState, schedule_id: i64) -> anyhow::Result<bool> {
+    if schedule_repository::get_schedule(&state.db, schedule_id).await?.is_none() {
+        return Ok(false);
+    }
+    execute_schedule(state, schedule_id, "手动").await?;
+    Ok(true)
+}
+
 // 计算 cron 表达式的下次触发时间(与调度器一致按本地时区解析)
 pub fn next_fire_time(cron_expr: &str) -> Option<String> {
     let schedule = cron::Schedule::from_str(cron_expr).ok()?;
@@ -77,7 +86,7 @@ async fn add_job_to_scheduler(state: &AppState, schedule_id: i64, cron_expr: &st
     let job = Job::new_async_tz(cron.as_str(), chrono::Local, move |_uuid, _lock| {
         let state = job_state.clone();
         Box::pin(async move {
-            if let Err(e) = execute_schedule(&state, schedule_id).await {
+            if let Err(e) = execute_schedule(&state, schedule_id, "定时").await {
                 tracing::error!("Schedule {} execution failed: {}", schedule_id, e);
             }
         })
@@ -102,8 +111,8 @@ fn start_conversation_boxed(state: &AppState, conversation_id: i64, task_content
     Box::pin(async move { conversation_service::start_conversation(&state, conversation_id, task_content, model_provider_id, model, thinking, false).await })
 }
 
-// 执行定时任务: 创建对话并触发 agent 执行
-async fn execute_schedule(state: &AppState, schedule_id: i64) -> anyhow::Result<()> {
+// 执行定时任务: 创建对话并触发 agent 执行, 对话标题以 trigger_label 为前缀
+async fn execute_schedule(state: &AppState, schedule_id: i64, trigger_label: &str) -> anyhow::Result<()> {
     let detail = schedule_repository::get_schedule(&state.db, schedule_id).await?.ok_or_else(|| anyhow::anyhow!("schedule not found"))?;
     let schedule = detail.schedule;
     // 执行 Agent 已由 get_schedule 单条 SQL 关联查出, 引用删除保护保证关联必然命中
@@ -111,7 +120,7 @@ async fn execute_schedule(state: &AppState, schedule_id: i64) -> anyhow::Result<
     let provider = model_provider_repository::get_model_provider(&state.db, agent.model_provider_id).await?.ok_or_else(|| anyhow::anyhow!("model provider not configured"))?;
 
     // 创建对话
-    let conversation_id = conversation_repository::add_conversation(&state.db, &format!("[定时] {}", schedule.name), &schedule.work_dir, &agent.prompt, None, Some(schedule.agent_id), Some(schedule_id)).await?;
+    let conversation_id = conversation_repository::add_conversation(&state.db, &format!("[{}] {}", trigger_label, schedule.name), &schedule.work_dir, &agent.prompt, None, Some(schedule.agent_id), Some(schedule_id)).await?;
 
     // 触发对话执行, 启动失败时记录日志, 避免对话已落库但未执行的静默失败
     let started = start_conversation_boxed(state, conversation_id, schedule.content.clone(), provider.id, agent.model.clone(), agent.thinking).await;

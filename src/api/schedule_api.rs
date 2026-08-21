@@ -116,3 +116,12 @@ pub async fn delete_schedule(State(state): State<AppState>, Path(schedule_id): P
     }
     Ok(())
 }
+
+// 手动触发定时任务接口: 立即执行一次, 不影响原调度计划, 不存在返回 404
+pub async fn trigger_schedule(State(state): State<AppState>, Path(schedule_id): Path<i64>) -> Result<(), AppError> {
+    let triggered = schedule_service::trigger_schedule(&state, schedule_id).await?;
+    if !triggered {
+        return Err(AppError::NotFound("Schedule not found".to_string()));
+    }
+    Ok(())
+}

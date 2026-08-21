@@ -4,33 +4,28 @@
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 ![Platform](https://img.shields.io/badge/platform-Windows%20%7C%20macOS%20%7C%20Linux-blue)
-![Version](https://img.shields.io/badge/version-0.1.0-green)
+[![GitHub release](https://img.shields.io/github/v/release/jiangwangyang/openagents)](https://github.com/jiangwangyang/openagents/releases)
 
 [English](README.md) | 中文
 
+## 你是否遇到过这些烦恼
+
+- **Agent 不听你的**: 平台预置了大段隐藏的系统提示词, Agent 的行为被平台定义, 你想改却看不到也改不了
+- **token 烧得心疼**: 预置提示词和海量工具定义每次请求都在消耗 token, 上下文臃肿缓存命不中, 又慢又贵, 账单失控却不知道钱花在哪
+- **AI 是黑盒**: 工具调用层层折叠嵌套, AI 改了什么文件, 执行了什么命令, 一概看不清, 不敢放手让它干活
+- **人肉流水线**: 一个 Agent 干不完复杂任务, 只能自己复制粘贴串联, 每天重复的活儿也没法自动定时跑
+- **数据在别人手里**: 对话记录, 文件, API Key 都存在厂商云端, 担心隐私泄露, 也怕被厂商锁定
+
 ## 为什么选择 OpenAgents
 
-- **绝对自由与掌控**
-  不预置任何系统提示词, 不消耗额外 token, Agent 的行为 100% 由你写的提示词决定
-- **极致效率**
-  架构极简: 只提供一个命令工具, 模型的一切操作都通过命令执行; 上下文精简, 缓存完全命中, 又快又省
-- **极致展示**
-  模型的思考, 输出, 工具调用从上往下平铺展示, 无层级嵌套, AI 做的每一步一目了然
-- **多智能体流水线**
-  多个 Agent 串联协作, 上一个的输出作为下一个的输入, 组成自动化工作流
-- **多主题配色动效**
-  多套主题配色与动效, 按心情切换
-
-## 功能特性
-
-- 多 Agent 对话: 流式响应, 思考模式开关
-- 多模型供应商接入: 支持 OpenAI / Anthropic 兼容协议
-- MCP 服务器接入: 支持本地进程 / HTTP 两种方式, 无限扩展工具能力
-- 技能 (Skills) 系统: 为 Agent 装载可复用的技能
-- 任务系统 + 多智能体流水线: 让 Agent 替你完成复杂工作
-- 定时调度: 使用 cron 表达式, 定时自动执行任务
-- 主题与动效自定义
-- 数据完全本地存储 (`~/.openagents`), API Key 不上传任何第三方
+- **绝对自由与掌控**: 不预置任何系统提示词, 不消耗额外 token, Agent 的行为 100% 由你写的提示词决定
+- **极致效率**: 架构极简, 只提供一个命令工具, 模型的一切操作都通过命令执行; 上下文精简, 缓存完全命中, 又快又省
+- **极致展示**: 模型的思考, 输出, 工具调用从上往下平铺展示, 无层级嵌套, AI 做的每一步一目了然
+- **开放扩展**: 通过 MCP 服务器和技能 (Skills) 系统按需为 Agent 装载能力, 工具生态不受限
+- **多智能体流水线**: 多个 Agent 串联协作, 上一个的输出作为下一个的输入, 组成自动化工作流
+- **定时自动化**: 使用 cron 表达式定时触发任务, 重复性工作交给 Agent 自动完成
+- **数据完全属于你**: 所有数据本地存储 (`~/.openagents`), API Key 不上传任何第三方
+- **多主题配色动效**: 多套主题配色与动效, 按心情切换
 
 ## 界面预览
 
@@ -52,17 +47,10 @@
 
 ### 多主题配色动效
 
-![多主题配色](docs/screenshots/theme-dark.png)
-
-![多主题配色](docs/screenshots/theme-ink.png)
-
-![多主题配色](docs/screenshots/theme-sunset.png)
-
-![多主题配色](docs/screenshots/theme-aurora.png)
-
-![多主题配色](docs/screenshots/theme-cyberpunk.png)
-
-![多主题配色](docs/screenshots/theme-blackhole.png)
+| ![blackhole](docs/screenshots/theme-blackhole.png) | ![dark](docs/screenshots/theme-dark.png) |
+| --- | --- |
+| ![ink](docs/screenshots/theme-ink.png) | ![sunset](docs/screenshots/theme-sunset.png) |
+| ![aurora](docs/screenshots/theme-aurora.png) | ![cyberpunk](docs/screenshots/theme-cyberpunk.png) |
 
 ## 安装与运行
 
@@ -125,6 +113,14 @@ openagents --web
 1. 检查模型供应商的 Base URL 和 API Key 是否正确
 2. 检查网络连通性 (是否需要代理)
 3. 查看日志定位原因: `~/.openagents/log/`
+
+### macOS 提示无法打开, 因为无法验证开发者
+
+首次运行在终端执行 `xattr -d com.apple.quarantine openagents`, 或在 系统设置 → 隐私与安全性 中允许运行
+
+### 如何更新版本
+
+重新下载最新压缩包替换可执行文件即可, 数据保存在 `~/.openagents`, 不受影响
 
 ### 日志在哪里查看
 

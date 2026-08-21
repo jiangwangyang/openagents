@@ -4,33 +4,28 @@
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 ![Platform](https://img.shields.io/badge/platform-Windows%20%7C%20macOS%20%7C%20Linux-blue)
-![Version](https://img.shields.io/badge/version-0.1.0-green)
+[![GitHub release](https://img.shields.io/github/v/release/jiangwangyang/openagents)](https://github.com/jiangwangyang/openagents/releases)
 
 English | [中文](README.zh-CN.md)
 
+## Sound familiar
+
+- **The agent won't listen to you**: platforms inject large hidden system prompts, the agent's behavior is defined by the platform, and you can neither see nor change it
+- **Tokens burn a hole in your pocket**: preset prompts and a mountain of tool definitions consume tokens on every request, bloated context misses the cache, slow and expensive, bills spiral out of control with no idea where the money goes
+- **AI is a black box**: tool calls are folded in nested layers, you can't see what files it changed or what commands it ran, so you dare not let it work unsupervised
+- **You are the pipeline**: one agent can't finish complex tasks, so you copy-paste outputs from one to the next yourself, and daily repetitive work can't run automatically on a schedule
+- **Your data is in someone else's hands**: conversations, files, and API keys are stored on the vendor's cloud, risking privacy leaks and vendor lock-in
+
 ## Why OpenAgents
 
-- **Absolute freedom and control**
-  No preset system prompts, no extra token consumption. The agent's behavior is 100% determined by the prompts you write
-- **Extreme efficiency**
-  Minimal architecture: only one command tool is provided, and every model operation is executed through commands; lean context with fully hit cache, fast and cost-effective
-- **Extreme transparency**
-  The model's thinking, output, and tool calls are displayed flat from top to bottom with no nested hierarchy, so every step the AI takes is clear at a glance
-- **Multi-agent pipelines**
-  Chain multiple agents together, where the output of one becomes the input of the next, forming automated workflows
-- **Multiple themes and animations**
-  Multiple color themes and animations, switch them to match your mood
-
-## Features
-
-- Multi-agent conversations: streaming responses, toggleable thinking mode
-- Multiple model providers: supports OpenAI / Anthropic compatible protocols
-- MCP server integration: supports both local process and HTTP modes, unlimited tool extensibility
-- Skills system: equip agents with reusable skills
-- Task system + multi-agent pipelines: let agents handle complex work for you
-- Scheduled tasks: run tasks automatically on a schedule using cron expressions
-- Customizable themes and animations
-- All data stored locally (`~/.openagents`), API keys are never uploaded to any third party
+- **Absolute freedom and control**: no preset system prompts, no extra token consumption, the agent's behavior is 100% determined by the prompts you write
+- **Extreme efficiency**: minimal architecture, only one command tool is provided, and every model operation is executed through commands; lean context with fully hit cache, fast and cost-effective
+- **Extreme transparency**: the model's thinking, output, and tool calls are displayed flat from top to bottom with no nested hierarchy, so every step the AI takes is clear at a glance
+- **Open extensibility**: equip agents with capabilities on demand through MCP servers and the skills system, no limits on your tool ecosystem
+- **Multi-agent pipelines**: chain multiple agents together, where the output of one becomes the input of the next, forming automated workflows
+- **Scheduled automation**: trigger tasks on a schedule with cron expressions, let agents handle repetitive work automatically
+- **Your data belongs to you**: all data is stored locally (`~/.openagents`), API keys are never uploaded to any third party
+- **Multiple themes and animations**: multiple color themes and animations, switch them to match your mood
 
 ## Screenshots
 
@@ -52,17 +47,10 @@ English | [中文](README.zh-CN.md)
 
 ### Multiple themes and animations
 
-![Multiple themes](docs/screenshots/theme-dark.png)
-
-![Multiple themes](docs/screenshots/theme-ink.png)
-
-![Multiple themes](docs/screenshots/theme-sunset.png)
-
-![Multiple themes](docs/screenshots/theme-aurora.png)
-
-![Multiple themes](docs/screenshots/theme-cyberpunk.png)
-
-![Multiple themes](docs/screenshots/theme-blackhole.png)
+| ![blackhole](docs/screenshots/theme-blackhole.png) | ![dark](docs/screenshots/theme-dark.png) |
+| --- | --- |
+| ![ink](docs/screenshots/theme-ink.png) | ![sunset](docs/screenshots/theme-sunset.png) |
+| ![aurora](docs/screenshots/theme-aurora.png) | ![cyberpunk](docs/screenshots/theme-cyberpunk.png) |
 
 ## Installation & Usage
 
@@ -125,6 +113,14 @@ Close the program occupying port 8000, or switch to desktop mode (desktop mode u
 1. Check that the model provider's Base URL and API Key are correct
 2. Check network connectivity (whether a proxy is needed)
 3. Check the logs to locate the cause: `~/.openagents/log/`
+
+### macOS says the app cannot be opened because the developer cannot be verified
+
+On first run, execute `xattr -d com.apple.quarantine openagents` in the terminal, or allow it in System Settings → Privacy & Security
+
+### How to update
+
+Download the latest archive and replace the executable. Your data is stored in `~/.openagents` and is not affected
 
 ### Where to find the logs
 

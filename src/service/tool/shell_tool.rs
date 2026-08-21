@@ -1,7 +1,12 @@
 // Shell 执行工具
+use std::time::Duration;
+
 use tokio::process::Command;
 
 use super::ToolResult;
+
+// Shell 命令执行超时时间
+const SHELL_COMMAND_TIMEOUT: Duration = Duration::from_secs(30);
 
 // PowerShell UTF-8 配置内容
 const POWERSHELL_UTF8_SETTING: &str = r#"# UTF-8 encoding setting
@@ -52,14 +57,18 @@ pub async fn execute(cmd_and_args: &[String], work_dir: &str) -> ToolResult {
         cmd.creation_flags(0x08000000);
     }
 
-    match cmd.output().await {
-        Ok(output) => {
+    // 超时被丢弃时自动终止子进程
+    cmd.kill_on_drop(true);
+
+    match tokio::time::timeout(SHELL_COMMAND_TIMEOUT, cmd.output()).await {
+        Ok(Ok(output)) => {
             let stdout = String::from_utf8_lossy(&output.stdout);
             let stderr = String::from_utf8_lossy(&output.stderr);
             let tool_content = format!("{}{}", stdout, stderr);
             let is_error = !output.status.success();
             (tool_content, is_error)
         }
-        Err(e) => (format!("Failed to execute command: {}", e), true),
+        Ok(Err(e)) => (format!("Failed to execute command: {}", e), true),
+        Err(_) => (format!("Command timed out after {} seconds", SHELL_COMMAND_TIMEOUT.as_secs()), true),
     }
 }

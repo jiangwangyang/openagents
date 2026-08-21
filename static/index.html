@@ -105,7 +105,7 @@
                     </div>
                     <div class="form-group flex-1">
                         <label data-i18n="task.workDir">Working Directory</label>
-                        <button class="workspace-btn flush" id="taskWorkspaceBtn" onclick="selectPanelWorkspace('taskWorkspaceDisplay')" title="Set Directory Context" data-i18n-title="input.cwdTitle">
+                        <button class="workspace-btn flush" onclick="selectPanelWorkspace('taskWorkspaceDisplay')" title="Set Directory Context" data-i18n-title="input.cwdTitle">
                             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                                 <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path>
                             </svg>
@@ -155,7 +155,7 @@
                     </div>
                     <div class="form-group">
                         <label data-i18n="task.workDir">Working Directory</label>
-                        <button class="workspace-btn flush" id="cronWorkspaceBtn" onclick="selectPanelWorkspace('cronWorkspaceDisplay')" title="Set Directory Context" data-i18n-title="input.cwdTitle">
+                        <button class="workspace-btn flush" onclick="selectPanelWorkspace('cronWorkspaceDisplay')" title="Set Directory Context" data-i18n-title="input.cwdTitle">
                             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                                 <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path>
                             </svg>
@@ -199,7 +199,7 @@
                 </div>
                 <div class="form-row form-actions">
                     <button class="btn btn-sm btn-secondary" onclick="toggleAddCronPanel()" data-i18n="common.cancel">Cancel</button>
-                    <button class="btn btn-sm send-button" id="cronSubmitBtn" onclick="submitCronTask()" data-i18n="common.save">Save</button>
+                    <button class="btn btn-sm send-button" onclick="submitCronTask()" data-i18n="common.save">Save</button>
                 </div>
             </div>
 
@@ -343,7 +343,7 @@
                 <button class="btn btn-sm send-button" onclick="toggleAddProviderPanel()" data-i18n="config.newProvider">+ New Provider</button>
             </div>
 
-            <div id="configFormContainer" class="config-form-container">
+            <div class="config-form-container">
                 <!-- 新增供应商面板 -->
                 <div class="add-panel" id="addProviderPanel" style="display: none;">
                     <h3 class="panel-sub-title" data-i18n="config.newProviderCard">+ New Model Provider</h3>
@@ -399,7 +399,7 @@
                 </select>
                 <!-- 模型路由选择: 供应商下拉, 模型输入(聚焦时拉取模型列表), 思考开关, 每次发送消息时生效 -->
                 <select id="providerSelect" class="form-control header-select" title="Select Provider" data-i18n-title="input.providerTitle"></select>
-                <div class="model-combo-wrapper" id="modelComboWrapper">
+                <div class="model-combo-wrapper">
                     <input id="modelSelect" class="form-control header-select" title="Select Model" data-i18n-title="input.modelTitle" placeholder="MODEL" data-i18n-placeholder="input.modelPlaceholder" autocomplete="off">
                     <div class="model-combo-list" id="modelComboList"></div>
                 </div>

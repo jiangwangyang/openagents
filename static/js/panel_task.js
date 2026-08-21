@@ -63,8 +63,6 @@ function getTaskController(taskId) {
             timer: null,
             eventSource: null,
             streamConvId: null,
-            streamLive: false,
-            liveRaw: '',
             liveText: '',
             expanded: false,
             rechecking: false
@@ -86,7 +84,6 @@ function closeTaskStream(controller) {
         controller.eventSource = null;
     }
     controller.streamConvId = null;
-    controller.streamLive = false;
 }
 
 // 停止任务的轮询定时器
@@ -325,50 +322,28 @@ function scheduleTaskRefetch(taskId, delay) {
 function openTaskStream(taskId, conversationId) {
     const controller = getTaskController(taskId);
     closeTaskStream(controller);
-    controller.liveRaw = '';
     controller.liveText = '';
     controller.streamConvId = conversationId;
-    const source = new EventSource(`/conversation/${conversationId}/stream`);
-    controller.eventSource = source;
-    source.onopen = () => {
-        controller.streamLive = true;
-    };
-    source.onmessage = (event) => {
-        const data = JSON.parse(event.data);
-        controller.streamLive = true;
-        // 提取最新文本类内容作为实况行与阶段摘要
-        if (data.type === 'text' || data.type === 'thinking') {
-            controller.liveRaw = data.text || '';
-        } else if (data.type === 'delta') {
-            controller.liveRaw += data.text || '';
-        } else if (data.type === 'tool_use') {
-            controller.liveRaw = `${t('stream.callPrefix')}: ${data.name || ''}`;
+    const source = followConversationStream(conversationId, liveText => {
+        controller.liveText = liveText;
+        const liveLine = document.getElementById(`task-live-${taskId}`);
+        if (liveLine) {
+            liveLine.textContent = liveText;
         }
-        if (controller.liveRaw) {
-            controller.liveText = controller.liveRaw;
-            const liveLine = document.getElementById(`task-live-${taskId}`);
-            if (liveLine) {
-                liveLine.textContent = controller.liveText;
-            }
-            const stageItem = document.getElementById(`stage-item-${conversationId}`);
-            if (stageItem) {
-                const snippet = stageItem.querySelector('.task-stage-snippet');
-                if (snippet) {
-                    snippet.textContent = controller.liveText;
-                    snippet.classList.add('stage-running');
-                }
+        const stageItem = document.getElementById(`stage-item-${conversationId}`);
+        if (stageItem) {
+            const snippet = stageItem.querySelector('.task-stage-snippet');
+            if (snippet) {
+                snippet.textContent = liveText;
+                snippet.classList.add('stage-running');
             }
         }
-    };
-    source.onerror = async () => {
+    }, async () => {
         // 已被新连接替换时忽略
         if (controller.eventSource !== source) {
             return;
         }
-        // 关闭连接并阻止浏览器自动重连
-        source.close();
         controller.eventSource = null;
-        controller.streamLive = false;
         // 流结束 = 当前对话完成: 重新拉取任务, 复核窗口内阻塞立即重开
         controller.rechecking = true;
         await loadTaskState(taskId);
@@ -392,7 +367,8 @@ function openTaskStream(taskId, conversationId) {
                 scheduleTaskRefetch(taskId, TASK_START_REFETCH_DELAY);
             }
         }, TASK_RECHECK_DELAY);
-    };
+    });
+    controller.eventSource = source;
 }
 
 // ===== 8. 展开详情与统一操作区 =====

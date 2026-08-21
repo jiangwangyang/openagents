@@ -6,7 +6,71 @@
 const cronListContainer = document.getElementById('cronListContainer');
 const addCronPanel = document.getElementById('addCronPanel');
 
-// ===== 2. 新增面板与表单辅助 =====
+// ===== 2. 运行时状态 =====
+// 每个定时任务的跟随控制器: 展开状态与 SSE 跟随流管理
+const cronControllers = {};
+// 流关闭后的复核延迟(毫秒): 覆盖执行收尾的毫秒级间隙
+const CRON_RECHECK_DELAY = 1500;
+
+// ===== 3. 跟随控制器基础 =====
+// 获取(或惰性创建)定时任务控制器
+function getCronController(scheduleId) {
+    if (!cronControllers[scheduleId]) {
+        cronControllers[scheduleId] = {
+            eventSource: null,
+            streamConvId: null,
+            expanded: false
+        };
+    }
+    return cronControllers[scheduleId];
+}
+
+// 关闭定时任务的 SSE 跟随流
+function closeCronStream(controller) {
+    if (controller.eventSource) {
+        controller.eventSource.close();
+        controller.eventSource = null;
+    }
+    controller.streamConvId = null;
+}
+
+// 打开执行对话 SSE: 执行记录摘要实时更新, 流结束后延迟复核详情刷新展示
+function openCronStream(scheduleId, conversationId) {
+    const controller = getCronController(scheduleId);
+    closeCronStream(controller);
+    controller.streamConvId = conversationId;
+    const source = followConversationStream(conversationId, liveText => {
+        const stageItem = document.getElementById(`stage-item-${conversationId}`);
+        if (stageItem) {
+            const snippet = stageItem.querySelector('.task-stage-snippet');
+            if (snippet) {
+                snippet.textContent = liveText;
+                snippet.classList.add('stage-running');
+            }
+        }
+    }, () => {
+        // 已被新连接替换时忽略
+        if (controller.eventSource !== source) {
+            return;
+        }
+        controller.eventSource = null;
+        controller.streamConvId = null;
+        // 流结束 = 对话执行完成: 延迟重新拉取详情刷新展示(覆盖执行收尾的毫秒级间隙)
+        setTimeout(() => {
+            if (getCronController(scheduleId).expanded) {
+                loadCronDetail(scheduleId);
+            }
+        }, CRON_RECHECK_DELAY);
+    });
+    controller.eventSource = source;
+}
+
+// 视图清理钩子: 离开定时视图时关闭全部 SSE 跟随流(由 switchView 按 VIEW_CONFIG.unload 调用)
+function cleanupCronView() {
+    Object.keys(cronControllers).forEach(scheduleId => closeCronStream(getCronController(parseInt(scheduleId))));
+}
+
+// ===== 4. 新增面板与表单辅助 =====
 async function toggleAddCronPanel() {
     const isOpening = addCronPanel.style.display === 'none';
     addCronPanel.style.display = isOpening ? 'flex' : 'none';
@@ -82,14 +146,22 @@ function buildCronPayload(name, content, workDir, agentIdVal, cronFieldValues, s
     };
 }
 
-// ===== 3. 任务列表 =====
+// ===== 5. 任务列表 =====
 async function fetchCronTasks() {
+    // 列表重建会替换全部卡片 DOM: 先关闭所有跟随流
+    cleanupCronView();
     cronListContainer.innerHTML = SKELETON_HTML;
     try {
         const [taskResponse, agentResponse] = await Promise.all([fetch('/schedule/list'), fetch('/agent/list')]);
         const tasks = await taskResponse.json();
         const agents = await agentResponse.json();
         cronListContainer.innerHTML = '';
+        // 清理已删除任务的控制器
+        Object.keys(cronControllers).forEach(scheduleId => {
+            if (!tasks.some(task => String(task.id) === scheduleId)) {
+                delete cronControllers[scheduleId];
+            }
+        });
 
         if (tasks.length === 0) {
             cronListContainer.innerHTML = emptyListHtml('cron.empty', 'cron.emptyHint');
@@ -165,18 +237,26 @@ async function fetchCronTasks() {
     }
 }
 
-// ===== 4. 执行记录 =====
-// 展开 cron 卡片时加载定时任务详情(执行对话记录)
+// ===== 6. 执行记录 =====
+// 展开/收起定时卡片: 展开加载执行记录并跟随运行中对话的流, 收起关闭跟随流
 function toggleCronCard(cardElement, scheduleId) {
     toggleCardOpen(cardElement);
-    if (cardElement.hasAttribute('open')) {
+    const controller = getCronController(scheduleId);
+    controller.expanded = cardElement.hasAttribute('open');
+    if (controller.expanded) {
         loadCronDetail(scheduleId);
+    } else {
+        closeCronStream(controller);
     }
 }
 
-// 加载定时任务详情: 渲染各次执行对话的最后一条消息
+// 加载定时任务详情: 渲染各次执行对话的最后一条消息, 最新对话运行中时开启 SSE 实时跟随
 async function loadCronDetail(scheduleId) {
     const stageList = document.getElementById(`cron-stages-${scheduleId}`);
+    if (!stageList) {
+        return;
+    }
+    const controller = getCronController(scheduleId);
     stageList.innerHTML = SKELETON_HTML;
     try {
         const response = await fetch(`/schedule/${scheduleId}`);
@@ -187,6 +267,7 @@ async function loadCronDetail(scheduleId) {
         const schedule = await response.json();
         stageList.innerHTML = '';
         if (!schedule.conversations || schedule.conversations.length === 0) {
+            closeCronStream(controller);
             stageList.innerHTML = `<div class="text-hint">${t('cron.notTriggered')}</div>`;
             return;
         }
@@ -194,12 +275,21 @@ async function loadCronDetail(scheduleId) {
         sortedStageConversations(schedule.conversations).forEach(conversation => {
             stageList.appendChild(createStageRecordItem(conversation));
         });
+        // 最新对话运行中: 开启 SSE 实时跟随(流结束后延迟复核刷新); 未运行则确保跟随流已关闭
+        const latest = schedule.conversations[schedule.conversations.length - 1];
+        if (latest.running === true) {
+            if (controller.expanded && controller.streamConvId !== latest.id) {
+                openCronStream(scheduleId, latest.id);
+            }
+        } else {
+            closeCronStream(controller);
+        }
     } catch (e) {
         stageList.innerHTML = `<div class="text-error-mono">${t('common.fetchFailed')}</div>`;
     }
 }
 
-// ===== 5. 新增任务 =====
+// ===== 7. 新增任务 =====
 async function submitCronTask() {
     const name = document.getElementById('cronName').value.trim();
     const content = document.getElementById('cronContent').value.trim();
@@ -232,7 +322,7 @@ async function submitCronTask() {
     }
 }
 
-// ===== 6. 启用/禁用切换 =====
+// ===== 8. 启用/禁用切换 =====
 // 切换定时任务启用/禁用状态
 async function toggleCronEnabled(task) {
     const cron = parseCronExpr(task.trigger);
@@ -263,7 +353,7 @@ async function toggleCronEnabled(task) {
     }
 }
 
-// ===== 7. 手动触发 =====
+// ===== 9. 手动触发 =====
 // 手动触发定时任务: 立即执行一次, 不影响原调度计划
 async function triggerCronTask(task) {
     try {
@@ -281,7 +371,7 @@ async function triggerCronTask(task) {
     }
 }
 
-// ===== 8. 删除任务 =====
+// ===== 10. 删除任务 =====
 function removeCronTask(taskId, taskName) {
     showConfirmDialog({
         title: t('cron.purgeTitle'),
@@ -290,6 +380,8 @@ function removeCronTask(taskId, taskName) {
             try {
                 const response = await fetch(`/schedule/${taskId}`, {method: 'DELETE'});
                 if (response.ok) {
+                    closeCronStream(getCronController(taskId));
+                    delete cronControllers[taskId];
                     await fetchCronTasks();
                 }
             } catch (e) {

@@ -43,11 +43,11 @@ const DELETE_SVG = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" s
 const SKELETON_HTML = '<div class="skeleton-loader"><span></span><span></span><span></span></div>';
 
 // ===== 4. 视图路由配置 =====
-// key 为视图名, load 为对应面板的数据加载函数名(调用时按名解析, 避免加载顺序依赖)
+// key 为视图名, load/unload 为对应面板的加载/清理钩子函数名(调用时按名解析, 避免加载顺序依赖)
 const VIEW_CONFIG = {
     dialog: {nav: 'navDialogBtn', view: 'viewDialog', infoKey: null, load: null},
     task: {nav: 'navTaskBtn', view: 'viewTask', infoKey: 'header.coreTask', load: 'fetchTaskList', unload: 'cleanupTaskView'},
-    cron: {nav: 'navCronBtn', view: 'viewCron', infoKey: 'header.coreCron', load: 'fetchCronTasks'},
+    cron: {nav: 'navCronBtn', view: 'viewCron', infoKey: 'header.coreCron', load: 'fetchCronTasks', unload: 'cleanupCronView'},
     agent: {nav: 'navAgentBtn', view: 'viewAgent', infoKey: 'header.coreAgent', load: 'fetchAgentRegistry'},
     skill: {nav: 'navSkillBtn', view: 'viewSkill', infoKey: 'header.coreSkill', load: 'fetchSkillData'},
     mcp: {nav: 'navMcpBtn', view: 'viewMcp', infoKey: 'header.coreMcp', load: 'fetchMcpRegistry'},
@@ -551,4 +551,31 @@ function closeStageDialog() {
         stageDialogState.eventSource.close();
     }
     stageDialogState = null;
+}
+
+// ===== 9. 对话流跟随(任务/定时面板共用) =====
+// 打开对话 SSE 跟随流: 提取文本类内容经 onLiveText 回调实况文本, 流结束(对话完成)时关闭连接并经 onStreamEnd 回调; 返回 EventSource 由调用方持有管理
+function followConversationStream(conversationId, onLiveText, onStreamEnd) {
+    let liveRaw = '';
+    const source = new EventSource(`/conversation/${conversationId}/stream`);
+    source.onmessage = (event) => {
+        const data = JSON.parse(event.data);
+        // 提取最新文本类内容作为实况文本
+        if (data.type === 'text' || data.type === 'thinking') {
+            liveRaw = data.text || '';
+        } else if (data.type === 'delta') {
+            liveRaw += data.text || '';
+        } else if (data.type === 'tool_use') {
+            liveRaw = `${t('stream.callPrefix')}: ${data.name || ''}`;
+        }
+        if (liveRaw) {
+            onLiveText(liveRaw);
+        }
+    };
+    source.onerror = () => {
+        // 流结束(回放完毕或对话完成): 关闭连接阻止浏览器自动重连
+        source.close();
+        onStreamEnd();
+    };
+    return source;
 }

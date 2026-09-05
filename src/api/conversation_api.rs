@@ -7,6 +7,7 @@ use axum::Json;
 use serde::Deserialize;
 use serde_json::json;
 
+use crate::ai::pi::types::Message;
 use crate::error::AppError;
 use crate::repository::entity::ConversationEntity;
 use crate::repository::{agent_repository, conversation_repository};
@@ -87,6 +88,23 @@ pub async fn create_conversation_work(State(state): State<AppState>, Json(req): 
         return Err(AppError::Conflict("Work already running".to_string()));
     }
     Ok(Json(conversation_id))
+}
+
+// 回退对话接口: 删除指定用户消息及其之后的全部消息, 返回该消息文本供前端填入输入框; 运行中返回 409, 对话不存在返回 404, 目标不是用户消息返回 400
+pub async fn rollback_conversation(State(state): State<AppState>, Path((conversation_id, message_id)): Path<(i64, i64)>) -> Result<Json<String>, AppError> {
+    // 运行中的对话不允许回退, 避免与后台任务存消息冲突; entry 存在即运行中
+    if conversation_service::get_conversation_state(&state, conversation_id).is_some() {
+        return Err(AppError::Conflict("Conversation is running".to_string()));
+    }
+    let conversation = conversation_repository::get_conversation_with_messages(&state.db, conversation_id).await?.ok_or_else(|| AppError::NotFound("Conversation not found".to_string()))?;
+    // 目标消息必须存在且解析后为用户消息, 仅允许回退到用户发送的消息
+    let message = conversation.messages.iter().find(|m| m.id == message_id).ok_or_else(|| AppError::BadRequest("Message not found".to_string()))?;
+    let text = match serde_json::from_value::<Message>(message.content.clone()) {
+        Ok(Message::User(user)) => conversation_service::user_message_text(&user.content),
+        _ => return Err(AppError::BadRequest("Only user messages can be rolled back".to_string())),
+    };
+    conversation_repository::delete_conversation_messages_from(&state.db, conversation_id, message_id).await?;
+    Ok(Json(text))
 }
 
 // 启动历史对话 work 请求体

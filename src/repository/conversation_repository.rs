@@ -84,6 +84,16 @@ pub async fn list_task_conversation_history(pool: &SqlitePool, task_id: i64) -> 
     sqlx::query_as::<_, ConversationHistorySummary>("SELECT a.name AS agent_name, m.content AS last_content FROM t_conversation c LEFT JOIN t_agent a ON a.id = c.agent_id LEFT JOIN t_message m ON m.id = (SELECT MAX(id) FROM t_message WHERE conversation_id = c.id) WHERE c.task_id = ? ORDER BY c.id").bind(task_id).fetch_all(pool).await
 }
 
+// 回退对话: 事务内删除指定消息及其之后的全部消息, 并原子刷新对话的更新时间
+pub async fn delete_conversation_messages_from(pool: &SqlitePool, conversation_id: i64, message_id: i64) -> Result<(), sqlx::Error> {
+    let mut tx = pool.begin().await?;
+    sqlx::query("DELETE FROM t_message WHERE conversation_id = ? AND id >= ?").bind(conversation_id).bind(message_id).execute(&mut *tx).await?;
+    let now = chrono::Local::now().to_rfc3339();
+    sqlx::query("UPDATE t_conversation SET update_time = ? WHERE id = ?").bind(&now).bind(conversation_id).execute(&mut *tx).await?;
+    tx.commit().await?;
+    Ok(())
+}
+
 // 删除对话, 消息由数据库外键 ON DELETE CASCADE 级联删除
 pub async fn delete_conversation(pool: &SqlitePool, conversation_id: i64) -> Result<bool, sqlx::Error> {
     let result = sqlx::query("DELETE FROM t_conversation WHERE id = ?").bind(conversation_id).execute(pool).await?;

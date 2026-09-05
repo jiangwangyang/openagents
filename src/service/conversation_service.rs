@@ -154,8 +154,9 @@ async fn do_run_conversation(state: &AppState, conversation_id: i64, task_conten
         };
         match &parsed {
             Message::User(user) => {
+                // 回放的历史用户消息携带消息 id(_id), 供前端绑定回退入口; 本轮新发的用户消息未入库无 id
                 let text = user_message_text(&user.content);
-                publish_chunk(state, conversation_id, "user", &text, json!({})).await;
+                publish_chunk(state, conversation_id, "user", &text, json!({"_id": msg.id})).await;
             }
             Message::Assistant(assistant) => {
                 for block in &assistant.content {

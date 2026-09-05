@@ -498,6 +498,38 @@ async function stopConversation() {
     }
 }
 
+// 回退到指定用户消息: 后台删除该消息及其之后的全部记录, 返回的消息文本填入输入框, 前端重新连接流刷新页面
+async function rollbackMessage(messageId) {
+    // 只读会话与流式输出中禁止回退, 作为隐藏按钮之外的防御性校验
+    if (isTyping || currentConvReadonly || !currentConversationId) {
+        return;
+    }
+    showConfirmDialog({
+        title: t('stream.rollbackTitle'),
+        text: t('stream.rollbackText'),
+        onConfirm: async () => {
+            try {
+                const response = await fetch(`/conversation/${currentConversationId}/rollback/${messageId}`, {method: 'DELETE'});
+                if (!response.ok) {
+                    showToast(t('stream.rollbackFailed'), 'error');
+                    return;
+                }
+                // 被回退的用户消息文本填入输入框, 用户可编辑后重新发送
+                messageInput.value = await response.json();
+                autoResize();
+            } catch (e) {
+                showToast(t('stream.rollbackFailed'), 'error');
+                return;
+            }
+            // 清空后由流式接口回放回退后的历史, 避免重复渲染
+            chatContainer.innerHTML = '';
+            emptyState.style.display = 'none';
+            connectStream(currentConversationId);
+            scrollToBottom();
+        }
+    });
+}
+
 async function sendMessage() {
     const message = messageInput.value.trim();
     // 只读会话(任务/定时来源)禁止发送, 作为禁用控件之外的防御性校验; 新会话首条消息不允许为空, 已有会话允许空消息
@@ -587,7 +619,7 @@ function connectStream(conversationId) {
     setTyping(true);
 
     // 渲染器状态由闭包自持, 滚动由本页按用户滚动意图控制
-    const renderer = createStreamRenderer(chatContainer);
+    const renderer = createStreamRenderer(chatContainer, !currentConvReadonly);
     const source = new EventSource(`/conversation/${conversationId}/stream`);
     currentEventSource = source;
 

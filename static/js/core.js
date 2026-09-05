@@ -40,6 +40,7 @@ let programScroll = false;
 const FOLD_SVG = `<svg viewBox="0 0 24 24" class="fold-icon" width="14" height="14" stroke="currentColor" stroke-width="2.5" fill="none" stroke-linecap="square" stroke-linejoin="miter"><polyline points="6 9 12 15 18 9"></polyline></svg>`;
 const ARROW_SVG = `<svg viewBox="0 0 24 24" class="info-card-arrow" width="14" height="14" stroke="currentColor" stroke-width="2.5" fill="none"><polyline points="9 18 15 12 9 6"></polyline></svg>`;
 const DELETE_SVG = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>`;
+const ROLLBACK_SVG = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="1 4 1 10 7 10"></polyline><path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"></path></svg>`;
 const SKELETON_HTML = '<div class="skeleton-loader"><span></span><span></span><span></span></div>';
 
 // ===== 4. 视图路由配置 =====
@@ -394,8 +395,8 @@ function switchView(viewName) {
 // 当前打开的阶段弹窗状态: 持有弹窗独立的 SSE 连接与流式渲染器
 let stageDialogState = null;
 
-// 流式渲染器工厂: 对话页与阶段弹窗共用, handleChunk 处理 SSE chunk 并往容器追加块, delta 合并入当前块; 滚动由调用方负责
-function createStreamRenderer(container) {
+// 流式渲染器工厂: 对话页与阶段弹窗共用, handleChunk 处理 SSE chunk 并往容器追加块, delta 合并入当前块; 滚动由调用方负责; rollbackable 为 true 时已入库的用户消息气泡追加回退按钮(仅对话页非只读会话传入)
+function createStreamRenderer(container, rollbackable) {
     let wrapper = null;
     let contentNode = null;
     let rawText = '';
@@ -442,6 +443,15 @@ function createStreamRenderer(container) {
             const div = document.createElement('div');
             div.className = 'user-message';
             div.innerHTML = `${formatMarkdown((data.text || '').trim())}<div class="message-time"></div>`;
+            // 已入库的用户消息(回放 chunk 携带 _id)提供回退入口, 通过闭包绑定避免内联 onclick
+            if (rollbackable && data._id != null) {
+                const rollbackBtn = document.createElement('button');
+                rollbackBtn.className = 'rollback-btn';
+                rollbackBtn.title = t('stream.rollback');
+                rollbackBtn.innerHTML = ROLLBACK_SVG;
+                rollbackBtn.onclick = () => rollbackMessage(data._id);
+                div.insertBefore(rollbackBtn, div.querySelector('.message-time'));
+            }
             container.appendChild(div);
             return;
         }

@@ -34,6 +34,7 @@ pub fn create_router(state: AppState) -> Router {
         .route("/conversation/start", post(conversation_api::create_conversation_work))
         .route("/conversation/{conversation_id}/start", post(conversation_api::start_conversation_work))
         .route("/conversation/{conversation_id}/stop", post(conversation_api::stop_conversation_work))
+        .route("/conversation/{conversation_id}/rollback/{message_id}", delete(conversation_api::rollback_conversation))
         .route("/conversation/{conversation_id}/stream", get(conversation_api::stream_conversation_work))
         // 模型提供商 CRUD
         .route("/model-provider/list", get(model_provider_api::list_model_providers))

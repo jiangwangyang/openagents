@@ -19,11 +19,39 @@
     padding: 16px 20px;
     border-radius: var(--user-msg-radius);
     clip-path: var(--clip-interactive);
+    /* 回退按钮绝对定位的包含块 */
+    position: relative;
     font-size: 15px;
     line-height: 1.6;
     box-shadow: var(--user-msg-shadow);
     filter: var(--user-msg-filter);
     animation: slideInRight 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+/* 用户消息回退按钮: 常驻显示, 绝对定位于气泡右下角, 与文字排版解耦 */
+.user-message .rollback-btn {
+    position: absolute;
+    right: 6px;
+    bottom: 4px;
+    opacity: 0.6;
+    padding: 2px;
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    color: var(--on-accent-muted);
+    transition: var(--transition-snap);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.user-message .rollback-btn:hover {
+    opacity: 1;
+}
+
+.user-message .rollback-btn svg {
+    width: 12px;
+    height: 12px;
 }
 
 .user-message .message-time {
@@ -216,6 +244,8 @@ details.system-details .content {
     border: 1px solid var(--card-border-color);
     border-radius: var(--radius-sm);
     clip-path: var(--clip-interactive);
+    /* 回退按钮绝对定位的包含块 */
+    position: relative;
     overflow: hidden;
     transition: var(--transition-snap);
     box-shadow: 2px 2px 0 rgba(var(--shadow-rgb), 0.03);
@@ -630,6 +660,8 @@ input.form-control {
     border: 1px solid var(--border-hard);
     border-radius: var(--radius-sm);
     clip-path: var(--clip-interactive);
+    /* 回退按钮绝对定位的包含块 */
+    position: relative;
     transition: var(--transition-snap);
 }
 
@@ -767,6 +799,8 @@ input.form-control {
     letter-spacing: var(--send-spacing);
     box-shadow: var(--send-shadow);
     clip-path: var(--clip-interactive);
+    /* 回退按钮绝对定位的包含块 */
+    position: relative;
     filter: var(--send-filter);
 }
 

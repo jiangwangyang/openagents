@@ -415,11 +415,11 @@ async function loadModelSelect() {
     }
 }
 
-// 渲染模型下拉列表: 聚焦时调用模型列表接口拉取当前供应商全部模型并全量展示
-async function renderModelComboList() {
-    const comboList = document.getElementById('modelComboList');
-    const input = document.getElementById('modelSelect');
-    const providerId = document.getElementById('providerSelect').value;
+// 渲染模型下拉列表: 聚焦时调用模型列表接口拉取当前供应商全部模型并全量展示(对话页与智能体页共用, 按参数指定输入框/列表/供应商来源)
+async function renderModelComboList(inputId, comboListId, providerSelectId) {
+    const comboList = document.getElementById(comboListId);
+    const input = document.getElementById(inputId);
+    const providerId = document.getElementById(providerSelectId).value;
     if (!providerId) {
         comboList.classList.remove('open');
         return;
@@ -444,7 +444,7 @@ async function renderModelComboList() {
         delete providerModelsCache[providerId];
     }
     // 等待期间供应商已切换则放弃本次渲染
-    if (String(providerId) !== document.getElementById('providerSelect').value) {
+    if (String(providerId) !== document.getElementById(providerSelectId).value) {
         return;
     }
     comboList.innerHTML = '';

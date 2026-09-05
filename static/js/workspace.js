@@ -56,7 +56,8 @@ function renderWorkdirHistory() {
         section.style.display = 'none';
         return;
     }
-    section.style.display = 'block';
+    // 历史记录栏为弹窗左栏, 需为 flex 布局让列表占满剩余高度
+    section.style.display = 'flex';
     list.forEach(path => {
         const item = document.createElement('div');
         item.className = 'dir-history-item';

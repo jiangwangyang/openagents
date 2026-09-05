@@ -78,7 +78,10 @@ async function fetchAgentRegistry() {
                         </div>
                         <div class="form-group flex-1">
                             <label>${t('input.modelTitle')}</label>
-                            <input type="text" id="agent-model-${agent.id}" class="form-control mono" value="${escapeHtml(agent.model || '')}">
+                            <div class="model-combo-wrapper">
+                                <input type="text" id="agent-model-${agent.id}" class="form-control mono" value="${escapeHtml(agent.model || '')}" autocomplete="off">
+                                <div class="model-combo-list" id="agent-model-combo-list-${agent.id}"></div>
+                            </div>
                         </div>
                         <div class="form-group flex-1">
                             <label>${t('input.thinkingTitle')}</label>
@@ -97,6 +100,12 @@ async function fetchAgentRegistry() {
             agentListContainer.appendChild(card);
             // 异步填充供应商下拉
             loadAgentProviderOptions(`agent-provider-${agent.id}`, agent.model_provider_id);
+            // 模型输入框复用对话页组合框逻辑: 聚焦拉取当前供应商模型列表, 失焦延迟关闭(留时间给点击事件)
+            const modelInput = card.querySelector(`#agent-model-${agent.id}`);
+            modelInput.addEventListener('focus', () => renderModelComboList(`agent-model-${agent.id}`, `agent-model-combo-list-${agent.id}`, `agent-provider-${agent.id}`));
+            modelInput.addEventListener('blur', () => {
+                setTimeout(() => card.querySelector(`#agent-model-combo-list-${agent.id}`).classList.remove('open'), 150);
+            });
         });
     } catch (e) {
         agentListContainer.innerHTML = errorListHtml('common.fetchFailed');

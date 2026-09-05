@@ -102,9 +102,16 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // 模型输入框: 聚焦时拉取供应商模型列表全量展示, 失焦延迟关闭(留时间给点击事件)
     const modelInput = document.getElementById('modelSelect');
-    modelInput.addEventListener('focus', renderModelComboList);
+    modelInput.addEventListener('focus', () => renderModelComboList('modelSelect', 'modelComboList', 'providerSelect'));
     modelInput.addEventListener('blur', () => {
         setTimeout(() => document.getElementById('modelComboList').classList.remove('open'), 150);
+    });
+
+    // 智能体新增面板的模型输入框复用对话页组合框逻辑(供应商来源为面板内的供应商下拉)
+    const agentModelInput = document.getElementById('agentModel');
+    agentModelInput.addEventListener('focus', () => renderModelComboList('agentModel', 'agentModelComboList', 'agentProvider'));
+    agentModelInput.addEventListener('blur', () => {
+        setTimeout(() => document.getElementById('agentModelComboList').classList.remove('open'), 150);
     });
 
     // 加载历史会话并进入新会话页面

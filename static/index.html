@@ -241,7 +241,11 @@
                     </div>
                     <div class="form-group flex-1">
                         <label data-i18n="input.modelTitle">Select Model</label>
-                        <input type="text" id="agentModel" class="form-control mono" placeholder="e.g. deepseek-v4-pro">
+                        <!-- 模型输入复用对话页组合框逻辑: 聚焦时按当前供应商拉取模型列表, 也可手动输入 -->
+                        <div class="model-combo-wrapper">
+                            <input type="text" id="agentModel" class="form-control mono" placeholder="e.g. deepseek-v4-pro" autocomplete="off">
+                            <div class="model-combo-list" id="agentModelComboList"></div>
+                        </div>
                     </div>
                     <div class="form-group flex-1">
                         <label data-i18n="input.thinkingTitle">Thinking Mode</label>
@@ -433,12 +437,14 @@
             </div>
             <div class="dir-modal-pathbar" id="currentPathDisplay"></div>
 
-            <div class="dir-history-section" id="dirHistorySection" style="display: none;">
-                <div class="dir-history-header" data-i18n="modal.recentWorkdirs">Recent Workdirs</div>
-                <div class="dir-history-list" id="dirHistoryList"></div>
+            <!-- 弹窗主体左右两栏: 左栏历史记录, 右栏本地目录浏览, 各自独立滚动互不挤占 -->
+            <div class="dir-modal-body">
+                <div class="dir-history-section" id="dirHistorySection" style="display: none;">
+                    <div class="dir-history-header" data-i18n="modal.recentWorkdirs">Recent Workdirs</div>
+                    <div class="dir-history-list" id="dirHistoryList"></div>
+                </div>
+                <div id="dirList" class="dir-modal-content"></div>
             </div>
-
-            <div id="dirList" class="dir-modal-content"></div>
             <div class="dir-modal-footer">
                 <button class="confirm-btn cancel" onclick="closeDirModal()" data-i18n="common.abort">Abort</button>
                 <button class="confirm-btn send-button" onclick="confirmDirSelection()" data-i18n="modal.confirmPath">Confirm Path</button>

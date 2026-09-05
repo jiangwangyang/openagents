@@ -500,8 +500,8 @@ async function stopConversation() {
 
 async function sendMessage() {
     const message = messageInput.value.trim();
-    // 只读会话(任务/定时来源)禁止发送, 作为禁用控件之外的防御性校验
-    if (!message || isTyping || currentConvReadonly) {
+    // 只读会话(任务/定时来源)禁止发送, 作为禁用控件之外的防御性校验; 新会话首条消息不允许为空, 已有会话允许空消息
+    if (isTyping || currentConvReadonly || (!message && !currentConversationId)) {
         return;
     }
 

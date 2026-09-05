@@ -66,7 +66,7 @@ pub async fn start_conversation(state: &AppState, conversation_id: i64, task_con
         }
     }
     tracing::info!("Conversation started: conversation_id={} model={} thinking={} query={}", conversation_id, model, thinking, query);
-    tokio::spawn(run_conversation(state.clone(), conv_state, conversation_id, task_content, model_provider_id, model, thinking));
+    tokio::spawn(run_conversation(state.clone(), conv_state, conversation_id, task_content, model_provider_id, model, thinking, query));
     true
 }
 
@@ -117,9 +117,9 @@ pub async fn publish_chunk(state: &AppState, conversation_id: i64, msg_type: &st
 }
 
 // 后台 agent loop, conv_state 为本次启动插入的状态, 收尾时据此避免误删替换后的新状态
-async fn run_conversation(state: AppState, conv_state: Arc<RwLock<ConversationState>>, conversation_id: i64, task_content: String, model_provider_id: i64, model: String, thinking: bool) {
+async fn run_conversation(state: AppState, conv_state: Arc<RwLock<ConversationState>>, conversation_id: i64, task_content: String, model_provider_id: i64, model: String, thinking: bool, query: bool) {
     // 捕获 panic 兜底, 保证对话必然标记完成, 避免对话被永久锁死
-    let result = std::panic::AssertUnwindSafe(do_run_conversation(&state, conversation_id, &task_content, model_provider_id, &model, thinking)).catch_unwind().await.unwrap_or_else(|e| {
+    let result = std::panic::AssertUnwindSafe(do_run_conversation(&state, conversation_id, &task_content, model_provider_id, &model, thinking, query)).catch_unwind().await.unwrap_or_else(|e| {
         let msg = e.downcast_ref::<String>().cloned().or_else(|| e.downcast_ref::<&str>().map(|s| s.to_string())).unwrap_or_else(|| "unknown".to_string());
         Err(anyhow::anyhow!("conversation panicked: {}", msg))
     });
@@ -135,7 +135,7 @@ async fn run_conversation(state: AppState, conv_state: Arc<RwLock<ConversationSt
 }
 
 // 实际对话逻辑
-async fn do_run_conversation(state: &AppState, conversation_id: i64, task_content: &str, model_provider_id: i64, model: &str, thinking: bool) -> anyhow::Result<()> {
+async fn do_run_conversation(state: &AppState, conversation_id: i64, task_content: &str, model_provider_id: i64, model: &str, thinking: bool, query: bool) -> anyhow::Result<()> {
     // 查询历史消息
     let conversation = conversation_repository::get_conversation_with_messages(&state.db, conversation_id).await?.ok_or_else(|| anyhow::anyhow!("conversation not found"))?;
 
@@ -186,8 +186,8 @@ async fn do_run_conversation(state: &AppState, conversation_id: i64, task_conten
         publish_chunk(state, conversation_id, "user", task_content, json!({})).await;
     }
 
-    // 没有任务直接结束
-    if task_content.is_empty() {
+    // 仅回放历史的查询会话直接结束
+    if query {
         return Ok(());
     }
 
@@ -196,11 +196,14 @@ async fn do_run_conversation(state: &AppState, conversation_id: i64, task_conten
     let system_prompt = conversation.conversation.system_prompt.clone();
     let tools: Vec<Tool> = tool::list_tools(conversation.conversation.task_id.is_some(), conversation.conversation.schedule_id.is_some()).iter().map(|t| Tool { name: t.name.clone(), description: t.description.clone(), parameters: t.input_schema.clone() }).collect();
 
-    // 本轮任务消息并入上下文
-    let task_message = user_text_message(task_content);
-    messages.push(task_message.clone());
     // 本轮新增的消息(结束后统一持久化)
-    let mut new_messages: Vec<Message> = vec![task_message];
+    let mut new_messages: Vec<Message> = Vec::new();
+    // 本轮任务消息并入上下文, 空消息不拼接直接用历史消息调用模型
+    if !task_content.is_empty() {
+        let task_message = user_text_message(task_content);
+        messages.push(task_message.clone());
+        new_messages.push(task_message);
+    }
 
     // 订阅停止信号(内存状态必存在, 取不到时退化为永不停机的空信号)
     let mut stop_rx = match state.conversation_states.get(&conversation_id) {

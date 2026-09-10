@@ -9,6 +9,7 @@ async function getWebStorage(key) {
         const data = await response.json();
         return data.value ?? null;
     } catch (e) {
+        // 静默处理错误
         return null;
     }
 }

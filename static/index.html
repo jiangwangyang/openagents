@@ -58,14 +58,14 @@
                 <button class="header-nav-btn" id="navMcpBtn" onclick="switchView('mcp')" data-i18n="nav.mcp" title="Register external tool servers for agents" data-i18n-title="nav.mcpTip">MCP</button>
                 <button class="header-nav-btn" id="navConfigBtn" onclick="switchView('config')" data-i18n="nav.config" title="Configure model providers (protocol, URL, API key)" data-i18n-title="nav.configTip">CONFIG</button>
                 <!-- 主题选择器: 色板预览下拉, 菜单项由 theme.js 按 THEME_META 动态生成 -->
-                <div class="theme-picker" id="themePicker">
+                <div class="theme-picker">
                     <button class="header-nav-btn theme-picker-btn" id="themePickerBtn" type="button" title="Switch Theme" data-i18n-title="header.switchTheme">
                         <span class="theme-picker-dot" id="themePickerDot"></span>
                         <span id="themePickerLabel">LIGHT</span>
                     </button>
                     <div class="theme-picker-menu" id="themePickerMenu"></div>
                 </div>
-                <!-- 语言切换按钮: 点击中英直接互换, 按钮显示目标语言 -->
+                <!-- 语言切换按钮: 点击中英直接互换, 固定显示 中/EN 双语言标识 -->
                 <button class="header-nav-btn" id="langToggleBtn" type="button" title="Switch Language" data-i18n-title="lang.toggleTitle" onclick="toggleLanguage()">中/EN</button>
             </div>
             <div class="header-right">

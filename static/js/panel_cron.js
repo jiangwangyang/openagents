@@ -12,65 +12,7 @@ const cronControllers = {};
 // 流关闭后的复核延迟(毫秒): 覆盖执行收尾的毫秒级间隙
 const CRON_RECHECK_DELAY = 1500;
 
-// ===== 3. 跟随控制器基础 =====
-// 获取(或惰性创建)定时任务控制器
-function getCronController(scheduleId) {
-    if (!cronControllers[scheduleId]) {
-        cronControllers[scheduleId] = {
-            eventSource: null,
-            streamConvId: null,
-            expanded: false
-        };
-    }
-    return cronControllers[scheduleId];
-}
-
-// 关闭定时任务的 SSE 跟随流
-function closeCronStream(controller) {
-    if (controller.eventSource) {
-        controller.eventSource.close();
-        controller.eventSource = null;
-    }
-    controller.streamConvId = null;
-}
-
-// 打开执行对话 SSE: 执行记录摘要实时更新, 流结束后延迟复核详情刷新展示
-function openCronStream(scheduleId, conversationId) {
-    const controller = getCronController(scheduleId);
-    closeCronStream(controller);
-    controller.streamConvId = conversationId;
-    const source = followConversationStream(conversationId, liveText => {
-        const stageItem = document.getElementById(`stage-item-${conversationId}`);
-        if (stageItem) {
-            const snippet = stageItem.querySelector('.task-stage-snippet');
-            if (snippet) {
-                snippet.textContent = liveText;
-                snippet.classList.add('stage-running');
-            }
-        }
-    }, () => {
-        // 已被新连接替换时忽略
-        if (controller.eventSource !== source) {
-            return;
-        }
-        controller.eventSource = null;
-        controller.streamConvId = null;
-        // 流结束 = 对话执行完成: 延迟重新拉取详情刷新展示(覆盖执行收尾的毫秒级间隙)
-        setTimeout(() => {
-            if (getCronController(scheduleId).expanded) {
-                loadCronDetail(scheduleId);
-            }
-        }, CRON_RECHECK_DELAY);
-    });
-    controller.eventSource = source;
-}
-
-// 视图清理钩子: 离开定时视图时关闭全部 SSE 跟随流(由 switchView 按 VIEW_CONFIG.unload 调用)
-function cleanupCronView() {
-    Object.keys(cronControllers).forEach(scheduleId => closeCronStream(getCronController(parseInt(scheduleId))));
-}
-
-// ===== 4. 新增面板与表单辅助 =====
+// ===== 3. 新增面板与表单辅助 =====
 async function toggleAddCronPanel() {
     const isOpening = addCronPanel.style.display === 'none';
     addCronPanel.style.display = isOpening ? 'flex' : 'none';
@@ -146,6 +88,64 @@ function buildCronPayload(name, content, workDir, agentIdVal, cronFieldValues, s
     };
 }
 
+// ===== 4. 跟随控制器基础 =====
+// 获取(或惰性创建)定时任务控制器
+function getCronController(scheduleId) {
+    if (!cronControllers[scheduleId]) {
+        cronControllers[scheduleId] = {
+            eventSource: null,
+            streamConvId: null,
+            expanded: false
+        };
+    }
+    return cronControllers[scheduleId];
+}
+
+// 关闭定时任务的 SSE 跟随流
+function closeCronStream(controller) {
+    if (controller.eventSource) {
+        controller.eventSource.close();
+        controller.eventSource = null;
+    }
+    controller.streamConvId = null;
+}
+
+// 打开执行对话 SSE: 执行记录摘要实时更新, 流结束后延迟复核详情刷新展示
+function openCronStream(scheduleId, conversationId) {
+    const controller = getCronController(scheduleId);
+    closeCronStream(controller);
+    controller.streamConvId = conversationId;
+    const source = followConversationStream(conversationId, liveText => {
+        const stageItem = document.getElementById(`stage-item-${conversationId}`);
+        if (stageItem) {
+            const snippet = stageItem.querySelector('.task-stage-snippet');
+            if (snippet) {
+                snippet.textContent = liveText;
+                snippet.classList.add('stage-running');
+            }
+        }
+    }, () => {
+        // 已被新连接替换时忽略
+        if (controller.eventSource !== source) {
+            return;
+        }
+        controller.eventSource = null;
+        controller.streamConvId = null;
+        // 流结束 = 对话执行完成: 延迟重新拉取详情刷新展示(覆盖执行收尾的毫秒级间隙)
+        setTimeout(() => {
+            if (getCronController(scheduleId).expanded) {
+                loadCronDetail(scheduleId);
+            }
+        }, CRON_RECHECK_DELAY);
+    });
+    controller.eventSource = source;
+}
+
+// 视图清理钩子: 离开定时视图时关闭全部 SSE 跟随流(由 switchView 按 VIEW_CONFIG.unload 调用)
+function cleanupCronView() {
+    Object.keys(cronControllers).forEach(scheduleId => closeCronStream(getCronController(parseInt(scheduleId))));
+}
+
 // ===== 5. 任务列表 =====
 async function fetchCronTasks() {
     // 列表重建会替换全部卡片 DOM: 先关闭所有跟随流
@@ -219,9 +219,7 @@ async function fetchCronTasks() {
             // 执行记录标题栏追加排序按钮(升/降序切换并持久化记忆)
             card.querySelector('.details-block-header').appendChild(createStageSortButton());
             card.querySelector('.details-block-header').appendChild(createStageExpandButton());
-            // 手动触发按钮
             card.querySelector('.cron-run-btn').onclick = () => triggerCronTask(task);
-            // 启用/禁用切换按钮
             card.querySelector('.cron-toggle-btn').onclick = () => toggleCronEnabled(task);
             // 删除按钮通过闭包绑定, 避免任务名中的引号破坏内联 onclick 字符串
             const deleteBtn = card.querySelector('.delete-btn');

@@ -249,7 +249,7 @@ function confirmDeleteConversation(conversationId, convTitle) {
                 }
                 await loadConversationList();
             } catch (e) {
-                // 静默处理错误
+                showToast(t('common.purgeFailure'), 'error');
             }
         }
     });

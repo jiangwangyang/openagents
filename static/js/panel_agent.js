@@ -50,7 +50,7 @@ async function fetchAgentRegistry() {
                         <span class="info-card-snippet">${escapeHtml(agent.description)}</span>
                     </div>
                     <div class="card-actions" onclick="event.stopPropagation();">
-                        <button class="btn btn-sm send-button btn-card-sm" onclick="updateSingleAgent(${agent.id})">${t('common.save')}</button>
+                        <button class="btn btn-sm send-button agent-save-btn btn-card-sm">${t('common.save')}</button>
                         <button class="delete-btn always-visible">${DELETE_SVG}</button>
                     </div>
                 </div>
@@ -93,7 +93,8 @@ async function fetchAgentRegistry() {
                     </div>
                 </div>
             `;
-            // 删除按钮通过闭包绑定, 避免名称中的引号破坏内联 onclick 字符串
+            // 按钮通过闭包绑定, 避免名称中的引号破坏内联 onclick 字符串
+            card.querySelector('.agent-save-btn').onclick = () => updateSingleAgent(agent.id);
             const deleteBtn = card.querySelector('.delete-btn');
             deleteBtn.title = t('common.purge');
             deleteBtn.onclick = () => removeAgent(agent.id, agent.name);

@@ -140,7 +140,7 @@ async function submitMcpServer() {
         return;
     }
 
-    let bodyPayload = {name: name, description: description};
+    const bodyPayload = {name: name, description: description};
     if (type === 'stdio') {
         bodyPayload.command = document.getElementById('mcpCommand').value.trim();
         const argsStr = document.getElementById('mcpArgs').value.trim();
@@ -190,7 +190,7 @@ async function updateSingleMcp(id, index) {
         return;
     }
     const description = document.getElementById(`mcp-desc-${index}`).value.trim();
-    let bodyPayload = {name: name, description: description};
+    const bodyPayload = {name: name, description: description};
 
     if (type === 'stdio') {
         bodyPayload.command = document.getElementById(`mcp-command-${index}`).value.trim();

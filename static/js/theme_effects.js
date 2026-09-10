@@ -93,7 +93,7 @@ function startThemeEffects(theme) {
     const w = fx.canvas.width;
     const h = fx.canvas.height;
     for (let i = 0; i < cfg.count; i++) {
-        fx.parts.push(makeParticle(fx.kind, w, h, i, theme));
+        fx.parts.push(makeParticle(fx.kind, w, h, i));
     }
     fx.running = true;
     fx.last = performance.now();
@@ -102,7 +102,7 @@ function startThemeEffects(theme) {
 
 // ===== 3. 粒子生成与主循环 =====
 // 生成单个粒子对象(飘叶/光尘/星尘/霓虹雨等类型, 按主题特效 kind 分发)
-function makeParticle(kind, w, h, seed, theme) {
+function makeParticle(kind, w, h, seed) {
     const rand = (min, max) => min + Math.random() * (max - min);
     const p = {x: rand(0, w), y: rand(0, h), r: rand(1, 6), vx: 0, vy: 0, sway: 0, swaySpeed: rand(0.4, 1.6), phase: rand(0, Math.PI * 2), rot: rand(0, Math.PI * 2), rotSpeed: 0, color: '#ffffff', opacity: 0.4};
     if (kind === 'sunset') {

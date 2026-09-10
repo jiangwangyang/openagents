@@ -6,7 +6,7 @@ use tokio::process::Command;
 use super::ToolResult;
 
 // Shell 命令执行超时时间
-const SHELL_COMMAND_TIMEOUT: Duration = Duration::from_secs(30);
+const SHELL_COMMAND_TIMEOUT: Duration = Duration::from_secs(60);
 
 // PowerShell UTF-8 配置内容
 const POWERSHELL_UTF8_SETTING: &str = r#"# UTF-8 encoding setting

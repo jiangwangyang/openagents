@@ -139,9 +139,18 @@ async function loadConversationList() {
             const items = conversationList.querySelectorAll('.conversation-item');
             items.forEach(item => item.classList.toggle('active', String(item.dataset.id) === String(currentConversationId)));
         }
+        // 按流会话注册表补充流式标志(页面初始化/列表刷新后恢复进行中的圆点)
+        syncStreamDots();
     } catch (e) {
         // 静默处理错误
     }
+}
+
+// 同步会话列表流式标志: 依据流会话注册表逐项切换 streaming 类, 在流开始/结束与列表重渲染时调用
+function syncStreamDots() {
+    conversationList.querySelectorAll('.conversation-item').forEach(item => {
+        item.classList.toggle('streaming', streamSessions[item.dataset.id] != null);
+    });
 }
 
 // 加载指定对话: 切换当前会话并从对话详情接口同步工作目录与模型路由配置; readonly 为 true 时(任务/定时来源)禁止发送消息
@@ -652,6 +661,8 @@ function connectStream(conversationId) {
         scrollTop: null
     };
     streamSessions[conversationId] = session;
+    // 流开始, 点亮左侧列表的流式标志
+    syncStreamDots();
     chatContainer.appendChild(container);
     usageInfo.textContent = '';
     setTyping(true);
@@ -692,6 +703,8 @@ function connectStream(conversationId) {
         // 流自然结束: 关闭连接并移除注册项, 下次访问该对话时重新请求接口回放
         source.close();
         delete streamSessions[conversationId];
+        // 流结束, 熄灭左侧列表的流式标志(含后台结束的会话)
+        syncStreamDots();
         session.renderer.finalize();
         // 后台结束的会话仅移除注册项, 界面收尾仅对当前可见会话执行
         if (String(currentConversationId) !== String(conversationId)) {

@@ -1000,9 +1000,9 @@ input.form-control {
     padding-left: 20px;
 }
 
-/* 历史记录栏: 弹窗主体左栏, 纵向 flex 让列表占满剩余高度 */
+/* 历史记录栏: 弹窗主体左栏, 宽度与对话页侧边栏保持一致, 纵向 flex 让列表占满剩余高度 */
 .dir-history-section {
-    width: 280px;
+    width: 320px;
     flex-shrink: 0;
     border-right: 1px solid var(--border-hard);
     background: var(--bg-surface);

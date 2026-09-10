@@ -297,6 +297,25 @@ body::before {
     white-space: nowrap;
 }
 
+/* 流式进行中的会话项: 标题文字流光扫过, 复用骨架屏 shimmer 动画, 深浅主题下变量自动反转均可见 */
+.conversation-item.streaming .conversation-item-text {
+    background: linear-gradient(90deg, var(--charcoal-700) 40%, var(--slate-400) 50%, var(--charcoal-700) 60%);
+    background-size: 200% 100%;
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+    animation: shimmer 1.4s infinite;
+}
+
+/* 流式进行中的会话项: 标题末尾追加迷你流式光标, 与消息流式光标同款闪烁(标题过长被省略号截断时光标随之隐藏) */
+/* 用文本字符实现: 父级 background-clip:text 会连带裁剪子元素背景(WebKit 行为), 纯背景块的光标会被裁掉 */
+.conversation-item.streaming .conversation-item-text::after {
+    content: '\258C';
+    color: var(--charcoal-900);
+    margin-left: 2px;
+    animation: blink 1s step-end infinite;
+}
+
 .delete-btn {
     opacity: 0;
     padding: 4px;

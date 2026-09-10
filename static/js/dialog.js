@@ -205,8 +205,6 @@ async function loadConversation(conversationId, readonly = false) {
         // 静默处理错误
     }
     updatePromptSourceHint();
-    chatContainer.innerHTML = '';
-    emptyState.style.display = 'none';
     messageInput.value = '';
     autoResize();
     conversationInfo.textContent = `ID: ${conversationId}`;
@@ -227,6 +225,12 @@ function confirmDeleteConversation(conversationId, convTitle) {
         onConfirm: async () => {
             try {
                 await fetch(`/conversation/${conversationId}`, {method: 'DELETE'});
+                // 被删除对话可能仍有后台流会话, 关闭连接并移除注册项避免悬挂
+                const session = streamSessions[conversationId];
+                if (session) {
+                    session.source.close();
+                    delete streamSessions[conversationId];
+                }
                 if (String(currentConversationId) === String(conversationId)) {
                     startNewChat();
                 }
@@ -243,11 +247,7 @@ async function startNewChat() {
     // 清空已加载会话的提示词来源状态, 恢复为新会话预判模式
     currentSystemPrompt = '';
     currentConvAgentName = '';
-    // 关闭旧会话可能仍在进行的流式连接, 避免其继续向新会话视图渲染或干扰按钮状态
-    if (currentEventSource) {
-        currentEventSource.close();
-        currentEventSource = null;
-    }
+    // 后台流会话保持运行不断开, 下方清空聊天容器仅摘下其会话容器(容器与已渲染内容保留在注册表中)
     // 新会话恢复可输入状态(清除任务/定时来源的只读标记与占位文案)
     setConversationReadonly(false);
     // 重置流式状态: 旧会话可能仍在输出, 新建会话需将停止按钮恢复为发送按钮
@@ -602,63 +602,103 @@ async function sendMessage() {
 }
 
 // ===== 8. SSE 流式渲染 =====
-// 连接对话流式接口: 先回放历史 chunks, 再实时跟随新数据; chunk 渲染复用 core.js 的流式渲染器(与阶段弹窗同一套规则)
+// 连接对话流式接口: 注册表已有该对话的流会话则收养挂回(后台流持续渲染, 切换零重放), 否则新建会话先回放历史 chunks 再实时跟随; 流自然结束时移除注册项, 下次访问重新请求接口回放最新数据; chunk 渲染复用 core.js 的流式渲染器(与阶段弹窗同一套规则)
 function connectStream(conversationId) {
-    // 关闭旧连接, 重置流式渲染状态
-    if (currentEventSource) {
-        currentEventSource.close();
-        currentEventSource = null;
+    // 摘下当前挂着的流会话(若仍在注册表中): 连接保持后台运行, 仅记录滚动位置并将容器移出可视区
+    Object.keys(streamSessions).forEach(id => {
+        const session = streamSessions[id];
+        if (session.container.parentNode === chatContainer) {
+            session.atBottom = isAtBottom;
+            session.scrollTop = viewDialog.scrollTop;
+            session.container.remove();
+        }
+    });
+    // 清空可视区残留内容(空态提示/已结束会话的旧容器), 会话容器统一走挂接
+    chatContainer.innerHTML = '';
+    emptyState.style.display = 'none';
+
+    // 收养已有会话: 容器挂回可视区, 同步用量展示/流式按钮状态/滚动位置
+    const existing = streamSessions[conversationId];
+    if (existing) {
+        chatContainer.appendChild(existing.container);
+        usageInfo.textContent = existing.usageText;
+        setTyping(true);
+        if (existing.atBottom === false) {
+            userScroll = true;
+            isAtBottom = false;
+            programScroll = true;
+            viewDialog.scrollTop = existing.scrollTop;
+        } else {
+            scrollToBottom();
+        }
+        return;
     }
-    streamChunkCount = 0;
-    // 重置 token 用量累计并清空 header 展示
-    usageInputTokens = 0;
-    usageOutputTokens = 0;
-    usageCacheTokens = 0;
-    usageTotalTokens = 0;
+
+    // 新建流会话: 独立容器与渲染器, 容器挂入可视区, 连接保持打开直到流自然结束
+    const container = document.createElement('div');
+    // 会话容器不生成布局盒, 消息块直接参与聊天容器 flex 布局(align-self 等样式表现与直连渲染一致)
+    container.style.display = 'contents';
+    const source = new EventSource(`/conversation/${conversationId}/stream`);
+    const session = {
+        source: source,
+        renderer: createStreamRenderer(container, !currentConvReadonly),
+        container: container,
+        chunkCount: 0,
+        usageInput: 0,
+        usageOutput: 0,
+        usageCache: 0,
+        usageText: '',
+        atBottom: true,
+        scrollTop: null
+    };
+    streamSessions[conversationId] = session;
+    chatContainer.appendChild(container);
     usageInfo.textContent = '';
     setTyping(true);
 
-    // 渲染器状态由闭包自持, 滚动由本页按用户滚动意图控制
-    const renderer = createStreamRenderer(chatContainer, !currentConvReadonly);
-    const source = new EventSource(`/conversation/${conversationId}/stream`);
-    currentEventSource = source;
-
     source.onmessage = (event) => {
         const data = JSON.parse(event.data);
-        streamChunkCount += 1;
+        session.chunkCount += 1;
+        const isCurrent = String(currentConversationId) === String(conversationId);
 
-        // token 用量: 对话页特有, 累计本次连接的全部 usage(工具循环会有多条), 更新 header 展示
+        // token 用量: 对话页特有, 累计本连接的全部 usage(工具循环会有多条), 仅当前可见会话更新 header 展示
         if (data.type === 'usage') {
-            usageInputTokens += data.input_tokens || 0;
-            usageOutputTokens += data.output_tokens || 0;
-            usageCacheTokens += data.cache_read_input_tokens || 0;
+            session.usageInput += data.input_tokens || 0;
+            session.usageOutput += data.output_tokens || 0;
+            session.usageCache += data.cache_read_input_tokens || 0;
             // 当次 usage 事件三项之和, 表示本轮对话的总 token 量
-            usageTotalTokens = (data.input_tokens || 0) + (data.output_tokens || 0) + (data.cache_read_input_tokens || 0);
+            const usageTotal = (data.input_tokens || 0) + (data.output_tokens || 0) + (data.cache_read_input_tokens || 0);
             const formatTokens = (count) => count >= 1000 ? (count / 1000).toFixed(1) + 'k' : String(count);
-            let usageText = `↑ ${formatTokens(usageInputTokens)} ${t('stream.usageIn')} · ${formatTokens(usageOutputTokens)} ${t('stream.usageOut')}`;
-            if (usageCacheTokens > 0) {
-                usageText += ` · ${formatTokens(usageCacheTokens)} ${t('stream.usageCache')}`;
+            let usageText = `↑ ${formatTokens(session.usageInput)} ${t('stream.usageIn')} · ${formatTokens(session.usageOutput)} ${t('stream.usageOut')}`;
+            if (session.usageCache > 0) {
+                usageText += ` · ${formatTokens(session.usageCache)} ${t('stream.usageCache')}`;
             }
-            usageText += ` · ${formatTokens(usageTotalTokens)} ${t('stream.usageTotal')}`;
-            usageInfo.textContent = usageText;
+            usageText += ` · ${formatTokens(usageTotal)} ${t('stream.usageTotal')}`;
+            session.usageText = usageText;
+            if (isCurrent) {
+                usageInfo.textContent = usageText;
+            }
             return;
         }
 
-        renderer.handleChunk(data);
-        scrollToBottomIfNotUserScroll();
+        // 后台会话持续向各自容器渲染, 滚动仅跟随当前可见会话
+        session.renderer.handleChunk(data);
+        if (isCurrent) {
+            scrollToBottomIfNotUserScroll();
+        }
     };
 
     source.onerror = async () => {
-        // 已被新连接替换时忽略
-        if (currentEventSource !== source) {
+        // 流自然结束: 关闭连接并移除注册项, 下次访问该对话时重新请求接口回放
+        source.close();
+        delete streamSessions[conversationId];
+        session.renderer.finalize();
+        // 后台结束的会话仅移除注册项, 界面收尾仅对当前可见会话执行
+        if (String(currentConversationId) !== String(conversationId)) {
             return;
         }
-        // 关闭连接, 仅收尾, 不重新打开避免无限重连
-        source.close();
-        currentEventSource = null;
-        renderer.finalize();
         // 流关闭且无任何数据时回退到空状态页
-        if (streamChunkCount === 0) {
+        if (session.chunkCount === 0) {
             chatContainer.appendChild(emptyState);
             emptyState.style.display = 'flex';
         }

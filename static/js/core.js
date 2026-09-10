@@ -19,17 +19,12 @@ let currentConversationId = null;
 let isTyping = false;
 // 当前会话是否为任务/定时来源的只读会话(仅供查看, 禁止发送消息)
 let currentConvReadonly = false;
-let currentEventSource = null;
 let currentWorkdir = '';
 
-// 流式渲染状态
-let streamChunkCount = 0;
-// token 用量累计(每次 connectStream 时重置)
-let usageInputTokens = 0;
-let usageOutputTokens = 0;
-let usageCacheTokens = 0;
-// 当次 usage 事件三项之和, 表示本轮对话的总 token 量
-let usageTotalTokens = 0;
+// 流会话注册表: key 为对话 id, value 为流会话对象(SSE 连接/渲染器/独立容器/chunk 计数/用量累计/滚动位置记忆)
+// 切换对话不关闭连接, 后台流持续向各自容器渲染; 流自然结束时移除注册项, 下次访问重新请求接口回放最新数据
+// 注意: 每个 EventSource 长占一个浏览器连接, 后台流会话过多可能挤占同域普通请求, 此处不设上限
+const streamSessions = {};
 
 // 会话滚动控制状态
 let isAtBottom = true;

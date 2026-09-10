@@ -118,8 +118,12 @@ async function loadConversationList() {
             const item = document.createElement('div');
             item.className = 'conversation-item';
             item.dataset.id = conversation.id;
+            // 标题拆为内层标题与流式光标两层: 光标常驻 DOM 由 CSS 控制显隐, 长标题截断不影响光标显示
             item.innerHTML = `
-                <span class="conversation-item-text">${escapeHtml(conversation.title)}</span>
+                <span class="conversation-item-text">
+                    <span class="conversation-item-title">${escapeHtml(conversation.title)}</span>
+                    <span class="stream-cursor">▌</span>
+                </span>
                 <button class="delete-btn">${DELETE_SVG}</button>
             `;
             // 删除按钮通过闭包绑定, 避免标题中的引号破坏内联 onclick 字符串

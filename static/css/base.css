@@ -290,15 +290,27 @@ body::before {
     background: var(--charcoal-900);
 }
 
+/* 会话标题容器: 标题与流式光标横向排列, 悬停时为右缘删除按钮让位 */
 .conversation-item-text {
     flex: 1;
+    min-width: 0;
+    display: flex;
+    align-items: center;
+    overflow: hidden;
+    transition: padding-right 0.2s cubic-bezier(0.2, 0, 0, 1);
+}
+
+/* 会话标题: 截断职责承担者, 超长以省略号收尾 */
+.conversation-item-title {
+    flex: 1;
+    min-width: 0;
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
 }
 
 /* 流式进行中的会话项: 标题文字流光扫过, 复用骨架屏 shimmer 动画, 深浅主题下变量自动反转均可见 */
-.conversation-item.streaming .conversation-item-text {
+.conversation-item.streaming .conversation-item-title {
     background: linear-gradient(90deg, var(--charcoal-700) 40%, var(--slate-400) 50%, var(--charcoal-700) 60%);
     background-size: 200% 100%;
     -webkit-background-clip: text;
@@ -307,12 +319,17 @@ body::before {
     animation: shimmer 1.4s infinite;
 }
 
-/* 流式进行中的会话项: 标题末尾追加迷你流式光标, 与消息流式光标同款闪烁(标题过长被省略号截断时光标随之隐藏) */
-/* 用文本字符实现: 父级 background-clip:text 会连带裁剪子元素背景(WebKit 行为), 纯背景块的光标会被裁掉 */
-.conversation-item.streaming .conversation-item-text::after {
-    content: '\258C';
+/* 流式光标: 仅流式会话显示, 与消息流式光标同款闪烁 */
+/* 常驻 DOM 并以 flex-shrink:0 固定在标题之后, 长标题截断不影响显示; 用文本字符实现, 不受标题 background-clip:text 连带裁剪(WebKit 行为) */
+.stream-cursor {
+    display: none;
     color: var(--charcoal-900);
+    flex-shrink: 0;
     margin-left: 2px;
+}
+
+.conversation-item.streaming .stream-cursor {
+    display: inline;
     animation: blink 1s step-end infinite;
 }
 
@@ -330,8 +347,23 @@ body::before {
     border-radius: var(--radius-sm);
 }
 
+/* 会话删除按钮: 悬浮于条目右缘不占布局空间, 隐藏时标题可延伸至右缘 */
+.conversation-item .delete-btn {
+    position: absolute;
+    right: 2px;
+    top: 50%;
+    transform: translateY(-50%);
+    /* 隐藏态不拦截指针, 避免标题右缘出现不可见的删除热区 */
+    pointer-events: none;
+}
+
 .conversation-item:hover .delete-btn {
     opacity: 0.5;
+    pointer-events: auto;
+}
+
+.conversation-item:hover .conversation-item-text {
+    padding-right: 18px;
 }
 
 .conversation-item .delete-btn:hover {

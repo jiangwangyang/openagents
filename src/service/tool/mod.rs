@@ -36,6 +36,14 @@ pub fn parse_bool(arg: &str, name: &str) -> Result<bool, ToolResult> {
     arg.parse::<bool>().map_err(|_| (format!("Invalid {}: {}", name, arg), true))
 }
 
+// 解析命令参数中的思考强度(pi ModelThinkingLevel), 失败转为 ToolResult
+pub fn parse_thinking_level(arg: &str) -> Result<&str, ToolResult> {
+    match arg {
+        "off" | "minimal" | "low" | "medium" | "high" | "xhigh" | "max" => Ok(arg),
+        _ => Err((format!("Invalid thinking: {}", arg), true)),
+    }
+}
+
 // 工具描述
 #[derive(Debug, Clone, serde::Serialize)]
 pub struct ToolDefinition {
@@ -54,8 +62,8 @@ const HANDOVER_COMMAND_HELP: &[(&str, &str)] = &[("task handover <agent_id>", "H
 const MANAGE_COMMAND_HELP: &[(&str, &str)] = &[
     ("agent list", "List all agents."),
     ("agent get <agent_id>", "Show details of a specific agent."),
-    ("agent add <name> <description> <prompt> <model_provider_id> <model> <thinking>", "Add a new agent. <thinking> is true or false."),
-    ("agent update <agent_id> <name> <description> <prompt> <model_provider_id> <model> <thinking>", "Update an existing agent. <thinking> is true or false."),
+    ("agent add <name> <description> <prompt> <model_provider_id> <model> <thinking>", "Add a new agent. <thinking> is one of off, minimal, low, medium, high, xhigh, max."),
+    ("agent update <agent_id> <name> <description> <prompt> <model_provider_id> <model> <thinking>", "Update an existing agent. <thinking> is one of off, minimal, low, medium, high, xhigh, max."),
     ("agent delete <agent_id>", "Delete an agent. Fails if the agent is referenced by conversations or schedules."),
     ("task list", "List all tasks."),
     ("task get <task_id>", "Show details of a specific task."),

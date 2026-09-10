@@ -50,7 +50,7 @@ pub fn assistant_message_text(message: &AssistantMessage) -> String {
 }
 
 // 启动对话, 同一 conversation 不允许同时运行多个; query 为 true 时仅回放历史, 不执行模型调用
-pub async fn start_conversation(state: &AppState, conversation_id: i64, task_content: String, model_provider_id: i64, model: String, thinking: bool, query: bool) -> bool {
+pub async fn start_conversation(state: &AppState, conversation_id: i64, task_content: String, model_provider_id: i64, model: String, thinking: String, query: bool) -> bool {
     let (tx, _) = tokio::sync::watch::channel(0u64);
     let (stop_tx, _) = tokio::sync::watch::channel(false);
     let conv_state = Arc::new(RwLock::new(ConversationState { chunks: Vec::new(), query, notify: Some(tx), stop: stop_tx }));
@@ -117,9 +117,9 @@ pub async fn publish_chunk(state: &AppState, conversation_id: i64, msg_type: &st
 }
 
 // 后台 agent loop, conv_state 为本次启动插入的状态, 收尾时据此避免误删替换后的新状态
-async fn run_conversation(state: AppState, conv_state: Arc<RwLock<ConversationState>>, conversation_id: i64, task_content: String, model_provider_id: i64, model: String, thinking: bool, query: bool) {
+async fn run_conversation(state: AppState, conv_state: Arc<RwLock<ConversationState>>, conversation_id: i64, task_content: String, model_provider_id: i64, model: String, thinking: String, query: bool) {
     // 捕获 panic 兜底, 保证对话必然标记完成, 避免对话被永久锁死
-    let result = std::panic::AssertUnwindSafe(do_run_conversation(&state, conversation_id, &task_content, model_provider_id, &model, thinking, query)).catch_unwind().await.unwrap_or_else(|e| {
+    let result = std::panic::AssertUnwindSafe(do_run_conversation(&state, conversation_id, &task_content, model_provider_id, &model, &thinking, query)).catch_unwind().await.unwrap_or_else(|e| {
         let msg = e.downcast_ref::<String>().cloned().or_else(|| e.downcast_ref::<&str>().map(|s| s.to_string())).unwrap_or_else(|| "unknown".to_string());
         Err(anyhow::anyhow!("conversation panicked: {}", msg))
     });
@@ -135,7 +135,7 @@ async fn run_conversation(state: AppState, conv_state: Arc<RwLock<ConversationSt
 }
 
 // 实际对话逻辑
-async fn do_run_conversation(state: &AppState, conversation_id: i64, task_content: &str, model_provider_id: i64, model: &str, thinking: bool, query: bool) -> anyhow::Result<()> {
+async fn do_run_conversation(state: &AppState, conversation_id: i64, task_content: &str, model_provider_id: i64, model: &str, thinking: &str, query: bool) -> anyhow::Result<()> {
     // 查询历史消息
     let conversation = conversation_repository::get_conversation_with_messages(&state.db, conversation_id).await?.ok_or_else(|| anyhow::anyhow!("conversation not found"))?;
 

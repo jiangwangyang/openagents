@@ -22,7 +22,8 @@ pub struct AgentEntity {
     pub prompt: String,
     pub model_provider_id: i64,
     pub model: String,
-    pub thinking: bool,
+    // 思考强度(pi ModelThinkingLevel): off/minimal/low/medium/high/xhigh/max
+    pub thinking: String,
     pub create_time: String,
     pub update_time: String,
 }
@@ -120,7 +121,7 @@ pub struct AgentJoinRow {
     pub agent_prompt: Option<String>,
     pub agent_model_provider_id: Option<i64>,
     pub agent_model: Option<String>,
-    pub agent_thinking: Option<bool>,
+    pub agent_thinking: Option<String>,
     pub agent_create_time: Option<String>,
     pub agent_update_time: Option<String>,
 }

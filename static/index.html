@@ -250,8 +250,13 @@
                     <div class="form-group flex-1">
                         <label data-i18n="input.thinkingTitle">Thinking Mode</label>
                         <select id="agentThinking" class="form-control">
-                            <option value="true" data-i18n="input.think">THINK</option>
-                            <option value="false" data-i18n="input.noThink">NO THINK</option>
+                            <option value="off" data-i18n="input.thinkingOff">OFF</option>
+                            <option value="minimal" data-i18n="input.thinkingMinimal">MINIMAL</option>
+                            <option value="low" data-i18n="input.thinkingLow">LOW</option>
+                            <option value="medium" data-i18n="input.thinkingMedium" selected>MEDIUM</option>
+                            <option value="high" data-i18n="input.thinkingHigh">HIGH</option>
+                            <option value="xhigh" data-i18n="input.thinkingXhigh">XHIGH</option>
+                            <option value="max" data-i18n="input.thinkingMax">MAX</option>
                         </select>
                     </div>
                 </div>
@@ -408,8 +413,13 @@
                     <div class="model-combo-list" id="modelComboList"></div>
                 </div>
                 <select id="thinkingSelect" class="form-control header-select" title="Thinking Mode" data-i18n-title="input.thinkingTitle">
-                    <option value="true" data-i18n="input.think">THINK</option>
-                    <option value="false" data-i18n="input.noThink">NO THINK</option>
+                    <option value="off" data-i18n="input.thinkingOff">OFF</option>
+                    <option value="minimal" data-i18n="input.thinkingMinimal">MINIMAL</option>
+                    <option value="low" data-i18n="input.thinkingLow">LOW</option>
+                    <option value="medium" data-i18n="input.thinkingMedium" selected>MEDIUM</option>
+                    <option value="high" data-i18n="input.thinkingHigh">HIGH</option>
+                    <option value="xhigh" data-i18n="input.thinkingXhigh">XHIGH</option>
+                    <option value="max" data-i18n="input.thinkingMax">MAX</option>
                 </select>
                 <!-- 会话创建后锁定目录与智能体的说明文字, 默认隐藏, 由 setContextLocked 控制显隐 -->
                 <span class="context-lock-hint" id="contextLockHint" style="display: none;" data-i18n="input.contextLocked"></span>

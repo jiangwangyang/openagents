@@ -28,18 +28,19 @@ pub struct AgentRequest {
     pub prompt: String,
     pub model_provider_id: i64,
     pub model: String,
-    pub thinking: bool,
+    // 思考强度(pi ModelThinkingLevel): off/minimal/low/medium/high/xhigh/max
+    pub thinking: String,
 }
 
 // 新增 Agent, 返回自增 id
 pub async fn add_agent(State(state): State<AppState>, Json(req): Json<AgentRequest>) -> Result<Json<i64>, AppError> {
-    let id = agent_repository::add_agent(&state.db, &req.name, &req.description, &req.prompt, req.model_provider_id, &req.model, req.thinking).await?;
+    let id = agent_repository::add_agent(&state.db, &req.name, &req.description, &req.prompt, req.model_provider_id, &req.model, &req.thinking).await?;
     Ok(Json(id))
 }
 
 // 按 id 更新 Agent, 不存在返回 404
 pub async fn update_agent(State(state): State<AppState>, Path(agent_id): Path<i64>, Json(req): Json<AgentRequest>) -> Result<(), AppError> {
-    let updated = agent_repository::update_agent(&state.db, agent_id, &req.name, &req.description, &req.prompt, req.model_provider_id, &req.model, req.thinking).await?;
+    let updated = agent_repository::update_agent(&state.db, agent_id, &req.name, &req.description, &req.prompt, req.model_provider_id, &req.model, &req.thinking).await?;
     if !updated {
         return Err(AppError::NotFound("Agent not found".to_string()));
     }

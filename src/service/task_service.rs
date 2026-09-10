@@ -180,7 +180,7 @@ async fn do_run_task(state: &AppState, task_id: i64, agent_id: i64, mut stop_rx:
 
         // 触发对话执行并等待完成
         tracing::info!("Task triggering conversation: task_id={} conversation_id={} agent={} model={}", task_id, latest.id, agent.name, agent.model);
-        if !conversation_service::start_conversation(state, latest.id, task_content, provider.id, agent.model.clone(), agent.thinking, false).await {
+        if !conversation_service::start_conversation(state, latest.id, task_content, provider.id, agent.model.clone(), agent.thinking.clone(), false).await {
             tracing::warn!("Task loop ended: task_id={} conversation_id={} already running", task_id, latest.id);
             return Ok(());
         }

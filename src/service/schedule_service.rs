@@ -106,7 +106,7 @@ async fn remove_job_from_scheduler(state: &AppState, schedule_id: i64) {
 
 // 触发对话执行的类型擦除封装: 同步函数边界隐藏内部 future 类型,
 // 打断 start_conversation -> 工具执行 -> schedule_service -> start_conversation 的异步递归类型循环(E0391)
-fn start_conversation_boxed(state: &AppState, conversation_id: i64, task_content: String, model_provider_id: i64, model: String, thinking: bool) -> std::pin::Pin<Box<dyn std::future::Future<Output = bool> + Send>> {
+fn start_conversation_boxed(state: &AppState, conversation_id: i64, task_content: String, model_provider_id: i64, model: String, thinking: String) -> std::pin::Pin<Box<dyn std::future::Future<Output = bool> + Send>> {
     let state = state.clone();
     Box::pin(async move { conversation_service::start_conversation(&state, conversation_id, task_content, model_provider_id, model, thinking, false).await })
 }
@@ -123,7 +123,7 @@ async fn execute_schedule(state: &AppState, schedule_id: i64, trigger_label: &st
     let conversation_id = conversation_repository::add_conversation(&state.db, &format!("[{}] {}", trigger_label, schedule.name), &schedule.work_dir, &agent.prompt, None, Some(schedule.agent_id), Some(schedule_id)).await?;
 
     // 触发对话执行, 启动失败时记录日志, 避免对话已落库但未执行的静默失败
-    let started = start_conversation_boxed(state, conversation_id, schedule.content.clone(), provider.id, agent.model.clone(), agent.thinking).await;
+    let started = start_conversation_boxed(state, conversation_id, schedule.content.clone(), provider.id, agent.model.clone(), agent.thinking.clone()).await;
     if !started {
         tracing::warn!("Schedule {} conversation {} failed to start", schedule_id, conversation_id);
     }

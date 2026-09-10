@@ -202,7 +202,7 @@ fn build_params(model: &Model, context: &Context, options: &AnthropicOptions) ->
         // 空 system prompt 不传(对齐 pi 的 if (context.systemPrompt) 真值判断), 空文本会触发 400 text content is empty
         system: context.system_prompt.as_ref().filter(|s| !s.trim().is_empty()).map(|s| vec![SystemBlock { block_type: "text".to_string(), text: sanitize_surrogates(s) }]),
         tools: context.tools.as_ref().filter(|t| !t.is_empty()).map(|t| convert_tools(t)),
-        // 思考配置: 开关映射固定级别 medium(预算在分发层给定), 关闭时显式 disabled
+        // 思考配置: 预算由分发层按 pi 级别映射给定, 关闭时显式 disabled
         thinking: if model.reasoning {
             match options.thinking_enabled {
                 Some(true) => Some(ThinkingConfig::Enabled { budget_tokens: options.thinking_budget_tokens.unwrap_or(1024), display: "summarized".to_string() }),

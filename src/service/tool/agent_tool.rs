@@ -1,7 +1,7 @@
 // Agent 管理工具
 use sqlx::SqlitePool;
 
-use super::{parse_bool, parse_id, ToolResult};
+use super::{parse_id, parse_thinking_level, ToolResult};
 use crate::repository::{agent_repository, DeleteResult};
 
 // 执行 Agent 管理命令
@@ -32,8 +32,8 @@ pub async fn execute(cmd_and_args: &[String], db: &SqlitePool) -> ToolResult {
                 Ok(id) => id,
                 Err(r) => return r,
             };
-            let thinking = match parse_bool(thinking, "thinking") {
-                Ok(b) => b,
+            let thinking = match parse_thinking_level(thinking) {
+                Ok(level) => level,
                 Err(r) => return r,
             };
             match agent_repository::add_agent(db, name, description, prompt, model_provider_id, model, thinking).await {
@@ -51,8 +51,8 @@ pub async fn execute(cmd_and_args: &[String], db: &SqlitePool) -> ToolResult {
                 Ok(id) => id,
                 Err(r) => return r,
             };
-            let thinking = match parse_bool(thinking, "thinking") {
-                Ok(b) => b,
+            let thinking = match parse_thinking_level(thinking) {
+                Ok(level) => level,
                 Err(r) => return r,
             };
             match agent_repository::update_agent(db, agent_id, name, description, prompt, model_provider_id, model, thinking).await {

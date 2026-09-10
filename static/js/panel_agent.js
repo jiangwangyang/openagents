@@ -86,8 +86,7 @@ async function fetchAgentRegistry() {
                         <div class="form-group flex-1">
                             <label>${t('input.thinkingTitle')}</label>
                             <select id="agent-thinking-${agent.id}" class="form-control">
-                                <option value="true" ${agent.thinking ? 'selected' : ''}>${t('input.think')}</option>
-                                <option value="false" ${agent.thinking ? '' : 'selected'}>${t('input.noThink')}</option>
+                                ${THINKING_LEVELS.map(level => `<option value="${level}" ${agent.thinking === level ? 'selected' : ''}>${t('input.thinking' + level.charAt(0).toUpperCase() + level.slice(1))}</option>`).join('')}
                             </select>
                         </div>
                     </div>
@@ -138,7 +137,7 @@ async function submitAgent() {
                 prompt: prompt,
                 model_provider_id: parseInt(providerValue),
                 model: document.getElementById('agentModel').value.trim(),
-                thinking: document.getElementById('agentThinking').value === 'true'
+                thinking: document.getElementById('agentThinking').value
             })
         });
         if (response.ok) {
@@ -179,7 +178,7 @@ async function updateSingleAgent(id) {
                 prompt: prompt,
                 model_provider_id: parseInt(providerValue),
                 model: document.getElementById(`agent-model-${id}`).value.trim(),
-                thinking: document.getElementById(`agent-thinking-${id}`).value === 'true'
+                thinking: document.getElementById(`agent-thinking-${id}`).value
             })
         });
         if (response.ok) {

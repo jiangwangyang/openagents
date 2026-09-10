@@ -349,7 +349,8 @@ function restoreLastModelConfig() {
         modelInput.value = config.model;
     }
     if (config.thinking) {
-        thinkingSelect.value = config.thinking;
+        // 兼容旧版布尔存储: true/false 映射为 medium/off
+        thinkingSelect.value = config.thinking === 'true' ? 'medium' : config.thinking === 'false' ? 'off' : config.thinking;
     }
 }
 
@@ -557,7 +558,7 @@ async function sendMessage() {
         showToast(t('stream.configMissing'), 'error');
         return;
     }
-    const modelConfig = {model_provider_id: parseInt(providerId), model: modelName, thinking: document.getElementById('thinkingSelect').value === 'true'};
+    const modelConfig = {model_provider_id: parseInt(providerId), model: modelName, thinking: document.getElementById('thinkingSelect').value};
     // 保存当前模型配置供下次新对话自动填入(仅记最近一次)
     saveLastModelConfig();
 

@@ -29,7 +29,7 @@ pub enum OpenAiResponsesError {
     Api { status: u16, body: String },
 }
 
-// 调用选项(pi OpenAIResponsesOptions 的裁剪版, reasoning_effort 由开关映射为固定级别)
+// 调用选项(pi OpenAIResponsesOptions 的裁剪版, reasoning_effort 为 pi ThinkingLevel 级别)
 #[derive(Debug, Clone, Default)]
 pub struct OpenAIResponsesOptions {
     pub api_key: Option<String>,

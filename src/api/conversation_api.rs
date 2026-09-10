@@ -51,7 +51,8 @@ pub struct CreateWorkRequest {
     pub work_dir: String,
     pub model_provider_id: Option<i64>,
     pub model: Option<String>,
-    pub thinking: Option<bool>,
+    // 思考强度(pi ModelThinkingLevel): off/minimal/low/medium/high/xhigh/max
+    pub thinking: Option<String>,
     pub agent_id: Option<i64>,
 }
 
@@ -113,7 +114,8 @@ pub struct StartWorkRequest {
     pub task_content: String,
     pub model_provider_id: i64,
     pub model: String,
-    pub thinking: bool,
+    // 思考强度(pi ModelThinkingLevel): off/minimal/low/medium/high/xhigh/max
+    pub thinking: String,
 }
 
 // 启动历史对话执行接口, 已在运行返回 409
@@ -138,7 +140,7 @@ pub async fn stream_conversation_work(State(state): State<AppState>, Path(conver
 
     // 无内存状态说明对话未运行, 启动仅查询的回放会话
     if conversation_service::get_conversation_state(&state, conversation_id).is_none() {
-        conversation_service::start_conversation(&state, conversation_id, String::new(), 0, String::new(), false, true).await;
+        conversation_service::start_conversation(&state, conversation_id, String::new(), 0, String::new(), "off".to_string(), true).await;
     }
     let conversation_state = conversation_service::get_conversation_state(&state, conversation_id).ok_or_else(|| AppError::Internal(anyhow::anyhow!("Failed to get conversation state")))?;
 

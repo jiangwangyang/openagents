@@ -37,6 +37,8 @@ const ARROW_SVG = `<svg viewBox="0 0 24 24" class="info-card-arrow" width="14" h
 const DELETE_SVG = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>`;
 const ROLLBACK_SVG = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="1 4 1 10 7 10"></polyline><path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"></path></svg>`;
 const SKELETON_HTML = '<div class="skeleton-loader"><span></span><span></span><span></span></div>';
+// 思考强度级别(pi ModelThinkingLevel), 选项文案走 i18n input.thinkingXxx 键
+const THINKING_LEVELS = ['off', 'minimal', 'low', 'medium', 'high', 'xhigh', 'max'];
 
 // ===== 4. 视图路由配置 =====
 // key 为视图名, load/unload 为对应面板的加载/清理钩子函数名(调用时按名解析, 避免加载顺序依赖)

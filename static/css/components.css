@@ -980,9 +980,11 @@ input.form-control {
     flex: 1;
     min-width: 0;
     overflow-y: auto;
-    padding: 16px;
+    /* 顶部不留空行, 首行条目与左栏标题条同处第一行网格 */
+    padding: 0 16px 16px;
 }
 
+/* 目录条目: 固定行盒高度, 行高锁定为 33px(6+6 内边距 + 20 行盒 + 1 边框), 与左栏条目/标题条同网格 */
 .dir-item {
     padding: 6px 16px;
     cursor: pointer;
@@ -990,6 +992,7 @@ input.form-control {
     align-items: center;
     gap: 12px;
     font-size: 13px;
+    line-height: 20px;
     font-family: var(--font-mono);
     border-bottom: 1px dashed var(--border-soft);
     transition: var(--transition-snap);
@@ -1010,8 +1013,12 @@ input.form-control {
     flex-direction: column;
 }
 
+/* 标题条占满一行行高(33px), 与右栏首行条目同处第一行网格 */
 .dir-history-header {
-    padding: 8px 16px 4px;
+    height: 33px;
+    padding: 0 16px;
+    display: flex;
+    align-items: center;
     font-family: var(--font-display);
     font-size: 10px;
     font-weight: 700;
@@ -1026,13 +1033,17 @@ input.form-control {
     padding-bottom: 6px;
 }
 
+/* 历史条目行高与右栏 .dir-item 对齐: 相同的内边距/字号, 透明边框补齐右栏虚线边框的 1px */
 .dir-history-item {
-    padding: 5px 16px;
+    position: relative;
+    padding: 6px 16px;
     display: flex;
     align-items: center;
     gap: 10px;
-    font-size: 12px;
+    font-size: 13px;
+    line-height: 20px;
     font-family: var(--font-mono);
+    border-bottom: 1px solid transparent;
     cursor: pointer;
     transition: var(--transition-snap);
     color: var(--charcoal-700);
@@ -1041,6 +1052,31 @@ input.form-control {
 .dir-history-item:hover {
     background: var(--hover-bg);
     color: var(--charcoal-900);
+}
+
+/* 历史删除按钮: 悬浮于条目右缘不占布局空间, 隐藏时路径可延伸至右缘 */
+.dir-history-item .delete-btn {
+    position: absolute;
+    right: 2px;
+    top: 50%;
+    transform: translateY(-50%);
+    /* 隐藏态不拦截指针, 避免路径右缘出现不可见的删除热区 */
+    pointer-events: none;
+}
+
+.dir-history-item:hover .delete-btn {
+    opacity: 0.5;
+    pointer-events: auto;
+}
+
+.dir-history-item:hover .dir-history-path {
+    padding-right: 18px;
+}
+
+.dir-history-item .delete-btn:hover {
+    opacity: 1;
+    color: var(--danger-color);
+    background: var(--danger-bg);
 }
 
 .dir-history-path {

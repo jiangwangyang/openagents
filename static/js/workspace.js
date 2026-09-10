@@ -68,7 +68,6 @@ function renderWorkdirHistory() {
         pathSpan.onclick = () => confirmHistorySelection(path);
         const removeBtn = document.createElement('button');
         removeBtn.className = 'delete-btn';
-        removeBtn.style.opacity = '0.5';
         removeBtn.title = t('modal.removeHistory');
         removeBtn.innerHTML = DELETE_SVG;
         removeBtn.onclick = (e) => {
